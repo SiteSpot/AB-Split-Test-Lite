@@ -1,0 +1,126 @@
+{
+  "post_data": {
+    "title": "Sample Test 2 - Complete",
+    "content": "This is a completed Magic Test demonstrating a headline optimization test with statistically significant results. Variation B (Transform Your Business in 30 Days or Less) is the clear winner with 10.20% conversion rate vs 5.59% for the original.",
+    "status": "complete"
+  },
+  "test_config": {
+    "test_type": "magic",
+    "magic_definition": [
+      {
+        "type": "text",
+        "selector": ".page-12 .notarealtest h2.entry-title",
+        "variations": [
+          "Welcome to Our Amazing Service",
+          "Transform Your Business in 30 Days or Less",
+          "Ready to 10x Your Revenue This Year?",
+          "Limited Time: Double Your Sales in 60 Days"
+        ]
+      }
+    ],
+    "target_percentage": "75",
+    "target_option_device_size": "desktop",
+    "conversion_page": "time",
+    "conversion_selector": "",
+    "conversion_time": "60",
+    "conversion_text": "",
+    "conversion_use_order_value": true,
+    "conversion_url": "thank-you",
+    "conversion_link_pattern": "",
+    "url_query": "",
+    "webhook_url": "",
+    "bt_allowed_roles": ["subscriber", "customer"],
+    "css_test_variations": "0",
+    "conversion_style": "bayesian",
+    "test_winner": "magic-1",
+    "goals": {
+      "1": {
+        "link": "absplittest.com"
+      },
+      "2": {
+        "url": "pricing"
+      },
+      "3": {
+        "": ""
+      },
+      "4": {
+        "": ""
+      },
+      "5": {
+        "": ""
+      },
+      "6": {
+        "": ""
+      },
+      "7": {
+        "": ""
+      },
+      "8": {
+        "": ""
+      },
+      "9": {
+        "": ""
+      },
+      "10": {
+        "": ""
+      }
+    },
+    "autocomplete_on": "0",
+    "ac_min_days": "7",
+    "ac_min_views": "500"
+  },
+  "observations": {
+    "magic-0": {
+      "visit": 8450,
+      "conversion": 422,
+      "goals": {
+        "1": 209,
+        "2": 211
+      },
+      "rate": 3.45,
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      }
+    },
+    "magic-1": {
+      "visit": 8234,
+      "conversion": 741,
+      "goals": {
+        "1": 221,
+        "2": 371
+      },
+      "rate": 12.75,
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": [ "purchase"]
+      }
+    },
+    "magic-2": {
+      "visit": 8112,
+      "conversion": 446,
+      "goals": {
+        "1": 223,
+        "2": 266
+      },
+      "rate": 4.20,
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      }
+    },
+    "magic-3": {
+      "visit": 7998,
+      "conversion": 488,
+      "goals": {
+        "1": 244,
+        "2": 264
+      },
+      "rate": 5.85,
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      }
+    }
+  }
+}
