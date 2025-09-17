@@ -21,12 +21,8 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-// Check if pro version is active and prevent activation if it is
-if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
-    require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
-}
 
-if ( is_plugin_active( 'ABSPLITTEST/bt-bb-ab.php' ) || is_plugin_active_for_network( 'ABSPLITTEST/bt-bb-ab.php' ) ) {
+if ( class_exists( 'Bt_Bb_Ab' ) ) {
     add_action( 'admin_notices', function() {
         echo '<div class="notice notice-error"><p><strong>AB Split Test Lite:</strong> The Pro version of AB Split Test is already active. Please deactivate the Pro version before activating the Lite version.</p></div>';
     });
@@ -51,7 +47,6 @@ if (!defined('BT_AB_TEST_LITE_WL_URL')) define('BT_AB_TEST_LITE_WL_URL', apply_f
 if (!defined('BT_AB_TEST_LITE_WL_ABTEST')) define('BT_AB_TEST_LITE_WL_ABTEST', apply_filters('ab_lite_wl_ab_test', 'AB Test'));
 
 
-
 if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 {
   class Bt_Ab_Tests_Lite{
@@ -60,10 +55,10 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 
       add_filter( 'post_updated_messages', array( $this, 'abst_custom_post_updated_messages' ) );
 
-      add_filter( 'init', array( $this,'bt_experiments_post_register'),10, 2); //register post type n status
-      add_filter( 'init', array( $this,'bt_include_module'),10, 2);
+      add_action( 'init', array( $this,'bt_experiments_post_register'),10, 2); //register post type n status
+      add_action( 'init', array( $this,'bt_include_module'),10, 2);
       
-      add_filter( 'init', array( $this, 'bt_include_support_module' ), 10, 2 );
+      add_action( 'init', array( $this, 'bt_include_support_module' ), 10, 2 );
 
       add_action('admin_head', array($this, 'bt_include_ajax_url'), 10);
       add_filter( 'post_row_actions', array($this,'remove_bulk_actions'),10,2); // remove quick edit
@@ -144,7 +139,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
         ) {
             $query->set('author', get_current_user_id());
         }
-    }
+    } // end abst_authors_see_own_posts_filter
 
 
 
@@ -288,7 +283,8 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
           return get_permalink($post->ID) ?? $slug;
       
       return $slug;
-  }
+    }
+  
 
   function save_test_config( $post_id, $data = array() ) {
 
@@ -298,22 +294,18 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
     // wl('no data');
       $data = $_POST;
     }
-          // get user level
-    $is_free = btab_user_level() == 'free';
-    if($is_free)
+    //count all custom posts bt_experiments
+    $count = wp_count_posts('bt_experiments');
+    if($count->publish > 1)
     {
-      //count all custom posts bt_experiments
-      $count = wp_count_posts('bt_experiments');
-      if($count->publish > 1)
-      {
-        //change current post status to draft
-        remove_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10 );
-        wp_update_post(['ID' => $post_id, 'post_status' => 'draft']);
-        add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
-        abst_log('Free licence limited to one active test. Upgrade https://absplittest.com/pricing?utm_source=ug');
-        return;
-      }
+      //change current post status to draft
+      remove_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10 );
+      wp_update_post(['ID' => $post_id, 'post_status' => 'draft']);
+      add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
+      abst_log('Free licence limited to one active test. Upgrade https://absplittest.com/pricing?utm_source=ug');
+      return;
     }
+    
     //test type 
     
     $url_query = sanitize_text_field($data['test_type']); //ab_test full_page css_test magic
@@ -344,12 +336,10 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
       //variation meta
       // variation meta (labels and screenshots)
       $variation_labels = $data['variation_label'] ?? array();
-      $variation_images = $data['variation_image'] ?? array();
       $variation_meta = array();
       foreach($page_variations as $key => $url){
         $variation_meta[$key] = array(
           'label' => sanitize_text_field($variation_labels[$key] ?? ''),
-          'image' => esc_url_raw($variation_images[$key] ?? ''),
           'weight' => 1
         );
       }
@@ -410,15 +400,15 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 
     update_post_meta( $post_id, 'conversion_selector', $conversion_selector );
 
-  // Save conversion_link_pattern (Link Click trigger)
-  if (isset($data['bt_experiments_conversion_link_pattern'])) {
-    $conversion_link_pattern = sanitize_text_field($data['bt_experiments_conversion_link_pattern']);
-    if (!empty($conversion_link_pattern)) {
-      update_post_meta($post_id, 'conversion_link_pattern', $conversion_link_pattern);
-    } else {
-      delete_post_meta($post_id, 'conversion_link_pattern');
+    // Save conversion_link_pattern (Link Click trigger)
+    if (isset($data['bt_experiments_conversion_link_pattern'])) {
+      $conversion_link_pattern = sanitize_text_field($data['bt_experiments_conversion_link_pattern']);
+      if (!empty($conversion_link_pattern)) {
+        update_post_meta($post_id, 'conversion_link_pattern', $conversion_link_pattern);
+      } else {
+        delete_post_meta($post_id, 'conversion_link_pattern');
+      }
     }
-  }
     
   
 
@@ -428,9 +418,9 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
   }
     function save_postdata( $post_id ) {
 
-    if (isset($_POST['original_post_status']) && $_POST['original_post_status'] === 'auto-draft') {
-        update_post_meta($post_id, '_abst_is_new', 'true');
-    }
+      if (isset($_POST['original_post_status']) && $_POST['original_post_status'] === 'auto-draft') {
+          update_post_meta($post_id, '_abst_is_new', 'true');
+      }
       /*
        * We need to verify this came from the our screen and with proper authorization,
        * because save_post can be triggered at other times.
@@ -452,7 +442,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
       /* OK, its safe for us to save the data now. */
       $this->save_test_config( $post_id, $_POST );
 
-    }
+  }
 
     //refresh conversion pages on trashed/untrashed experiments
     
@@ -461,14 +451,14 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 
     if ( ! is_object( $post ) || 'bt_experiments' !== get_post_type( $post->ID ) ) {
       return $messages;
-  }
-//if post created was in the last minute its new
-  $post_time = get_the_time('U', $post->ID);
-  $is_new = time() - $post_time <= 60;
+    }
+    //if post created was in the last minute its new
+    $post_time = get_the_time('U', $post->ID);
+    $is_new = time() - $post_time <= 60;
 
-  if ($is_new) {
-      $message_text = 'Split Test Created.';
-  } else {
+    if ($is_new) {
+        $message_text = 'Split Test Created.';
+    } else {
       $message_text = 'Split Test Updated.';
     }
 
@@ -512,8 +502,8 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
           delete_option('all_testable_posts'); //  refresh it
       }
 
-  //    if ($post_after->post_type !== 'bt_experiments')
-//        return;
+     //    if ($post_after->post_type !== 'bt_experiments')
+    //        return;
       
       $this->refresh_conversion_pages();
       
@@ -573,7 +563,6 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
         $conversion_pages[$post_id]['scroll_depth'] = $conversion_scroll;
         $conversion_pages[$post_id]['url_query'] = $url_query;
         $conversion_pages[$post_id]['conversion_text'] = $conversion_text;
-        $conversion_pages[$post_id]['use_order_value'] = $use_order_value;
       }
 
       update_option('bt_conversion_pages',$conversion_pages);
@@ -724,8 +713,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
     }
 
     function create_new_on_page_test(){
-      // ONLY FOR LOGGD IN USERS
-      // if user has edittor role, then allow to create experiment
+
       if(!current_user_can('edit_posts'))
         wp_die('You do not have the correct permissions to create a test.');
 
@@ -988,23 +976,23 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
                 width: 100%;
             }
 
-                form#post {
-    padding: 20px;
-}
+            form#post {
+              padding: 20px;
+            }
 
-button.button.button-small.add-goal {
-    background: white;
-    border: thin solid #bbbbbb;
-    border-radius: 5px;
-    padding: 3px 11px;
-    cursor:pointer;
-}button.button.button-small.add-goal:hover {
-    background: #ebebeb;
-    border: thin solid #a0a0a0;
-}button.button.button-small.add-goal:active {
-    background: #ffffff;
-    border: thin solid #747474;
-}
+            button.button.button-small.add-goal {
+              background: white;
+              border: thin solid #bbbbbb;
+              border-radius: 5px;
+              padding: 3px 11px;
+              cursor:pointer;
+            }button.button.button-small.add-goal:hover {
+              background: #ebebeb;
+              border: thin solid #a0a0a0;
+            }button.button.button-small.add-goal:active {
+              background: #ffffff;
+              border: thin solid #747474;
+            }
       </style>';
       //form post to ajax url action name create_new_on_page_test
       echo '</head><body><form action="' . admin_url( 'admin-ajax.php' ) . '" method="post" id="post" enctype="multipart/form-data"><h4>Create new Split Test</h4><div class="title_box"> <h4><label for="post_title">Test Name</label></h4><input name="post_title" id="post_title" type="text" value="" placeholder="Test Name" size="30" class="regular-text" required="required"/>';
@@ -1056,18 +1044,16 @@ button.button.button-small.add-goal {
       $graphicon = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg>';
       $webhook_url = get_post_meta($pid,'webhook_url',true); 
       $magic_definition = get_post_meta($pid,'magic_definition',true); 
-      if( btab_user_level() == 'free' )
-      {
         //if post status is publish
         $active_tests = wp_count_posts('bt_experiments');
         if($active_tests->publish > 0 && (get_post_status($pid) !== 'publish'))
-          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded?
+          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded?
 <a href='".get_admin_url()."options-general.php?page=bt_bb_ab_test'>Click here to refresh your license and unlock Pro features.</a></p></div>";
         if($active_tests->publish > 1 && (get_post_status($pid) == 'publish'))
-          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded?
+          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded?
 <a href='".get_admin_url()."options-general.php?page=bt_bb_ab_test'>Click here to refresh your license and unlock Pro features.</a></p>
 </div>";
-      }
+      
       echo "<div class='ab-tabs'><button class='config-button ab-tab-button tab-active' href='#config'>".$cog." Settings</button><button class='ab-tab-results-button ab-tab-button' href='#results'>".$graphicon." Results</button></div>";
       echo "<div class='ab-panels'><div id='configuration_settings' class='ab-tab-content'><div class='show_test_type'><h3>Test Type</h3>";
       $this->show_test_type($post);
@@ -1141,23 +1127,16 @@ button.button.button-small.add-goal {
       echo "</div></div><div class='bt_experiments_inner_custom_box'><div class='goal'><h3>Conversion / Goal Trigger</h3><div class='conversion-goal'>";
       $this->bt_experiments_inner_custom_box($post);// conversions / goals area
       echo "</div></div>";
-
-      
- echo "<div class='upgrade'> <h4>Upgrade to add Subgoals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance</p><p>Agency upgrade also includes support for more sites, Custom Conversion Values (Order Value), Analytics integrations and more!</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade Plan</a></p></div>";
+      echo "<div class='upgrade'> <h4>Upgrade to add Subgoals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance</p><p>Agency upgrade also includes support for more sites, Custom Conversion Values (Order Value), Analytics integrations and more!</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade Plan</a></p></div>";
       echo "</div>";
       
       echo "<input type='hidden' name='conversion_style' value='bayesian'/>";
-      
 
       echo "<div class='show_targeting_options collapsed'><h3>Test Visitor Segmentation</h3><p>Choose which visitors will be tested on. <BR/>Everyone else will see the default.<BR/>Filters apply in the execution order ↓</p>";
       $this->show_targeting_options($post);
       echo "<div class='show_autocomplete collapsed'><h3>Autocomplete</h3>";
       //if its on then show it
-      echo "</div>";
-      //webhook stuff
-      
-      
-      echo "</div></div>";
+      echo "</div></div></div>";
       
       echo "<div class='show_experiment_results ab-tab-content'>";
       $this->show_experiment_results($post);
@@ -1326,37 +1305,37 @@ button.button.button-small.add-goal {
 
     function abst_get_archives(){
       $out = [];
-    $post_types = get_post_types( array( 'public' => true ), 'objects' );
+      $post_types = get_post_types( array( 'public' => true ), 'objects' );
 
-    foreach ( $post_types as $type ) {
-      $out['post-type-archive-'.$type->name]=$type->label;
-    }       
+      foreach ( $post_types as $type ) {
+        $out['post-type-archive-'.$type->name]=$type->label;
+      }       
 
-    $post_types = get_post_types( array( 'public' => true ), 'names' );
-    $all_tags = array();
+      $post_types = get_post_types( array( 'public' => true ), 'names' );
+      $all_tags = array();
 
-    foreach ( $post_types as $post_type ) {
-        $taxonomies = get_object_taxonomies( $post_type, 'objects' );
+      foreach ( $post_types as $post_type ) {
+          $taxonomies = get_object_taxonomies( $post_type, 'objects' );
 
-        foreach( $taxonomies as $taxonomy ) {
-            $terms = get_terms( array(
-                'taxonomy' => $taxonomy->name,
-                'hide_empty' => false,
-            ) );
+          foreach( $taxonomies as $taxonomy ) {
+              $terms = get_terms( array(
+                  'taxonomy' => $taxonomy->name,
+                  'hide_empty' => false,
+              ) );
 
-            if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
-                foreach ( $terms as $term ) {
-                  if($taxonomy->publicly_queryable == true)
-                    if($taxonomy->name == 'category')
-                      $out['category-'.$term->slug] = $taxonomy->name . ': ' .$term->name;
-                    else
-                      $out['term-'.$term->slug] = $taxonomy->name . ': '.$term->name;
-                }
-            }
-        }
-    }
-      return $out;
+              if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+                  foreach ( $terms as $term ) {
+                    if($taxonomy->publicly_queryable == true)
+                      if($taxonomy->name == 'category')
+                        $out['category-'.$term->slug] = $taxonomy->name . ': ' .$term->name;
+                      else
+                        $out['term-'.$term->slug] = $taxonomy->name . ': '.$term->name;
+                  }
+              }
+          }
       }
+      return $out;
+    }
 
 
     function show_test_type($post){
@@ -1381,15 +1360,10 @@ button.button.button-small.add-goal {
     <label for="ab_test" class="ab-shadow"><h5>On Page Elements</h5><p>Compare different on-page elements to discover the best layout.</p></label>
   </div>
   <div>
-    <p>Magic Point and Click</p>
-    <p>AI assisted point and click to create testing. The easiest way to test.</p>
-  </div>
-  <div>
-    <p>Test Code</p>
-    <p>Test CSS styles or JavaScript. Available in the pro version only.</p>
+    <p> <strong>Magic Point and Click + Code tests available in Pro version</strong></p>
   </div>
   ';
-          }
+    }
 
     function show_targeting_options($post){
 
@@ -1486,21 +1460,6 @@ button.button.button-small.add-goal {
       return $count_posts->publish;
     }
     
-    function get_ac_data( $id )
-    {
-      if( class_exists('Ab_Tests_Autocomplete') )  {
-        $ac_data = Ab_Tests_Autocomplete::get_data($id);  
-      } else {
-        $ac_data = [
-          'autocomplete_on' => false,
-          'min_days'  => 1,
-          'min_views' => 10
-        ];
-      }
-      
-      return $ac_data;
-    }
-    
     
     
     function convert_ab_split_test_shortcode($atts, $content = null) {
@@ -1519,11 +1478,6 @@ button.button.button-small.add-goal {
       return '<' . esc_attr($attributes['wrap']) . ' class="' . $class_eid . ' ' . $class_var . '">' . do_shortcode($content) . '</' . esc_attr($attributes['wrap']) . '>';
     }
     
-    
-  
-
-
-
 /**
  * Identify the control/original variation key based on test type and naming rules.
  * - For magic tests: 'magic-0'
@@ -1543,9 +1497,7 @@ button.button.button-small.add-goal {
  */
 function identify_control_variation($variations, $test = null) {
     // Magic test: magic-0 always control
-    if (isset($variations['magic-0'])) return 'magic-0';
     
-    if ($test && isset($variations['test-css-' . $test->ID . '-1'])) return 'test-css-' . $test->ID . '-1';
 
     // Full page test: get control key from post meta
     if ($test && get_post_meta($test->ID, 'test_type', true) === 'full_page') {
@@ -1570,7 +1522,6 @@ function identify_control_variation($variations, $test = null) {
 
 function show_experiment_results($test,$asTable = false){
 
-  $ac_data = $this->get_ac_data($test->ID);
   $pid = $test->ID;
   
   $observations = get_post_meta($pid,'observations',true);
@@ -1645,7 +1596,6 @@ function show_experiment_results($test,$asTable = false){
     $experiment_status = "<p class='experiment-status'>🧪 Your test is just getting started. Give it a day or so to collect more data and check back soon for insights!</p>";
   } else {
       $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_LITE_WL_ABTEST . " to find the winner. " . $remaining . "</p>";
-    
   }
   $goodStats = true;
 
@@ -1724,14 +1674,7 @@ function show_experiment_results($test,$asTable = false){
         if(isset($variation_meta[$key]['label'])){
           $key = $variation_meta[$key]['label'];
         }
-        // IF ITS MAGIC with no label
-        if($test_type == 'magic' && strpos($key, 'magic-') === 0){
-          $variation_number = intval(str_replace('magic-', '', $key));
-          $key = 'Variation ' . chr(65 + $variation_number);
-        }
 
-        if($var['visit'] < $ac_data['min_views'])
-          $notenoughvisits .= "<h4>Variation <code>$key</code> needs more views</h4>";
       }
 
         $likeylwinner = $observations['bt_bb_ab_stats']['best'] ?? '';
@@ -1746,12 +1689,10 @@ function show_experiment_results($test,$asTable = false){
       // Output chart data as JavaScript variable
       echo '<script>var testAge = ' . $test_age . '; var likelyDuration = ' . $likelyDuration . ';</script>';
                 
-      if($test_age < $ac_data['min_days'] )
-        $experiment_status .= "<h4> This test has run for ". $timediff . " - it requires at least ". $ac_data['min_days'] ." days.</h4>";
       if($notenoughvisits !== '')
         $experiment_status .= $notenoughvisits;
       
-      if( ($likelywinnerpercentage >= $percentage_target) && ($test_age >= $ac_data['min_days']) && ($notenoughvisits == '') )
+      if( ($likelywinnerpercentage >= $percentage_target) && ($notenoughvisits == '') )
       {
         // Calculate uplift and improvement metrics
         $winner_data = null;
@@ -1920,14 +1861,6 @@ function show_experiment_results($test,$asTable = false){
           }
         }
         
-        //save winner test_winner if autocomplete is on
-        //is this the first time its been observed?
-        if(empty($test_winner) && $autocomplete_on)
-        {
-          wp_update_post(array('ID' => $test->ID, 'post_status' => 'complete')); // upd status
-          update_post_meta($test->ID,'test_winner',$likeylwinner); // save it!
-          btab_send_webhook($test->ID, $likeylwinner, $likelywinnerpercentage); // send it!
-        }
       }
       else
       {
@@ -1959,10 +1892,6 @@ function show_experiment_results($test,$asTable = false){
         
         // Format leading variation name
         //if it copntains magic- then do the thiong else just use its nameSZ
-        if($leading_variation && strpos($leading_variation, 'magic-') !== false) {
-          $leading_display = str_replace('magic-', '', $leading_variation);
-          $leading_label = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$leading_display];
-        } else {
           $leading_display = $leading_variation;
           if(is_int($leading_display)) {
             //get post name by id
@@ -1970,7 +1899,7 @@ function show_experiment_results($test,$asTable = false){
           } else {
             $leading_label = $leading_variation;
           }
-        }
+        
         //if its set in variation meta then use that
         if($variation_meta)
         {
@@ -2112,12 +2041,8 @@ function show_experiment_results($test,$asTable = false){
     
     if($asTable)
       echo '<table style="width:100%; max-width:800px;" border="0" cellspacing="5px" cellpadding="5px"> <thead><tr>  <th style="text-align: center;">Version Title</th>  <th style="text-align: center;">'.$conversion_text.'</th>  <th style="text-align: center;">'.$chance_column_header.'</th> <th style="text-align: center;">Visits</th> <th style="text-align: center;">Conversions</th> </tr></thead><tbody>';
-    else
-      echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>'.$goalsHtml.'<div class="results-conversions">Conversions</div><div class="results-conversion-rate">'.$conversion_text.'</div><div class="results-likely">'.$chance_column_header.'</div></div>';
-    //hide old results remove soon
-    echo '<style>.results_variation { display: none; }</style>';
 
-$titles = array();
+    $titles = array();
     $variation_meta = get_post_meta($pid,'variation_meta',true);
 
       if(is_array($observations))
@@ -2201,11 +2126,8 @@ $titles = array();
       }
       
 
-      if(intval($mv['visit']) < $ac_data['min_views'])
-      {
-        $class = "na";
-      }
-      else if($mv['probability'] > apply_filters('ab_complete_confidence', 95) )
+
+      if($mv['probability'] > apply_filters('ab_complete_confidence', 95) )
         $class = "testwinner";
       else
         $class = "no";
@@ -2552,11 +2474,7 @@ $titles = array();
       // Add test age and likely duration to main data object
       $observations['test_age'] = $test_age;
       $observations['likely_duration'] = $likelyDuration;
-      
-      // Add minimum requirements data
-      $observations['min_views'] = $ac_data['min_views'];
-      $observations['min_days'] = $ac_data['min_days'];
-      
+            
       // Add confidence target percentage
       $observations['confidence_target'] = $percentage_target;
     }
@@ -2820,9 +2738,6 @@ echo "    if( selectval !== 'url' )
     
     }
 
-
-    }
-
     
     function get_woo_pages(){
       if ( !class_exists( 'WooCommerce' ) )
@@ -2892,7 +2807,7 @@ echo "    if( selectval !== 'url' )
             }
             if($column_name == 'conversion')
             {
-              $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> ".$conversionPrefix.$v['conversion']."</div>";
+              $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> ".$v['conversion']."</div>";
             }
             if($column_name == 'rate')
             {
@@ -3634,12 +3549,7 @@ echo "    if( selectval !== 'url' )
     //called in wp_head 
     function render_experiment_config() {
       
-
-      
-      $user_level = btab_user_level();
       global $post;
-      $agency = $user_level  == 'agency';
-      $free = $user_level == 'free';
       
       $is_preview = (is_preview() || (isset($_GET['fl_builder']) && is_user_logged_in()) ||  $this->is_elementor_preview() )  ? true : false;
       
@@ -3665,24 +3575,12 @@ echo "    if( selectval !== 'url' )
       {
         $post_id =  'author-'.$gqo->user_login;
       } 
-      $do_fingerprint = ab_get_admin_setting( 'ab_use_fingerprint' );        
-      $do_fingerprint = apply_filters( 'bt_ab_fingerprint', $do_fingerprint );
-      $advanced_tracking = ab_get_admin_setting( 'ab_use_uuid' );
-      $advanced_tracking = apply_filters( 'bt_ab_use_uuid', $advanced_tracking );
-      $abst_server_convert_woo = ab_get_admin_setting( 'abst_server_convert_woo' );
-      $abst_disable_ai = ab_get_admin_setting( 'abst_disable_ai' );
 
       $btab_vars =  [
         'is_admin' => current_user_can('manage_options'),
         'post_id' => $post_id,
         'is_preview' => $is_preview,
-        'is_agency' => $agency,
-        'is_free' => $free,
-        'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
-        'do_fingerprint' => $do_fingerprint ? '1' : '0',
-        'advanced_tracking' => $advanced_tracking ? '1' : '0',
-        'abst_server_convert_woo' => $abst_server_convert_woo ? '1' : '0',
-        'abst_disable_ai' => $abst_disable_ai ? '1' : '0',
+        'is_free' => '1',
         'plugins_uri' => BT_AB_TEST_LITE_PLUGIN_URI,
         'domain' => get_home_url(),
         'v' => BT_AB_TEST_LITE_VERSION
@@ -3753,7 +3651,6 @@ echo "    if( selectval !== 'url' )
         $experiments[$val->ID]['full_page_default_page'] = $full_page_default_page;
         $experiments[$val->ID]['page_variations'] = $page_variations;
         $experiments[$val->ID]['variation_meta'] = $variation_meta;
-        $experiments[$val->ID]['use_order_value'] = $use_order_value;
         $experiments[$val->ID]['magic_definition'] = $magic_definition;
         $experiments[$val->ID]['css_test_variations'] = $css_test_variations;
         $experiments[$val->ID]['test_status'] = $test_status;
@@ -3766,16 +3663,6 @@ echo "    if( selectval !== 'url' )
         if($test_type == 'full_page' && !is_int($full_page_default_page))
           $style .= ' .'.$full_page_default_page.'{display:none;}'; //hide the page to avoid flicker
 
-        if($test_type == 'magic' && is_int($full_page_default_page))
-          $style .= ' .page-id-'.$full_page_default_page.',.postid-'.$full_page_default_page.'{display:none;}'; //hide the page to avoid flicker
-
-        // if test winner and autocomplete is on and its an on page elements, then make it visible with css
-        if($test_winner && $test_type == 'ab_test')
-        {
-          //css to select by attribute bt-variation and bt-eid
-          $style .= '[bt-variation="'.$test_winner.'"][bt-eid="'.$val->ID.'"]{display:inherit !important;}';
-
-        }
 
       }
       $style .= '</style>';
@@ -3852,14 +3739,14 @@ body.fl-builder-edit [class*='ab-var-'] {
     
     function post_status_transition($new_status, $old_status, $post)
     {
-        // Check if the post is transitioning from 'auto-draft' to 'publish'
-        if ($old_status === 'auto-draft' && $new_status === 'publish') {
-          delete_option('all_testable_posts');// better refresh it
-        }
+      // Check if the post is transitioning from 'auto-draft' to 'publish'
+      if ($old_status === 'auto-draft' && $new_status === 'publish') {
+        delete_option('all_testable_posts');// better refresh it
+      }
 
-        // Check if the post is transitioning from 'publish' to 'trash' or 'delete'
-        if (($old_status === 'publish' || $old_status === 'trash') && ($new_status === 'trash' || $new_status === 'delete')) {
-          delete_option('all_testable_posts'); // better refresh it
+      // Check if the post is transitioning from 'publish' to 'trash' or 'delete'
+      if (($old_status === 'publish' || $old_status === 'trash') && ($new_status === 'trash' || $new_status === 'delete')) {
+        delete_option('all_testable_posts'); // better refresh it
       }
     }
 
@@ -3877,23 +3764,23 @@ body.fl-builder-edit [class*='ab-var-'] {
     
 
 
-/**
- * Log experiment activity
- *
- * @param int $bt_eid The experiment ID
- * @param string $bt_variation The variation ID
- * @param string $bt_type The type of activity (visit|conversion|goal)
- * @param bool $from_api Whether the request is coming from a js navigator.beacon() call or the AB Test admin page
- * @param string $bt_location The location of the activity
- * @param int $abConversionValue The value of the conversion
- * @param string $uuid The user's UUID
- * @param string $size The size of the device (mobile|tablet|desktop)
- * @param string $advancedId The user's advanced ID
- *
- * @return void
- *
- * @since 1.0.0
- */
+      /**
+       * Log experiment activity
+       *
+       * @param int $bt_eid The experiment ID
+       * @param string $bt_variation The variation ID
+       * @param string $bt_type The type of activity (visit|conversion|goal)
+       * @param bool $from_api Whether the request is coming from a js navigator.beacon() call or the AB Test admin page
+       * @param string $bt_location The location of the activity
+       * @param int $abConversionValue The value of the conversion
+       * @param string $uuid The user's UUID
+       * @param string $size The size of the device (mobile|tablet|desktop)
+       * @param string $advancedId The user's advanced ID
+       *
+       * @return void
+       *
+       * @since 1.0.0
+       */
       function log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false,$uuid = false,$size = false, $advancedId = false){
       
         $error = false;
@@ -4102,51 +3989,52 @@ body.fl-builder-edit [class*='ab-var-'] {
         }
       }
 
-        if($error)
-        {
-          abst_log( 'Log event ERROR: ' . $error );
-          if( $from_api ) {
-            return new WP_REST_Response([
-              'error'  => $error
-            ], 200);
-          } else {
-            echo( json_encode(array('error'=>$error)) );
-            die();
-          }
-        }
-
-        //update conversion rate if not zeros
-        if(isset($obs[$variation]['visit']) && isset($obs[$variation]['conversion']) &&
-           $obs[$variation]['visit'] !== 0 && $obs[$variation]['conversion'] !== 0 &&
-           is_numeric($obs[$variation]['visit']) && is_numeric($obs[$variation]['conversion']))
-        {
-          $obs[$variation]['rate'] = round( ( ($obs[$variation]['conversion'] / $obs[$variation]['visit']) * 100), 2); // round it to 2 decimal places
-        }
-
-        if($type == 'visit' || $type == 'conversion' && !empty($location))
-        {
-          if(isset($obs[$variation]['location'][$type]) && is_array($obs[$variation]['location'][$type]))
-          {
-            if (!in_array($location, $obs[$variation]['location'][$type]))
-            {
-              abst_log('OBS: add location ' . $location . ' for variation ' . $variation . ' type ' . $type);
-              $obs[$variation]['location'][$type][] = $location;
-            }
-          }
-        }
-
-              
-        do_action('log_experiment_activity', $eid, $variation, $type, $location); // do ya thing vibe coders
-        
-        update_post_meta($eid,'observations',$obs);
-  
+      if($error)
+      {
+        abst_log( 'Log event ERROR: ' . $error );
         if( $from_api ) {
-          return new WP_REST_Response(['success' => true], 200);        
+          return new WP_REST_Response([
+            'error'  => $error
+          ], 200);
         } else {
-          echo( json_encode(['success' => true]) );
+          echo( json_encode(array('error'=>$error)) );
           die();
         }
       }
+
+      //update conversion rate if not zeros
+      if(isset($obs[$variation]['visit']) && isset($obs[$variation]['conversion']) &&
+          $obs[$variation]['visit'] !== 0 && $obs[$variation]['conversion'] !== 0 &&
+          is_numeric($obs[$variation]['visit']) && is_numeric($obs[$variation]['conversion']))
+      {
+        $obs[$variation]['rate'] = round( ( ($obs[$variation]['conversion'] / $obs[$variation]['visit']) * 100), 2); // round it to 2 decimal places
+      }
+
+      if($type == 'visit' || $type == 'conversion' && !empty($location))
+      {
+        if(isset($obs[$variation]['location'][$type]) && is_array($obs[$variation]['location'][$type]))
+        {
+          if (!in_array($location, $obs[$variation]['location'][$type]))
+          {
+            abst_log('OBS: add location ' . $location . ' for variation ' . $variation . ' type ' . $type);
+            $obs[$variation]['location'][$type][] = $location;
+          }
+        }
+      }
+
+            
+      do_action('log_experiment_activity', $eid, $variation, $type, $location); // do ya thing vibe coders
+      
+      update_post_meta($eid,'observations',$obs);
+
+      if( $from_api ) {
+        return new WP_REST_Response(['success' => true], 200);        
+      } else {
+        echo( json_encode(['success' => true]) );
+        die();
+      }
+    }
+    
   
 
     function update_fingerprint_db($uuid = null,$type = null,$variation = null, $testId = null, $timestamp = null, $location = null, $device_size = null) {
@@ -4348,23 +4236,23 @@ body.fl-builder-edit [class*='ab-var-'] {
           wp_die();
         }
         
-          //clear meta
-          update_post_meta($eid,'observations',false);
-          update_post_meta($eid,'test_winner',false);
-          update_post_meta($eid,'ab-test-winner',false);
-          
-          //update published date
-          $post = array(
-              'ID' => $eid,
-              'post_date' => current_time( 'Y-m-d H:i:s' ), // UPDATE 
-              'post_status' => 'publish', // make active again if necess
-          );
-          wp_update_post( $post );
+        //clear meta
+        update_post_meta($eid,'observations',false);
+        update_post_meta($eid,'test_winner',false);
+        update_post_meta($eid,'ab-test-winner',false);
         
-          $response['text'] = 'Results reset. Reloading page.';
-          $response['success'] = true;
-          echo json_encode($response);
-          wp_die();
+        //update published date
+        $post = array(
+            'ID' => $eid,
+            'post_date' => current_time( 'Y-m-d H:i:s' ), // UPDATE 
+            'post_status' => 'publish', // make active again if necess
+        );
+        wp_update_post( $post );
+      
+        $response['text'] = 'Results reset. Reloading page.';
+        $response['success'] = true;
+        echo json_encode($response);
+        wp_die();
       }
       else
       {
@@ -4404,11 +4292,14 @@ body.fl-builder-edit [class*='ab-var-'] {
       }
       return $block_content;
     
-    }
-}
+    } //end add_btvar_attribute_to_all_blocks
+  } //end Bt_Ab_Tests_Lite
+
 
 $btab = new Bt_Ab_Tests_Lite();
 }
+
+
 
 function btab_user_level(){
   $user_licence = ab_get_admin_setting('bt_bb_ab_lic');
@@ -4456,27 +4347,9 @@ function bt_bb_ab_defaults(){
 
 
 
-  
-
-
 function update_admin_setting($setting,$value){
-  if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php'))
-  {
-    return update_site_option( $setting,$value);
-  }
   return update_option($setting,$value);
 }
-
-/**
- * Activates the plugin by checking for a purchased license file and updating the admin setting with the license key.
- * Schedules a daily check for updates if there is no existing schedule.
- *
- * @throws Exception if there is an error updating the admin setting.
- */
-
-
-
-
 
 
 
@@ -4656,7 +4529,6 @@ function abst_log($message, $level = 'info') {
  */
 function abst_add_logs_page() {
   // Only add logs menu if logging is enabled
-  if (ab_get_admin_setting('abst_enable_logging') == '1') {
     add_submenu_page(
       'edit.php?post_type=bt_experiments',
       'Test Logs',
@@ -4665,7 +4537,7 @@ function abst_add_logs_page() {
       'abst-logs',
       'abst_logs_page_content'
     );
-  }
+  
 }
 add_action('admin_menu', 'abst_add_logs_page');
 
@@ -4748,22 +4620,6 @@ add_action('abst_trim_log', 'trim_abst_log');
 
 
 
-add_action('woocommerce_checkout_update_order_meta', function($order_id) {
-    if (isset($_COOKIE['ab-advanced-id']) && !empty($_COOKIE['ab-advanced-id'])) {
-        // Get the order object properly
-        $order = wc_get_order($order_id);
-        
-        // Only update if it doesn't already exist
-        if ($order && !$order->get_meta('_abuuid')) {
-            // Use WooCommerce's proper method for updating order meta
-            $order->update_meta_data('_abuuid', sanitize_text_field($_COOKIE['ab-advanced-id']));
-            $order->save();
-            
-            abst_log('Updated _abuuid ' . sanitize_text_field($_COOKIE['ab-advanced-id']) . ' for order ' . $order_id);
-        }
-    }
-}); 
-
 
 function abst_get_detected_caches() {
 
@@ -4838,284 +4694,3 @@ function abst_get_detected_caches() {
 
   return $detected_caches;
 }
-
-/**
- * Create sample tests on plugin activation
- */
-function create_sample_tests_on_activation() {
-  return load_sample_tests_from_json(false); // Don't force on activation
-}
-
-/**
- * Load sample tests from JSON files
- * @param bool $force Whether to force creation even if tests exist
- * @return array Results of the operation
- */
-function load_sample_tests_from_json($force = false) {
-  $results = ['created' => 0, 'skipped' => 0, 'errors' => []];
-  
-  // Check if any tests already exist (unless forced)
-  if (!$force) {
-    $existing_tests = get_posts([
-      'post_type' => 'bt_experiments',
-      'post_status' => 'any',
-      'numberposts' => 1
-    ]);
-    
-    if (!empty($existing_tests)) {
-      $results['skipped'] = 'Tests already exist';
-      return $results;
-    }
-  }
-  
-  // Get sample data directory
-  $sample_dir = plugin_dir_path(__FILE__) . 'includes/sampledata/';
-  
-  if (!is_dir($sample_dir)) {
-    $results['errors'][] = 'Sample data directory not found: ' . $sample_dir;
-    return $results;
-  }
-  
-  // Scan for JSON files
-  $json_files = glob($sample_dir . '*.json');
-  
-  // Reverse order so newest/alphabetically last is imported first
-  $json_files = array_reverse($json_files);
-  
-  if (empty($json_files)) {
-    $results['errors'][] = 'No JSON sample files found in: ' . $sample_dir;
-    return $results;
-  }
-  
-  foreach ($json_files as $json_file) {
-    $filename = basename($json_file);
-    
-    // Read and decode JSON
-    $json_content = file_get_contents($json_file);
-    if ($json_content === false) {
-      $results['errors'][] = "Could not read file: {$filename}";
-      continue;
-    }
-    
-    $sample_data = json_decode($json_content, true);
-    if ($sample_data === null) {
-      $results['errors'][] = "Invalid JSON in file: {$filename}";
-      continue;
-    }
-    
-    // Create test based on filename and data
-    $test_created = create_test_from_json_data($filename, $sample_data);
-    
-    if ($test_created) {
-      $results['created']++;
-    } else {
-      $results['errors'][] = "Failed to create test from: {$filename}";
-    }
-  }
-  
-  // Clear any cached posts
-  delete_transient('ab_posts_cache');
-  
-  return $results;
-}
-
-/**
- * Create a test from JSON data
- * @param string $filename The JSON filename
- * @param array $data The decoded JSON data
- * @return int|false The post ID or false on failure
- */
-function create_test_from_json_data($filename, $data) {
-  // Handle the current format (test results data)
-  if (isset($data['magic-1']) || isset($data['magic-2'])) {
-    return create_test_from_results_data($filename, $data);
-  }
-  
-  // Handle structured format (post_data, test_config, sample_results)
-  if (isset($data['post_data']) && isset($data['test_config'])) {
-    return create_test_from_structured_data($data);
-  }
-  
-  return false;
-}
-
-/**
- * Create test from results data format
- */
-function create_test_from_results_data($filename, $data) {
-  // Extract test name from filename
-  $test_name = 'Sample: ' . ucwords(str_replace(['-', '.json'], [' ', ''], basename($filename, '.json')));
-  
-  // Create the post
-  $sample_test = [
-    'post_title' => $test_name,
-    'post_type' => 'bt_experiments',
-    'post_status' => 'draft',
-    'post_content' => 'This is a sample test with realistic data loaded from JSON.',
-    'post_date' => current_time('mysql'),
-    'post_date_gmt' => current_time('mysql', 1),
-  ];
-  
-  $test_id = wp_insert_post($sample_test);
-  
-  if ($test_id) {
-    // Basic test configuration
-    update_post_meta($test_id, 'test_type', 'magic');
-    update_post_meta($test_id, 'target_percentage', '50');
-    update_post_meta($test_id, 'conversion_page', 'time');
-    update_post_meta($test_id, 'conversion_time', '30');
-    
-    // Create sample magic definition based on filename
-    $magic_definition = create_sample_magic_definition($filename);
-    update_post_meta($test_id, 'magic_definition', json_encode($magic_definition));
-    
-    // Store the sample results data
-    update_post_meta($test_id, 'sample_results', json_encode($data));
-    
-    return $test_id;
-  }
-  
-  return false;
-}
-
-/**
- * Create test from structured data format
- */
-function create_test_from_structured_data($data) {
-  abst_log('create_test_from_structured_data');
-  $post_data = $data['post_data'];
-  $test_config = $data['test_config'];
-  
-  // Create the post with date set to 14 days ago
-  $two_weeks_ago = date('Y-m-d H:i:s', strtotime('-14 days'));
-  $two_weeks_ago_gmt = gmdate('Y-m-d H:i:s', strtotime('-14 days'));
-  
-  $sample_test = [
-    'post_title' => $post_data['title'],
-    'post_type' => 'bt_experiments',
-    'post_status' => $post_data['status'] ?? 'publish',
-    'post_content' => $post_data['content'] ?? '',
-    'post_date' => $two_weeks_ago,
-    'post_date_gmt' => $two_weeks_ago_gmt,
-  ];
-  
-  $test_id = wp_insert_post($sample_test);
-  
-  if ($test_id) {
-    // Apply test configuration with proper meta key mapping
-    $meta_mapping = [
-      'test_type' => 'test_type', // Add test_type mapping
-      'target_percentage' => 'target_percentage',
-      'target_option_device_size' => 'target_option_device_size',
-      'conversion_page' => 'conversion_page',
-      'conversion_selector' => 'conversion_selector',
-      'conversion_time' => 'conversion_time',
-      'conversion_text' => 'conversion_text',
-      'conversion_url' => 'conversion_url',
-      'conversion_link_pattern' => 'conversion_link_pattern',
-      'url_query' => 'url_query',
-      'bt_allowed_roles' => 'bt_allowed_roles',
-      'css_test_variations' => 'css_test_variations',
-      'conversion_style' => 'conversion_style',
-      'goals' => 'goals',
-      'status' => 'post_status',
-      'observations' => 'observations'
-    ];
-    
-    foreach ($test_config as $key => $value) {
-      if (isset($meta_mapping[$key])) {
-        $meta_key = $meta_mapping[$key];
-        
-        // Special handling for certain fields
-        if ($key === 'magic_definition') {
-          $value = json_encode($value);
-        } elseif ($key === 'observations' && is_array($value)) {
-          // Observations are stored as array, no JSON encoding needed
-        } elseif ($key === 'bt_allowed_roles' && is_array($value)) {
-          $value = array_map('esc_attr', $value);
-        } elseif ($key === 'goals' && is_array($value)) {
-          // Goals are stored as array, no JSON encoding needed
-        }
-        
-        update_post_meta($test_id, $meta_key, $value);
-      }
-    }
-    
-    // Store observations if provided (updated from sample_results)
-    if (isset($data['observations'])) {
-      update_post_meta($test_id, 'observations', $data['observations']);
-      
-      // Run statistical analysis on the observations data
-      $test_age = 14; // Test was created 14 days ago
-      require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
-      $analyzed_observations = bt_bb_ab_split_test_analyzer($data['observations'], $test_age);
-      
-      // Update with analyzed data including statistical calculations
-      update_post_meta($test_id, 'observations', $analyzed_observations);
-      
-      abst_log('Statistical analysis completed for test ' . $test_id);
-    }
-    
-    return $test_id;
-  }
-  
-  return false;
-}
-
-/**
- * Create sample magic definition based on filename
- */
-function create_sample_magic_definition($filename) {
-  $name = strtolower($filename);
-  
-  if (strpos($name, 'button') !== false || strpos($name, 'cta') !== false) {
-    return [
-      'original' => [
-        'selector' => 'button, .btn, input[type="submit"]',
-        'type' => 'style',
-        'property' => 'background-color',
-        'value' => '#007cba'
-      ],
-      'variations' => [
-        'Green Button' => [
-          'selector' => 'button, .btn, input[type="submit"]',
-          'type' => 'style',
-          'property' => 'background-color',
-          'value' => '#46b450'
-        ],
-        'Red Button' => [
-          'selector' => 'button, .btn, input[type="submit"]',
-          'type' => 'style',
-          'property' => 'background-color',
-          'value' => '#dc3232'
-        ]
-      ]
-    ];
-  }
-  
-  // Default to headline test
-  return [
-    'original' => [
-      'selector' => 'h1, h2.entry-title, .page-title',
-      'type' => 'text',
-      'value' => 'Original Headline'
-    ],
-    'variations' => [
-      'Compelling Headline' => [
-        'selector' => 'h1, h2.entry-title, .page-title',
-        'type' => 'text',
-        'value' => 'Discover Amazing Results in Just 30 Days'
-      ],
-      'Question Headline' => [
-        'selector' => 'h1, h2.entry-title, .page-title',
-        'type' => 'text',
-        'value' => 'Ready to Transform Your Business?'
-      ]
-    ]
-  ];
-}
-
-// Register activation hook
-register_activation_hook(__FILE__, 'create_sample_tests_on_activation');
-
-
