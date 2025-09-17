@@ -55,14 +55,14 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 
       add_filter( 'post_updated_messages', array( $this, 'abst_custom_post_updated_messages' ) );
 
-      add_action( 'init', array( $this,'bt_experiments_post_register'),10, 2); //register post type n status
+      add_action( 'init', array( $this,'bt_experiments_post_register')); //register post type n status
       add_action( 'init', array( $this,'bt_include_module'),10, 2);
       
       add_action( 'init', array( $this, 'bt_include_support_module' ), 10, 2 );
 
       add_action('admin_head', array($this, 'bt_include_ajax_url'), 10);
       add_filter( 'post_row_actions', array($this,'remove_bulk_actions'),10,2); // remove quick edit
-      add_filter( 'manage_bt_experiments_posts_columns', array($this,'experiments_posts_columns'), 10, 1 ); // add experiment data to columns in admin
+      add_filter( 'manage_bt_experiments_posts_columns', array($this,'experiments_posts_columns'), 10, 1 )  ; // add experiment data to columns in admin
 
       add_filter( 'body_class', [$this, 'updated_body_class'] );
       add_filter( 'bt_can_user_view_variations', [$this, 'can_user_view_variations'], 10, 1 );
@@ -302,7 +302,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
       remove_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10 );
       wp_update_post(['ID' => $post_id, 'post_status' => 'draft']);
       add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
-      abst_log('Free licence limited to one active test. Upgrade https://absplittest.com/pricing?utm_source=ug');
+      abst_log('Free licence limited to one active test. Upgrade https://absplittest.com/pricing?utm_source=ugrepolite');
       return;
     }
     
@@ -1047,22 +1047,19 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
         //if post status is publish
         $active_tests = wp_count_posts('bt_experiments');
         if($active_tests->publish > 0 && (get_post_status($pid) !== 'publish'))
-          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded?
-<a href='".get_admin_url()."options-general.php?page=bt_bb_ab_test'>Click here to refresh your license and unlock Pro features.</a></p></div>";
+          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This version of AB Split Test is limited to one active test. Pause your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ugrepolite' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded? <?BR>Install the premium version available on the website.</p></div>";
         if($active_tests->publish > 1 && (get_post_status($pid) == 'publish'))
-          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded?
-<a href='".get_admin_url()."options-general.php?page=bt_bb_ab_test'>Click here to refresh your license and unlock Pro features.</a></p>
-</div>";
+          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This version of AB Split Test is limited to one active test. Upgrade to modify & activate this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ugrepolite' target='_blank'>Upgrade to pro.</a></p><p>Already upgraded? <?BR>Install the premium version available on the website.</p></div>";
       
       echo "<div class='ab-tabs'><button class='config-button ab-tab-button tab-active' href='#config'>".$cog." Settings</button><button class='ab-tab-results-button ab-tab-button' href='#results'>".$graphicon." Results</button></div>";
       echo "<div class='ab-panels'><div id='configuration_settings' class='ab-tab-content'><div class='show_test_type'><h3>Test Type</h3>";
       $this->show_test_type($post);
+      echo "</div><div class='show_full_page_test'><h3>Page and Variations</h3>";
       $this->show_full_page_test($post);
       echo "</div></div>";  
       //if bricks, add bricks helper
       echo "<div class='show_css_classes expanded'><h3>On-Page Elements</h3>";
       echo "<p  class='show'>You can go straight to the block editor or your favourite page builder.<BR>Click the element you want to test, then create your test in the AB Split Test Section of your settings.</p>";
-      echo "</div>";
       if (wp_get_theme()->get('Name') == 'Bricks') {
         echo "<h4>Bricks Instructions.</h4>";
         echo "<p>Upgrade to Pro to test Bricks.</p>";
@@ -1118,15 +1115,13 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
       echo "<label>HTML Classes</label>";
       echo "<input type='text' value='ab-".get_the_ID() ." ab-var-{name}'/>";
       echo "<p><small>Replace {name} with your variation name</small></p>";
+      echo "</div>";
       //shortcodes
       echo "<label>Shortcode</label>";
       echo "<input type='text' value=\"[ab_split_test eid='".$post->ID."' var='{name}']Text One![/ab_split_test]\"/>";
-      echo "</div><div class='magic_settings'>";
-      echo "<h3>Magic Settings</h3>";
-      echo "<p>These settings will help you with your test.</p> ";
-      echo "</div></div><div class='bt_experiments_inner_custom_box'><div class='goal'><h3>Conversion / Goal Trigger</h3><div class='conversion-goal'>";
+      echo "</div><div class='bt_experiments_inner_custom_box'><div class='goal'><h3>Conversion / Goal Trigger</h3><div class='conversion-goal'>";
       $this->bt_experiments_inner_custom_box($post);// conversions / goals area
-      echo "</div></div>";
+      echo "</div>";
       echo "<div class='upgrade'> <h4>Upgrade to add Subgoals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance</p><p>Agency upgrade also includes support for more sites, Custom Conversion Values (Order Value), Analytics integrations and more!</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade Plan</a></p></div>";
       echo "</div>";
       
@@ -1134,9 +1129,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 
       echo "<div class='show_targeting_options collapsed'><h3>Test Visitor Segmentation</h3><p>Choose which visitors will be tested on. <BR/>Everyone else will see the default.<BR/>Filters apply in the execution order ↓</p>";
       $this->show_targeting_options($post);
-      echo "<div class='show_autocomplete collapsed'><h3>Autocomplete</h3>";
-      //if its on then show it
-      echo "</div></div></div>";
+      echo "</div>";
       
       echo "<div class='show_experiment_results ab-tab-content'>";
       $this->show_experiment_results($post);
@@ -1211,7 +1204,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
 
       echo "</div><div class='page-variations-wrapper'><h4>Page Variations</h4>";
       echo "<p>We'll split your traffic evenly between the page you choose above, and any variations you add below.</p>";
-      echo "<p><strong>NOTE: this free version is limited to one test variation. <a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade for unlimited tests with unlimited variations, AI assistance and more.</a></strong></p>";
+      echo "<p><strong>NOTE: this free version is limited to one test variation. <a href='https://absplittest.com/pricing?utm_source=ugrepolite' target='_blank'>Upgrade for unlimited tests with unlimited variations, AI assistance and more.</a></strong></p>";
       $mypages = $posts;
       if(!empty($mypages) || !empty($page_variations))
       {
@@ -1360,7 +1353,7 @@ if(! class_exists ( 'Bt_Ab_Tests_Lite'))
     <label for="ab_test" class="ab-shadow"><h5>On Page Elements</h5><p>Compare different on-page elements to discover the best layout.</p></label>
   </div>
   <div>
-    <p> <strong>Magic Point and Click + Code tests available in Pro version</strong></p>
+    <p> <strong>Magic & Code tests available in Pro version</strong></p>
   </div>
   ';
     }
@@ -1570,6 +1563,7 @@ function show_experiment_results($test,$asTable = false){
   if($test_type_label == 'magic') $test_type_label = 'Magic Test';
   if($test_type_label == 'ab_test') $test_type_label = 'On-Page Test';
   if($test_type_label == 'css_test') $test_type_label = 'Code Test';
+  if(empty($test_type_label)) $test_type_label = 'Status';
   echo "<h3>" . $test_type_label . ": <span class='status'>";
   if($test->post_status == 'publish')
   {
@@ -2011,29 +2005,7 @@ function show_experiment_results($test,$asTable = false){
     // IF ANY GOALS ARE SET THEN add column/div for goals with a dropdown to choose between available goals
     $goalsHtml = '';
     $goalsTableHead = '';
-    $emptyGoals = true;
-    if(!empty($foundGoals))
-    {
-      foreach($foundGoals as $key => $value) {
-        if(!empty(trim($value))){
-          $emptyGoals = false;
-          break;
-        }
-      }
-    }
 
-    if(!$emptyGoals)
-    {
-      $goalSelect = '<div>Subgoals</div><select class="goal-select">';
-      foreach($foundGoals as $key => $goal)
-      {
-        if(!empty(trim($goal)))
-          $goalSelect .= '<option value="'.$key.'">'.$goal.'</option>';
-      }
-      $goalSelect .= '</select>';
-      $goalsHtml = '<div class="results-goals">'.$goalSelect.'</div>';
-      $goalsTableHead = '<th>Sub-goals</th>';
-    }
 
 
     // Determine column header based on conversion style
@@ -2113,14 +2085,6 @@ function show_experiment_results($test,$asTable = false){
 
       }
 
-      //if is magic if mk starts with magic-
-      if(stripos($mk, 'magic-') === 0)
-      {
-        $mk = substr($mk, 6);
-        //0= variation a 1= variation b etc
-        $mk = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$mk];
-      }
-
       if(isset($variation_meta[$okey]['label']) && !empty($variation_meta[$okey]['label'])){
         $mk = $variation_meta[$okey]['label'];
       }
@@ -2197,68 +2161,45 @@ function show_experiment_results($test,$asTable = false){
       //  } else {
       //    $image_html = "<div class='results-image'></div>";
       //  }
-        echo "<div class='results_variation ".$class."'><div class='title'>".$mk."{$uplift_html}</div>";
-        echo "<div class='results-visits'>".$mv['visit']."<span> ▾</span></div>";
-        if(!empty($mv['goals'])){
-          echo "<div class='results-goals'>";
-          foreach($foundGoals as $goal_key => $goal_name) {
-            if(!empty(trim($goal_name))){
-              $goal_value = isset($mv['goals'][$goal_key]) ? $mv['goals'][$goal_key] : 0;
-              echo "<div class='results-goal' data-goal='" . $goal_key . "' > " . $goal_value . "</div>";
-            }
-          }
-          echo "</div>";
-        } else {
-          // If this variation has no goals but others do, show zeros for all defined goals
-          if(!$emptyGoals) {
-            echo "<div class='results-goals'>";
-            foreach($foundGoals as $goal_key => $goal_name) {
-              if(!empty(trim($goal_name))){
-                echo "<div class='results-goal' data-goal='" . $goal_key . "' > 0 </div>";
-              }
-            }
-            echo "</div>";
-          } else {
-            //echo "<div class='results-goal'>No goals</div>";
-          }
-        }
-        echo "<div class='results-conversions'>".$mv['conversion']."<span> ▾</span></div>";
+       // echo "<div class='results_variation ".$class."'><div class='title'>".$mk."{$uplift_html}</div>";
+        //echo "<div class='results-visits'>".$mv['visit']."<span> ▾</span></div>";
+        //echo "<div class='results-conversions'>".$mv['conversion']."<span> ▾</span></div>";
 
-        echo "<div class='results-conversion-rate'>".$mv['rate']."</div>";
+        //echo "<div class='results-conversion-rate'>".$mv['rate']."</div>";
         
-        $mv['probability'] = $mv['probability'] . "%";
+//        $mv['probability'] = $mv['probability'] . "%";
         
         if(isset($mv['probability']) )  
         {
-            echo "<div class='results-likely'>".$mv['probability']."</div>";
+  //          echo "<div class='results-likely'>".$mv['probability']."</div>";
           
         }
-        echo "</div>";
+    //    echo "</div>";
 
-        echo "<div class='seen-on'><div><p>Visits</p>";
-        if(@!empty($mv['location']['visit'])){
-          foreach($mv['location']['visit'] as $visit){
-              if(is_numeric($visit))
-                echo "<a target='_blank' href='".get_permalink($visit)."?abtv=".$mk."&abtid=".$pid."'>".get_the_title($visit)."</a>";
-              else
-                echo "<span ><small>".$visit."</small></span>";
+        //echo "<div class='seen-on'><div><p>Visits</p>";
+        //if(@!empty($mv['location']['visit'])){
+          //foreach($mv['location']['visit'] as $visit){
+              //if(is_numeric($visit))
+                //echo "<a target='_blank' href='".get_permalink($visit)."?abtv=".$mk."&abtid=".$pid."'>".get_the_title($visit)."</a>";
+              //else
+                //echo "<span ><small>".$visit."</small></span>";
               
           }
         }
-        echo "</div><div><p>Conversions</p>";
-        if(@!empty($mv['location']['conversion'])){
-          foreach($mv['location']['conversion'] as $visit){
-              if(is_numeric($visit))
-                echo "<a target='_blank' href='".get_permalink($visit)."?abtv=".$mk."&abtid=".$pid."'>".get_the_title($visit)."</a>";
-              else
-                echo "<span ><small>".$visit."</small></span>";
-          }  
-        }
+        //echo "</div><div><p>Conversions</p>";
+        //if(@!empty($mv['location']['conversion'])){
+          //foreach($mv['location']['conversion'] as $visit){
+              //if(is_numeric($visit))
+                //echo "<a target='_blank' href='".get_permalink($visit)."?abtv=".$mk."&abtid=".$pid."'>".get_the_title($visit)."</a>";
+              //else
+                //echo "<span ><small>".$visit."</small></span>";
+          //}  
+        //}
           
-        echo "</div></div>";
-      }
-      else
-      {
+        //echo "</div></div>";
+//      }
+      //else
+      //{
         // Determine what to display in the "Chance of winning" column
           if(!intval($mv['visit'])) {
             $chance_of_winning = "✕";
@@ -2274,22 +2215,13 @@ function show_experiment_results($test,$asTable = false){
         echo "<td style='text-align: center;'>".$mv['visit']."</td>";
         echo "<td style='text-align: center;'>".$mv['conversion']."</td></tr>";
         
-      }
-    } // end foreach meta
+      //}
+    //} // end foreach meta
       
 
     //new table
     //echo a dropdown to select the goal
-    echo '<div class="abst-goal-select-container"><h3>Goals</h3>';
-    echo '<select id="abst-goal-select">';
-    $conversion_page = get_post_meta($pid, 'conversion_page', true);
-    echo '<option value="">Primary Conversion: '.$this->get_experiment_conversion_summary($pid).'</option>';
-    foreach($foundGoals as $key => $goal)
-    {
-      if(!empty(trim($goal)))
-        echo '<option value="subgoal'.$key.'">Subgoal '.$key.': '.$goal.'</option>';
-    }
-    echo '</select></div>';
+    echo '<div class="abst-goal-select-container"><h3>'.$this->get_experiment_conversion_summary($pid).'</h3></div>';
     echo '<div id="abst-results-table"></div>';
     //close table
     if($asTable)
@@ -2416,10 +2348,6 @@ function show_experiment_results($test,$asTable = false){
         $observations['magic_definition'] = $magic_definition;
       }
       
-      $css_test_variations = get_post_meta($pid, 'css_test_variations', true);
-      if(!empty($css_test_variations)) {
-        $observations['css_test_variations'] = $css_test_variations;
-      }
       
       // Add comprehensive statistical data from bt_bb_ab_stats
       if(isset($observations['bt_bb_ab_stats'])) {
@@ -2501,16 +2429,6 @@ function cmp_by_ConversionRate($a, $b) {
 
 
       $eid = $post->ID;
-      $plugins_folder_url = plugin_dir_url( __FILE__ );
-      $pixel_url = esc_url($plugins_folder_url . 'pixel.php?eid=' . esc_attr(get_the_ID())); 
-
-          // generate pixel html
-      $pixel_html = '<img src="' . esc_url($pixel_url) . '" width="1" height="1" alt=""/>';
-      echo "<script>
-      window.abstpid = " . $eid . ";
-      window.abembedimg = '{$pixel_html}';
-      </script>";
-
       global $wp_post_types;
       // Add an nonce field so we can check for it later.
       wp_nonce_field( 'myplugin_inner_custom_box', 'bt_experiments_inner_custom_box_nonce' );
@@ -2537,7 +2455,6 @@ function cmp_by_ConversionRate($a, $b) {
       $select .="<option value='scroll'>Scroll Depth</option>";
       $select .="<option value='url'>URL</option>";
       $select .="<option value='block'>Conversion Block / Module / Element Class</option>";
-
 
       //woo pizza
       $woo_opts = '';
@@ -3428,14 +3345,12 @@ echo "    if( selectval !== 'url' )
             $test_type = get_post_meta( $post->ID, 'test_type', true );
             if($test_type == 'full_page')
               $test_type = 'Full Page Test';
-            else if($test_type == 'magic')
-              $test_type = 'Magic Test';
             else if($test_type == 'ab_test')
                 $test_type = 'On Page Test';
             else
-              $test_type = 'Code Test';
+              $test_type = 'Status';
 
-            $newstate = "<span class='test-type'>".$test_type."</span>" . $newstate;
+            $newstate = "<span class='test-type'>".$test_type.":</span>" . $newstate;
 
             $states = array();
             $states[] = $newstate;
@@ -3501,7 +3416,6 @@ echo "    if( selectval !== 'url' )
             $conversion_url = get_post_meta($module->settings->ab_test,"conversion_url",true);
             $target_percentage = get_post_meta($module->settings->ab_test,"target_percentage",true);
             $url_query = get_post_meta($module->settings->ab_test,"url_query",true);
-            $css_test_variations = get_post_meta($module->settings->css_test_variations,"url_query",true);
             $target_option_device_size = get_post_meta($module->settings->ab_test,"target_option_device_size",true) || 'all';
             $ab_use_fingerprint = get_post_meta($module->settings->ab_test,"ab_use_fingerprint",true) || '';
             if($target_option_device_size == true)
@@ -3626,7 +3540,6 @@ echo "    if( selectval !== 'url' )
         $test_status = $val->post_status;
         $test_winner = get_post_meta($val->ID,"test_winner",true);
         $magic_definition = get_post_meta($val->ID,"magic_definition",true);
-        $css_test_variations = get_post_meta($val->ID,"css_test_variations",true);
         $target_option_device_size = get_post_meta($val->ID,"target_option_device_size",true);
 
         if($target_option_device_size == '')
@@ -3652,7 +3565,6 @@ echo "    if( selectval !== 'url' )
         $experiments[$val->ID]['page_variations'] = $page_variations;
         $experiments[$val->ID]['variation_meta'] = $variation_meta;
         $experiments[$val->ID]['magic_definition'] = $magic_definition;
-        $experiments[$val->ID]['css_test_variations'] = $css_test_variations;
         $experiments[$val->ID]['test_status'] = $test_status;
         $experiments[$val->ID]['test_winner'] = $test_winner;
         $experiments[$val->ID]['target_option_device_size'] = $target_option_device_size;
