@@ -756,11 +756,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php')) {
 
-              wp_redirect(network_admin_url('admin.php?page=bt_bb_ab_test&wizard=1'));
+              wp_safe_redirect(network_admin_url('admin.php?page=bt_bb_ab_test&wizard=1'));
 
           } else {
 
-              wp_redirect(admin_url('options-general.php?page=bt_bb_ab_test&wizard=1'));
+              wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&wizard=1'));
 
           }
 
@@ -2639,7 +2639,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         return $post_id;
 
-      $nonce = $_POST['bt_experiments_inner_custom_box_nonce'];
+      $nonce = isset( $_POST['bt_experiments_inner_custom_box_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['bt_experiments_inner_custom_box_nonce'] ) ) : '';
 
       // Verify that the nonce is valid.
 
@@ -3329,7 +3329,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      $expects_json = !empty($data['abst_magic_mode']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+      $expects_json = !empty($data['abst_magic_mode']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ) ), 'application/json') !== false);
 
 
 
@@ -3499,11 +3499,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      $pid = intval($_POST['pid']);
+      $pid = isset( $_POST['pid'] ) ? intval( wp_unslash( $_POST['pid'] ) ) : 0;
 
-      $variation_name = sanitize_text_field($_POST['variation_name']);
+      $variation_name = isset( $_POST['variation_name'] ) ? sanitize_text_field( wp_unslash( $_POST['variation_name'] ) ) : '';
 
-      $variation_id = sanitize_text_field($_POST['variation_id']);
+      $variation_id = isset( $_POST['variation_id'] ) ? sanitize_text_field( wp_unslash( $_POST['variation_id'] ) ) : '';
 
       //sanitized
 
@@ -3593,19 +3593,21 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<script type='text/javascript'> window.ajaxurl = '" . esc_url(admin_url('admin-ajax.php')) . "'; window.bt_homeurl = '" . esc_url(home_url()) . "';</script>";
 
-      $jquery_src = '//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js';
+      // Enqueue jQuery (WordPress provides it)
+      wp_enqueue_script('jquery');
 
-      echo "<script type='text/javascript' src='" . esc_url($jquery_src) . "'></script>";
+      // Enqueue custom scripts
+      wp_enqueue_script('select2-js', plugin_dir_url(__FILE__) . 'js/select2.js', array('jquery'), null, true);
+      wp_enqueue_script('experiment-js', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), null, true);
 
-      echo "<script type='text/javascript' src='" . esc_url(plugin_dir_url(__FILE__) . "js/select2.js") . "'></script>";
+      // Enqueue custom styles
+      wp_enqueue_style('select2-css', plugin_dir_url(__FILE__) . 'css/select2.css');
+      wp_enqueue_style('experiment-css', plugin_dir_url(__FILE__) . 'css/experiment.css');
+      wp_enqueue_style('bt-bb-ab-admin-css', plugin_dir_url(__FILE__) . 'admin/bt-bb-ab-admin.css');
 
-      echo "<link rel='stylesheet' href='" . esc_url(plugin_dir_url(__FILE__) . "css/select2.css") . "'>";
-
-      echo "<script type='text/javascript' src='" . esc_url(plugin_dir_url(__FILE__) . "js/experiment.js") . "'></script>";
-
-      echo "<link rel='stylesheet' href='" . esc_url(plugin_dir_url(__FILE__) . "css/experiment.css") . "'>";
-
-      echo "<link rel='stylesheet' href='" . esc_url(plugin_dir_url(__FILE__) . "admin/bt-bb-ab-admin.css") . "'>";
+      // Print enqueued styles and scripts for AJAX context
+      wp_print_styles();
+      wp_print_scripts();
 
       echo "<script type='text/javascript'>
 
@@ -4695,7 +4697,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           if (function_exists('abst_get_form_optgroups')) {
 
-            echo abst_get_form_optgroups();
+            echo wp_kses_post( abst_get_form_optgroups() );
 
           }
 
@@ -5949,7 +5951,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<li>Click any block you want to test.</li>";
 
-      echo "<li>Click the Advanced Tab, then " . BT_AB_TEST_WL_ABTEST . ".</li>";
+      echo "<li>Click the Advanced Tab, then " . esc_html( BT_AB_TEST_WL_ABTEST ) . ".</li>";
 
       echo "<li>Choose your test from the dropdown.</li>";
 
@@ -7055,7 +7057,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo '<div>
 
-    <input type="radio" id="magic" name="test_type" value="magic" '. $magic_selected.'>
+    <input type="radio" id="magic" name="test_type" value="magic" '. esc_attr( $magic_selected ).'>
 
     <label for="magic">
 
@@ -7069,7 +7071,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
   <div>
 
-    <input type="radio" id="full_page" name="test_type" value="full_page" '. $full_page_test_selected.'>
+    <input type="radio" id="full_page" name="test_type" value="full_page" '. esc_attr( $full_page_test_selected ).'>
 
     <label for="full_page"><h5>Full Page</h5><p>Swap between unlimited pages or posts to see the best performer.</p></label>
 
@@ -7077,7 +7079,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
   <div>
 
-    <input type="radio" id="ab_test" name="test_type" value="ab_test" '. $ab_test_selected.'>
+    <input type="radio" id="ab_test" name="test_type" value="ab_test" '. esc_attr( $ab_test_selected ).'>
 
     <label for="ab_test"><h5>On Page Elements</h5><p>Compare different on-page elements to discover the best layout.</p></label>
 
@@ -7085,7 +7087,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
   <div>
 
-    <input type="radio" id="css_test" name="test_type" value="css_test" '. $css_test_selected.'>
+    <input type="radio" id="css_test" name="test_type" value="css_test" '. esc_attr( $css_test_selected ).'>
 
     <label for="css_test">
 
@@ -7213,9 +7215,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       //get data
 
-      $eid = intval($_POST['pid']);
+      $eid = isset( $_POST['pid'] ) ? intval( wp_unslash( $_POST['pid'] ) ) : 0;
 
-      $variation = sanitize_text_field($_POST['variation']);
+      $variation = isset( $_POST['variation'] ) ? sanitize_text_field( wp_unslash( $_POST['variation'] ) ) : '';
 
       //get observations
 
@@ -7421,7 +7423,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       //get email from POST
 
-      $email = sanitize_email($_POST['email'] ?? '');
+      $email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 
       if(empty($email)) {
 
@@ -8213,9 +8215,9 @@ function show_experiment_results($test,$asTable = false){
 
         //construct clean inputs href
 
-        $cleanHref = esc_url($_SERVER['REQUEST_URI'] . "&abstCleanInputs=1");
+        $cleanHref = esc_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) . "&abstCleanInputs=1" );
 
-        echo('<h4 class="error">Unsanitized keys found (disallowed characters are: @ # $ % ^ &amp; *). <BR/><a href="'.$cleanHref.'">Click here to remove them</a></h4>');
+        echo '<h4 class="error">Unsanitized keys found (disallowed characters are: @ # $ % ^ &amp; *). <BR/><a href="' . esc_attr( $cleanHref ) . '">Click here to remove them</a></h4>';
 
       }
 
@@ -8259,7 +8261,7 @@ function show_experiment_results($test,$asTable = false){
 
       $invalid_ids = implode(', ', $invalid_variations_check['invalid_keys']);
 
-      $cleanupHref = esc_url($_SERVER['REQUEST_URI'] . "&abstCleanupVariations=1");
+      $cleanupHref = esc_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) . "&abstCleanupVariations=1" );
 
       
 
@@ -8267,11 +8269,11 @@ function show_experiment_results($test,$asTable = false){
 
       echo '<strong>âš ï¸ Invalid Variation Data Detected</strong><br>';
 
-      echo 'Found <strong>' . $invalid_count . '</strong> observation key(s) that don\'t match any configured page in this test.<br>';
+      echo 'Found <strong>' . esc_html( $invalid_count ) . '</strong> observation key(s) that don\'t match any configured page in this test.<br>';
 
       echo '<small style="color: #666;">Valid page IDs: <code>' . esc_html($valid_ids) . '</code> | Invalid keys: <code>' . esc_html($invalid_ids) . '</code></small><br><br>';
 
-      echo '<a href="' . $cleanupHref . '" class="button button-secondary" onclick="return confirm(\'This will remove data for variation keys: ' . esc_attr($invalid_ids) . '. This cannot be undone. Continue?\');">ðŸ§¹ Remove Invalid Data</a>';
+      echo '<a href="' . esc_attr( $cleanupHref ) . '" class="button button-secondary" onclick="return confirm(\'This will remove data for variation keys: ' . esc_attr($invalid_ids) . '. This cannot be undone. Continue?\');">ðŸ§¹ Remove Invalid Data</a>';
 
       echo '</div>';
 
@@ -8403,7 +8405,7 @@ function show_experiment_results($test,$asTable = false){
 
   echo "<div class='abst-results-header'>";
 
-  echo "<h2>" . $test_type_label . ": <span class='status'>";
+  echo "<h2>" . esc_html( $test_type_label ) . ": <span class='status'>";
 
   if($test->post_status == 'publish')
 
@@ -8721,7 +8723,7 @@ function show_experiment_results($test,$asTable = false){
 
       // Output chart data as JavaScript variable
 
-      echo '<script>var testAge = ' . $test_age . '; var likelyDuration = ' . $likelyDuration . ';</script>';
+      echo '<script>var testAge = ' . intval( $test_age ) . '; var likelyDuration = ' . intval( $likelyDuration ) . ';</script>';
 
                 
 
@@ -9535,7 +9537,7 @@ function show_experiment_results($test,$asTable = false){
 
       
 
-    echo $experiment_status;
+    echo wp_kses_post( $experiment_status );
 
     
 
@@ -9987,9 +9989,9 @@ $titles = array();
 
       //  }
 
-        echo "<div class='results_variation ".$class."'><div class='title'>".$mk."{$uplift_html}</div>";
+        echo "<div class='results_variation " . esc_attr( $class ) . "'><div class='title'>" . esc_html( $mk ) . "" . wp_kses_post( $uplift_html ) . "</div>";
 
-        echo "<div class='results-visits'>".$mv['visit']."<span> â–¾</span></div>";
+        echo "<div class='results-visits'>" . esc_html( $mv['visit'] ) . "<span> â–¾</span></div>";
 
         if(!empty($mv['goals'])){
 
@@ -10161,15 +10163,15 @@ $titles = array();
 
         }
 
-        echo "<tr><td style='text-align: center;'>$mk</td>";
+        echo "<tr><td style='text-align: center;'>" . esc_html( $mk ) . "</td>";
 
-        echo "<td style='text-align: center;'>".$mv['rate']."</td>";
+        echo "<td style='text-align: center;'>" . esc_html( $mv['rate'] ) . "</td>";
 
-        echo "<td style='text-align: center;'>".$chance_of_winning."</td>";
+        echo "<td style='text-align: center;'>" . esc_html( $chance_of_winning ) . "</td>";
 
-        echo "<td style='text-align: center;'>".$mv['visit']."</td>";
+        echo "<td style='text-align: center;'>" . esc_html( $mv['visit'] ) . "</td>";
 
-        echo "<td style='text-align: center;'>".$mv['conversion']."</td></tr>";
+        echo "<td style='text-align: center;'>" . esc_html( $mv['conversion'] ) . "</td></tr>";
 
         
 
@@ -10297,7 +10299,7 @@ $titles = array();
 
       if (ab_get_admin_setting('ab_use_uuid') == 1 || ab_get_admin_setting('ab_use_fingerprint') == 1) {
 
-        echo '<button id="abst-export-data" class="button abst-export-data" test_id="'.$pid.'">Export Visitor Data</button>';
+        echo '<button id="abst-export-data" class="button abst-export-data" test_id="' . esc_attr( $pid ) . '">Export Visitor Data</button>';
 
       }
 
@@ -10767,7 +10769,7 @@ $titles = array();
 
       echo "<ul style='margin-left: 20px;'>";
 
-      echo "<li>Clear your caching plugin (we have detected and auto-cleared: " . implode(', ', abst_get_detected_caches()) . ")</li>";
+      echo "<li>Clear your caching plugin (we have detected and auto-cleared: " . esc_html( implode(', ', abst_get_detected_caches()) ) . ")</li>";
 
       echo "<li>Purge your CDN cache (Cloudflare, Sucuri, etc.)</li>";
 
@@ -10841,9 +10843,9 @@ function cmp_by_ConversionRate($a, $b) {
 
       echo "<script>
 
-      window.abstpid = " . $eid . ";
+      window.abstpid = " . intval( $eid ) . ";
 
-      window.abembedimg = '{$pixel_html}';
+      window.abembedimg = '" . esc_js( $pixel_html ) . "';
 
       </script>";
 
@@ -10941,7 +10943,7 @@ function cmp_by_ConversionRate($a, $b) {
 
       echo '<p><label for="bt_experiments_conversion_url">';
 
-      _e( "Define a successful conversion. Something like a thank-you page, or a checkout complete page.", 'ab-split-test-lite' );
+      esc_html_e( "Define a successful conversion. Something like a thank-you page, or a checkout complete page.", 'ab-split-test-lite' );
 
       echo '</label><p/>';
 
@@ -10951,7 +10953,7 @@ function cmp_by_ConversionRate($a, $b) {
 
 
 
-      echo $select;
+      echo wp_kses_post( $select );
 
 
 
@@ -10961,7 +10963,7 @@ function cmp_by_ConversionRate($a, $b) {
 
     echo " <div class='test-conversion-tags-mode'><h4>Conversion Blocks, Classes, Modules</h4><ol><li>Edit the page you would like to create your test conversion goal.</li><li>Add the conversion classes below to your page, or use a Block/module to trigger a conversion on page load.</li></ol>";
 
-      echo "<div class='test-class-info test-conversion-info'><input type='text' value='ab-".$post->ID ." ab-convert'/></div></div>";
+      echo "<div class='test-class-info test-conversion-info'><input type='text' value='ab-" . esc_attr( $post->ID ) . " ab-convert'/></div></div>";
 
       
 
@@ -11173,15 +11175,11 @@ function cmp_by_ConversionRate($a, $b) {
 
 
 
-      $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid='.$eid);
+      $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
 
+      $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></script>';
 
-
-      $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="'.$plugin_url.'"></script>';
-
-
-
-      echo "<input type='text' readonly='readonly' onclick='this.select()' value='", esc_attr($fingerprint_script_html), "'>";
+      echo "<input type='text' readonly='readonly' onclick='this.select()' value='" . esc_attr($fingerprint_script_html) . "'>";
 
      
 
@@ -11205,7 +11203,7 @@ function cmp_by_ConversionRate($a, $b) {
 
       //if conversion page is an integer
 
-      echo "<script ".ABST_CACHE_EXCLUDES.">
+      echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . ">
 
       jQuery(document).ready(function() {  
 
@@ -11445,27 +11443,27 @@ echo "    if( selectval !== 'url' )
 
         if (isset($_SERVER['HTTP_CLIENT_IP']))
 
-            $ipaddress = $_SERVER['HTTP_CLIENT_IP'];
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
 
         else if(isset($_SERVER['HTTP_X_FORWARDED_FOR']))
 
-            $ipaddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
 
         else if(isset($_SERVER['HTTP_X_FORWARDED']))
 
-            $ipaddress = $_SERVER['HTTP_X_FORWARDED'];
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED'] ) );
 
         else if(isset($_SERVER['HTTP_FORWARDED_FOR']))
 
-            $ipaddress = $_SERVER['HTTP_FORWARDED_FOR'];
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_FORWARDED_FOR'] ) );
 
         else if(isset($_SERVER['HTTP_FORWARDED']))
 
-            $ipaddress = $_SERVER['HTTP_FORWARDED'];
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_FORWARDED'] ) );
 
         else if(isset($_SERVER['REMOTE_ADDR']))
 
-            $ipaddress = $_SERVER['REMOTE_ADDR'];
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
 
         else
 
@@ -11525,7 +11523,7 @@ echo "    if( selectval !== 'url' )
 
   
 
-    echo "<script " . ABST_CACHE_EXCLUDES . " id='abst_conv_value'>
+    echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . " id='abst_conv_value'>
 
             window.abst = window.abst || {};
 
@@ -11623,13 +11621,13 @@ function fluent_cart_order_paid($eventData) {
 
           abst_log( 'Fluent cart order paid and found for  test ID: ' . $eid );
 
-          $uuid = isset($_COOKIE['ab-advanced-id']) ? $_COOKIE['ab-advanced-id'] : false; 
+          $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field( wp_unslash( $_COOKIE['ab-advanced-id'] ) ) : false; 
 
           $advancedId = $uuid;
 
           if (isset($_COOKIE['btab_' . $eid])) {
 
-            $cookie = json_decode(stripslashes($_COOKIE['btab_' . $eid]), true);
+            $cookie = json_decode( wp_unslash( $_COOKIE['btab_' . $eid] ), true );
 
             if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
 
@@ -11723,7 +11721,7 @@ function fluent_cart_order_paid($eventData) {
 
           if (isset($_COOKIE['btab_' . $eid])) {
 
-            $cookie = json_decode(stripslashes($_COOKIE['btab_' . $eid]), true);
+            $cookie = json_decode( wp_unslash( $_COOKIE['btab_' . $eid] ), true );
 
             if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
 
@@ -11777,7 +11775,8 @@ function fluent_cart_order_paid($eventData) {
 
       // Verify nonce
 
-      if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'abst_export_data_nonce')) {
+      $nonce = isset($_POST['nonce']) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+      if (!$nonce || !wp_verify_nonce($nonce, 'abst_export_data_nonce')) {
 
         wp_send_json_error('Security check failed');
 
@@ -11793,7 +11792,7 @@ function fluent_cart_order_paid($eventData) {
 
       //if test_id in post
 
-      $test_id = intval($_POST['test_id']);
+      $test_id = isset($_POST['test_id']) ? intval( wp_unslash( $_POST['test_id'] ) ) : 0;
 
       if(empty($test_id))
 
@@ -11809,7 +11808,7 @@ function fluent_cart_order_paid($eventData) {
 
         $results = $wpdb->get_results($wpdb->prepare(
 
-          "SELECT uuid, type, variation, testId, location, size, timestamp, goals FROM {$wpdb->prefix}abst_fingerprints WHERE testId = %d",
+          "SELECT uuid, type, variation, testId, location, size, timestamp, goals FROM " . $wpdb->prefix . "abst_fingerprints WHERE testId = %d",
 
           $test_id
 
@@ -12117,7 +12116,7 @@ function fluent_cart_order_paid($eventData) {
 
       {
 
-        $events = json_decode(stripslashes($_COOKIE['abst_server_events']), true);
+        $events = json_decode( wp_unslash( $_COOKIE['abst_server_events'] ), true );
 
       }
 
@@ -12287,7 +12286,7 @@ function fluent_cart_order_paid($eventData) {
 
         //todo clean up scripts
 
-        echo $out;
+        echo wp_kses_post( $out );
 
 
 
@@ -12341,9 +12340,9 @@ function fluent_cart_order_paid($eventData) {
 
     $labels = array(
 
-      'name'                  => __( 'AB Split Test Lite', 'Post Type General Name', 'ab-split-test-lite' ),
+      'name'                  => __( 'AB Split Test Lite', 'ab-split-test-lite' ),
 
-      'singular_name'         => __( 'AB Split Test', 'Post Type Singular Name', 'ab-split-test-lite' ),
+      'singular_name'         => __( 'AB Split Test', 'ab-split-test-lite' ),
 
       'menu_name'             => __( 'AB Split Test Lite', 'ab-split-test-lite' ),
 
@@ -12457,7 +12456,7 @@ function fluent_cart_order_paid($eventData) {
 
         'show_in_inline_dropdown'   => true,
 
-        'label_count'               => _n_noop( 'Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>' ),
+        'label_count'               => _n_noop( 'Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
 
@@ -12479,7 +12478,7 @@ function fluent_cart_order_paid($eventData) {
 
         'show_in_inline_dropdown'   => true,
 
-        'label_count'               => _n_noop( 'Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>' ),
+        'label_count'               => _n_noop( 'Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
 
@@ -12839,7 +12838,7 @@ function fluent_cart_order_paid($eventData) {
 
     if(!empty($options['btVar']) && !empty($options['btExperiment']) )
 
-      echo " bt-variation='".sanitize_text_field($options['btVar'])."' bt-eid='".intval($options['btExperiment'])."' ";
+      echo " bt-variation='" . esc_attr( sanitize_text_field( $options['btVar'] ) ) . "' bt-eid='" . intval( $options['btExperiment'] ) . "' ";
 
    }
 
@@ -13313,7 +13312,7 @@ function fluent_cart_order_paid($eventData) {
 
 
 
-        $searchQuery = sanitize_text_field($_GET['q'] ?? '');
+        $searchQuery = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) );
 
         
 
@@ -13655,7 +13654,7 @@ function fluent_cart_order_paid($eventData) {
 
         $request_body = array(
 
-            'markdown' => sanitize_textarea_field($_POST['markdown']),
+            'markdown' => sanitize_textarea_field( wp_unslash( $_POST['markdown'] ?? '' ) ),
 
             'licence' => $licence,
 
@@ -13727,7 +13726,7 @@ function fluent_cart_order_paid($eventData) {
 
 
 
-        $page_id = isset($_POST['page_id']) ? sanitize_text_field($_POST['page_id']) : '';
+        $page_id = isset($_POST['page_id']) ? sanitize_text_field( wp_unslash( $_POST['page_id'] ) ) : '';
 
         if (empty($page_id)) {
 
@@ -14103,9 +14102,9 @@ function fluent_cart_order_paid($eventData) {
 
         $request_body = array(
 
-            'markdown' => sanitize_textarea_field($_POST['markdown']),
+            'markdown' => sanitize_textarea_field( wp_unslash( $_POST['markdown'] ?? '' ) ),
 
-            'heatmap_data' => isset($_POST['heatmapData']) ? sanitize_textarea_field($_POST['heatmapData']) : '',
+            'heatmap_data' => isset($_POST['heatmapData']) ? sanitize_textarea_field( wp_unslash( $_POST['heatmapData'] ) ) : '',
 
             'licence' => $licence,
 
@@ -14189,9 +14188,9 @@ function fluent_cart_order_paid($eventData) {
 
 
 
-        $search_query = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        $search_query = isset($_POST['search']) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
 
-        $exact_id = isset($_POST['exact_id']) ? sanitize_text_field($_POST['exact_id']) : '';
+        $exact_id = isset($_POST['exact_id']) ? sanitize_text_field( wp_unslash( $_POST['exact_id'] ) ) : '';
 
         if(!empty($exact_id))
 
@@ -14313,7 +14312,7 @@ function fluent_cart_order_paid($eventData) {
 
 
 
-      echo $embed_code;
+      echo wp_kses_post( $embed_code );
 
       wp_die();
 
@@ -14331,7 +14330,7 @@ function fluent_cart_order_paid($eventData) {
 
       if( $btab_reset > 0 ) {
 
-        echo '<script '.ABST_CACHE_EXCLUDES.'>
+        echo '<script ' . wp_kses_post( ABST_CACHE_EXCLUDES ) . '>
 
           (function(){
 
@@ -15077,13 +15076,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         // Backwards compat display:revert removed Feb 2026 - was breaking themes using display:flex/grid on body
 
-        echo '<style id="abst-dynamic-hide">' . $hide_css . '</style>';
+        echo '<style id="abst-dynamic-hide">' . wp_kses_post( $hide_css ) . '</style>';
 
         // noscript: if JS disabled, override the hide CSS so page is visible
 
         if(!empty($noscript_css)) {
 
-          echo '<noscript><style>' . $noscript_css . '</style></noscript>';
+          echo '<noscript><style>' . wp_kses_post( $noscript_css ) . '</style></noscript>';
 
         }
 
@@ -15637,15 +15636,15 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      echo "<script " . ABST_CACHE_EXCLUDES . " id='abst_variables'>";
+      echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . " id='abst_variables'>";
 
       echo "var bt_ajaxurl = '".esc_url(admin_url( 'admin-ajax.php' ))."';";
 
       echo "var bt_adminurl = '".esc_url(admin_url())."';";
 
-      echo "var bt_pluginurl = '".plugin_dir_url( __FILE__ )."';";
+      echo "var bt_pluginurl = '" . esc_js( plugin_dir_url( __FILE__ ) ) . "';";
 
-      echo "var bt_homeurl = '".home_url()."';";
+      echo "var bt_homeurl = '" . esc_js( home_url() ) . "';";
 
       echo "window.btab_vars = Object.assign(window.btab_vars || {}, " . json_encode($btab_vars) . ");";
 
@@ -15667,11 +15666,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       }
 
-      echo $js;
+      echo wp_kses_post( $js );
 
       echo "</script>";
 
-      echo $style;
+      echo wp_kses_post( $style );
 
     }
 
@@ -15977,25 +15976,25 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         {
 
-          $eid                = sanitize_text_field(($bt_eid)? (int)$bt_eid : (int)$_POST['eid']);
+          $eid                = sanitize_text_field(($bt_eid)? (int)$bt_eid : (int)wp_unslash( $_POST['eid'] ?? 0 ));
 
-          $variation          = $bt_variation ?? sanitize_text_field($_POST['variation'] ?? '');
+          $variation          = $bt_variation ?? sanitize_text_field( wp_unslash( $_POST['variation'] ?? '' ) );
 
-          $type               = sanitize_text_field(($bt_type)? $bt_type : $_POST['type']);
+          $type               = sanitize_text_field(($bt_type)? $bt_type : wp_unslash( $_POST['type'] ?? '' ));
 
           $location           = $bt_location;
 
           if($location === false)
 
-            $location           = sanitize_text_field($_POST['location'] ?? '');
+            $location           = sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) );
 
-          $size               = $size ?? sanitize_text_field($_POST['size'] ?? '');
+          $size               = $size ?? sanitize_text_field( wp_unslash( $_POST['size'] ?? '' ) );
 
-          $abConversionValue  = sanitize_text_field(($abConversionValue)? $abConversionValue : $_POST['orderValue'] ?? 1);
+          $abConversionValue  = sanitize_text_field(($abConversionValue)? $abConversionValue : wp_unslash( $_POST['orderValue'] ?? 1 ));
 
-          $uuid               = sanitize_text_field(($uuid)? $uuid : ($_POST['uuid'] ?? null));
+          $uuid               = sanitize_text_field(($uuid)? $uuid : wp_unslash( $_POST['uuid'] ?? null ));
 
-          $advancedId         = sanitize_text_field(($advancedId)? $advancedId : ($_POST['ab_advanced_id'] ?? null));
+          $advancedId         = sanitize_text_field(($advancedId)? $advancedId : wp_unslash( $_POST['ab_advanced_id'] ?? null ));
 
         }
 
@@ -16723,9 +16722,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $timestamp = sanitize_text_field($timestamp);
 
-      $location = $location ?? sanitize_text_field($_GET['location'] ?? false);
+      $location = $location ?? sanitize_text_field( wp_unslash( $_GET['location'] ?? false ) );
 
-      $device_size = $device_size ?? sanitize_text_field($_GET['device_size'] ?? false);
+      $device_size = $device_size ?? sanitize_text_field( wp_unslash( $_GET['device_size'] ?? false ) );
 
       $fingerprint_db = intval(ab_get_admin_setting('abst_fingerprint_table_ready'));
 
@@ -16767,33 +16766,33 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $required_columns = [
 
-          'uuid'      => "ALTER TABLE $table_name ADD COLUMN uuid varchar(255) NOT NULL",
+          'uuid'      => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN uuid varchar(255) NOT NULL",
 
-          'type'      => "ALTER TABLE $table_name ADD COLUMN type varchar(255) NOT NULL",
+          'type'      => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN type varchar(255) NOT NULL",
 
-          'variation' => "ALTER TABLE $table_name ADD COLUMN variation varchar(255) NOT NULL",
+          'variation' => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN variation varchar(255) NOT NULL",
 
-          'testId'    => "ALTER TABLE $table_name ADD COLUMN testId varchar(255) NOT NULL",
+          'testId'    => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN testId varchar(255) NOT NULL",
 
-          'timestamp' => "ALTER TABLE $table_name ADD COLUMN timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+          'timestamp' => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
 
-          'location'  => "ALTER TABLE $table_name ADD COLUMN location varchar(255) NOT NULL",
+          'location'  => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN location varchar(255) NOT NULL",
 
-          'size'      => "ALTER TABLE $table_name ADD COLUMN size varchar(255) NOT NULL",
+          'size'      => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN size varchar(255) NOT NULL",
 
-          'goals'     => "ALTER TABLE $table_name ADD COLUMN goals TEXT"
+          'goals'     => "ALTER TABLE " . $wpdb->prefix . "abst_fingerprints ADD COLUMN goals TEXT"
 
         ];
 
-  
 
-        $existing_columns = $wpdb->get_col("DESC $table_name", 0);
+
+        $existing_columns = $wpdb->get_col($wpdb->prepare("DESC %i", $table_name), 0);
 
         foreach ( $required_columns as $column => $alter_sql ) {
 
           if ( ! in_array( $column, $existing_columns ) ) {
 
-            $wpdb->query( $alter_sql );
+            $wpdb->query($alter_sql);
 
           }
 
@@ -16813,7 +16812,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if($type == 'visit') {
 
-        $sql = $wpdb->prepare("SELECT * FROM $table_name WHERE uuid = %s AND testId = %d", $uuid, $testId);
+        $sql = $wpdb->prepare("SELECT * FROM " . $wpdb->prefix . "abst_fingerprints WHERE uuid = %s AND testId = %d", $uuid, $testId);
 
         $result = $wpdb->get_row($sql);
 
@@ -16903,7 +16902,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           //get the variation from the db
 
-          $variation = $wpdb->get_row($wpdb->prepare("SELECT variation FROM $table_name WHERE uuid = %s AND testId = %d", $uuid, $testId));
+          $variation = $wpdb->get_row($wpdb->prepare("SELECT variation FROM " . $wpdb->prefix . "abst_fingerprints WHERE uuid = %s AND testId = %d", $uuid, $testId));
 
           abst_log('===');
 
@@ -16933,7 +16932,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         //get goals for this eid uuid
 
-        $sql = $wpdb->prepare("SELECT * FROM $table_name WHERE uuid = %s AND testId = %d AND type = 'visit'", $uuid, $testId); // get the variation thats a visit no conversiions no nothibgs
+        $sql = $wpdb->prepare("SELECT * FROM " . $wpdb->prefix . "abst_fingerprints WHERE uuid = %s AND testId = %d AND type = 'visit'", $uuid, $testId); // get the variation thats a visit no conversiions no nothibgs
 
         $result = $wpdb->get_row($sql);
 
@@ -17021,7 +17020,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $query = $wpdb->prepare(
 
-        "DELETE FROM $table_name WHERE timestamp < DATE_SUB(CURRENT_DATE, INTERVAL %d DAY)",
+        "DELETE FROM " . $wpdb->prefix . "abst_fingerprints WHERE timestamp < DATE_SUB(CURRENT_DATE, INTERVAL %d DAY)",
 
         $days_to_keep
 
@@ -17559,7 +17558,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       
 
-      wp_die($summary);
+      wp_die( wp_kses_post( $summary ) );
 
     }
 
@@ -20171,7 +20170,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           echo '<p><strong>Sample Data Loaded Successfully!</strong></p>';
 
-          echo '<p>Created ' . $results['created'] . ' sample tests with realistic data.</p>';
+          echo '<p>Created ' . intval( $results['created'] ) . ' sample tests with realistic data.</p>';
 
           echo '<p>Tests are created as drafts - you can review and activate them in the <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments')) . '">A/B Tests</a> section.</p>';
 
@@ -20191,7 +20190,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           echo '<p><strong>Sample Data Loading Errors:</strong></p>';
 
-          echo '<p>' . implode('</p><p>', $results['errors']) . '</p>';
+          echo '<p>' . wp_kses_post( implode('</p><p>', $results['errors']) ) . '</p>';
 
           echo '</div>';
 
@@ -20207,7 +20206,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           echo '<div class="notice notice-warning">';
 
-          echo '<p><strong>Sample Data Skipped:</strong> ' . $results['skipped'] . '</p>';
+          echo '<p><strong>Sample Data Skipped:</strong> ' . intval( $results['skipped'] ) . '</p>';
 
           echo '</div>';
 
@@ -20285,7 +20284,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $error_message = $result->get_error_message();
 
-        wp_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode($error_message)));
+        wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode($error_message)));
 
         exit;
 
@@ -20295,7 +20294,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if ($result === false) {
 
-        wp_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode('Installation failed. Please try manual installation.')));
+        wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode('Installation failed. Please try manual installation.')));
 
         exit;
 
@@ -20315,7 +20314,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $error_message = $activate_result->get_error_message();
 
-        wp_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode('Plugin installed but activation failed: ' . $error_message)));
+        wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode('Plugin installed but activation failed: ' . $error_message)));
 
         exit;
 
@@ -20325,7 +20324,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // Success - redirect with success message
 
-      wp_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_success=1'));
+      wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_success=1'));
 
       exit;
 
@@ -20459,7 +20458,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                     <div class="update-message notice inline notice-warning notice-alt">
 
-                        <p>There is a new version of '. $plugin['name'] .' available. Please <a href="'. $settings_link .'">activate your licence key</a> to recieve updates. <br>Go to your <a href="'. BT_AB_TEST_MERCHANT_URL .'/my-account/" target="_blank">account page</a> to get your license key.</p>
+                        <p>There is a new version of ' . esc_html( $plugin['name'] ) . ' available. Please <a href="' . esc_attr( $settings_link ) . '">activate your licence key</a> to recieve updates. <br>Go to your <a href="' . esc_attr( BT_AB_TEST_MERCHANT_URL ) . '/my-account/" target="_blank">account page</a> to get your license key.</p>
 
                     </div>
 
@@ -24485,7 +24484,7 @@ function search_all_journey_logs($post_id, $filters = []) {
 
         if (!empty($current_metadata['referrer'])) {
 
-          $ref_host = parse_url($current_metadata['referrer'], PHP_URL_HOST);
+          $ref_host = wp_parse_url($current_metadata['referrer'], PHP_URL_HOST);
 
           if ($ref_host) {
 
@@ -24501,7 +24500,7 @@ function search_all_journey_logs($post_id, $filters = []) {
 
         if ($metadata_matches_filter && !empty($filters['referrer'])) {
 
-          $ref_host = parse_url($current_metadata['referrer'], PHP_URL_HOST);
+          $ref_host = wp_parse_url($current_metadata['referrer'], PHP_URL_HOST);
 
           if (!$ref_host || stripos($ref_host, $filters['referrer']) === false) {
 
@@ -24827,7 +24826,7 @@ function search_all_journey_logs($post_id, $filters = []) {
 
         if (!empty($current_metadata['referrer'])) {
 
-          $ref_host = parse_url($current_metadata['referrer'], PHP_URL_HOST);
+          $ref_host = wp_parse_url($current_metadata['referrer'], PHP_URL_HOST);
 
           if ($ref_host) {
 
@@ -24843,7 +24842,7 @@ function search_all_journey_logs($post_id, $filters = []) {
 
         if ($metadata_matches_filter && !empty($filters['referrer'])) {
 
-          $ref_host = parse_url($current_metadata['referrer'], PHP_URL_HOST);
+          $ref_host = wp_parse_url($current_metadata['referrer'], PHP_URL_HOST);
 
           if (!$ref_host || stripos($ref_host, $filters['referrer']) === false) {
 
