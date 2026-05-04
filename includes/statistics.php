@@ -308,8 +308,8 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
  * Uses Box-Muller transform
  */
 function random_normal($mean = 0, $std = 1) {
-  $u1 = mt_rand() / mt_getrandmax();
-  $u2 = mt_rand() / mt_getrandmax();
+  $u1 = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
+  $u2 = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
   
   // Box-Muller transform
   $z = sqrt(-2 * log($u1)) * cos(2 * M_PI * $u2);

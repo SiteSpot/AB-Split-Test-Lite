@@ -24,7 +24,7 @@ class Element_AB_Conversion extends \Bricks\Element {
 
     $this->controls['bt_experiment'] = [
       'tab' => 'content',
-      'label' => esc_html( BT_AB_TEST_WL_ABTEST ),
+      'label' => 'Split Test',
       'type' => 'select',
       'options' => [
         'h1' => 'H1',

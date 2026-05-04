@@ -51,7 +51,7 @@ if(! class_exists ( 'BtConversionModule'))
 
       return new WP_REST_Response([
         'status'  => 0,
-        'message' => 'AB Split Test Lite' . ': ' . __( 'Variation name does not exist', 'ab-split-test-lite' )
+        'message' => 'AB BT_AB_TEST_WL_ABTEST Lite' . ': ' . __( 'Variation name does not exist', 'ab-split-test-lite' )
       ], 200);
     }
 
@@ -140,7 +140,7 @@ if( class_exists('FLBuilderModule') ) {
         'name'          => __('AB test conversion', 'ab-split-test-lite'),
         'description'   => __('Trigger the conversion event of your AB test when this module is loaded. Does not display anything.', 'ab-split-test-lite'),
         'category'      => apply_filters( 'bt_bb_ab_conversion_category','Utilities'),
-        'group'         => apply_filters( 'bt_bb_ab_conversion_group', 'AB Split Test Lite'),
+        'group'         => apply_filters( 'bt_bb_ab_conversion_group', 'AB BT_AB_TEST_WL_ABTEST Lite'),
         'dir'           => BT_CONVERSION_DIR . 'modules/conversion',
         'url'           => BT_CONVERSION_URL . 'modules/conversion',
       ));  

@@ -56,12 +56,7 @@ $folder_path = end($parts);
 define('BT_AB_PLUGIN_FOLDER', $folder_path);
 
 
-
-if (!defined('AB Split Test Lite')) define('AB Split Test Lite', apply_filters('ab_wl_name', 'AB Split Test Lite'));
-
-if (!defined('BT_AB_TEST_WL_URL')) define('BT_AB_TEST_WL_URL', apply_filters('ab_wl_url', 'https://absplittest.com'));
-
-if (!defined('BT_AB_TEST_WL_ABTEST')) define('BT_AB_TEST_WL_ABTEST', apply_filters('ab_wl_ab_test', 'AB Test'));
+if (!defined('BT_AB_TEST_WL_ABTEST')) define('BT_AB_TEST_WL_ABTEST', apply_filters('ab_wl_ab_test', 'Split Test'));
 
 if (!defined('ABST_JOURNEY_DIR')) define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
 
@@ -501,7 +496,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             'description' => __('Choose an existing split test', 'ab-split-test-lite'),
 
-            'group' => __('Split Test Settings', 'ab-split-test-lite'),
+            'group' => __('BT_AB_TEST_WL_ABTEST Settings', 'ab-split-test-lite'),
 
         ));
 
@@ -2033,11 +2028,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           // get user level
 
-    $is_free = btab_user_level() == 'free';
-
-    if($is_free)
-
-    {
 
       //count all custom posts bt_experiments
 
@@ -2097,7 +2087,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       }
 
-    }
+    
 
     $requested_status = sanitize_text_field((string) ($data['post_status'] ?? get_post_status($post_id)));
 
@@ -3281,7 +3271,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         'all_boxes',
 
-        BT_AB_TEST_WL_ABTEST,
+        'Split Test',
 
         array($this,'all_boxes'),
 
@@ -3387,7 +3377,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       
 
-      echo $this->save_test_config( $data['post_id'], $data);
+      $this->save_test_config( $data['post_id'], $data);
 
 
 
@@ -3601,21 +3591,21 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0">';
 
-      echo "<script type='text/javascript'> window.ajaxurl = '" . admin_url( 'admin-ajax.php' ) . "'; window.bt_homeurl = '" . home_url() . "';</script>";
+      echo "<script type='text/javascript'> window.ajaxurl = '" . esc_url(admin_url('admin-ajax.php')) . "'; window.bt_homeurl = '" . esc_url(home_url()) . "';</script>";
 
       $jquery_src = '//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js';
 
-      echo "<script type='text/javascript' src='" . $jquery_src . "'></script>";
+      echo "<script type='text/javascript' src='" . esc_url($jquery_src) . "'></script>";
 
-      echo "<script type='text/javascript' src='" . plugin_dir_url( __FILE__ ) . "js/select2.js'></script>";
+      echo "<script type='text/javascript' src='" . esc_url(plugin_dir_url(__FILE__) . "js/select2.js") . "'></script>";
 
-      echo "<link rel='stylesheet' href='" . plugin_dir_url( __FILE__ ) . "css/select2.css'>";
+      echo "<link rel='stylesheet' href='" . esc_url(plugin_dir_url(__FILE__) . "css/select2.css") . "'>";
 
-      echo "<script type='text/javascript' src='" . plugin_dir_url( __FILE__ ) . "js/experiment.js'></script>";
+      echo "<script type='text/javascript' src='" . esc_url(plugin_dir_url(__FILE__) . "js/experiment.js") . "'></script>";
 
-      echo "<link rel='stylesheet' href='" . plugin_dir_url( __FILE__ ) . "css/experiment.css'>";
+      echo "<link rel='stylesheet' href='" . esc_url(plugin_dir_url(__FILE__) . "css/experiment.css") . "'>";
 
-      echo "<link rel='stylesheet' href='" . plugin_dir_url( __FILE__ ) . "admin/bt-bb-ab-admin.css'>";
+      echo "<link rel='stylesheet' href='" . esc_url(plugin_dir_url(__FILE__) . "admin/bt-bb-ab-admin.css") . "'>";
 
       echo "<script type='text/javascript'>
 
@@ -4605,7 +4595,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       //form post to ajax url action name create_new_on_page_test
 
-      echo '</head><body><form action="' . admin_url( 'admin-ajax.php' ) . '" method="post" id="post" enctype="multipart/form-data"><h4 style="font-size:1.1em;">Create new Split Test</h4><div class="title_box"> <h4><label for="post_title">Test Name</label></h4><input name="post_title" id="post_title" type="text" value="" placeholder="Test Name" size="30" class="regular-text" required="required"/>';
+      echo '</head><body><form action="' . esc_url(admin_url('admin-ajax.php')) . '" method="post" id="post" enctype="multipart/form-data"><h4 style="font-size:1.1em;">Create new Split Test</h4><div class="title_box"> <h4><label for="post_title">Test Name</label></h4><input name="post_title" id="post_title" type="text" value="" placeholder="Test Name" size="30" class="regular-text" required="required"/>';
 
       echo '<input type="hidden"  name="test_type" value="ab_test"/>';
 
@@ -4641,7 +4631,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      echo '<input type="hidden" name="post_id" value="' . $post_id . '" />';
+      echo '<input type="hidden" name="post_id" value="' . esc_attr($post_id) . '" />';
 
       $post = get_post($post_id);
 
@@ -4673,13 +4663,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-          echo "<div class='subgoal hidden test-goal-".$i."'>";
+          echo "<div class='subgoal hidden test-goal-".esc_attr($i)."'>";
 
           echo "<span class='close-goal'>x</span>";
 
-          echo "<h4>Sub Goal ".$i."</h4>";
+          echo "<h4>Sub Goal ".esc_html($i)."</h4>";
 
-          echo "<select class='goal-type' name='goal[".$i."]'>";
+          echo "<select class='goal-type' name='goal[".esc_attr($i)."]'>";
 
           echo "<option value=''>Select Goal Trigger...</option>";
 
@@ -4713,11 +4703,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           echo "</select>";
 
-          echo "<label class='goal-value-label' for='goal_value[".$i."]'>Goal Value</label>";
+          echo "<label class='goal-value-label' for='goal_value[".esc_attr($i)."]'>Goal Value</label>";
 
-          echo "<input class='goal-value' type='text' name='goal_value[".$i."]' placeholder='' />";
+          echo "<input class='goal-value' type='text' name='goal_value[".esc_attr($i)."]' placeholder='' />";
 
-          echo "<select class='goal-page' name='goal_page[".$i."]'>";
+          echo "<select class='goal-page' name='goal_page[".esc_attr($i)."]'>";
 
           echo "</select></div>";
 
@@ -5777,7 +5767,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         ], $this->get_magic_edit_url('', $idea_page_flow));
 
-        echo "<p>To create a magic test, visit the page you want to test then click on ". BT_AB_TEST_WL_ABTEST." > New Magic Test in the Admin Bar.</p>";
+        echo "<p>To create a magic test, visit the page you want to test then click on ". 'Split Test' ." > New Magic Test in the Admin Bar.</p>";
 
         if (!empty($idea_page_flow)) {
 
@@ -5787,7 +5777,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<p><a href='" . esc_url($start_magic_url) . "' class='button button-primary'>Launch Magic Setup</a></p>";
 
-        echo "<p><a href='".get_home_url()."' class='button'>Go to your home page</a></p>";
+        echo "<p><a href='".esc_url(get_home_url())."' class='button'>Go to your home page</a></p>";
 
         echo "<p><img src='data:image/png;base64,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'>";
 
@@ -5841,7 +5831,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<li>Click any Bricks element you want to test.</li>";
 
-        echo "<li>Click the Style Tab, then " . BT_AB_TEST_WL_ABTEST . ".</li>";
+        echo "<li>Click the Style Tab, then " . 'Split Test' . ".</li>";
 
         echo "<li>Choose your test.</li>";
 
@@ -5865,7 +5855,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<li>Click any element or section to test.</li>";
 
-        echo "<li>Click the Advanced Tab, then " . BT_AB_TEST_WL_ABTEST . ".</li>";
+        echo "<li>Click the Advanced Tab, then " . 'Split Test' . ".</li>";
 
         echo "<li>Choose your test.</li>";
 
@@ -5889,7 +5879,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<li>Click any Beaver Builder element you want to test.</li>";
 
-        echo "<li>Click the Advanced Tab, then " . BT_AB_TEST_WL_ABTEST . ".</li>";
+        echo "<li>Click the Advanced Tab, then " . 'Split Test' . ".</li>";
 
         echo "<li>Choose your test.</li>";
 
@@ -5913,7 +5903,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<li>Click any Breakdance element you want to test.</li>";
 
-        echo "<li>Click the Advanced Tab, then " . BT_AB_TEST_WL_ABTEST . ".</li>";
+        echo "<li>Click the Advanced Tab, then " . 'Split Test' . ".</li>";
 
         echo "<li>Choose your test.</li>";
 
@@ -5937,7 +5927,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<li>Click any Oxygen element you want to test.</li>";
 
-        echo "<li>Click the Advanced Tab, then " . BT_AB_TEST_WL_ABTEST . ".</li>";
+        echo "<li>Click the Advanced Tab, then " . 'Split Test' . ".</li>";
 
         echo "<li>Choose your test.</li>";
 
@@ -5979,7 +5969,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<li>Load and edit the page you want to test. You can do this on any page in anything that lets you apply CSS classes or edit HTML.</li>";
 
-      echo "<li>Choose an element wrapping your test variation.</li><li>Add the CSS classes you copied from the test like 'ab-". $post->ID ." ab-var-{name}' to that element.</li>"; 
+      echo "<li>Choose an element wrapping your test variation.</li><li>Add the CSS classes you copied from the test like 'ab-". esc_html( $post->ID ) ." ab-var-{name}' to that element.</li>"; 
 
       echo "<li>Give your test variation a name.</li>";
 
@@ -5993,7 +5983,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<label>HTML Classes</label>";
 
-      echo "<input type='text' value='ab-".get_the_ID() ." ab-var-{name}'/>";
+      echo "<input type='text' value='ab-". esc_attr( get_the_ID() ) ." ab-var-{name}'/>";
 
       echo "<p><small>Replace {name} with your variation name</small></p>";
 
@@ -6001,7 +5991,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<label>Shortcode</label>";
 
-      echo "<input type='text' value=\"[ab_split_test eid='".$post->ID."' var='{name}']Text One![/ab_split_test]\"/>";
+      echo "<input type='text' value=\"[ab_split_test eid='". esc_attr( $post->ID ) ."' var='{name}']Text One![/ab_split_test]\"/>";
 
       echo "</div></div><div class='bt_experiments_inner_custom_box'><h3>Goals</h3><div class='goal'><div class='conversion-goal'>";
 
@@ -6051,15 +6041,15 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           if(!empty($goal_key)){
 
-            echo "<div class='subgoal test-goal-$i'>";
+            echo "<div class='subgoal test-goal-" . esc_attr( $i ) . "'>";
 
             echo "<span class='close-goal'>x</span>";
 
-            echo "<h4>Sub Goal $i</h4> ";
+            echo "<h4>Sub Goal " . esc_html( $i ) . "</h4> ";
 
             echo "<label>Trigger Type</label>";
 
-            echo "<select class='goal-type' name='goal[$i]'>";
+            echo "<select class='goal-type' name='goal[" . esc_attr( $i ) . "]'>";
 
             echo "<option value=''>Select Goal Trigger...</option>";
 
@@ -6091,7 +6081,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
                 if(!empty($page)) {
 
-                  echo "<option value=\"$page\">$name</option>";
+                  echo "<option value=\"" . esc_attr( $page ) . "\">" . esc_html( $name ) . "</option>";
 
                 }
 
@@ -6165,7 +6155,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             if (function_exists('abst_get_form_optgroups')) {
 
-              echo abst_get_form_optgroups($goal_key);
+              echo wp_kses_post( abst_get_form_optgroups($goal_key) );
 
             }
 
@@ -6173,17 +6163,17 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             echo "</select>";
 
-            echo "<label class='goal-value-label' for='goal_value[$i]'>Goal Value</label>";
+            echo "<label class='goal-value-label' for='goal_value[" . esc_attr( $i ) . "]'>Goal Value</label>";
 
-            echo "<input class='goal-value' type='text' name='goal_value[$i]' value='" . esc_attr($goal) . "' placeholder='' />";
+            echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr( $i ) . "]' value='" . esc_attr($goal) . "' placeholder='' />";
 
-            echo "<select class='goal-page' name='goal_page[$i]'>";
+            echo "<select class='goal-page' name='goal_page[" . esc_attr( $i ) . "]'>";
 
             $page_title = get_the_title($goal);
 
             if(!empty($page_title))
 
-              echo "<option value='".$goal."'>$page_title</option>";
+              echo "<option value='" . esc_attr( $goal ) . "'>" . esc_html( $page_title ) . "</option>";
 
             echo "</select></div>";
 
@@ -6193,13 +6183,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           {
 
-            echo "<div class='subgoal hidden test-goal-".$i."'>";
+            echo "<div class='subgoal hidden test-goal-" . esc_attr( $i ) . "'>";
 
             echo "<span class='close-goal'>x</span>";
 
-            echo "<h4>Sub Goal ".$i."</h4>";
+            echo "<h4>Sub Goal " . esc_html( $i ) . "</h4>";
 
-            echo "<select class='goal-type' name='goal[".$i."]'>";
+            echo "<select class='goal-type' name='goal[" . esc_attr( $i ) . "]'>";
 
             echo "<option value=''>Select Goal Trigger...</option>";
 
@@ -6231,7 +6221,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
                 if(!empty($page)) {
 
-                  echo "<option value=\"$page\">$name</option>";
+                  echo "<option value=\"" . esc_attr( $page ) . "\">" . esc_html( $name ) . "</option>";
 
                 }
 
@@ -6307,7 +6297,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             if (function_exists('abst_get_form_optgroups')) {
 
-              echo abst_get_form_optgroups();
+              echo wp_kses_post( abst_get_form_optgroups() );
 
             }
 
@@ -6315,11 +6305,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             echo "</select>";
 
-            echo "<label class='goal-value-label' for='goal_value[".$i."]'>Goal Value</label>";
+            echo "<label class='goal-value-label' for='goal_value[" . esc_attr( $i ) . "]'>Goal Value</label>";
 
-            echo "<input class='goal-value' type='text' name='goal_value[".$i."]' placeholder='' />";
+            echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr( $i ) . "]' placeholder='' />";
 
-            echo "<select class='goal-page' name='goal_page[".$i."]'>";
+            echo "<select class='goal-page' name='goal_page[" . esc_attr( $i ) . "]'>";
 
             echo "</select></div>";
 
@@ -6413,7 +6403,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       if($agency){
 
-        echo "<div class='webhooks_settings collapsed'><h3>Webhooks</h3><p>Send a POST of test result data when a test is complete.</p><p><input type='text' id='bt_webhook_url' name='bt_webhook_url' style='width:100%;' placeholder='Enter a complete URL e.g. https://you.com/thing' value='".$webhook_url."'></p><p>Sample JSON</p>";
+        echo "<div class='webhooks_settings collapsed'><h3>Webhooks</h3><p>Send a POST of test result data when a test is complete.</p><p><input type='text' id='bt_webhook_url' name='bt_webhook_url' style='width:100%;' placeholder='Enter a complete URL e.g. https://you.com/thing' value='" . esc_attr( $webhook_url ) . "'></p><p>Sample JSON</p>";
 
         $webhook_sample = array(
 
@@ -6555,7 +6545,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo '<input type="text" id="restart-confirm"/>';
 
-      echo "<p><strong>Caution</strong>, this is not reversible</p><button class='button' id='bt_clear_experiment_results' eid='$pid'>Clear Results & Restart Test</button>";
+      echo "<p><strong>Caution</strong>, this is not reversible</p><button class='button' id='bt_clear_experiment_results' eid='" . esc_attr( $pid ) . "'>Clear Results & Restart Test</button>";
 
       
 
@@ -6707,7 +6697,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo '<option value="', $selected_page, '" selected="selected">', get_the_title($selected_page), '</option>';
+        echo '<option value="', esc_attr( $selected_page ), '" selected="selected">', esc_html( get_the_title($selected_page) ), '</option>';
 
       }
 
@@ -6717,7 +6707,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
                 
 
-        echo '<option value="', $post->ID, '"', $selected_page == $post->ID ? ' selected="selected"' : '', '>'. $post->post_title. '</option>';
+        echo '<option value="', esc_attr( $post->ID ), '"', $selected_page == $post->ID ? ' selected="selected"' : '', '>', esc_html( $post->post_title ), '</option>';
 
         
 
@@ -6731,7 +6721,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         foreach ($archives_taxonomies as $k => $tax) {
 
-          echo '<option value="', $k, '"', $selected_page == $k ? ' selected="selected"' : '', '>'. $tax. '</option>';
+          echo '<option value="', esc_attr( $k ), '"', $selected_page == $k ? ' selected="selected"' : '', '>', esc_html( $tax ), '</option>';
 
         }
 
@@ -6863,7 +6853,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             }
 
-            echo '<option value="' .$page_slug .'" selected="selected">', $page_title, '</option>';
+            echo '<option value="', esc_attr( $page_slug ), '" selected="selected">', esc_html( $page_title ), '</option>';
 
           }
 
@@ -6907,7 +6897,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             if(empty($selected))
 
-              echo "<option value='". $slug."' $selected>". $title ." | ". $page->post_type . " | ". $post_name ." </option>";
+              echo "<option value='", esc_attr( $slug ), "' ", esc_attr( $selected ), ">", esc_html( $title ), " | ", esc_html( $page->post_type ), " | ", esc_html( $post_name ), " </option>";
 
           }
 
@@ -7117,7 +7107,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      echo $this->show_login_targeting_options($post);
+      echo wp_kses_post( $this->show_login_targeting_options($post) );
 
 
 
@@ -7195,7 +7185,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       foreach ($wp_roles->roles as $role => $value) {
 
-        echo '<label><input type="checkbox" '. ((in_array($role, $allowed_roles))? 'checked' : '') .' name="bt_allowed_roles[]" value="'. $role .'">'. $value['name'] .'</label>';
+        echo '<label><input type="checkbox" ', ((in_array($role, $allowed_roles))? 'checked' : ''), ' name="bt_allowed_roles[]" value="', esc_attr( $role ), '">', esc_html( $value['name'] ), '</label>';
 
       }
 
@@ -9623,11 +9613,11 @@ function show_experiment_results($test,$asTable = false){
 
     if($asTable)
 
-      echo '<table style="width:100%; max-width:800px;" border="0" cellspacing="5px" cellpadding="5px"> <thead><tr>  <th style="text-align: center;">Version Title</th>  <th style="text-align: center;">'.$conversion_text.'</th>  <th style="text-align: center;">'.$chance_column_header.'</th> <th style="text-align: center;">Visits</th> <th style="text-align: center;">Conversions</th> </tr></thead><tbody>';
+      echo '<table style="width:100%; max-width:800px;" border="0" cellspacing="5px" cellpadding="5px"> <thead><tr>  <th style="text-align: center;">Version Title</th>  <th style="text-align: center;">', esc_html( $conversion_text ), '</th>  <th style="text-align: center;">', esc_html( $chance_column_header ), '</th> <th style="text-align: center;">Visits</th> <th style="text-align: center;">Conversions</th> </tr></thead><tbody>';
 
     else
 
-      echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>'.$goalsHtml.'<div class="results-conversions">Conversions</div><div class="results-conversion-rate">'.$conversion_text.'</div><div class="results-likely">'.$chance_column_header.'</div></div>';
+      echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>', wp_kses_post( $goalsHtml ), '<div class="results-conversions">Conversions</div><div class="results-conversion-rate">', esc_html( $conversion_text ), '</div><div class="results-likely">', esc_html( $chance_column_header ), '</div></div>';
 
     //hide old results remove soon
 
@@ -10011,7 +10001,7 @@ $titles = array();
 
               $goal_value = isset($mv['goals'][$goal_key]) ? $mv['goals'][$goal_key] : 0;
 
-              echo "<div class='results-goal' data-goal='" . $goal_key . "' > " . $goal_value . "</div>";
+              echo "<div class='results-goal' data-goal='", esc_attr( $goal_key ), "' > ", esc_html( $goal_value ), "</div>";
 
             }
 
@@ -10031,7 +10021,7 @@ $titles = array();
 
               if(!empty(trim($goal_name))){
 
-                echo "<div class='results-goal' data-goal='" . $goal_key . "' > 0 </div>";
+                echo "<div class='results-goal' data-goal='", esc_attr( $goal_key ), "' > 0 </div>";
 
               }
 
@@ -10047,11 +10037,11 @@ $titles = array();
 
         }
 
-        echo "<div class='results-conversions'>".$mv['conversion']."<span> â–¾</span></div>";
+        echo "<div class='results-conversions'>", esc_html( $mv['conversion'] ), "<span> â–¾</span></div>";
 
 
 
-        echo "<div class='results-conversion-rate'>".$mv['rate']."</div>";
+        echo "<div class='results-conversion-rate'>", esc_html( $mv['rate'] ), "</div>";
 
         
 
@@ -10063,7 +10053,7 @@ $titles = array();
 
         {
 
-          echo "<div class='results-likely'>".$aovobs[$okey]['probability']."%</div>";  
+          echo "<div class='results-likely'>", esc_html( $aovobs[$okey]['probability'] ), "%</div>";  
 
         }
 
@@ -10073,11 +10063,11 @@ $titles = array();
 
           if($conversion_style == 'thompson' && isset($variation_meta[$okey]['weight'])) {
 
-            echo "<div class='results-likely'>".round(  floatval($variation_meta[$okey]['weight'])*100,1)."%</div>";
+            echo "<div class='results-likely'>", esc_html( round( floatval($variation_meta[$okey]['weight'])*100,1) ), "%</div>";
 
           } else {
 
-            echo "<div class='results-likely'>".$mv['probability']."</div>";
+            echo "<div class='results-likely'>", esc_html( $mv['probability'] ), "</div>";
 
           }
 
@@ -10095,11 +10085,11 @@ $titles = array();
 
               if(is_numeric($visit))
 
-                echo "<a target='_blank' href='".get_permalink($visit)."?abtv=".$mk."&abtid=".$pid."'>".get_the_title($visit)."</a>";
+                echo "<a target='_blank' href='", esc_url( get_permalink($visit) . '?abtv=' . $mk . '&abtid=' . $pid ), "'>", esc_html( get_the_title($visit) ), "</a>";
 
               else
 
-                echo "<span ><small>".$visit."</small></span>";
+                echo "<span ><small>", esc_html( $visit ), "</small></span>";
 
               
 
@@ -10115,11 +10105,11 @@ $titles = array();
 
               if(is_numeric($visit))
 
-                echo "<a target='_blank' href='".get_permalink($visit)."?abtv=".$mk."&abtid=".$pid."'>".get_the_title($visit)."</a>";
+                echo "<a target='_blank' href='", esc_url( get_permalink($visit) . '?abtv=' . $mk . '&abtid=' . $pid ), "'>", esc_html( get_the_title($visit) ), "</a>";
 
               else
 
-                echo "<span ><small>".$visit."</small></span>";
+                echo "<span ><small>", esc_html( $visit ), "</small></span>";
 
           }  
 
@@ -10285,15 +10275,15 @@ $titles = array();
 
           $expectedEnd = 'Variations are very close - test may take a long time';
 
-          echo '<div id="expectedEnd">' . $expectedEnd . '</div>';
+          echo '<div id="expectedEnd">', esc_html( $expectedEnd ), '</div>';
 
         } elseif($likelyDuration < 999) {
 
-          $expectedEnd = date('F jS Y', strtotime('+'. $likelyDuration . ' days'));
+          $expectedEnd = wp_date('F jS Y', strtotime('+'. $likelyDuration . ' days'));
 
           $expectedEnd = 'Projected end date: ' . $expectedEnd;
 
-          echo '<div id="expectedEnd">' . $expectedEnd . '</div>';
+          echo '<div id="expectedEnd">', esc_html( $expectedEnd ), '</div>';
 
         }
 
@@ -11019,7 +11009,7 @@ function cmp_by_ConversionRate($a, $b) {
 
       }
 
-      echo $select;
+      echo wp_kses_post( $select );
 
       echo '</select></label>';
 
@@ -11039,7 +11029,7 @@ function cmp_by_ConversionRate($a, $b) {
 
         // since in 1.3.2
 
-      echo '<label class="conversion_selector_input" for="bt_experiments_conversion_selector">CSS Selector that when clicked will trigger the conversion. <br/>Add our class <code>ab-click-convert-'.$eid.'</code> or define your own below.</label><input class="conversion_selector_input" type="text" id="bt_experiments_conversion_selector" name="bt_experiments_conversion_selector" placeholder="#yourthing" value="' . esc_attr( $conversion_selector ) . '"  />';
+      echo '<label class="conversion_selector_input" for="bt_experiments_conversion_selector">CSS Selector that when clicked will trigger the conversion. <br/>Add our class <code>ab-click-convert-', esc_attr( $eid ), '</code> or define your own below.</label><input class="conversion_selector_input" type="text" id="bt_experiments_conversion_selector" name="bt_experiments_conversion_selector" placeholder="#yourthing" value="' . esc_attr( $conversion_selector ) . '"  />';
 
     
 
@@ -11131,13 +11121,13 @@ function cmp_by_ConversionRate($a, $b) {
 
   window.abst.abConversionValue = 1; // optional, change if you are using \'use order value\'
 
-  (window.abConvert = window.abConvert || []).push('.$eid.');
+  (window.abConvert = window.abConvert || []).push('.esc_js($eid).');
 
   processAbstConvert?.();
 
 </script>';
 
-      echo '<div id="conversion_javascript"><textarea id="conversion_javascript_area" rows="5">'.$conversionScript.'</textarea><div id="conversion_order_value_javascript_slot"></div><BR>
+      echo '<div id="conversion_javascript"><textarea id="conversion_javascript_area" rows="5">',esc_textarea($conversionScript),'</textarea><div id="conversion_order_value_javascript_slot"></div><BR>
 
       <button class="bt_js_copy button">copy</button><span class="bt_js_copied"> Copied!</span><p>Place this code anywhere, at any time when you want to trigger a conversion. You may not need the script tags depending on where you place it.</p></div>';
 
@@ -11165,9 +11155,9 @@ function cmp_by_ConversionRate($a, $b) {
 
       $pixel_html_with_value = esc_html("<img src='{$pixel_url}&value=129.99' width='1' height='1' alt=''/>");
 
-      echo "<input type='text' readonly='readonly' onclick='this.select()' value='{$pixel_html}'>";
+      echo "<input type='text' readonly='readonly' onclick='this.select()' value='", esc_attr($pixel_html), "'>";
 
-      echo "<input type='text' readonly='readonly' onclick='this.select()' value='{$pixel_html_with_value}' style='margin-top:8px;'>";
+      echo "<input type='text' readonly='readonly' onclick='this.select()' value='", esc_attr($pixel_html_with_value), "' style='margin-top:8px;'>";
 
       echo '<div id="conversion_order_value_embed_slot"></div>';
 
@@ -11183,7 +11173,7 @@ function cmp_by_ConversionRate($a, $b) {
 
 
 
-      $plugin_url = get_admin_url().'admin-ajax.php?action=ab_fp&eid='.$eid;
+      $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid='.$eid);
 
 
 
@@ -11191,7 +11181,7 @@ function cmp_by_ConversionRate($a, $b) {
 
 
 
-      echo "<input type='text' readonly='readonly' onclick='this.select()' value='{$fingerprint_script_html}'>";
+      echo "<input type='text' readonly='readonly' onclick='this.select()' value='", esc_attr($fingerprint_script_html), "'>";
 
      
 
@@ -11249,9 +11239,9 @@ function cmp_by_ConversionRate($a, $b) {
 
 
 
-        var selectval = '". $conversion_page ."';
+        var selectval = '", esc_js($conversion_page), "';
 
-        jQuery('#bt_experiments_conversion_page option[value=\'". $conversion_page ."\']').first().attr('selected', 'selected');";
+        jQuery('#bt_experiments_conversion_page option[value=\'', esc_js($conversion_page), '\']').first().attr('selected', 'selected');";
 
         if(is_numeric($conversion_page))
 
@@ -11539,7 +11529,7 @@ echo "    if( selectval !== 'url' )
 
             window.abst = window.abst || {};
 
-            window.abst.abConversionValue = '" . $total . "';
+            window.abst.abConversionValue = '", esc_js( $total ), "';
 
         </script>";
 
@@ -11843,7 +11833,11 @@ function fluent_cart_order_paid($eventData) {
 
         $filepath = $uploads_dir . '/' . $filename;
 
-        $file = fopen($filepath, 'w');
+        
+
+        // Build CSV content
+
+        $csv_content = '';
 
         
 
@@ -11853,7 +11847,7 @@ function fluent_cart_order_paid($eventData) {
 
           $first_row = (array) $results[0];
 
-          fputcsv($file, array_keys($first_row));
+          $csv_content .= implode(',', array_map(function($val) { return '"' . str_replace('"', '""', $val) . '"'; }, array_keys($first_row))) . "\n";
 
         }
 
@@ -11863,11 +11857,27 @@ function fluent_cart_order_paid($eventData) {
 
         foreach($results as $result){
 
-          fputcsv($file, (array) $result);
+          $row = (array) $result;
+
+          $csv_content .= implode(',', array_map(function($val) { return '"' . str_replace('"', '""', $val) . '"'; }, $row)) . "\n";
 
         }
 
-        fclose($file);
+        
+
+        // Use WordPress filesystem API
+
+        global $wp_filesystem;
+
+        if (empty($wp_filesystem)) {
+
+          require_once(ABSPATH . '/wp-admin/includes/file.php');
+
+          WP_Filesystem();
+
+        }
+
+        $wp_filesystem->put_contents($filepath, $csv_content, FS_CHMOD_FILE);
 
         
 
@@ -14879,7 +14889,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'is_agency' => ($user_level  == 'agency'),
 
-        'is_free' => ($user_level == 'free') ? '1' : '0',
+        'is_free' => '1',
 
         'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
 
@@ -15295,9 +15305,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       global $post;
 
-      $agency = $user_level  == 'agency';
+      $agency = false;
 
-      $free = $user_level == 'free';
+      $free = true;
 
       
 
@@ -15383,7 +15393,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'is_agency' => $agency,
 
-        'is_free' => $free,
+        'is_free' => true,
 
         'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
 
@@ -15629,9 +15639,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       echo "<script " . ABST_CACHE_EXCLUDES . " id='abst_variables'>";
 
-      echo "var bt_ajaxurl = '".admin_url( 'admin-ajax.php' )."';";
+      echo "var bt_ajaxurl = '".esc_url(admin_url( 'admin-ajax.php' ))."';";
 
-      echo "var bt_adminurl = '".admin_url()."';";
+      echo "var bt_adminurl = '".esc_url(admin_url())."';";
 
       echo "var bt_pluginurl = '".plugin_dir_url( __FILE__ )."';";
 
@@ -16719,7 +16729,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $fingerprint_db = intval(ab_get_admin_setting('abst_fingerprint_table_ready'));
 
-      if(!$timestamp) $timestamp = date('Y-m-d H:i:s'); 
+      if(!$timestamp) $timestamp = wp_date('Y-m-d H:i:s'); 
 
       
 
@@ -17049,7 +17059,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           if (filemtime($file) < time() - $fileage) {
 
-            unlink($file);
+            global $wp_filesystem;
+
+            if (empty($wp_filesystem)) {
+
+              require_once(ABSPATH . '/wp-admin/includes/file.php');
+
+              WP_Filesystem();
+
+            }
+
+            $wp_filesystem->delete($file);
 
             abst_log('Deleted old export file (over 1 hr) ' . $file);
 
@@ -20153,7 +20173,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           echo '<p>Created ' . $results['created'] . ' sample tests with realistic data.</p>';
 
-          echo '<p>Tests are created as drafts - you can review and activate them in the <a href="' . admin_url('edit.php?post_type=bt_experiments') . '">A/B Tests</a> section.</p>';
+          echo '<p>Tests are created as drafts - you can review and activate them in the <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments')) . '">A/B Tests</a> section.</p>';
 
           echo '</div>';
 
@@ -20915,7 +20935,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           if ($target_percentage < 100) {
 
-              $random = mt_rand(1, 100);
+              $random = wp_rand(1, 100);
 
               if ($random > $target_percentage) {
 
@@ -21073,15 +21093,15 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                 '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
 
-                mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                wp_rand(0, 0xffff), wp_rand(0, 0xffff),
 
-                mt_rand(0, 0xffff),
+                wp_rand(0, 0xffff),
 
-                mt_rand(0, 0x0fff) | 0x4000,
+                wp_rand(0, 0x0fff) | 0x4000,
 
-                mt_rand(0, 0x3fff) | 0x8000,
+                wp_rand(0, 0x3fff) | 0x8000,
 
-                mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+                wp_rand(0, 0xffff), wp_rand(0, 0xffff), wp_rand(0, 0xffff)
 
               );
 
@@ -21269,7 +21289,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if ($target_percentage && $target_percentage < 100) {
 
-            $random = mt_rand(1, 100);
+            $random = wp_rand(1, 100);
 
             if ($random > $target_percentage) {
 
@@ -21730,35 +21750,7 @@ function bt_bb_ab_licence_details(){
 
 
 function bb_bt_white_label_details(){
-
-  
-
-  $isFree = btab_user_level() == 'free';
-
-  if($isFree)
-
-    return false;
-
-   
-
-  $ab_wl_bb = 'AB Split Test Lite';
-
-  $ab_wl_bt = BT_AB_TEST_WL_ABTEST;
-
-  $ab_wl_url = BT_AB_TEST_WL_URL;
-
-
-
-  return array(
-
-    'bb' => $ab_wl_bb,
-
-    'bt' => $ab_wl_bt,
-
-    'url' => $ab_wl_url,
-
-  );
-
+  return false;
 }
 
 
@@ -23153,7 +23145,7 @@ function abst_heatmaps_page_content() {
 
       $selected_attr = ($selected_eid == $eid) ? 'selected' : '';
 
-      echo '<option value="' . esc_attr($eid) . '" ' . $selected_attr . '>' . esc_html($experiment_post->post_title) . '</option>';
+      echo '<option value="' . esc_attr($eid) . '" ' . esc_attr($selected_attr) . '>' . esc_html($experiment_post->post_title) . '</option>';
 
     }
 
@@ -23181,7 +23173,7 @@ function abst_heatmaps_page_content() {
 
           $selected_attr = ($selected_variation === $var_name) ? 'selected' : '';
 
-          echo '<option value="' . esc_attr($var_name) . '" ' . $selected_attr . '>' . esc_html($display_name) . '</option>';
+          echo '<option value="' . esc_attr($var_name) . '" ' . esc_attr($selected_attr) . '>' . esc_html($display_name) . '</option>';
 
         }
 
@@ -23215,7 +23207,7 @@ function abst_heatmaps_page_content() {
 
         $selected_attr = ($selected_referrer === $ref_domain) ? ' selected' : '';
 
-        echo '<option value="' . esc_attr($ref_domain) . '"' . $selected_attr . '>' . esc_html($ref_domain) . ' (' . intval($ref_count) . ')</option>';
+        echo '<option value="' . esc_attr($ref_domain) . '"' . esc_attr($selected_attr) . '>' . esc_html($ref_domain) . ' (' . intval($ref_count) . ')</option>';
 
       }
 
@@ -23237,7 +23229,7 @@ function abst_heatmaps_page_content() {
 
       $selected_attr = ($selected_utm_source === $val) ? ' selected' : '';
 
-      echo '<option value="' . esc_attr($val) . '"' . $selected_attr . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
+      echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
 
     }
 
@@ -23257,7 +23249,7 @@ function abst_heatmaps_page_content() {
 
       $selected_attr = ($selected_utm_medium === $val) ? ' selected' : '';
 
-      echo '<option value="' . esc_attr($val) . '"' . $selected_attr . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
+      echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
 
     }
 
@@ -23277,7 +23269,7 @@ function abst_heatmaps_page_content() {
 
       $selected_attr = ($selected_utm_campaign === $val) ? ' selected' : '';
 
-      echo '<option value="' . esc_attr($val) . '"' . $selected_attr . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
+      echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
 
     }
 
@@ -23401,7 +23393,7 @@ function abst_heatmaps_page_content() {
 
           if (!$journeys_enabled) {
 
-            echo '<li style="color:#dc2626;">âŒ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_admin#heatmaps') . '">Enable it in Settings</a></li>';
+            echo '<li style="color:#dc2626;">âŒ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_admin#heatmaps')) . '">Enable it in Settings</a></li>';
 
           } else {
 
@@ -23447,7 +23439,7 @@ function abst_heatmaps_page_content() {
 
         
 
-        echo '<p style="font-size:13px; color:#64748b;"><a href="' . admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test#heatmaps') . '">Check your Settings â†’</a></p>';
+        echo '<p style="font-size:13px; color:#64748b;"><a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test#heatmaps')) . '">Check your Settings â†’</a></p>';
 
         echo '</div>';
 
@@ -23547,7 +23539,7 @@ function abst_heatmaps_page_content() {
 
       // Context and description outside preview
 
-      echo '<div class="abst-heatmap-context"><div><span class="abst-context-icon">📊</span><strong>'. esc_html($modeNice) . ':</strong> ' . esc_html($context_parts['page']) . ' <span class="abst-context-sep">›</span> Size: '  . esc_html($context_parts['size']) . $context_eid . $context_variation . '</div>';
+      echo '<div class="abst-heatmap-context"><div><span class="abst-context-icon">📊</span><strong>'. esc_html($modeNice) . ':</strong> ' . esc_html($context_parts['page']) . ' <span class="abst-context-sep">›</span> Size: '  . esc_html($context_parts['size']) . wp_kses_post($context_eid) . wp_kses_post($context_variation) . '</div>';
 
       echo '<p class="abst-heatmap-description">' . wp_kses_post($description) . '</p></div>';
 
@@ -23983,7 +23975,7 @@ function get_scroll_data($post_id, $filters) {
 
           $meta_referrer = isset($parts[6]) ? $parts[6] : '';
 
-          $ref_host = parse_url($meta_referrer, PHP_URL_HOST);
+          $ref_host = wp_parse_url($meta_referrer, PHP_URL_HOST);
 
           if (!$ref_host || stripos($ref_host, $filters['referrer']) === false) {
 
@@ -24293,7 +24285,7 @@ function search_all_journey_logs($post_id, $filters = []) {
 
   abst_log('searching for ' . $post_id . ' in ' . sizeof($journey_files_gz) . ' files');
 
-  abst_log('Current server date: ' . date('Y-m-d H:i:s') . ' | Cutoff timestamp: ' . (time() - ($days * 24 * 60 * 60)) . ' | Current timestamp: ' . time());
+  abst_log('Current server date: ' . wp_date('Y-m-d H:i:s') . ' | Cutoff timestamp: ' . (time() - ($days * 24 * 60 * 60)) . ' | Current timestamp: ' . time());
 
 
 
@@ -25011,7 +25003,7 @@ function abst_logs_page_content() {
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>'.esc_html(BT_AB_TEST_WL_ABTEST).' Debug Logs</h1>';
+  echo '<h1>'.'Split Test'.' Debug Logs</h1>';
 
   echo '</div>';
 
@@ -25821,7 +25813,7 @@ function create_test_from_structured_data($data) {
 
   // Create the post with date set to 14 days ago
 
-  $two_weeks_ago = date('Y-m-d H:i:s', strtotime('-14 days'));
+  $two_weeks_ago = wp_date('Y-m-d H:i:s', strtotime('-14 days'));
 
   $two_weeks_ago_gmt = gmdate('Y-m-d H:i:s', strtotime('-14 days'));
 
@@ -26297,7 +26289,7 @@ function ab_gamma_random( $shape ) {
 
   if ( $shape < 1 ) {
 
-    $u = mt_rand() / mt_getrandmax();
+    $u = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
 
     return ab_gamma_random( 1 + $shape ) * pow( $u, 1 / $shape );
 
@@ -26319,7 +26311,7 @@ function ab_gamma_random( $shape ) {
 
     }
 
-    $u = mt_rand() / mt_getrandmax();
+    $u = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
 
     if ( $u < 1 - 0.331 * pow( $x, 4 ) || log( $u ) < 0.5 * $x * $x + $d * ( 1 - $v + log( $v ) ) ) {
 
@@ -26339,13 +26331,13 @@ function ab_normal_random() {
 
   while ( $u === 0 ) {
 
-    $u = mt_rand() / mt_getrandmax();
+    $u = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
 
   }
 
   while ( $v === 0 ) {
 
-    $v = mt_rand() / mt_getrandmax();
+    $v = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
 
   }
 
@@ -27713,7 +27705,7 @@ function select_variation_by_weights($variation_meta) {
 
     // Weighted random selection
 
-    $rand = mt_rand(0, $total_weight * 100) / 100;
+    $rand = wp_rand(0, $total_weight * 100) / 100;
 
     $cumulative = 0;
 

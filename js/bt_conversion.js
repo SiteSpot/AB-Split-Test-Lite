@@ -1439,7 +1439,8 @@ function abstMainInit() {
             experimentVariation = variations[randVar];
           }
         }
-        if (btab_vars.is_free == '1' && current_exp[experimentId].length > 2) {
+        // Free version: limit to 2 variations (1 variation + control)
+        if (current_exp[experimentId].length > 2) {
           var randVar = getRandomInt(0, 1);  //limit to 2
           console.info('Free version of AB Split Test is limited to 1 variation. Your others will not be shown. Upgrade: https://absplittest.com/pricing?ref=ug');
           experimentVariation = current_exp[experimentId][randVar];
@@ -2435,10 +2436,8 @@ function bt_get_variations(eid) {
     });
   
 
-  if (btab_vars.is_free == '1') {
-    //only return first 2 variations
-    variation = variation.slice(0, 2);
-  }
+  // Free version: only return first 2 variations
+  variation = variation.slice(0, 2);
 
   return variation;
 }
@@ -2654,11 +2653,8 @@ function abst_process_approved_events() {
  * @param {string} data.type - The event type
  */
 async function btab_track_event(data) {
-
-  if (btab_vars.is_free == '1')
-    return false;
-
-  check_heatmap_tracking();
+  // Free version: event tracking disabled
+  return false;
 
   if (btab_vars.tagging == '0') {
     //console.log('event tagging turned off');
@@ -2805,10 +2801,8 @@ async function btab_track_event(data) {
 }
 
 function abst_find_analytics() {
-  if (btab_vars.is_free == '1')
-    return false;
-
-  window.abeventstarted = new Date().getTime();
+  // Free version: analytics integration disabled
+  return false;
 
   window.dataLayer || (window.dataLayer = []); //gtag
 

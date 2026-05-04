@@ -109,7 +109,7 @@ function add_bricks_attributes($attributes, $key, $element){
             $controls['bt_experiment'] = [
               'tab' => 'style',
               'group' => 'abst',
-              'label' => esc_html( BT_AB_TEST_WL_ABTEST ),
+              'label' => 'Split Test',
               'type' => 'select',
               'options' => $this->tests_with_id(),
               'inline' => true,

@@ -165,7 +165,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->add_control(
         'bt_experiment_id',
         [
-          'label' => esc_html( BT_AB_TEST_WL_ABTEST ),
+          'label' => 'Split Test',
           'type' => \Elementor\Controls_Manager::SELECT2,
           'multiple' => false,
           'options' => $experiments,
@@ -218,7 +218,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->start_controls_section(
         'conversion_section',
         [
-          'label' => esc_html( BT_AB_TEST_WL_ABTEST ) . ' ' . __( 'Conversion Module', 'ab-split-test-lite' ),
+          'label' => 'Split Test' . ' ' . __( 'Conversion Module', 'ab-split-test-lite' ),
           'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
         ]
       );
@@ -337,7 +337,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->add_control(
         'bt_experiment',
         [
-          'label' => esc_html( BT_AB_TEST_WL_ABTEST ),
+          'label' => 'Split Test',
           'type' => \Elementor\Controls_Manager::SELECT2,
           'multiple' => false,
           'options' => $experiments, 
@@ -374,7 +374,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->start_controls_section(
         'general_section',
         [
-          'label' => esc_html( BT_AB_TEST_WL_ABTEST ) . ' ' . __( 'Page Redirect', 'ab-split-test-lite' ),
+          'label' => 'Split Test' . ' ' . __( 'Page Redirect', 'ab-split-test-lite' ),
           'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
         ]
       );

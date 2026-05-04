@@ -777,9 +777,9 @@ if ($user_level == 'free') {
 
         ?>
 
-          <input type="checkbox" class="ab-toggle" id="post_type_<?php echo $post_type->name; ?>" name="selected_post_types[]" value="<?php echo $post_type->name; ?>" <?php echo $checked; ?> />
+          <input type="checkbox" class="ab-toggle" id="post_type_<?php echo esc_attr($post_type->name); ?>" name="selected_post_types[]" value="<?php echo esc_attr($post_type->name); ?>" <?php echo esc_attr($checked); ?> />
 
-          <label for="post_type_<?php echo $post_type->name; ?>"><?php echo $post_type->label; ?></label><br>
+          <label for="post_type_<?php echo esc_attr($post_type->name); ?>"><?php echo esc_html($post_type->label); ?></label><br>
 
         <?php
 
@@ -823,7 +823,7 @@ if ($user_level == 'free') {
 
             <p>Cache clearing is enabled by default. <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade for advanced cache controls</a></p>
 
-            <p>Detected caches: <?php echo $detected_caches; ?></p>
+            <p>Detected caches: <?php echo esc_html($detected_caches); ?></p>
 
           </div>
 
@@ -839,9 +839,9 @@ if ($user_level == 'free') {
 
             <p>Required for WooFunnels or CartFlows conversion tracking.</p>
 
-            <?php if ($user_level == 'free') { echo $upgrade_link; } else { ?>
+            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
 
-            <p><input type="checkbox" class="ab-toggle" id="abst_server_convert_woo" name="abst_server_convert_woo" value="1" <?php echo $abst_server_convert_woo; ?> /> Enable server side conversion tracking for WooCommerce.</p>
+            <p><input type="checkbox" class="ab-toggle" id="abst_server_convert_woo" name="abst_server_convert_woo" value="1" <?php echo esc_attr($abst_server_convert_woo); ?> /> Enable server side conversion tracking for WooCommerce.</p>
 
             <div class="ab-settings-subsection ab-test-woo-goal-status">
 
@@ -849,7 +849,7 @@ if ($user_level == 'free') {
 
               <p>Woo Order Status for conversion tracking.</p>
 
-              <?php echo $selected_woo_order_statuses; ?>
+              <?php echo wp_kses_post($selected_woo_order_statuses); ?>
 
             </div>
 
@@ -873,11 +873,11 @@ if ($user_level == 'free') {
 
             <p>If you need more requests, please add your OpenAI key below.</p>
 
-            <?php if ($user_level == 'free') { echo $upgrade_link; } else { ?>
+            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
 
             <label for="ab_openapi_key">Your OpenAI API Key</label><br>
 
-            <input name="ab_openapi_key" id="ab_openapi_key" type="password" value="<?php echo $ab_openapi_key; ?>" />
+            <input name="ab_openapi_key" id="ab_openapi_key" type="password" value="<?php echo esc_attr($ab_openapi_key); ?>" />
 
             <p>Enter your OpenAI API key for text suggestions. <a href="https://platform.openai.com/" target="_blank">Get a key here.</a></p>
 
@@ -907,7 +907,7 @@ if ($user_level == 'free') {
 
             <p>With this enabled, AB Split Test will wait for cookie consent before sending test data.</p>
 
-            <p><input type="checkbox" class="ab-toggle" id="wait_for_approval" name="wait_for_approval" value="1" <?php echo $wait_for_approval; ?> /> Enable wait for approval.</p>
+            <p><input type="checkbox" class="ab-toggle" id="wait_for_approval" name="wait_for_approval" value="1" <?php echo esc_attr($wait_for_approval); ?> /> Enable wait for approval.</p>
 
             <div id="wait_for_approval_info_area">
 
@@ -965,9 +965,9 @@ if ($user_level == 'free') {
 
             </ul>
 
-            <?php if ($user_level == 'free') { echo $upgrade_link; } else { ?>
+            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
 
-            <p><input type="checkbox" class="ab-toggle" id="use_uuid" name="use_uuid" value="1" <?php echo $use_uuid; ?> /> <strong>Enable advanced tracking</strong></p>
+            <p><input type="checkbox" class="ab-toggle" id="use_uuid" name="use_uuid" value="1" <?php echo esc_attr($use_uuid); ?> /> <strong>Enable advanced tracking</strong></p>
 
             <div id="uuid_settings_area" style="<?php echo empty($use_uuid) ? 'display:none;' : ''; ?>">
 
@@ -977,7 +977,7 @@ if ($user_level == 'free') {
 
               <label for="uuid_length"><strong>Visitor Tracking Duration</strong></label>
 
-              <p>The number of days to remember the visitor: <input type="number" id="uuid_length" name="uuid_length" style="width:60px;" value="<?php echo $uuid_length; ?>" /> days</p>
+              <p>The number of days to remember the visitor: <input type="number" id="uuid_length" name="uuid_length" style="width:60px;" value="<?php echo esc_attr($uuid_length); ?>" /> days</p>
 
 
 
@@ -997,9 +997,9 @@ if ($user_level == 'free') {
 
             <p>Fingerprint conversion tests use the visitor's hashed IP address to track them. Ensure you have permission & enable cookie consent mode.</p>
 
-            <?php if ($user_level == 'free') { echo $upgrade_link; } else { ?>
+            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
 
-            <p><input type="checkbox" class="ab-toggle" id="use_fingerprint" name="use_fingerprint" value="1" <?php echo $use_fingerprint; ?> /> Enable fingerprinting.</p>
+            <p><input type="checkbox" class="ab-toggle" id="use_fingerprint" name="use_fingerprint" value="1" <?php echo esc_attr($use_fingerprint); ?> /> Enable fingerprinting.</p>
 
             <div id="fingerprint_settings_area" style="<?php echo empty($use_fingerprint) ? 'display:none;' : ''; ?>">
 
@@ -1009,7 +1009,7 @@ if ($user_level == 'free') {
 
               <label for="fingerprint_length"><strong>Fingerprint validity</strong></label>
 
-              <p>The number of days to remember the visitor: <input type="number" id="fingerprint_length" name="fingerprint_length" style="width:60px;" value="<?php echo $fingerprint_length; ?>" /> days</p>
+              <p>The number of days to remember the visitor: <input type="number" id="fingerprint_length" name="fingerprint_length" style="width:60px;" value="<?php echo esc_attr($fingerprint_length); ?>" /> days</p>
 
             </div>
 
@@ -1023,7 +1023,7 @@ if ($user_level == 'free') {
 
             <p>Remove all plugin data (tracking database, test ideas, settings) when you uninstall the plugin.</p>
 
-            <p><input type="checkbox" class="ab-toggle" id="delete_fingerprint_db_on_uninstall" name="delete_fingerprint_db_on_uninstall" value="1" <?php echo $delete_fingerprint_db_on_uninstall; ?> /> Delete data on uninstall</p>
+            <p><input type="checkbox" class="ab-toggle" id="delete_fingerprint_db_on_uninstall" name="delete_fingerprint_db_on_uninstall" value="1" <?php echo esc_attr($delete_fingerprint_db_on_uninstall); ?> /> Delete data on uninstall</p>
 
           </div>
 
@@ -1047,7 +1047,7 @@ if ($user_level == 'free') {
 
             <p>Generates heatmaps by page / test / variation / size.</p>
 
-            <p><input type="checkbox" class="ab-toggle" id="abst_heatmap_enable_user_journeys" name="enable_user_journeys" value="1" <?php echo $enable_user_journeys; ?> /> <strong>Enable heatmaps</strong></p>
+            <p><input type="checkbox" class="ab-toggle" id="abst_heatmap_enable_user_journeys" name="enable_user_journeys" value="1" <?php echo esc_attr($enable_user_journeys); ?> /> <strong>Enable heatmaps</strong></p>
 
 
 
@@ -1061,7 +1061,7 @@ if ($user_level == 'free') {
 
               <p>Watch recordings of user sessions to understand how visitors interact with your site.</p>
 
-              <p><input type="checkbox" class="ab-toggle" id="abst_enable_session_replays" name="enable_session_replays" value="1" <?php echo $enable_session_replays; ?> /> <strong>Enable session replays</strong></p>
+              <p><input type="checkbox" class="ab-toggle" id="abst_enable_session_replays" name="enable_session_replays" value="1" <?php echo esc_attr($enable_session_replays); ?> /> <strong>Enable session replays</strong></p>
 
 
 
@@ -1123,7 +1123,7 @@ if ($user_level == 'free') {
 
             <p>When test has MAB enabled, 'confidence' metrics & autocomplete for tests are removed.</p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
@@ -1135,7 +1135,7 @@ if ($user_level == 'free') {
 
             <p>Enable secure sharing of your A/B test summaries with an external Agency.</p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
@@ -1147,7 +1147,7 @@ if ($user_level == 'free') {
 
             <p>View multiple site statistics from a dashboard on this site.</p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
@@ -1159,7 +1159,7 @@ if ($user_level == 'free') {
 
             <p>Show the Test Ideas planning board in the admin menu.</p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
@@ -1171,7 +1171,7 @@ if ($user_level == 'free') {
 
             <p>When your test is complete, send an HTTP POST containing the Test ID, name and other statistics to an endpoint of your choice.</p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
@@ -1183,7 +1183,7 @@ if ($user_level == 'free') {
 
             <p>When a test completes via autocomplete, a notification is sent to the admin email. Override that address here.</p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
@@ -1197,7 +1197,7 @@ if ($user_level == 'free') {
 
             <small>Sends on Monday morning, website time.</small></p>
 
-            <?php echo $upgrade_link; ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 
