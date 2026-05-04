@@ -72,10 +72,10 @@ if( class_exists('FLBuilderModule') ) {
 		public function __construct()
 		{
 			parent::__construct(array(
-				'name'          => __('LEGACY, DONT USE. AB Test Page Redirect', 'bt-bb-ab'),
-				'description'   => __('This module has now been replaced. Remove this module and update your AB test settings.', 'bt-bb-ab'),
+				'name'          => __('LEGACY, DONT USE. AB Test Page Redirect', 'ab-split-test-lite'),
+				'description'   => __('This module has now been replaced. Remove this module and update your AB test settings.', 'ab-split-test-lite'),
 				'category'      => apply_filters( 'bt_bb_ab_page_redirect_category','Utilities'),
-				'group'         => apply_filters( 'bt_bb_ab_page_redirect_group', BT_AB_TEST_WL_NAME),
+				'group'         => apply_filters( 'bt_bb_ab_page_redirect_group', AB Split Test Lite),
 				'dir'           => BT_MODULES_DIR . 'modules/page-redirect',
 				'url'           => BT_MODULES_URL . 'modules/page-redirect',
 			));  
@@ -110,14 +110,14 @@ if( class_exists('FLBuilderModule') ) {
    */
   FLBuilder::register_module('BT_BB_AB_PageRedirectModule', array(
       'general'       => array( // Tab
-        'title'         => __('General', 'bt-bb-ab'), // Tab title
+        'title'         => __('General', 'ab-split-test-lite'), // Tab title
         'sections'      => array( // Tab Sections
           'general'       => array( // Section
-            'title'         => BT_AB_TEST_WL_ABTEST . ' ' . __( 'Page Redirect Module', 'bt-bb-ab' ), // Section Title
+            'title'         => BT_AB_TEST_WL_ABTEST . ' ' . __( 'Page Redirect Module', 'ab-split-test-lite' ), // Section Title
             'fields'        => [
 				'experiment' => [
 					'type'          => 'suggest',
-					'label'         => __( 'Experiment', 'bt-bb-ab' ),
+					'label'         => __( 'Experiment', 'ab-split-test-lite' ),
 					'action'        => 'fl_as_posts', // Search posts.
 					'data'          => 'bt_experiments', // Slug of the post type to search.
 					'limit'         => 1, // Limits the number of selections that can be made.

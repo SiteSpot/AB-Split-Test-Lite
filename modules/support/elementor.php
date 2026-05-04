@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 class BT_BB_AB_Elementor
 {
@@ -69,7 +70,7 @@ class BT_BB_AB_Elementor
         'bt_experiment_section',
         [
           'tab' => \Elementor\Controls_Manager::TAB_ADVANCED,
-          'label' => __( 'AB Split Test', 'bt-bb-ab' ),
+          'label' => __( 'AB Split Test', 'ab-split-test-lite' ),
         ]
       );
 
@@ -78,29 +79,29 @@ class BT_BB_AB_Elementor
       $element->add_control(
         'bt_experiment',
         [
-          'label' => __( 'Experiment', 'bt-bb-ab' ),
+          'label' => __( 'Experiment', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::SELECT2,
           'multiple' => false,
           'options' => $experiments,
           'default' => 0,
-          'description' => __( 'Select a test or ', 'bt-bb-ab' ) . '<a class="new-on-page-test-button" href="' . esc_url( admin_url( 'edit.php?post_type=bt_experiments' ) ) . '" target="_blank">' . __( 'Create one here.', 'bt-bb-ab' ) . '</a>'
+          'description' => __( 'Select a test or ', 'ab-split-test-lite' ) . '<a class="new-on-page-test-button" href="' . esc_url( admin_url( 'edit.php?post_type=bt_experiments' ) ) . '" target="_blank">' . __( 'Create one here.', 'ab-split-test-lite' ) . '</a>'
         ]
       );
       
       $element->add_control(
         'bt_variation',
         [
-          'label' => __( 'Variation Name', 'bt-bb-ab' ),
+          'label' => __( 'Variation Name', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::TEXT,
           'default' => '',
-          'description' => __('Using "default" will cause this version to run first, unless otherwise targeted. <a href="#">more info <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window"></a>', 'bt-bb-ab')
+          'description' => __('Using "default" will cause this version to run first, unless otherwise targeted. <a href="#">more info <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window"></a>', 'ab-split-test-lite')
         ]
       );
 
       $element->add_control(
         'bt_hidden',
         [
-          'label' => __( 'Variation Hidden', 'bt-bb-ab' ),
+          'label' => __( 'Variation Hidden', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::TEXT,
           'default' => 'false'
         ]
@@ -135,7 +136,7 @@ if(class_exists('\Elementor\Widget_Base'))
      */
     public function get_title() 
     {
-      return __( 'Split Test conversion', 'bt-bb-ab' );
+      return __( 'Split Test conversion', 'ab-split-test-lite' );
     }
 
     /**
@@ -176,11 +177,11 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->add_control(
         'bt_experiment_type',
         [
-          'label' => __( 'Conversion Type', 'bt-bb-ab' ),
+          'label' => __( 'Conversion Type', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::SELECT,
           'options' => [
-            'load'  => __( 'On Page Load', 'bt-bb-ab' ),
-            'click' => __( 'On Element Click', 'bt-bb-ab' )
+            'load'  => __( 'On Page Load', 'ab-split-test-lite' ),
+            'click' => __( 'On Element Click', 'ab-split-test-lite' )
           ],
           'default' => 'load',
           'description' => $fields['bt_experiment_type']['description'],
@@ -190,7 +191,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->add_control(
         'bt_click_conversion_selector',
         [
-          'label' => __( 'Selector', 'bt-bb-ab' ),
+          'label' => __( 'Selector', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::TEXT,
           'default' => '',
           'conditions' => [
@@ -217,7 +218,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->start_controls_section(
         'conversion_section',
         [
-          'label' => esc_html( BT_AB_TEST_WL_ABTEST ) . ' ' . __( 'Conversion Module', 'bt-bb-ab' ),
+          'label' => esc_html( BT_AB_TEST_WL_ABTEST ) . ' ' . __( 'Conversion Module', 'ab-split-test-lite' ),
           'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
         ]
       );
@@ -289,7 +290,7 @@ if(class_exists('\Elementor\Widget_Base'))
      */
     public function get_title() 
     {
-      return __( 'LEGACY: AB Test Page Redirect', 'bt-bb-ab' );
+      return __( 'LEGACY: AB Test Page Redirect', 'ab-split-test-lite' );
     }
 
     /**
@@ -347,7 +348,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->add_control(
         'bt_variation',
         [
-          'label' => __( 'Variation', 'bt-bb-ab' ),
+          'label' => __( 'Variation', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::TEXT,
           'default' => '',
           'description' => 'Using "default" will cause this version to run first, unless otherwise targeted. <a href="#">more info <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window"></a>'
@@ -357,7 +358,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->add_control(
         'redirect_url',
         [
-          'label' => __( 'Redirect URL', 'bt-bb-ab' ),
+          'label' => __( 'Redirect URL', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::SELECT,
           'groups' => $opt_group,
           'default' => '',
@@ -373,7 +374,7 @@ if(class_exists('\Elementor\Widget_Base'))
       $this->start_controls_section(
         'general_section',
         [
-          'label' => esc_html( BT_AB_TEST_WL_ABTEST ) . ' ' . __( 'Page Redirect', 'bt-bb-ab' ),
+          'label' => esc_html( BT_AB_TEST_WL_ABTEST ) . ' ' . __( 'Page Redirect', 'ab-split-test-lite' ),
           'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
         ]
       );

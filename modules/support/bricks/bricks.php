@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 
 class BT_BB_AB_Bricks
@@ -86,7 +87,7 @@ function add_bricks_attributes($attributes, $key, $element){
           add_filter( 'bricks/elements/'.$brick.'/control_groups', function( $control_groups ) {
                 $control_groups['abst'] = [
                     'tab'      => 'style', // or 'style'
-                    'title'    => esc_html__( 'AB Split Test', 'bt-bb-ab' ),
+                    'title'    => esc_html__( 'AB Split Test', 'ab-split-test-lite' ),
                 ];
 
                 return $control_groups;
@@ -112,16 +113,16 @@ function add_bricks_attributes($attributes, $key, $element){
               'type' => 'select',
               'options' => $this->tests_with_id(),
               'inline' => true,
-              'placeholder' => esc_html__( 'Choose Test', 'bt-bb-ab' ),
+              'placeholder' => esc_html__( 'Choose Test', 'ab-split-test-lite' ),
             ];
 
             $controls['bt_var'] = [
               'tab' => 'style',
               'group' => 'abst',
-              'label' => esc_html__( 'Variation Name', 'bt-bb-ab' ),
+              'label' => esc_html__( 'Variation Name', 'ab-split-test-lite' ),
               'type' => 'text',
               'inline' => true,
-              'placeholder' => esc_html__( 'Your variation name...', 'bt-bb-ab' ),
+              'placeholder' => esc_html__( 'Your variation name...', 'ab-split-test-lite' ),
             ];
 
         

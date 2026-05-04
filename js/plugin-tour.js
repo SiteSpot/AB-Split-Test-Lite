@@ -714,37 +714,7 @@ jQuery(function($){
     jQuery('#heatmap_all_pages').trigger('change');
 
 
-    jQuery('body').on('change', '#abst_remote_access_enabled', function() {
-      if (jQuery(this).is(':checked')) {
-        jQuery('#abst_remote_access_enabled_info_area').show();
-      } else {
-        jQuery('#abst_remote_access_enabled_info_area').hide();
-      }
-    });
-    jQuery('#abst_remote_access_enabled').trigger('change');
 
-    jQuery('body').on('click', '#abst_agency_regenerate_key', function(e) {
-      e.preventDefault();
-      jQuery('#abst_agency_site_key').val('');
-      var agencyHubVars = window.abstAgencyHubVars || {};
-      jQuery.ajax({
-        url: ajaxurl,
-        type: 'POST',
-        data: {
-          action: 'abst_regenerate_agency_key',
-          nonce: agencyHubVars.regenerateNonce || ''
-        },
-        success: function(response) {
-          if (response && response.success && response.data && response.data.key) {
-            jQuery('#abst_agency_site_key').val(response.data.key);
-          } else if (response && response.data) {
-            alert(typeof response.data === 'string' ? response.data : 'Unable to regenerate Agency Hub key.');
-          } else {
-            alert('Unable to regenerate Agency Hub key.');
-          }
-        }
-      });
-    });
 
     jQuery('body').on('change', '#abst_heatmap_enable_user_journeys', function() {
       if (jQuery(this).is(':checked')) {

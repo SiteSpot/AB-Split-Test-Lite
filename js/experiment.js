@@ -470,7 +470,7 @@ jQuery(document).ready(function() {
 
     var action = jQuery(this).data('action') || '';
 
-    if(action === 'start-as-draft' || action === 'save-draft') {
+    if(action === 'save-draft') {
       submitExperimentWithStatus('draft', false);
       return;
     }

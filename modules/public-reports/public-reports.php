@@ -98,7 +98,7 @@ class ABST_Public_Reports {
         }
 
         if (!$this->is_shareable_reports_enabled()) {
-            $this->render_error_page(__('Please upgrade to enable shareable reports.', 'bt-bb-ab'));
+            $this->render_error_page(__('Please upgrade to enable shareable reports.', 'ab-split-test-lite'));
             exit;
         }
         
@@ -172,7 +172,7 @@ class ABST_Public_Reports {
         $token = sanitize_text_field($token);
         
         if (strlen($token) !== self::TOKEN_LENGTH) {
-            return new WP_Error('invalid_token', __('Invalid report link.', 'bt-bb-ab'));
+            return new WP_Error('invalid_token', __('Invalid report link.', 'ab-split-test-lite'));
         }
         
         // Find the test with this token
@@ -190,7 +190,7 @@ class ABST_Public_Reports {
                 
                 // Check expiration
                 if (!empty($link_data['expires']) && strtotime($link_data['expires']) < time()) {
-                    return new WP_Error('expired', __('This report link has expired.', 'bt-bb-ab'));
+                    return new WP_Error('expired', __('This report link has expired.', 'ab-split-test-lite'));
                 }
                 
                 // Update view count
@@ -203,7 +203,7 @@ class ABST_Public_Reports {
             }
         }
         
-        return new WP_Error('not_found', __('Report not found.', 'bt-bb-ab'));
+        return new WP_Error('not_found', __('Report not found.', 'ab-split-test-lite'));
     }
     
     /**
@@ -213,7 +213,7 @@ class ABST_Public_Reports {
         $test = get_post($test_id);
         
         if (!$test || $test->post_type !== 'bt_experiments') {
-            return new WP_Error('not_found', __('Test not found.', 'bt-bb-ab'));
+            return new WP_Error('not_found', __('Test not found.', 'ab-split-test-lite'));
         }
         
         // Get observations
@@ -375,14 +375,14 @@ class ABST_Public_Reports {
         check_ajax_referer('abst_share_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
-            wp_send_json_error(['message' => __('Permission denied.', 'bt-bb-ab')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'ab-split-test-lite')]);
         }
         
         $test_id = intval($_POST['test_id'] ?? 0);
         $expiration_days = intval($_POST['expiration_days'] ?? self::DEFAULT_EXPIRATION_DAYS);
         
         if (!$test_id) {
-            wp_send_json_error(['message' => __('Invalid test ID.', 'bt-bb-ab')]);
+            wp_send_json_error(['message' => __('Invalid test ID.', 'ab-split-test-lite')]);
         }
         
         $result = $this->create_share_link($test_id, $expiration_days);
@@ -397,14 +397,14 @@ class ABST_Public_Reports {
         check_ajax_referer('abst_share_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
-            wp_send_json_error(['message' => __('Permission denied.', 'bt-bb-ab')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'ab-split-test-lite')]);
         }
         
         $test_id = intval($_POST['test_id'] ?? 0);
         $token = sanitize_text_field($_POST['token'] ?? '');
         
         if (!$test_id || !$token) {
-            wp_send_json_error(['message' => __('Invalid parameters.', 'bt-bb-ab')]);
+            wp_send_json_error(['message' => __('Invalid parameters.', 'ab-split-test-lite')]);
         }
         
         $share_links = get_post_meta($test_id, '_abst_share_links', true);
@@ -412,10 +412,10 @@ class ABST_Public_Reports {
         if (is_array($share_links) && isset($share_links[$token])) {
             unset($share_links[$token]);
             update_post_meta($test_id, '_abst_share_links', $share_links);
-            wp_send_json_success(['message' => __('Share link revoked.', 'bt-bb-ab')]);
+            wp_send_json_success(['message' => __('Share link revoked.', 'ab-split-test-lite')]);
         }
         
-        wp_send_json_error(['message' => __('Share link not found.', 'bt-bb-ab')]);
+        wp_send_json_error(['message' => __('Share link not found.', 'ab-split-test-lite')]);
     }
     
     /**
@@ -425,13 +425,13 @@ class ABST_Public_Reports {
         check_ajax_referer('abst_share_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
-            wp_send_json_error(['message' => __('Permission denied.', 'bt-bb-ab')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'ab-split-test-lite')]);
         }
         
         $test_id = intval($_POST['test_id'] ?? 0);
         
         if (!$test_id) {
-            wp_send_json_error(['message' => __('Invalid test ID.', 'bt-bb-ab')]);
+            wp_send_json_error(['message' => __('Invalid test ID.', 'ab-split-test-lite')]);
         }
         
         $share_links = get_post_meta($test_id, '_abst_share_links', true);
@@ -474,21 +474,10 @@ class ABST_Public_Reports {
     }
 
     public function is_shareable_reports_enabled() {
-        if (!function_exists('bt_bb_ab_licence_details') || !function_exists('btab_user_level')) {
-            return false;
-        }
 
-        $licence_details = bt_bb_ab_licence_details();
+        return false;
+        
 
-        if (empty($licence_details)) {
-            return false;
-        }
-
-        if (btab_user_level() == 'free') {
-            return false;
-        }
-
-        return isset($licence_details->sites) && ($licence_details->sites === 0 || $licence_details->sites > 39);
     }
     
     /**
@@ -509,7 +498,7 @@ class ABST_Public_Reports {
                     title="Click to copy">
                 <a href="<?php echo esc_url($url); ?>" target="_blank" class="share-button button button-secondary">
                     <span class="dashicons dashicons-external" style="font-size: 16px; height: 16px; width: 16px; margin-right: 4px; margin-top: 3px;"></span>
-                    <?php esc_html_e('Open', 'bt-bb-ab'); ?>
+                    <?php esc_html_e('Open', 'ab-split-test-lite'); ?>
                 </a>
             </div>
             <p class="description" style="margin-top: 10px;">
@@ -524,7 +513,8 @@ class ABST_Public_Reports {
     }
 
     public function render_share_button($test_id) {
-        echo $this->get_share_button_html($test_id);
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is already escaped in get_share_button_html
+        echo $this->get_share_button_html($test_id); // Output is already escaped in get_share_button_html
     }
 
     public function render_admin_footer_script() {
@@ -546,13 +536,13 @@ class ABST_Public_Reports {
                 
                 $.post(ajaxurl, {
                     action: 'abst_revoke_share_link',
-                    nonce: '<?php echo wp_create_nonce('abst_share_nonce'); ?>',
+                    nonce: '<?php echo esc_attr(wp_create_nonce('abst_share_nonce')); ?>',
                     test_id: testId,
                     token: oldToken
                 }).done(function() {
                     $.post(ajaxurl, {
                         action: 'abst_generate_share_link',
-                        nonce: '<?php echo wp_create_nonce('abst_share_nonce'); ?>',
+                        nonce: '<?php echo esc_attr(wp_create_nonce('abst_share_nonce')); ?>',
                         test_id: testId,
                         expiration_days: 0
                     }).done(function(response) {

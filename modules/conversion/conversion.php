@@ -1,4 +1,7 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
 if(! class_exists ( 'BtConversionModule'))
 {
@@ -48,7 +51,7 @@ if(! class_exists ( 'BtConversionModule'))
 
       return new WP_REST_Response([
         'status'  => 0,
-        'message' => BT_AB_TEST_WL_NAME . ': ' . __( 'Variation name does not exist', 'bt_experiment' )
+        'message' => 'AB Split Test Lite' . ': ' . __( 'Variation name does not exist', 'ab-split-test-lite' )
       ], 200);
     }
 
@@ -66,7 +69,7 @@ if(! class_exists ( 'BtConversionModule'))
         ),
         'bt_experiment_type'     => array(
           'type'          => 'select',
-          'label'         => __( 'Conversion Type', 'bt-bb-ab' ),
+          'label'         => __( 'Conversion Type', 'ab-split-test-lite' ),
           'options'       => array(                    
             'load'          => 'On Page Load',
             'click'         => 'On Element Click',
@@ -82,7 +85,7 @@ if(! class_exists ( 'BtConversionModule'))
         ),
         'bt_click_conversion_selector'  => array(
           'type'          => 'text',
-          'label'         => __( 'Selector', 'bt-bb-ab' ),
+          'label'         => __( 'Selector', 'ab-split-test-lite' ),
           'description'   => 'Selector for element that will trigger a conversion on click. <a href="https://www.w3schools.com/cssref/css_selectors.asp" target="_blank">More info on selectors. <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window" ></a>',
           'bt_gutenberg_type' => 'string', // set type for gutenberg support field mapping
         ),
@@ -134,10 +137,10 @@ if( class_exists('FLBuilderModule') ) {
     public function __construct()
     {
       parent::__construct(array(
-        'name'          => __('AB test conversion', 'bt-bb-ab'),
-        'description'   => __('Trigger the conversion event of your AB test when this module is loaded. Does not display anything.', 'bt-bb-ab'),
+        'name'          => __('AB test conversion', 'ab-split-test-lite'),
+        'description'   => __('Trigger the conversion event of your AB test when this module is loaded. Does not display anything.', 'ab-split-test-lite'),
         'category'      => apply_filters( 'bt_bb_ab_conversion_category','Utilities'),
-        'group'         => apply_filters( 'bt_bb_ab_conversion_group', BT_AB_TEST_WL_NAME),
+        'group'         => apply_filters( 'bt_bb_ab_conversion_group', 'AB Split Test Lite'),
         'dir'           => BT_CONVERSION_DIR . 'modules/conversion',
         'url'           => BT_CONVERSION_URL . 'modules/conversion',
       ));  
@@ -149,10 +152,10 @@ if( class_exists('FLBuilderModule') ) {
    */
   FLBuilder::register_module('Bt_BB_ConversionModule', array(
       'general'       => array( // Tab
-        'title'         => __('General', 'bt-bb-ab'), // Tab title
+        'title'         => __('General', 'ab-split-test-lite'), // Tab title
         'sections'      => array( // Tab Sections
           'general'       => array( // Section
-            'title'         => BT_AB_TEST_WL_ABTEST . ' ' . __( 'Conversion Module', 'bt-bb-ab' ), // Section Title
+            'title'         => BT_AB_TEST_WL_ABTEST . ' ' . __( 'Conversion Module', 'ab-split-test-lite' ), // Section Title
             'fields'        => BtConversionModule::get_fields()
           ),
         )

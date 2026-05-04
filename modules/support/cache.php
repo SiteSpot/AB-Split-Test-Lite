@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /* exclude our scripts from caching plugins so it doesnt get defered or excluided */
 // scripts to exclude: 

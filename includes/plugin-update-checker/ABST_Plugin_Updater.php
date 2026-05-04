@@ -222,8 +222,8 @@ class ABST_Plugin_Updater {
 
 		printf(
 			'<tr class="plugin-update-tr %3$s" id="%1$s-update" data-slug="%1$s" data-plugin="%2$s">',
-			$this->slug,
-			$file,
+			esc_attr($this->slug),
+			esc_attr($file),
 			in_array( $this->name, $this->get_active_plugins(), true ) ? 'active' : 'inactive'
 		);
 
@@ -254,26 +254,28 @@ class ABST_Plugin_Updater {
 
 		printf(
 			/* translators: the plugin name. */
-			esc_html__( 'There is a new version of %1$s available.', 'bt-bb-ab' ),
+			esc_html__( 'There is a new version of %1$s available.', 'ab-split-test-lite' ),
 			esc_html( $plugin['Name'] )
 		);
 
 		if ( ! current_user_can( 'update_plugins' ) ) {
 			echo ' ';
-			esc_html_e( 'Contact your network administrator to install the update.', 'bt-bb-ab' );
+			esc_html_e( 'Contact your network administrator to install the update.', 'ab-split-test-lite' );
 		} elseif ( empty( $update_cache->response[ $this->name ]->package ) && ! empty( $changelog_link ) ) {
 			echo ' ';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Arguments are escaped via esc_url() and esc_html()
 			printf(
 				/* translators: 1. opening anchor tag, do not translate 2. the new plugin version 3. closing anchor tag, do not translate. */
-				__( '%1$sView version %2$s details%3$s.', 'bt-bb-ab' ),
+				__( '%1$sView version %2$s details%3$s.', 'ab-split-test-lite' ),
 				'<a target="_blank" class="thickbox open-plugin-details-modal" href="' . esc_url( $changelog_link ) . '">',
 				esc_html( $update_cache->response[ $this->name ]->new_version ),
 				'</a>'
 			);
 		} elseif ( ! empty( $changelog_link ) ) {
 			echo ' ';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Arguments are escaped via esc_url() and esc_html()
 			printf(
-				__( '%1$sView version %2$s details%3$s or %4$supdate now%5$s.', 'bt-bb-ab' ),
+				__( '%1$sView version %2$s details%3$s or %4$supdate now%5$s.', 'ab-split-test-lite' ),
 				'<a target="_blank" class="thickbox open-plugin-details-modal" href="' . esc_url( $changelog_link ) . '">',
 				esc_html( $update_cache->response[ $this->name ]->new_version ),
 				'</a>',
@@ -284,7 +286,7 @@ class ABST_Plugin_Updater {
 			printf(
 				' %1$s%2$s%3$s',
 				'<a target="_blank" class="update-link" href="' . esc_url( wp_nonce_url( $update_link, 'upgrade-plugin_' . $file ) ) . '">',
-				esc_html__( 'Update now.', 'bt-bb-ab' ),
+				esc_html__( 'Update now.', 'ab-split-test-lite' ),
 				'</a>'
 			);
 		}
@@ -516,7 +518,7 @@ class ABST_Plugin_Updater {
 		}
 
 		if ( ! current_user_can( 'update_plugins' ) ) {
-			wp_die( esc_html__( 'You do not have permission to install plugin updates', 'bt-bb-ab' ), esc_html__( 'Error', 'bt-bb-ab' ), array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to install plugin updates', 'ab-split-test-lite' ), esc_html__( 'Error', 'ab-split-test-lite' ), array( 'response' => 403 ) );
 		}
 
 		$version_info = $this->get_repo_api_data();

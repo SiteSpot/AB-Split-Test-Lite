@@ -10,7 +10,7 @@ class Element_AB_Conversion extends \Bricks\Element {
   // public $scripts      = []; // Enqueue registered scripts
 
   public function get_label() {
-    return esc_html( BT_AB_TEST_WL_NAME ) . ' ' . esc_html__( 'Conversion', 'bt-bb-ab' );
+    return esc_html( AB Split Test Lite ) . ' ' . esc_html__( 'Conversion', 'ab-split-test-lite' );
   }
 
   // Set builder control groups
@@ -35,14 +35,14 @@ class Element_AB_Conversion extends \Bricks\Element {
         'h6' => 'H6',
       ],
       'inline' => true,
-      'placeholder' => esc_html__( 'Choose Test', 'bt-bb-ab' ),
+      'placeholder' => esc_html__( 'Choose Test', 'ab-split-test-lite' ),
     ];
 
     $this->controls['bt_var'] = [
       'tab' => 'content',
-      'label' => esc_html__( 'Variation Name', 'bt-bb-ab' ),
+      'label' => esc_html__( 'Variation Name', 'ab-split-test-lite' ),
       'type' => 'text',
-      'placeholder' => esc_html__( 'Your variation name...', 'bt-bb-ab' ),
+      'placeholder' => esc_html__( 'Your variation name...', 'ab-split-test-lite' ),
     ];
   }
 
@@ -55,7 +55,7 @@ class Element_AB_Conversion extends \Bricks\Element {
     if ( ! $bt_experiment && ! $bt_var ) {
       return $this->render_element_placeholder( [
         'icon-class' => 'ti-paragraph',
-        'text'       => esc_html__( 'Please choose a test and add a variation name to this element.', 'bt-bb-ab' ),
+        'text'       => esc_html__( 'Please choose a test and add a variation name to this element.', 'ab-split-test-lite' ),
       ] );
     }
 

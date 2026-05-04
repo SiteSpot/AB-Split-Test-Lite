@@ -792,7 +792,7 @@ if (!empty($data['goals'])) {
         
         <?php if (!empty($data['experiment_status'])): ?>
             <div class="analysis-section" style="margin: 20px 0; background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
-                <?php echo $data['experiment_status']; ?>
+                <?php echo wp_kses_post($data['experiment_status']); ?>
             
         <?php endif; ?>
         
@@ -1203,7 +1203,7 @@ if (!empty($data['goals'])) {
                                 </a>
                             <?php endif; ?>
                         </div>
-                        <span class="heatmap-stats"><?php echo number_format($var['visits']); ?> visits • <?php echo round($var['rate'], 2); ?>%</span>
+                        <span class="heatmap-stats"><?php echo number_format($var['visits']); ?> visits • <?php echo esc_html(round($var['rate'], 2)); ?>%</span>
                     </div>
                     <div class="heatmap-iframe-container">
                         <iframe 

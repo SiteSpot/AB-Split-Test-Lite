@@ -107,13 +107,13 @@ class ABST_Session_Replay {
             'nonce' => wp_create_nonce('abst_session_replay'),
             'homeUrl' => home_url(),
             'strings' => [
-                'loading' => __('Loading...', 'bt-bb-ab'),
-                'noSessions' => __('No sessions found matching your filters.', 'bt-bb-ab'),
-                'loadingSession' => __('Loading session data...', 'bt-bb-ab'),
-                'pageView' => __('Page View', 'bt-bb-ab'),
-                'click' => __('Click', 'bt-bb-ab'),
-                'rageClick' => __('Rage Click', 'bt-bb-ab'),
-                'conversion' => __('Conversion', 'bt-bb-ab'),
+                'loading' => __('Loading...', 'ab-split-test-lite'),
+                'noSessions' => __('No sessions found matching your filters.', 'ab-split-test-lite'),
+                'loadingSession' => __('Loading session data...', 'ab-split-test-lite'),
+                'pageView' => __('Page View', 'ab-split-test-lite'),
+                'click' => __('Click', 'ab-split-test-lite'),
+                'rageClick' => __('Rage Click', 'ab-split-test-lite'),
+                'conversion' => __('Conversion', 'ab-split-test-lite'),
             ]
         ]);
     }
@@ -285,7 +285,7 @@ class ABST_Session_Replay {
         wp_send_json_success([
             'session_count' => count($index),
             /* translators: %d is the number of sessions */
-            'message' => sprintf(__('Index rebuilt with %d sessions', 'bt-bb-ab'), count($index))
+            'message' => sprintf(__('Index rebuilt with %d sessions', 'ab-split-test-lite'), count($index))
         ]);
     }
 

@@ -13,8 +13,8 @@
 
 class BT_BB_AB_Admin {
 
-  public static $menu_name  = BT_AB_TEST_WL_NAME;
-  public static $page_title = BT_AB_TEST_WL_NAME . ' Settings';
+  public static $menu_name  = 'AB Split Test Lite';
+  public static $page_title = 'AB Split Test Lite' . ' Settings';
   public static $page_slug  = 'bt_bb_ab_test';
 
   public function __construct()
@@ -242,7 +242,7 @@ class BT_BB_AB_Admin {
     add_submenu_page(
       'edit.php?post_type=bt_experiments',
       self::$page_title,
-      __( 'Settings', 'bt-bb-ab' ),
+      __( 'Settings', 'ab-split-test-lite' ),
       'manage_options',
       self::$page_slug,
       [$this, 'settings_page']
@@ -265,19 +265,19 @@ class BT_BB_AB_Admin {
       }
 
       if ( $item[2] === $parent_slug ) {
-        $item[0] = __( 'All Tests', 'bt-bb-ab' );
+        $item[0] = __( 'All Tests', 'ab-split-test-lite' );
         if ( isset( $item[3] ) ) {
-          $item[3] = __( 'All Tests', 'bt-bb-ab' );
+          $item[3] = __( 'All Tests', 'ab-split-test-lite' );
         }
       } elseif ( $item[2] === 'post-new.php?post_type=bt_experiments' ) {
-        $item[0] = __( 'New Test', 'bt-bb-ab' );
+        $item[0] = __( 'New Test', 'ab-split-test-lite' );
         if ( isset( $item[3] ) ) {
-          $item[3] = __( 'New Test', 'bt-bb-ab' );
+          $item[3] = __( 'New Test', 'ab-split-test-lite' );
         }
       } elseif ( $item[2] === 'bt_bb_ab_insights' ) {
-        $item[0] = __( 'CRO Hub', 'bt-bb-ab' );
+        $item[0] = __( 'CRO Hub', 'ab-split-test-lite' );
         if ( isset( $item[3] ) ) {
-          $item[3] = __( 'CRO Hub', 'bt-bb-ab' );
+          $item[3] = __( 'CRO Hub', 'ab-split-test-lite' );
         }
       }
     }
@@ -439,7 +439,7 @@ class BT_BB_AB_Admin {
     if ( empty( $license_data ) || ! is_object( $license_data ) ) {
       abst_log( 'License activation: Invalid license data object after successful response' );
       if ( $shouldredirect ) {
-        $redirect = add_query_arg( array( 'sl_activation' => 'false', 'message' => urlencode( __( 'Invalid license data received.', 'bt-bb-ab' ) ) ), $base_url );
+        $redirect = add_query_arg( array( 'sl_activation' => 'false', 'message' => urlencode( __( 'Invalid license data received.', 'ab-split-test-lite' ) ) ), $base_url );
         wp_redirect( $redirect );
         exit();
       }
@@ -530,11 +530,6 @@ class BT_BB_AB_Admin {
 
     $monthly_levels = ['26','25','10'];
 
-    if($user_level == 'free' && isset($license_data->license) && $license_data->license == 'valid')
-      abst_start_free_trial();
-
-    if($user_level !== 'free' && !empty(get_site_option('btbbabfte')))
-      update_site_option('btbbabfte',gmdate('Ymd'));
 
     // If it's a monthly plan and the license is not valid, downgrade to free
     if(in_array($price_id, $monthly_levels) && isset($license_data->license) && $license_data->license !== 'valid') {
@@ -562,7 +557,7 @@ class BT_BB_AB_Admin {
       if ( is_wp_error( $response ) ) {
         $message = $response->get_error_message();
       } else {
-        $message = __( 'An error occurred, please try again.', 'bt-bb-ab' );
+        $message = __( 'An error occurred, please try again.', 'ab-split-test-lite' );
       }
 
     } else {
@@ -573,7 +568,7 @@ class BT_BB_AB_Admin {
       if ( empty( $license_data ) || ! is_object( $license_data ) ) {
         abst_log( 'License activation failed: Invalid JSON response' );
         abst_log( wp_remote_retrieve_body( $response ) );
-        $message = __( 'An error occurred, please try again. Invalid response from license server.' , 'bt-bb-ab' );
+        $message = __( 'An error occurred, please try again. Invalid response from license server.' , 'ab-split-test-lite' );
         return $message;
       }
       
@@ -581,7 +576,7 @@ class BT_BB_AB_Admin {
       if ( ! isset( $license_data->success ) ) {
         abst_log( 'License activation failed: Missing success property in response' );
         abst_log( $license_data );
-        $message = __( 'An error occurred, please try again. Unexpected response format.' , 'bt-bb-ab' );
+        $message = __( 'An error occurred, please try again. Unexpected response format.' , 'ab-split-test-lite' );
         return $message;
       }
 
@@ -589,7 +584,7 @@ class BT_BB_AB_Admin {
 
       if($license_data->license == 'invalid'){
         abst_log('License activation failed: Invalid license key');
-        $message = __( 'Invalid license key. Please check and try again.', 'bt-bb-ab' );
+        $message = __( 'Invalid license key. Please check and try again.', 'ab-split-test-lite' );
         return $message;
       }
       
@@ -604,7 +599,7 @@ class BT_BB_AB_Admin {
 
             /* translators: %s is the expiration date */
             $message = sprintf(
-              __( 'Your license key expired on %s.', 'bt-bb-ab' ),
+              __( 'Your license key expired on %s.', 'ab-split-test-lite' ),
               date_i18n( get_option( 'date_format' ), strtotime( $license_data->expires, current_time( 'timestamp' ) ) )
             );
             break;
@@ -612,34 +607,34 @@ class BT_BB_AB_Admin {
           case 'disabled' :
           case 'revoked' :
 
-            $message = __( 'Your license key has been disabled.', 'bt-bb-ab' );
+            $message = __( 'Your license key has been disabled.', 'ab-split-test-lite' );
             break;
 
           case 'missing' :
 
-            $message = __( 'Invalid license.', 'bt-bb-ab' );
+            $message = __( 'Invalid license.', 'ab-split-test-lite' );
             break;
 
           case 'invalid' :
           case 'site_inactive' :
 
-            $message = __( 'Your license is not active for this URL.', 'bt-bb-ab' );
+            $message = __( 'Your license is not active for this URL.', 'ab-split-test-lite' );
             break;
 
           case 'item_name_mismatch' :
 
             /* translators: %s is the product name */
-            $message = sprintf( __( 'This appears to be an invalid license key for %s.' , 'bt-bb-ab' ), BT_BB_AB_EDD_ITEM_NAME );
+            $message = sprintf( __( 'This appears to be an invalid license key for %s.' , 'ab-split-test-lite' ), BT_BB_AB_EDD_ITEM_NAME );
             break;
 
           case 'no_activations_left':
 
-            $message = __( 'Your license key has reached its activation limit.', 'bt-bb-ab' );
+            $message = __( 'Your license key has reached its activation limit.', 'ab-split-test-lite' );
             break;
 
           default :
 
-            $message = __( 'An error occurred, please try again.', 'bt-bb-ab' );
+            $message = __( 'An error occurred, please try again.', 'ab-split-test-lite' );
             break;
         }        
       }
@@ -687,7 +682,7 @@ class BT_BB_AB_Admin {
         if ( is_wp_error( $response ) ) {
           $message = $response->get_error_message();
         } else {
-          $message = __( 'An error occurred, please try again.', 'bt-bb-ab' );
+          $message = __( 'An error occurred, please try again.', 'ab-split-test-lite' );
         }
 
         $base_url = self::get_current_settings_url();
@@ -769,17 +764,7 @@ class BT_BB_AB_Admin {
   }
 
   public static function is_abst_teams(){
-    $licenceDetails = bt_bb_ab_licence_details();
     
-    if(empty($licenceDetails))
-      return false;
-    
-    if(btab_user_level() == 'free')
-      return false;
-    // In EDD, license_limit (sites) = 0 means UNLIMITED, which is Teams
-    // sites > 39 also qualifies as Teams
-    if(isset($licenceDetails->sites) && ($licenceDetails->sites === 0 || $licenceDetails->sites > 39))
-      return true;
       
     return false;
   }
@@ -869,8 +854,8 @@ class BT_BB_AB_Admin {
 
     add_submenu_page(
       'edit.php?post_type=bt_experiments',
-      __('CRO Hub', 'bt-bb-ab'),
-      __('CRO Hub', 'bt-bb-ab'),
+      __('CRO Hub', 'ab-split-test-lite'),
+      __('CRO Hub', 'ab-split-test-lite'),
       'edit_posts',
       'bt_bb_ab_insights',
       [$this, 'insights_page']

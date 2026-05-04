@@ -1,4 +1,7 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
 define( 'BT_BB_AB_EDD_SL_STORE_URL', 'https://absplittest.com' );
 define( 'BT_BB_AB_EDD_ITEM_NAME', 'AB Split Test' );

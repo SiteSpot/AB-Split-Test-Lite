@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 //agency hum
 
@@ -81,11 +82,11 @@ if ( ! class_exists( 'BT_BB_AB_Agency_Hub' ) ) {
 		 */
 		public function ajax_regenerate_key() {
 			if ( ! check_ajax_referer( 'abst_agency_regenerate_key', 'nonce', false ) ) {
-				wp_send_json_error( __( 'Security check failed', 'bt-bb-ab' ), 403 );
+				wp_send_json_error( __( 'Security check failed', 'ab-split-test-lite' ), 403 );
 			}
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( __( 'Permission denied', 'bt-bb-ab' ), 403 );
+				wp_send_json_error( __( 'Permission denied', 'ab-split-test-lite' ), 403 );
 			}
 
 			// Regenerate secret and build new site key.

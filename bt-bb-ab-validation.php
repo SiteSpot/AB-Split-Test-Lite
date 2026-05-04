@@ -1,4 +1,7 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 /**
  * Shared validation and normalization helpers for REST, MCP, CLI, and abilities integrations.
  */
@@ -13,9 +16,7 @@ function abst_get_supported_test_statuses() {
 function abst_get_supported_conversion_types() {
     return [
         'selector', 'link', 'url', 'page', 'time', 'scroll', 'text', 'block', 'javascript',
-        'embed', 'fingerprint', 'advanced',
-        'woo-order-received', 'woo-order-pay', 'edd-purchase',
-        'surecart-order-paid', 'fluentcart-order-paid', 'wp-pizza-is-checkout', 'wp-pizza-is-order-history',
+        'fingerprint', 'advanced',
         'form-fluentform', 'form-cf7', 'form-wpforms', 'form-gravity', 'form-ninjaforms',
         'form-formidable', 'form-forminator', 'form-elementor', 'form-jetformbuilder',
         'form-metform', 'form-mwwpform', 'form-sureforms', 'form-formcraft',
@@ -26,16 +27,9 @@ function abst_get_supported_conversion_types() {
 function abst_get_value_capable_conversion_types() {
     return [
         'javascript',
-        'embed',
         'fingerprint',
+
         'advanced',
-        'woo-order-received',
-        'woo-order-pay',
-        'edd-purchase',
-        'surecart-order-paid',
-        'fluentcart-order-paid',
-        'wp-pizza-is-checkout',
-        'wp-pizza-is-order-history',
     ];
 }
 

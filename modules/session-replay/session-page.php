@@ -8,15 +8,15 @@ if (!defined('ABSPATH')) {
 }
 ?>
 <div class="wrap abst-session-replay-wrap">
-    <h1><?php _e('Session Replay', 'bt-bb-ab'); ?></h1>
-    <p class="description"><?php _e('Watch recordings of user sessions to understand how visitors interact with your site.', 'bt-bb-ab'); ?></p>
+    <h1><?php esc_html_e('Session Replay', 'ab-split-test-lite'); ?></h1>
+    <p class="description"><?php esc_html_e('Watch recordings of user sessions to understand how visitors interact with your site.', 'ab-split-test-lite'); ?></p>
     
     <div class="abst-session-replay-container">
         <!-- Left Sidebar: Filters + Session List -->
         <div class="abst-session-sidebar">
             <!-- Filters -->
             <div class="abst-session-filters">
-                <h3><?php _e('Filters', 'bt-bb-ab'); ?></h3>
+                <h3><?php esc_html_e('Filters', 'ab-split-test-lite'); ?></h3>
                 
                 <p><strong>Advanced Filters Available:</strong></p>
                 <ul style="margin-left: 20px; list-style-type: disc;">
@@ -35,7 +35,7 @@ if (!defined('ABSPATH')) {
                 
                 <p style="margin-top: 15px;">
                     <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">
-                        <?php _e('Upgrade to enable advanced filters', 'bt-bb-ab'); ?>
+                        <?php esc_html_e('Upgrade to enable advanced filters', 'ab-split-test-lite'); ?>
                     </a>
                 </p>
             </div>
@@ -43,11 +43,11 @@ if (!defined('ABSPATH')) {
             <!-- Session List -->
             <div class="abst-session-list">
                 <h3>
-                    <?php _e('Sessions', 'bt-bb-ab'); ?>
+                    <?php esc_html_e('Sessions', 'ab-split-test-lite'); ?>
                     <span id="session-count" class="abst-session-count"></span>
                 </h3>
                 <div id="session-list-container">
-                    <p class="abst-loading"><?php _e('Loading sessions...', 'bt-bb-ab'); ?></p>
+                    <p class="abst-loading"><?php esc_html_e('Loading sessions...', 'ab-split-test-lite'); ?></p>
                 </div>
                 <div id="session-pagination" class="abst-pagination"></div>
             </div>
@@ -58,8 +58,8 @@ if (!defined('ABSPATH')) {
             <!-- Empty State -->
             <div id="replay-empty-state" class="abst-replay-empty">
                 <div class="abst-empty-icon">▶️</div>
-                <h2><?php _e('Select a Session to Replay', 'bt-bb-ab'); ?></h2>
-                <p><?php _e('Choose a session from the list on the left to watch how a visitor interacted with your site.', 'bt-bb-ab'); ?></p>
+                <h2><?php esc_html_e('Select a Session to Replay', 'ab-split-test-lite'); ?></h2>
+                <p><?php esc_html_e('Choose a session from the list on the left to watch how a visitor interacted with your site.', 'ab-split-test-lite'); ?></p>
             </div>
             
             <!-- Replay Area (hidden until session selected) -->
