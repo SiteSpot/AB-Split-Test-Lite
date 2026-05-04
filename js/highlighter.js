@@ -1,5 +1,520 @@
 var ab_highlight_timer;
-var abstSpecialPages = ['woo-order-pay', 'woo-order-received', 'woo', 'javascript', 'edd-purchase', 'surecart-order-paid', 'wp-pizza-is-checkout', 'wp-pizza-is-order-history'];
+var abstSpecialPages = ['woo-order-pay', 'woo-order-received', 'woo', 'javascript', 'edd-purchase', 'surecart-order-paid', 'wp-pizza-is-checkout', 'wp-pizza-is-order-history', 'fluentcart-order-paid'];
+var abstOrderPages = [ 'woo-order-received', 'javascript', 'edd-purchase', 'surecart-order-paid', 'fluentcart-order-paid'];
+// Form submission conversions are prefixed with 'form-' and handled dynamically
+var abstFormConversionPrefix = 'form-';
+
+// ============================================
+// AI SUGGESTION CACHING SYSTEM
+// ============================================
+if (!window.abstAISuggestions) {
+    window.abstAISuggestions = {}; // Keyed by selector - current suggestions
+}
+if (!window.abstAISuggestionHistory) {
+    window.abstAISuggestionHistory = {}; // Keyed by selector - all past suggestions (to avoid repeats)
+}
+
+/**
+ * Cache AI suggestions for a selector
+ * @param {string} selector - CSS selector
+ * @param {array} suggestions - Array of suggestion strings
+ */
+function cacheAISuggestions(selector, suggestions) {
+    if (!selector || !suggestions) return;
+    window.abstAISuggestions[selector] = suggestions;
+    
+    // Also add to history to track all suggestions ever shown
+    if (!window.abstAISuggestionHistory[selector]) {
+        window.abstAISuggestionHistory[selector] = [];
+    }
+    suggestions.forEach(function(s) {
+        var text = typeof s === 'object' ? s.text : s;
+        if (window.abstAISuggestionHistory[selector].indexOf(text) === -1) {
+            window.abstAISuggestionHistory[selector].push(text);
+        }
+    });
+    
+    console.log('Cached AI suggestions for:', selector, suggestions);
+}
+
+/**
+ * Get cached AI suggestions for a selector
+ * @param {string} selector - CSS selector
+ * @returns {array|null} - Array of suggestions or null
+ */
+function getCachedAISuggestions(selector) {
+    return window.abstAISuggestions[selector] || null;
+}
+
+/**
+ * Get suggestion history for a selector (used to exclude from new generations)
+ * @param {string} selector - CSS selector
+ * @returns {array} - Array of all past suggestion strings
+ */
+function getSuggestionHistory(selector) {
+    return window.abstAISuggestionHistory[selector] || [];
+}
+
+jQuery('body').on('click', '.abst-order-value-info', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var $button = jQuery(this);
+    var expanded = $button.attr('aria-expanded') === 'true';
+    $button.attr('aria-expanded', expanded ? 'false' : 'true');
+    $button
+        .closest('#conversion_use_order_value_container')
+        .find('.conversion_order_value_help_panel')
+        .first()
+        .stop(true, true)
+        .slideToggle(180);
+});
+
+function normalizeSuggestionText(suggestion) {
+    return String(typeof suggestion === 'object' ? suggestion.text : suggestion || '').trim();
+}
+
+function mergeUniqueSuggestions(existingSuggestions, incomingSuggestions) {
+    var merged = [];
+    var seen = {};
+
+    function addSuggestion(suggestion) {
+        var text = normalizeSuggestionText(suggestion);
+        if (!text) return;
+        var key = text.toLowerCase();
+        if (seen[key]) return;
+        seen[key] = true;
+        merged.push(suggestion);
+    }
+
+    (existingSuggestions || []).forEach(addSuggestion);
+    (incomingSuggestions || []).forEach(addSuggestion);
+
+    return merged;
+}
+
+function formatCroChatSuggestions(variations) {
+    return (variations || []).map(function(variation) {
+        var text = typeof variation === 'object' ? variation.text : variation;
+        var style = typeof variation === 'object' && variation.style ? variation.style : 'CRO CHAT SUGGESTION';
+        return {
+            text: text,
+            style: style
+        };
+    });
+}
+
+function updateAISuggestionToggleCount() {
+    var count = jQuery('#ai-suggestions-list li').length;
+    jQuery('.abst-ai-suggestions-count').text(count);
+}
+
+function formatCroChatInline(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function formatCroChatResponse(response) {
+    var safeResponse = jQuery('<div>').text(String(response || '').replace(/\r\n/g, '\n').trim()).html();
+    var lines = safeResponse.split('\n');
+    var html = [];
+    var inList = false;
+
+    function closeList() {
+        if (inList) {
+            html.push('</ul>');
+            inList = false;
+        }
+    }
+
+    lines.forEach(function(line) {
+        var trimmed = line.trim();
+
+        if (!trimmed) {
+            closeList();
+            return;
+        }
+
+        if (/^---+$/.test(trimmed)) {
+            closeList();
+            html.push('<hr class="abst-cro-chat-rule">');
+            return;
+        }
+
+        var headingMatch = trimmed.match(/^#{1,6}\s+(.*)$/);
+        if (headingMatch) {
+            closeList();
+            html.push('<p class="abst-cro-chat-heading">' + formatCroChatInline(headingMatch[1]) + '</p>');
+            return;
+        }
+
+        var bulletMatch = trimmed.match(/^[-*]\s+(.*)$/);
+        if (bulletMatch) {
+            if (!inList) {
+                html.push('<ul class="abst-cro-chat-list">');
+                inList = true;
+            }
+            html.push('<li>' + formatCroChatInline(bulletMatch[1]) + '</li>');
+            return;
+        }
+
+        closeList();
+        html.push('<p>' + formatCroChatInline(trimmed) + '</p>');
+    });
+
+    closeList();
+    return html.join('');
+}
+
+function setAISuggestionsExpanded(expanded) {
+    var $toggle = jQuery('.abst-ai-suggestions-toggle');
+    var $content = $toggle.next('.abst-ai-suggestions-content');
+    window.abmagic = window.abmagic || {};
+
+    if (!$toggle.length || !$content.length) {
+        return;
+    }
+
+    $toggle.attr('aria-expanded', expanded ? 'true' : 'false');
+    jQuery('#ai-suggestions').toggleClass('is-expanded', !!expanded);
+    window.abmagic.aiSuggestionsDismissed = !expanded;
+
+    if (expanded) {
+        $content.stop(true, true).slideDown(750);
+        $content.find('#ai-suggestions-list').show();
+    } else {
+        $content.stop(true, true).slideUp(250);
+    }
+}
+
+function setVariationEditorActive(isActive) {
+    jQuery('#variation-editor-container').toggleClass('is-active', !!isActive);
+}
+
+function setGoalsContainerActive(element, isActive) {
+    jQuery('.abst-goals-container').removeClass('is-active');
+    if (element) {
+        jQuery(element).toggleClass('is-active', !!isActive);
+    }
+}
+
+function updateUserRoleRowState() {
+    jQuery('#abst-user-roles-container .abst-user-role').each(function() {
+        var isChecked = jQuery(this).find('input[type="checkbox"]').is(':checked');
+        jQuery(this).toggleClass('is-checked', isChecked);
+    });
+}
+
+function isWithinSelectedMagicElement(target) {
+    var selector = jQuery('#abst-selector-input').val();
+    if (!selector || selector === 'Select an item' || selector === 'Select an item to start testing') {
+        return false;
+    }
+
+    try {
+        var $selected = jQuery(selector);
+        if (!$selected.length) {
+            return false;
+        }
+
+        var targetNode = target && target.nodeType ? target : null;
+        if (!targetNode) {
+            return false;
+        }
+
+        return $selected.filter(function() {
+            return this === targetNode || jQuery.contains(this, targetNode);
+        }).length > 0;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Populate the AI suggestions panel with suggestions and action buttons
+ * @param {array} suggestions - Array of suggestion strings
+ * @param {boolean} append - If true, append to existing suggestions instead of replacing
+ */
+function populateAISuggestionsPanel(suggestions, append) {
+    // Always hide loading indicators when populating
+    jQuery('.ai-loading').hide();
+    jQuery('.abst-ai-suggestions-inline-loading').hide();
+
+    if (!suggestions || suggestions.length === 0) {
+        if (!append) {
+            jQuery('#ai-suggestions').slideUp();
+        }
+        return;
+    }
+    
+    var html = '';
+    suggestions.forEach(function(suggestion, idx) {
+        // Handle both string and object formats
+        var text = typeof suggestion === 'object' ? suggestion.text : suggestion;
+        var style = typeof suggestion === 'object' ? suggestion.style : '';
+        
+        html += '<li class="ai-suggestion-item" data-suggestion-text="' + jQuery('<div>').text(text).html().replace(/"/g, '&quot;') + '">';
+        if (style) {
+            html += '<span class="ai-suggestion-style">' + jQuery('<div>').text(style).html() + '</span>';
+        }
+        html += '<span class="ai-suggestion-text">' + jQuery('<div>').text(text).html() + '</span>';
+        html += '<div class="ai-suggestion-actions">';
+        html += '<button class="ai-add-variation" title="Add as new variation">+ Add to new Variation</button>';
+        html += '<button class="ai-replace-current" title="Replace current variation">↻ Update current Variation</button>';
+        html += '</div>';
+        html += '</li>';
+    });
+    
+    if (append) {
+        jQuery('#ai-suggestions-list').append(html);
+    } else {
+        jQuery('#ai-suggestions-list').html(html);
+    }
+
+    // Show and enable the "Generate More" button
+    jQuery('#ai-generate-more').show().prop('disabled', false);
+
+    updateAISuggestionToggleCount();
+
+    // Show container and auto-expand suggestions content
+    jQuery('#ai-suggestions').slideDown(650, function() {
+        setAISuggestionsExpanded(true);
+    });
+}
+
+/**
+ * Add a new variation with the given text
+ * @param {string} text - The variation text to add
+ */
+function addVariationFromSuggestion(text) {
+    var selector = jQuery('#abst-selector-input').val();
+    if (!selector) {
+        alert('Please select an element first');
+        return;
+    }
+    
+    // Ensure abmagic is initialized
+    if (!window.abmagic) window.abmagic = {};
+    if (!window.abmagic.definition) window.abmagic.definition = [];
+    
+    // Get current element definition
+    var elementIndex = getElementIndexFromMagic(selector);
+    
+    if (elementIndex === -1) {
+        // Element not in definition yet - need to add it first
+        var variationType = getElementType(jQuery(selector)[0]);
+        if (!variationType) {
+            alert('Cannot test this element type');
+            return;
+        }
+        
+        var originalValue;
+        if (variationType === 'image') {
+            originalValue = jQuery(selector).attr('src') || '';
+        } else {
+            originalValue = jQuery(selector).html() || '';
+        }
+        
+        window.abmagic.definition.push({
+            type: variationType,
+            selector: selector,
+            scope: getMagicScope(),
+            variations: [originalValue, text]
+        });
+        elementIndex = window.abmagic.definition.length - 1;
+    } else {
+        // Add to existing element's variations
+        window.abmagic.definition[elementIndex].variations.push(text);
+    }
+    
+    // Update the variation picker to show new variation
+    updateVariationPicker();
+    
+    // Switch to the new variation
+    var newVariationIndex = window.abmagic.definition[elementIndex].variations.length - 1;
+    jQuery('#variation-picker').val(newVariationIndex).trigger('change');
+    
+    // Update editor with the new text
+    if (window.abstEditor) {
+        window.abstEditor.innerHTML = text;
+    }
+    
+    console.log('Added variation from suggestion:', text, 'at index', newVariationIndex);
+}
+
+// Normalize text for comparison - remove extra whitespace, normalize quotes
+function normalizeTextForMatch(str) {
+    if (!str) return '';
+    return str
+        .replace(/^["']+|["']+$/g, '') // Strip leading/trailing quotes
+        .replace(/[\u2018\u2019\u201C\u201D]/g, "'") // Smart quotes to regular
+        .replace(/[\u2014\u2013]/g, '-')             // Em/en dashes to regular
+        .replace(/\.\.\./g, '')  // Remove ellipsis
+        .replace(/…/g, '')       // Unicode ellipsis
+        .replace(/[\r\n\t]+/g, ' ')  // All line breaks and tabs to space
+        .replace(/\s+/g, ' ')    // Multiple spaces to single space
+        .replace(/,\s*/g, ', ')  // Normalize comma spacing
+        .trim()
+        .toLowerCase();
+}
+
+// Get element priority bonus (prefer semantic elements over divs/spans)
+function getElementMatchBonus(el) {
+    var tag = el.tagName.toLowerCase();
+    if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) return 50;
+    if (['p', 'a', 'button', 'li'].includes(tag)) return 30;
+    if (tag === 'span') return 10;
+    return 0; // div and others get no bonus
+}
+
+// Find the best matching element for a given search text
+function findBestMatchingElement(searchText) {
+    var searchTextNorm = normalizeTextForMatch(searchText);
+    var searchTextStart = searchTextNorm.substring(0, 20);
+    
+    var bestMatch = null;
+    var bestMatchScore = 0;
+    
+    jQuery('h1, h2, h3, h4, h5, h6, p, a, button, span, li, div').not('#wpadminbar *, #abst-magic-bar *, .cro-chat-test-bubble, .abst-cro-chat-message *').each(function() {
+        if (jQuery(this).is(':hidden') || jQuery(this).closest('#wpadminbar, #abst-magic-bar').length) return;
+        
+        // Get text content - replace <br> with space
+        var $clone = jQuery(this).clone();
+        $clone.find('br').replaceWith(' ');
+        $clone.html($clone.html().replace(/<br\s*\/?>/gi, ' '));
+        var textWithChildren = normalizeTextForMatch($clone.text());
+        
+        var $cloneDirect = jQuery(this).clone();
+        $cloneDirect.find('br').replaceWith(' ');
+        $cloneDirect.html($cloneDirect.html().replace(/<br\s*\/?>/gi, ' '));
+        $cloneDirect.children().remove();
+        var textDirect = normalizeTextForMatch($cloneDirect.text());
+        
+        var childCount = jQuery(this).find('*').length;
+        var elementBonus = getElementMatchBonus(this);
+        var score = 0;
+        
+        // Exact match on direct text (highest priority)
+        if (textDirect === searchTextNorm) {
+            score = 300 + elementBonus - childCount;
+        }
+        // Exact match including children
+        else if (textWithChildren === searchTextNorm) {
+            score = 250 + elementBonus - childCount;
+        }
+        // "Starts with" match
+        else if (textDirect.startsWith(searchTextNorm) || textWithChildren.startsWith(searchTextNorm)) {
+            score = 150 + elementBonus - childCount;
+        }
+        // Search text starts with element text
+        else if (searchTextNorm.startsWith(textDirect) && textDirect.length > 15) {
+            score = 140 + elementBonus - childCount;
+        }
+        // First 20 chars match
+        else if (searchTextStart.length >= 15 && (textDirect.startsWith(searchTextStart) || textWithChildren.startsWith(searchTextStart))) {
+            score = 120 + elementBonus - childCount;
+        }
+        // Contains match
+        else if (textDirect.includes(searchTextNorm) || textWithChildren.includes(searchTextNorm)) {
+            score = 100 + elementBonus - childCount;
+        }
+        // Partial contains on first 20 chars
+        else if (searchTextStart.length >= 15 && (textDirect.includes(searchTextStart) || textWithChildren.includes(searchTextStart))) {
+            score = 50 + elementBonus - childCount;
+        }
+        
+        if (score > bestMatchScore) {
+            bestMatchScore = score;
+            bestMatch = this;
+        }
+    });
+    
+    return { element: bestMatch, score: bestMatchScore };
+}
+
+// Add persistent AI suggest buttons to elements matching suggestions
+function addAiSuggestButtonsToElements(suggestions) {
+    console.log('addAiSuggestButtonsToElements called with', suggestions);
+    
+    // Remove any existing AI suggest buttons and highlight classes
+    jQuery('.abst-ai-suggest-inline').remove();
+    jQuery('.abst-ai-suggested').removeClass('abst-ai-suggested');
+    
+    if (!suggestions || suggestions.length === 0) return;
+    
+    suggestions.forEach(function(suggestion) {
+        console.log('Looking for:', suggestion.original.substring(0, 50));
+        
+        var result = findBestMatchingElement(suggestion.original);
+        
+        if (result.element) {
+            var $el = jQuery(result.element);
+            console.log('Best match:', result.element, 'score:', result.score);
+            
+            // Make element relative if not already positioned
+            if ($el.css('position') === 'static') {
+                $el.css('position', 'relative');
+            }
+            $el.css('overflow', 'visible');
+            
+            // Add light green highlight box around the element
+            $el.addClass('abst-ai-suggested');
+            
+            var testData = JSON.stringify(suggestion).replace(/"/g, '&quot;');
+            var btn = jQuery('<button class="abst-ai-suggest-inline" data-test="' + testData + '" style="position:absolute; top:-28px; left:0; padding:3px 8px; background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9; border-radius:10px; font-size:10px; cursor:pointer; white-space:nowrap; z-index:99999; box-shadow:0 1px 4px rgba(0,0,0,0.1);">+ AI suggested test element</button>');
+            
+            $el.append(btn);
+        }
+    });
+}
+
+// Handle inline AI suggest button clicks
+jQuery('body').on('click', '.abst-ai-suggest-inline', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    var $btn = jQuery(this);
+    var $parentEl = $btn.parent();
+    var testData = $btn.attr('data-test');
+    var suggestion = JSON.parse(testData.replace(/&quot;/g, '"'));
+    
+    // Remove green highlight from parent element (will get orange from abst-variation)
+    $parentEl.removeClass('abst-ai-suggested');
+    
+    // Remove this button before triggering bubble click
+    $btn.remove();
+    
+    // Find and click the matching bubble
+    jQuery('.cro-chat-test-bubble').each(function() {
+        var bubbleData = JSON.parse(jQuery(this).attr('data-test').replace(/&quot;/g, '"'));
+        if (bubbleData.element === suggestion.element && bubbleData.original === suggestion.original) {
+            jQuery(this).click();
+            return false;
+        }
+    });
+});
+
+// Handle clicks on AI suggested elements (green box) - same as clicking the button
+jQuery('body').on('click', '.abst-ai-suggested', function(e) {
+    // Don't trigger if clicking on the button itself (it has its own handler)
+    if (jQuery(e.target).hasClass('abst-ai-suggest-inline')) {
+        return;
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    var $el = jQuery(this);
+    var $btn = $el.find('.abst-ai-suggest-inline');
+    
+    if ($btn.length > 0) {
+        // Trigger the button click
+        $btn.click();
+    }
+});
+
 
 function bt_highlight(selector){
     if(window.ab_highlight_timer) {
@@ -21,7 +536,7 @@ function bt_highlight(selector){
     window.ab_highlight_timer = setTimeout(function(){
         elem.removeClass('ab-highlight');
     },2000);
-    if(!isInViewport(elem[0]) && !elem.hasClass('scrollingto')) {
+    if(elem.length > 0 && !isInViewport(elem[0]) && !elem.hasClass('scrollingto')) {
         elem.addClass('scrollingto');
         jQuery('html, body').animate({
             //scroll element to 1/3 down view
@@ -47,9 +562,31 @@ jQuery(function(){
     bt_highlight(jQuery(this).val());
   });
 
-  //if url contains query string abmagic then load magic bar
-  if(window.location.search.includes('abmagic'))
-    window.abst_magic_bar();
+  jQuery(document).on('mousedown', function(e) {
+    var target = e.target;
+    var keepActive = jQuery(target).closest('#variation-editor-container, #ai-suggestions').length > 0 || isWithinSelectedMagicElement(target);
+    if (!keepActive) {
+        setVariationEditorActive(false);
+    }
+  });
+
+  jQuery('body').on('focusin click', '#variation-editor-container, #abst-selector-input, #abst-variation-editor-container, .abst-editor-toolbar button, .ai-suggestion-item, .ai-add-variation, .ai-replace-current, .abst-ai-suggestions-toggle', function() {
+    setVariationEditorActive(true);
+  });
+
+  jQuery(document).on('mousedown', function(e) {
+    var target = e.target;
+    var keepActive = jQuery(target).closest('.abst-goals-container').length > 0;
+    if (!keepActive) {
+        jQuery('.abst-goals-container').removeClass('is-active');
+    }
+  });
+
+  jQuery('body').on('focusin click', '.abst-goals-container', function() {
+    setGoalsContainerActive(this, true);
+  });
+
+
 // http://tom.test/?abmagic=1&abiframe=1&text_to_replace=Get%20a%20locker&variations=Reserve%20Your%20Locker%20Now%7CBook%20Your%20Locker%20Instantly%7CSecure%20Your%20Storage%20Spot%20Today
 // if text_to_replace and variations are set, then log url decoded values of each
     if(window.location.search.includes('abmagic') && window.location.search.includes('text_to_replace') && window.location.search.includes('variations'))
@@ -88,12 +625,9 @@ jQuery(function(){
         if (element) {
 
             // Always use the orchestrator that guarantees a page-scoped unique selector
-            const selector = getUniqueSelector(element);
-            if (selector && jQuery(selector).length === 1) {
-                selector = scopeSelectorToPage(selector);
-            }
-            else
-            {
+            let selector = getUniqueSelector(element);
+            // getUniqueSelector already scopes the selector, so no need to call scopeSelectorToPage again
+            if (!selector || jQuery(selector).length !== 1) {
                 //get the unique selector for the element
                 selector = generateShortPath(element);
             }
@@ -104,19 +638,55 @@ jQuery(function(){
             //set bg yellow opacity 50%
             element.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
 
-            //scroll to it
+            // Get variations from URL
+            const variationsParam = urlParams.get('variations');
+            const variationsArray = variationsParam ? variationsParam.split('|') : [];
+            const allVariations = [textToReplace].concat(variationsArray);
+            
+            // Initialize abmagic and create definition
+            if (!window.abmagic) window.abmagic = {};
+            if (!window.abmagic.definition) window.abmagic.definition = [];
+            
+            // Add to definition with all variations from URL
+            window.abmagic.definition.push({
+                selector: selector,
+                variations: allVariations,
+                scope: getMagicScope(),
+                type: 'text'
+            });
 
+            if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
             jQuery('.click-to-start-help').hide();
-            jQuery('#variation-picker-container, #variation-editor-container, .abst-goals-column, #abst-magic-bar-start, #abst-targeting-button, .magic-test-name, .winning-mode').slideDown();
-            setMagicBar(selector, textToReplace, false, 'text');
+            jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').slideDown();
+
+            jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
             bt_highlight(selector);
-            //create a test with the selector
+            jQuery('#abst-selector-input').val(selector).trigger('blur');
+            
+            // Set editor content
+            if (window.abstEditor) {
+                window.abstEditor.innerHTML = textToReplace;
+                jQuery('#abst-variation-editor').val(textToReplace);
+            }
+            
+            // Update unified test object if available
             setTimeout(function(){
-                test_title = urlParams.get('test_title');
-                if(test_title)
-                {
+                const test_title = urlParams.get('test_title');
+                if (window.abmagic.test) {
+                    if (test_title) {
+                        window.abmagic.test.title = test_title;
+                    }
+                    window.abmagic.syncToDOM();
+                } else if (test_title) {
                     jQuery('#abst-magic-bar-title').val(test_title);
                 }
+                
+                // Update variation picker to show all variations
+                if (typeof updateVariationPicker === 'function') {
+                    updateVariationPicker();
+                }
+                
+                console.log('URL test created:', { selector, variations: allVariations, definition: window.abmagic.definition });
             }, 100);
         }
         
@@ -125,6 +695,14 @@ jQuery(function(){
 }
   
   // admin bar test helper...
+  abstBuildAdminBar();
+  // Re-run if config loads late (deferred by cache plugins)
+  document.addEventListener('abst-config-ready', abstBuildAdminBar);
+
+function abstBuildAdminBar() {
+  // Clear previous admin bar content if re-running after late config load
+  jQuery("#wp-admin-bar-ab-test ul.ab-submenu").empty();
+
   var submenus = '';
   var bt_conversion_icon = '<div class="ab-flag-filled"></div>';
   var bt_variation_icon = '<div class="ab-split"></div>';
@@ -139,6 +717,22 @@ jQuery(function(){
       jQuery.each(bt_conversion_vars, function(index,value){
         conversions[value.eid] = value;
       });
+   }
+
+   // Add New Magic Test link at the top
+   submenus += '<li><a class="ab-item ab-sub-secondary" id="wp-admin-bar-ab-new-magic-test" href="#" onclick="abst_magic_bar();">✨ New Magic Test</a></li>';
+   
+   // Add AI Suggestions link
+   if(typeof btab_vars !== 'undefined' && btab_vars.abst_disable_ai !== '1') {
+     submenus += '<li><a class="ab-item ab-sub-secondary" id="ab-ai">🤖 AI Suggestions</a></li>';
+   }
+   
+   // Add heatmaps button third
+   if(typeof btab_vars !== 'undefined' && btab_vars.abst_enable_user_journeys === '1') {
+     if(typeof btab_vars.post_id !== 'undefined' && btab_vars.post_id) {
+       heatmapUrl = bt_adminurl + 'edit.php?post_type=bt_experiments&page=abst-heatmaps&post=' + btab_vars.post_id + '&size=large&mode=clicks';
+       submenus += '<li><a class="ab-item ab-sub-secondary" href="' + heatmapUrl + '" target="_blank">🔥 Heat/Click/Scroll Maps </a></li>';
+     }
    }
 
    if(window.bt_experiments)
@@ -181,7 +775,7 @@ jQuery(function(){
                     preview_url.searchParams.set('abtid', index);
                     preview_url.searchParams.set('abtv', 'magic-'+ix);
                     let link_html = '<span title="Copy Preview URL" class="ab-copy-link" data-preview="'+preview_url.toString()+'">'+bt_link_icon+'</span>';
-                    
+
                     submenus += '<li><a class="ab-item" magic-eid="' + index + '" magic-index="' + ix + '"> '+ variationText + link_html + '</a></li>';
                   });
                 }
@@ -232,9 +826,9 @@ jQuery(function(){
 
   var bt_variations_found = jQuery('[bt-eid]:not([bt-eid=""])[bt-variation]:not([bt-variation=""])');
 
-  if(bt_variations_found.length || !jQuery.isEmptyObject(conversions) || magicResults)
-  { 
-    submenus += '<li><a class="ab-item ab-sub-secondary" id="ab-clear-test-cookies">Clear AB Test Cookies</a></li>';
+  if(true)
+  {
+    // submenus += '<li><a class="ab-item ab-sub-secondary" id="ab-clear-test-cookies">Clear AB Test Cookies</a></li>'; // nobody uses this do they email us if you do.
 
     //add admin bar if not there
     if(!jQuery('#wp-admin-bar-ab-test').length)
@@ -320,6 +914,7 @@ jQuery(function(){
         interval: 100
     });
   }
+} // end abstBuildAdminBar
 });
 
 
@@ -511,32 +1106,38 @@ function getAbPageContent(){
  * @param {string} abAiType - The type of AI to use. (rewrite, suggestions, magic)
  * @param {string} outputSelector - The selector for the output element.
  */
-function sendToOpenAI(query,abAiType,outputSelector) {
+function sendToOpenAI(query,abAiType,outputSelector, selectorContext) {
     if(btab_vars.abst_disable_ai == '1'){
         console.log('ABST AI is disabled');
         return;
     }
 
-    jQuery("#ai-suggestions").slideDown();
-    if(!jQuery("#ai-suggestions p.ai-loading").length) 
-        jQuery("#ai-suggestions").append('<p class="ai-loading">Generating AI Suggestions ✨</p>');
+    showAILoadingState();
 
-    context = getAbPageContent();
-
-    //convert to markdown w turndown
-    var turndownService = new TurndownService();
-    var markdown = turndownService.turndown(context);
+    // Use enhanced context if available, fallback to legacy
+    var markdown;
+    if (window.abstAI && window.abstAI.buildContext) {
+        var aiContext = window.abstAI.buildContext({ maxContentChars: 30000 });
+        markdown = window.abstAI.formatContext(aiContext);
+        console.log('ABST AI: Using enhanced context (' + markdown.length + ' chars)');
+    } else {
+        // Fallback to legacy method
+        var context = getAbPageContent();
+        var turndownService = new TurndownService();
+        markdown = turndownService.turndown(context);
+    }
     query = query.trim();
 
     if (!window.abmagic) window.abmagic = {};
     if (!window.abmagic.aicache) window.abmagic.aicache = {};
 
+    var requestSelector = selectorContext || jQuery('#abst-selector-input').val() || '';
     var aicachekey = abAiType + '_' + query;
 
     //check for magic cache
     if( window.abmagic.aicache[aicachekey])
     {
-        show_magic_ai(window.abmagic.aicache[aicachekey]);
+        show_magic_ai(window.abmagic.aicache[aicachekey], requestSelector);
         return;
     }
     aidata = {
@@ -555,9 +1156,16 @@ function sendToOpenAI(query,abAiType,outputSelector) {
         url: bt_ajaxurl,
         type : 'post',
         data : aidata,
+        error: function(xhr, status, error) {
+            console.error('ABST AI: AJAX request failed', status, error);
+            jQuery('.ai-loading').hide();
+            jQuery('#ai-suggestions').html('<p style="color: red;">AI request failed: ' + (error || status) + '</p>');
+        },
         success: function( response ) {
+            console.log('ABST AI: Response received', response);
             if(response && typeof response.error !== 'undefined')
             {
+                jQuery('.ai-loading').hide();
                 if(typeof response.error.message !== 'undefined')
                 {
                     jQuery(outputSelector).parent().empty().html('<small><strong>' + response.error.message + '</strong></small>');
@@ -582,13 +1190,14 @@ function sendToOpenAI(query,abAiType,outputSelector) {
 
                     var ideas = JSON.parse(respo);
 
-                    console.log(ideas);
+                    //console.log(ideas);
                     //remove ```json and ``` from response
                     outt += "<h3>CRO Page Score: " + ideas.overall_page_rating + "%</h3><h4> You should consider adding:</h4><p> " + ideas.missing_content +"</p>";
                     jQuery.each(ideas.suggestions,function(index, content){
         
                         outt += "<div class='ai-option'><h4>" +  content.test_name + "</h4><p> " + content.reason_why +"</p><p>Original text:<BR><strong>" + content.original_string + "</strong></p><p>Suggestions:</p>";
                         jQuery.each(content.suggestions,function(index, suggestion){
+                            console.log(suggestion);
         
                             outt += "<p class='ai-suggestion-item'>" + suggestion + "</p>";
                         });
@@ -597,19 +1206,26 @@ function sendToOpenAI(query,abAiType,outputSelector) {
                 }
                 else if(abAiType == 'magic')
                 {
+                    // Check if response has the expected structure
+                    if (!response.choices || !response.choices[0] || !response.choices[0]['message'] || !response.choices[0]['message']['content']) {
+                        console.error('ABST AI: Invalid response structure', response);
+                        jQuery('.ai-loading').hide();
+                        jQuery('#ai-suggestions').html('<p style="color: red;">AI response format error. Please try again.</p>');
+                        return;
+                    }
                     window.abmagic.aicache[aicachekey] = response.choices[0]['message']['content'];
                     //console.log('allcache',window.abmagic.aicache);
                     //dont do if #imageSelector is visible
                     if(!jQuery('#imageSelector').is(':visible'))
                     {
-                        show_magic_ai(response.choices[0]['message']['content']);
+                        show_magic_ai(response.choices[0]['message']['content'], requestSelector);
                     }
                 }
                 else
                 {
                     suggestions = JSON.parse(response.choices[0]['message']['content']);
                     jQuery.each(suggestions.suggestions,function(index, choice){
-                        outt += "<div class='ai-option'>" + choice +"</div>";
+                        outt += "<div class='ai-option'>" + choice.text +" <small style='text-transform: uppercase; color: #8a8a8aff; display: block;'>" + choice.style + "</small></div>";
                     });                  
                 }
 
@@ -643,20 +1259,665 @@ function sendToOpenAI(query,abAiType,outputSelector) {
     });
 }
 
-function show_magic_ai(response){
-    outt='';
-    jQuery("#ai-suggestions-list").empty();
-    suggestions = JSON.parse(response).suggestions;
-    //console.log(suggestions);
-    jQuery.each(suggestions,function(index, choice){
-        outt += "<li class='ai-suggestion-item'>" + choice + "</li>";
-    });
-    jQuery("#ai-suggestions p").remove();
-    jQuery("#ai-suggestions").prepend('<p>AI Suggestions ✨ <small>Click to add to test variations & edit.</small></p>').slideDown(1000);
-    //console.log(outt);
-    jQuery("#ai-suggestions-list").html(outt);
-    jQuery("#ai-suggestions-list").slideDown(1000);
+function show_magic_ai(response, selectorContext){
+    try {
+        // Clean up response if it contains markdown code blocks
+        var cleanResponse = response;
+        if (typeof cleanResponse === 'string') {
+            cleanResponse = cleanResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+        }
+        
+        var parsed = JSON.parse(cleanResponse);
+        var suggestions = parsed.suggestions;
+        
+        if (!suggestions || !Array.isArray(suggestions)) {
+            console.error('ABST AI: No suggestions array in response', parsed);
+            jQuery('.ai-loading').hide();
+            jQuery('#ai-suggestions').html('<p style="color: orange;">No suggestions received. Try clicking a different element.</p>');
+            return;
+        }
+        
+        console.log('ABST AI: Received ' + suggestions.length + ' suggestions');
+        
+        // Cache suggestions for current selector
+        var selector = selectorContext || jQuery('#abst-selector-input').val();
+        var existingSuggestions = selector ? (getCachedAISuggestions(selector) || []) : [];
+        var mergedSuggestions = mergeUniqueSuggestions(existingSuggestions, suggestions);
+
+        if (selector) {
+            cacheAISuggestions(selector, mergedSuggestions);
+        }
+
+        if (selectorContext && jQuery('#abst-selector-input').val() !== selectorContext) {
+            console.log('ABST AI: Cached suggestions for non-selected element:', selectorContext);
+            return;
+        }
+
+        if (existingSuggestions.length > 0 && mergedSuggestions.length === existingSuggestions.length) {
+            jQuery('.ai-loading').hide();
+            console.log('ABST AI: No unique suggestions to append for:', selector);
+            return;
+        }
+
+        // Use the unified panel population function
+        populateAISuggestionsPanel(mergedSuggestions);
+    } catch (e) {
+        console.error('ABST AI: Failed to parse AI response', e, response);
+        jQuery('.ai-loading').hide();
+        jQuery('#ai-suggestions').html('<p style="color: red;">Failed to parse AI response. Please try again.</p>');
+    }
 }
+
+function hideAISuggestionsPanel() {
+    window.abmagic = window.abmagic || {};
+    window.abmagic.aiSuggestionsDismissed = false;
+    jQuery('.ai-loading').hide();
+    jQuery('.abst-ai-suggestions-inline-loading').hide();
+    jQuery('#ai-suggestions-list').hide().empty();
+    jQuery('#ai-generate-more').hide();
+    updateAISuggestionToggleCount();
+    setAISuggestionsExpanded(false);
+    jQuery('#ai-suggestions').slideUp();
+}
+
+function showAILoadingState() {
+    window.abmagic = window.abmagic || {};
+    jQuery('#ai-suggestions p.ai-loading').remove();
+    updateAISuggestionToggleCount();
+
+    // Ensure skeleton items are shown (in case called independently)
+    if (jQuery('#ai-suggestions-list').children().length === 0) {
+        var skeletonHtml = '';
+        for (var i = 0; i < 3; i++) {
+            skeletonHtml += '<div class="ai-skeleton-item">';
+            skeletonHtml += '<div class="ai-skeleton ai-skeleton-style"></div>';
+            skeletonHtml += '<div class="ai-skeleton ai-skeleton-text"></div>';
+            skeletonHtml += '</div>';
+        }
+        jQuery('#ai-suggestions-list').html(skeletonHtml).show();
+    }
+
+    jQuery('#ai-generate-more').show().prop('disabled', true);
+    jQuery('.abst-ai-suggestions-inline-loading').show();
+}
+
+function showAISuggestionsForSelector(selector, sourceText, type) {
+    if (type === 'image') {
+        setVariationEditorActive(false);
+        hideAISuggestionsPanel();
+        return true;
+    }
+
+    if (!selector) {
+        setVariationEditorActive(false);
+        hideAISuggestionsPanel();
+        return true;
+    }
+
+    setVariationEditorActive(true);
+
+    // Show skeleton placeholders immediately while waiting for cache or AI
+    var skeletonHtml = '';
+    for (var i = 0; i < 3; i++) {
+        skeletonHtml += '<div class="ai-skeleton-item">';
+        skeletonHtml += '<div class="ai-skeleton ai-skeleton-style"></div>';
+        skeletonHtml += '<div class="ai-skeleton ai-skeleton-text"></div>';
+        skeletonHtml += '</div>';
+    }
+    jQuery('#ai-suggestions-list').html(skeletonHtml).show();
+    jQuery('#ai-generate-more').show().prop('disabled', true);
+    jQuery('#ai-suggestions').slideDown(650, function() {
+        setAISuggestionsExpanded(true);
+    });
+
+    var cachedSuggestions = getCachedAISuggestions(selector);
+    if (cachedSuggestions && cachedSuggestions.length > 0) {
+        console.log('Found cached AI suggestions for:', selector);
+        populateAISuggestionsPanel(cachedSuggestions);
+        return true;
+    }
+
+    var urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.get('text_to_replace') && urlParams.get('variations')){
+        console.log('MAGIC TEST DEF IN URL PARAMS, building suggestions');
+        var variations = urlParams.get('variations').split('|');
+        cacheAISuggestions(selector, variations);
+        populateAISuggestionsPanel(variations);
+        window.history.replaceState(null, '', window.location.pathname + '?' + urlParams.toString());
+        return true;
+    }
+
+    if (sourceText && sourceText.trim()) {
+        console.log('No cached suggestions, calling AI');
+        showAILoadingState();
+        sendToOpenAI(sourceText, 'magic', '#ai-suggestions-list', selector);
+        return true;
+    }
+
+    hideAISuggestionsPanel();
+    return true;
+}
+
+function getMagicPrimaryGoalFromExperiment(experiment) {
+    if (!experiment) {
+        return { type: 'click', value: '' };
+    }
+
+    var conversionType = experiment.conversion_page || 'click';
+    var goalValue = '';
+
+    if (!isNaN(parseInt(conversionType, 10)) && String(parseInt(conversionType, 10)) === String(conversionType)) {
+        return {
+            type: 'page',
+            value: String(conversionType)
+        };
+    }
+
+    if (conversionType === 'selector') {
+        goalValue = experiment.conversion_selector || '';
+    } else if (conversionType === 'url') {
+        goalValue = experiment.conversion_url || '';
+    } else if (conversionType === 'time') {
+        goalValue = experiment.conversion_time || '';
+    } else if (conversionType === 'text') {
+        goalValue = experiment.conversion_text || '';
+    } else if (conversionType === 'link') {
+        goalValue = experiment.conversion_link_pattern || '';
+    } else if (conversionType === 'scroll') {
+        goalValue = experiment.conversion_scroll || '';
+    }
+
+    return {
+        type: conversionType,
+        value: goalValue
+    };
+}
+
+function getMagicSecondaryGoalsFromExperiment(experiment) {
+    var secondaryGoals = [];
+    var goals = experiment ? experiment.goals : null;
+
+    if (typeof goals === 'string') {
+        try {
+            goals = JSON.parse(goals);
+        } catch (e) {
+            goals = null;
+        }
+    }
+
+    if (!goals || typeof goals !== 'object') {
+        return secondaryGoals;
+    }
+
+    if (Array.isArray(goals)) {
+        goals.forEach(function(goal) {
+            if (goal && typeof goal === 'object') {
+                if (goal.type) {
+                    secondaryGoals.push({
+                        type: goal.type,
+                        value: goal.value || ''
+                    });
+                    return;
+                }
+
+                var nestedType = Object.keys(goal)[0];
+                if (nestedType) {
+                    secondaryGoals.push({
+                        type: nestedType,
+                        value: goal[nestedType] || ''
+                    });
+                }
+            }
+        });
+        return secondaryGoals;
+    }
+
+    var directGoalKeys = Object.keys(goals);
+    var looksLikeSingleGoalMap = directGoalKeys.length > 0 && directGoalKeys.every(function(key) {
+        return typeof goals[key] !== 'object';
+    });
+
+    if (looksLikeSingleGoalMap) {
+        var singleGoalType = directGoalKeys[0];
+        secondaryGoals.push({
+            type: singleGoalType,
+            value: goals[singleGoalType] || ''
+        });
+        return secondaryGoals;
+    }
+
+    Object.keys(goals).forEach(function(key) {
+        var goal = goals[key];
+        if (!goal) {
+            return;
+        }
+
+        if (goal.type) {
+            secondaryGoals.push({
+                type: goal.type,
+                value: goal.value || ''
+            });
+        } else if (typeof goal === 'object') {
+            var goalType = Object.keys(goal)[0];
+            if (!goalType) {
+                return;
+            }
+
+            secondaryGoals.push({
+                type: goalType,
+                value: goal[goalType] || ''
+            });
+        }
+    });
+
+    return secondaryGoals;
+}
+
+function applyMagicGoalToContainer($goalContainer, goal) {
+    if (!$goalContainer || !$goalContainer.length || !goal || !goal.type) {
+        return;
+    }
+
+    var goalType = goal.type;
+    var goalValue = goal.value || '';
+    var $goalSelect = $goalContainer.find('select.goal-type').first();
+
+    if (!$goalSelect.length) {
+        return;
+    }
+
+    $goalSelect.val(goalType).trigger('change');
+    $goalContainer.find('.abst-goal-input-value').val(goalValue);
+
+    if (goalType === 'page' && goalValue) {
+        jQuery.ajax({
+            url: abst_magic_data.ajax_url,
+            dataType: 'json',
+            data: {
+                q: goalValue,
+                action: 'ab_page_selector'
+            },
+            success: function(pages) {
+                if (!Array.isArray(pages) || !pages.length) {
+                    return;
+                }
+
+                var pageMatch = pages.find(function(page) {
+                    return Array.isArray(page) && String(page[0]) === String(goalValue);
+                }) || pages[0];
+
+                if (!Array.isArray(pageMatch) || pageMatch.length < 2) {
+                    return;
+                }
+
+                var $pageInput = $goalContainer.find('.abst-goal-page-input');
+                if ($pageInput.length) {
+                    $pageInput.val(pageMatch[1]);
+                }
+                $goalContainer.find('.abst-goal-input-value').val(String(pageMatch[0]));
+            }
+        });
+    }
+}
+
+function loadMagicTestFromUrl() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var testId = urlParams.get('testid');
+
+    if (!testId || typeof bt_experiments === 'undefined' || !bt_experiments[testId]) {
+        return false;
+    }
+
+    var experiment = bt_experiments[testId];
+    if (!experiment || experiment.test_type !== 'magic' || !experiment.magic_definition) {
+        return false;
+    }
+
+    var magicDefinition;
+    try {
+        magicDefinition = JSON.parse(experiment.magic_definition);
+    } catch (e) {
+        console.error('ABST: Failed to parse magic_definition for test', testId, e);
+        return false;
+    }
+
+    if (!Array.isArray(magicDefinition) || magicDefinition.length === 0) {
+        return false;
+    }
+
+    if (!window.abmagic) window.abmagic = {};
+    window.abmagic.definition = magicDefinition;
+    window.abmagic.test = window.abmagic.test || {};
+    window.abmagic.editingTestId = testId;
+    window.abmagic.scopeDirty = false;
+
+    window.abmagic.test.title = experiment.name || window.abmagic.test.title || '';
+    window.abmagic.test.conversion_style = experiment.conversion_style || 'bayesian';
+    window.abmagic.test.use_order_value = experiment.use_order_value === '1' || experiment.use_order_value === 1;
+    window.abmagic.test.url_query = experiment.url_query || '';
+    window.abmagic.test.targeting = {
+        device_size: experiment.target_option_device_size || 'all',
+        traffic_percentage: parseInt(experiment.target_percentage, 10) || 100,
+        allowed_roles: Array.isArray(experiment.allowed_roles) ? experiment.allowed_roles : (abst_magic_data.defaults || []),
+        scope: getMagicScopeFromDefinition(magicDefinition)
+    };
+    window.abmagic.test.goals = {
+        primary: getMagicPrimaryGoalFromExperiment(experiment),
+        secondary: getMagicSecondaryGoalsFromExperiment(experiment)
+    };
+
+    if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
+    jQuery('.click-to-start-help').hide();
+    jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').show();
+    jQuery('.magic-test-name').css('display', 'flex');
+    jQuery('#abst-magic-bar-start').text('Update Test');
+
+    if (typeof refreshVariationClasses === 'function') {
+        refreshVariationClasses();
+    }
+
+    if (window.abmagic.syncToDOM) {
+        window.abmagic.syncToDOM();
+    }
+
+    var firstDef = magicDefinition[0];
+    if (firstDef && firstDef.selector) {
+        var initialVariationIndex = firstDef.variations && firstDef.variations.length > 1 ? 1 : 0;
+        jQuery('#variation-picker').val(String(initialVariationIndex));
+        setMagicBar(
+            firstDef.selector,
+            (firstDef.variations && firstDef.variations[initialVariationIndex]) || (firstDef.variations && firstDef.variations[0]) || '',
+            false,
+            firstDef.type || 'text',
+            true
+        );
+        jQuery('.abst-variation-marker .abst-marker-var').removeClass('active');
+        jQuery('.abst-variation-marker .abst-marker-var[data-var="' + initialVariationIndex + '"]').addClass('active');
+    }
+
+    console.log('ABST: Loaded existing magic test into Magic Mode', testId, experiment);
+    return true;
+}
+
+/**
+ * Generate more AI suggestions, excluding previously shown ones
+ * @param {string} text - The text to generate suggestions for
+ * @param {string} excludeList - Pipe-separated list of suggestions to exclude
+ * @param {function} callback - Callback function(suggestions)
+ */
+function generateMoreSuggestions(text, excludeList, callback) {
+    if (btab_vars.abst_disable_ai == '1') {
+        console.log('ABST AI is disabled');
+        callback([]);
+        return;
+    }
+    
+    // Use enhanced context if available
+    var markdown = '';
+    if (window.abstAI && window.abstAI.buildContext) {
+        var aiContext = window.abstAI.buildContext({ maxContentChars: 15000 });
+        markdown = window.abstAI.formatContext(aiContext);
+    }
+    
+    var aidata = {
+        'action': 'send_to_openai',
+        'input_text': text,
+        'type': 'magic',
+        'title': 'magic',
+        'context': markdown,
+        'domain': btab_vars.domain,
+        'exclude_suggestions': excludeList
+    };
+    
+    if (window.abaiScreenshot) {
+        aidata['screenshot'] = window.abaiScreenshot;
+    }
+    
+    jQuery.ajax({
+        url: bt_ajaxurl,
+        type: 'post',
+        data: aidata,
+        success: function(response) {
+            if (response && typeof response.error !== 'undefined') {
+                console.log('AI Error:', response.error);
+                callback([]);
+                return;
+            }
+            
+            try {
+                var content = response.choices[0]['message']['content'];
+                // Clean up response
+                content = content.replace(/```json/g, '').replace(/```/g, '');
+                var parsed = JSON.parse(content);
+                var suggestions = parsed.suggestions || [];
+                
+                // Filter out any that are still in the exclude list (AI sometimes repeats)
+                if (excludeList) {
+                    var excludeArray = excludeList.split('|||');
+                    suggestions = suggestions.filter(function(s) {
+                        var text = typeof s === 'object' ? s.text : s;
+                        return excludeArray.indexOf(text) === -1;
+                    });
+                }
+                
+                callback(suggestions);
+            } catch (e) {
+                console.log('Error parsing AI response:', e);
+                callback([]);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('AI request failed:', error);
+            callback([]);
+        }
+    });
+}
+
+// ============================================
+// CRO CHAT - Conversational AI Assistant
+// ============================================
+
+/**
+ * Initialize CRO Chat state
+ */
+if (!window.abstCroChat) {
+    window.abstCroChat = {
+        history: [],
+        isOpen: false,
+        pageContext: null
+    };
+}
+
+/**
+ * Send a message to the CRO Chat AI
+ * @param {string} userMessage - The user's question
+ * @param {function} callback - Callback with (error, response)
+ */
+function sendCroChatMessage(userMessage, callback) {
+    if (!userMessage || !userMessage.trim()) {
+        callback('Please enter a message', null);
+        return;
+    }
+
+    // Build context on first message
+    if (!window.abstCroChat.pageContext && window.abstAI) {
+        window.abstCroChat.pageContext = window.abstAI.formatContext(
+            window.abstAI.buildContext({ maxContentChars: 30000 })
+        );
+    }
+
+    var aidata = {
+        'action': 'send_to_openai',
+        'type': 'cro-chat',
+        'input_text': window.abstCroChat.history.length ? '' : (window.abstCroChat.pageContext || ''),
+        'user_question': userMessage.trim(),
+        'conversation_history': JSON.stringify(window.abstCroChat.history),
+        'domain': btab_vars.domain
+    };
+
+    if (window.abaiScreenshot && !window.abstCroChat.history.length) {
+        aidata['screenshot'] = window.abaiScreenshot;
+    }
+
+    jQuery.ajax({
+        url: bt_ajaxurl,
+        type: 'post',
+        data: aidata,
+        success: function(response) {
+            if (response && response.error) {
+                callback(response.error.message || response.error, null);
+                return;
+            }
+
+            var aiResponse = '';
+            if (response && response.choices && response.choices[0]) {
+                aiResponse = response.choices[0].message.content;
+            }
+
+            // Add to conversation history
+            window.abstCroChat.history.push({ role: 'user', content: userMessage });
+            window.abstCroChat.history.push({ role: 'assistant', content: aiResponse });
+
+            // Keep history manageable (last 10 exchanges)
+            if (window.abstCroChat.history.length > 20) {
+                window.abstCroChat.history = window.abstCroChat.history.slice(-20);
+            }
+
+            callback(null, aiResponse);
+        },
+        error: function(xhr, status, error) {
+            callback('Request failed: ' + error, null);
+        }
+    });
+}
+
+/**
+ * Clear CRO Chat history
+ */
+function clearCroChatHistory() {
+    window.abstCroChat.history = [];
+    window.abstCroChat.pageContext = null;
+}
+
+// ============================================
+// FULL PAGE OPTIMIZE - Bulk Element Changes
+// ============================================
+
+/**
+ * Request full page optimization suggestions
+ * @param {string} optimizationGoal - What the user wants to optimize for
+ * @param {function} callback - Callback with (error, response)
+ */
+function requestFullPageOptimize(optimizationGoal, callback) {
+    if (!optimizationGoal || !optimizationGoal.trim()) {
+        optimizationGoal = 'Improve overall conversion rate';
+    }
+
+    // Build context
+    var pageContext = '';
+    if (window.abstAI) {
+        pageContext = window.abstAI.formatContext(
+            window.abstAI.buildContext({ maxContentChars: 30000 })
+        );
+    }
+
+    var aidata = {
+        'action': 'send_to_openai',
+        'type': 'fullpage-optimize',
+        'input_text': pageContext,
+        'optimization_goal': optimizationGoal.trim(),
+        'domain': btab_vars.domain
+    };
+
+    if (window.abaiScreenshot) {
+        aidata['screenshot'] = window.abaiScreenshot;
+    }
+
+    jQuery.ajax({
+        url: bt_ajaxurl,
+        type: 'post',
+        data: aidata,
+        success: function(response) {
+            if (response && response.error) {
+                callback(response.error.message || response.error, null);
+                return;
+            }
+
+            try {
+                var content = response.choices[0].message.content;
+                // Clean up JSON if wrapped in markdown
+                content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+                var parsed = JSON.parse(content);
+                callback(null, parsed);
+            } catch (e) {
+                callback('Failed to parse AI response: ' + e.message, null);
+            }
+        },
+        error: function(xhr, status, error) {
+            callback('Request failed: ' + error, null);
+        }
+    });
+}
+
+/**
+ * Apply full page optimization to create a test
+ * @param {object} optimization - The parsed optimization response
+ * @returns {object} Magic test definition ready to save
+ */
+function applyFullPageOptimization(optimization) {
+    if (!optimization || !optimization.elements) {
+        console.error('Invalid optimization data');
+        return null;
+    }
+
+    var magicDefinitions = [];
+    
+    optimization.elements.forEach(function(element) {
+        // Try to find the element on the page
+        var foundElement = null;
+        var selector = '';
+        
+        // Search for the original text in the page
+        jQuery('h1, h2, h3, h4, h5, h6, p, a, button, span, li, td, th, label, div').each(function() {
+            var text = jQuery(this).clone().children().remove().end().text().trim();
+            if (text === element.original || text.includes(element.original)) {
+                foundElement = this;
+                return false; // break
+            }
+        });
+
+        if (foundElement) {
+            selector = getUniqueSelector(foundElement);
+            
+            // Build variations array
+            var variations = [element.original]; // A = original
+            if (element.variations) {
+                if (element.variations.B) variations.push(element.variations.B);
+                if (element.variations.C) variations.push(element.variations.C);
+                if (element.variations.D) variations.push(element.variations.D);
+            }
+
+            magicDefinitions.push({
+                selector: selector,
+                type: 'text',
+                original: element.original,
+                scope: getMagicScope(),
+                variations: variations,
+                why: element.why || ''
+            });
+        } else {
+            console.warn('Could not find element on page:', element.original.substring(0, 50) + '...');
+        }
+    });
+
+    return {
+        test_name: optimization.test_name || 'AI Full Page Optimization',
+        reasoning: optimization.reasoning || '',
+        elements: magicDefinitions
+    };
+}
+
+// CRO Chat and Full Page Optimize are exported at the end of the file with other abstAI functions
 
 
 function loadingMessage(){
@@ -762,6 +2023,41 @@ function selectorDetection(){
     var selectorHoverDebounce = null;
     var lastProcessedElement = null;
 
+    // Validate selector on click - flash green if element exists, orange if not
+    jQuery('body').on('click','#abst-selector-input',function(){
+        var $inputElement = jQuery(this);
+        var selectorValue = $inputElement.val();
+        
+        if(selectorValue && selectorValue.trim() !== '' && selectorValue !== 'Select an item to start testing') {
+            try {
+                var $targetElement = jQuery(selectorValue);
+                if($targetElement.length > 0) {
+                    // Element exists - flash green border on input and highlight element
+                    $inputElement.css('transition', 'box-shadow 0.2s ease');
+                    $inputElement.css('box-shadow', '0 0 0 3px #4CAF50');
+                    bt_highlight(selectorValue);
+                    setTimeout(function(){
+                        $inputElement.css('box-shadow', '');
+                    }, 1500);
+                } else {
+                    // Element doesn't exist - flash orange border on input
+                    $inputElement.css('transition', 'box-shadow 0.2s ease');
+                    $inputElement.css('box-shadow', '0 0 0 3px #FF9800');
+                    setTimeout(function(){
+                        $inputElement.css('box-shadow', '');
+                    }, 1500);
+                }
+            } catch(e) {
+                // Invalid selector syntax - flash orange
+                $inputElement.css('transition', 'box-shadow 0.2s ease');
+                $inputElement.css('box-shadow', '0 0 0 3px #FF9800');
+                setTimeout(function(){
+                    $inputElement.css('box-shadow', '');
+                }, 1500);
+            }
+        }
+    });
+
     jQuery('body').on('blur','#abst-selector-input',function(){
         console.log('blur');
         var $inputElement = jQuery(this); // Store jQuery object for the input element
@@ -803,6 +2099,7 @@ function selectorDetection(){
                     
                     // Set content in the contentEditable editor without triggering events
                     window.abstEditor.innerHTML = jQuery(newSelectorValue).html() || '';
+                    showAISuggestionsForSelector(newSelectorValue, window.abstEditor.innerHTML, getElementType(jQuery(newSelectorValue)[0]));
                     console.log('updated ', newSelectorValue);
                 }
                 
@@ -821,59 +2118,269 @@ function selectorDetection(){
 
     });
 
+    // CRO Chat - Send message on button click
+    jQuery('body').on('click', '#abst-cro-chat-send', function(e) {
+        e.preventDefault();
+        var input = jQuery('#abst-cro-chat-input');
+        var message = input.val().trim();
+        if (!message) return;
+
+        var messagesContainer = jQuery('#abst-cro-chat-messages');
+        messagesContainer.show();
+
+        // Add user message
+        messagesContainer.append('<div class="abst-cro-chat-response abst-cro-chat-response--user"><strong class="abst-cro-chat-response-label">You:</strong><p>' + jQuery('<div>').text(message).html() + '</p></div>');
+        messagesContainer.append('<div id="cro-chat-loading" class="abst-cro-chat-response abst-cro-chat-response--loading"><p><em>Thinking...</em></p></div>');
+        messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+
+        input.val('').prop('disabled', true);
+        jQuery('#abst-cro-chat-send').prop('disabled', true);
+        
+        // After 2 seconds, show screenshot thumbnail and update to "Processing..." (if still loading)
+        var loadingTimeout = setTimeout(function() {
+            var loadingEl = jQuery('#cro-chat-loading');
+            if (loadingEl.length && !loadingEl.hasClass('has-response')) {
+                var screenshotHtml = '';
+                if (window.abaiScreenshot) {
+                    screenshotHtml = '<div class="abst-cro-chat-loading-screenshot"><img src="' + window.abaiScreenshot + '" style="width: fit-content; max-width: 100%; height: auto; background: #fff; border-radius: 4px; border: 1px solid #ddd; padding: 2px; display: block;"></div>';
+                }
+                loadingEl.html(screenshotHtml + '<p><em>Processing...</em></p>');
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+            }
+        }, 2000);
+
+        window.abstAI.croChat.send(message, function(err, response) {
+            clearTimeout(loadingTimeout);
+            jQuery('#cro-chat-loading').addClass('has-response').remove();
+            input.prop('disabled', false);
+            jQuery('#abst-cro-chat-send').prop('disabled', false);
+
+            if (err) {
+                messagesContainer.append('<div class="abst-cro-chat-response abst-cro-chat-response--error"><strong class="abst-cro-chat-response-label">Error:</strong><p>' + jQuery('<div>').text(err).html() + '</p></div>');
+            } else {
+                // Parse test suggestions from response
+                var testSuggestions = [];
+                var cleanResponse = response.replace(/\[TEST:\s*([^\]]+)\]/g, function(match, content) {
+                    var parts = content.split('|').map(function(p) { return p.trim(); });
+                    if (parts.length >= 3) {
+                        testSuggestions.push({
+                            element: parts[0],
+                            original: parts[1],
+                            variations: parts.slice(2)
+                        });
+                    }
+                    return ''; // Remove from main text
+                });
+
+                var formattedResponse = formatCroChatResponse(cleanResponse);
+
+                var responseHtml = '<div class="abst-cro-chat-response abst-cro-chat-response--assistant"><strong class="abst-cro-chat-response-label">CRO Expert:</strong>' + formattedResponse + '</div>';
+
+                // Add test suggestion bubbles to sticky suggestions container (replaces previous)
+                if (testSuggestions.length > 0) {
+                    var suggestionsHtml = '';
+                    testSuggestions.forEach(function(test, idx) {
+                        var testData = JSON.stringify(test).replace(/"/g, '&quot;');
+                        // Get first few words of original text (remove em dashes)
+                        var cleanOriginal = test.original.replace(/[\u2014\u2013—–]/g, '-');
+                        var originalPreview = cleanOriginal.split(' ').slice(0, 4).join(' ');
+                        if (cleanOriginal.split(' ').length > 4) originalPreview += '...';
+                        suggestionsHtml += '<button class="cro-chat-test-bubble" data-test="' + testData + '" style="display: inline-block; margin: 2px; padding: 6px 10px; background: #fff; border: 1px solid #4CAF50; border-radius: 16px; cursor: pointer; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; line-height: 1.4; text-align: left; color: #333;">';
+                        suggestionsHtml += '<strong style="font-weight: 600; color: #2e7d32; font-size: 11px; font-family: inherit;">' + jQuery('<div>').text(test.element).html() + '</strong>: ';
+                        suggestionsHtml += '<span style="color: #666;">' + jQuery('<div>').text(originalPreview).html() + '</span>';
+                        suggestionsHtml += '</button>';
+                    });
+                    jQuery('#abst-cro-chat-suggestions-list').css({'display': 'flex', 'flex-wrap': 'wrap', 'gap': '4px'}).html(suggestionsHtml);
+                    jQuery('#abst-cro-chat-suggestions').show();
+                    
+                    // Store suggestions and add persistent buttons to matching elements
+                    window.abstCroSuggestions = testSuggestions;
+                    addAiSuggestButtonsToElements(testSuggestions);
+                }
+
+                messagesContainer.append(responseHtml);
+            }
+            
+            // For first response, scroll to top so user can read from beginning
+            // For subsequent responses, scroll to bottom to show latest
+            if (window.abstCroChat && window.abstCroChat.history && window.abstCroChat.history.length <= 2) {
+                // First exchange (1 user + 1 assistant = 2 messages)
+                messagesContainer.scrollTop(0);
+            } else {
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+            }
+            input.focus();
+        });
+    });
+
+    // CRO Chat - Send on Enter key
+    jQuery('body').on('keypress', '#abst-cro-chat-input', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            jQuery('#abst-cro-chat-send').click();
+        }
+    });
+
+    jQuery('body').on('click', '#abst-test-empty-chat-send', function(e) {
+        e.preventDefault();
+        var promptInput = jQuery('#abst-test-empty-chat-input');
+        var message = promptInput.val().trim();
+
+        if (!message) return;
+
+        jQuery('#abst-cro-chat-input').val(message);
+        promptInput.val('');
+
+        if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('chat');
+
+        setTimeout(function() {
+            jQuery('#abst-cro-chat-send').trigger('click');
+        }, 0);
+    });
+
+    jQuery('body').on('keypress', '#abst-test-empty-chat-input', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            jQuery('#abst-test-empty-chat-send').trigger('click');
+        }
+    });
+
+    // CRO Chat - Click test bubble to SELECT element and show AI suggestions
+    // (Changed from auto-creating 4 variations to integrating with variation editor)
+    jQuery('body').on('click', '.cro-chat-test-bubble', function(e) {
+        e.preventDefault();
+        var testData = JSON.parse(jQuery(this).attr('data-test'));
+        
+        // Use shared function to find matching element
+        var result = findBestMatchingElement(testData.original);
+        var foundElement = result.element;
+        
+        console.log('CRO Chat: Searching for "' + testData.original.substring(0, 20) + '...", found:', foundElement, 'score:', result.score);
+
+        var $bubble = jQuery(this);
+        
+        if (foundElement) {
+            var selector = getUniqueSelector(foundElement);
+            
+            // Initialize abmagic if needed
+            if (!window.abmagic) window.abmagic = {};
+            if (!window.abmagic.definition) window.abmagic.definition = [];
+            
+            // Hide help, show test editor (first time only)
+            if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
+            jQuery('.click-to-start-help').slideUp();
+            jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').slideDown();
+
+            jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
+            
+            // Remove green AI suggestion styling from this element
+            jQuery(foundElement).removeClass('abst-ai-suggested');
+            jQuery(foundElement).find('.abst-ai-suggest-inline').remove();
+            
+            // Highlight the element
+            bt_highlight(selector);
+            
+            // Set selector input to this element (this triggers the blur handler)
+            jQuery('#abst-selector-input').val(selector);
+            
+            // Get first suggestion text for B variation
+            var firstSuggestion = '';
+            if (testData.variations && testData.variations.length > 0) {
+                firstSuggestion = typeof testData.variations[0] === 'object' ? testData.variations[0].text : testData.variations[0];
+            }
+            
+            // Add element to definition with original (A) and first suggestion (B)
+            var elementIndex = getElementIndexFromMagic(selector);
+            if (elementIndex === -1) {
+                // Not in definition yet - check how many variations exist in the test
+                var existingVariationCount = 2; // Default: A (original) + B (suggestion)
+                if (window.abmagic.definition.length > 0) {
+                    // Match the number of variations from existing elements
+                    // variations array includes original at index 0
+                    existingVariationCount = Math.max(2, window.abmagic.definition[0].variations.length);
+                }
+                
+                // Build variations array with original + suggestions, padding with original if needed
+                var newVariations = [testData.original];
+                for (var i = 1; i < existingVariationCount; i++) {
+                    if (testData.variations && testData.variations[i - 1]) {
+                        var suggestionText = typeof testData.variations[i - 1] === 'object' ? testData.variations[i - 1].text : testData.variations[i - 1];
+                        newVariations.push(suggestionText);
+                    } else {
+                        // Pad with original if not enough suggestions
+                        newVariations.push(testData.original);
+                    }
+                }
+                
+                window.abmagic.definition.push({
+                    selector: selector,
+                    variations: newVariations,
+                    scope: getMagicScope(),
+                    type: 'text'
+                });
+                console.log('CRO Chat: Added element with', newVariations.length, 'variations to match existing test');
+            }
+            
+            // Update variation picker to show correct number of variations
+            updateVariationPicker();
+            
+            // Select B variation (index 1) in the picker without triggering change (to avoid jump)
+            jQuery('#variation-picker').val('1');
+            
+            // Set editor content to the first suggestion (B variation)
+            if (window.abstEditor) {
+                window.abstEditor.innerHTML = firstSuggestion || testData.original;
+            }
+            
+            var croChatSuggestions = formatCroChatSuggestions(testData.variations);
+
+            // Cache the AI suggestions for this selector
+            cacheAISuggestions(selector, croChatSuggestions);
+            
+            // Populate the AI suggestions panel with the variations
+            populateAISuggestionsPanel(croChatSuggestions);
+            
+            // Update test title if this is the first element
+            if (window.abmagic.test && window.abmagic.definition.length === 1) {
+                window.abmagic.test.title = 'Test: ' + testData.element;
+                window.abmagic.syncToDOM();
+            }
+            
+            // Mark this bubble as selected (not added yet - user chooses suggestions)
+            $bubble.css({
+                'background': '#e3f2fd',
+                'border-color': '#1976D2'
+            }).addClass('cro-bubble-selected');
+            
+            console.log('Element selected from CRO chat:', testData.element, 'Suggestions shown:', testData.variations.length);
+        } else {
+            // Mark bubble as not found
+            $bubble.css({
+                'background': '#ffcdd2',
+                'border-color': '#c62828'
+            });
+            alert('Could not find "' + testData.original.substring(0, 30) + '..." on the page. Try selecting the element manually.');
+        }
+    });
+
     jQuery('body').on('click','.abst-variation',function(e){
+        // Ignore clicks on the variation marker buttons
+        if (jQuery(e.target).closest('.abst-variation-marker').length > 0) {
+            return;
+        }
         //abst-selector-input 
         e.preventDefault();
         var selector = getUniqueSelector(jQuery(this).first()[0]);
-        jQuery('#abst-selector-input').val(selector).trigger('blur');
+        var elementDef = window.abmagic && window.abmagic.definition ? window.abmagic.definition.find(function(def) {
+            return def.selector === selector;
+        }) : null;
+        var variationIndex = parseInt(jQuery("#variation-picker").val(), 10) || 0;
+        var elementType = elementDef && elementDef.type ? elementDef.type : getElementType(jQuery(this).first()[0]);
+        var selectorText = elementDef && elementDef.variations ? (elementDef.variations[variationIndex] || elementDef.variations[0] || '') : jQuery(selector).html();
+        setMagicBar(selector, selectorText, false, elementType);
         
     });
 
-    jQuery('body').on('contextmenu','.abst-variation',function(e){
-        e.preventDefault();
-        //abst-selector-input 
-        if(!confirm('Are you sure you want to remove this element from this test?'))
-            return;
-
-        deleteItem = jQuery(this).first();
-
-        //find the unselector in the window.abmagic.definition
-        window.abmagic.definition.forEach(function(value, key) {
-            
-            console.log(value['selector']);
-            //if deleteitem is the same element as jquery(value['selector']) selector element
-            if (deleteItem.is(value['selector'])) {
-                console.log('found',value['selector']);
-                console.log(value.variations[0]);
-                // Use Pell editor API instead of TinyMCE
-                if (window.abstEditor) {
-                    window.abstEditor.innerHTML = value.variations[0];
-                    // Trigger input event to mark as changed
-                    const event = new Event('input', { bubbles: true });
-                    window.abstEditor.dispatchEvent(event);
-                }
-                jQuery("#abst-selector-input").val('').trigger('blur');
-                //hide ai suggestions
-                jQuery('#ai-suggestions').slideUp();
-                //remove from window.abmagic.definition
-                console.log('removed',value['selector']);
-                console.log(window.abmagic.definition);
-                //if its an image then set src to 0
-                if (value.type === 'image') {
-                    deleteItem.attr('src',value.variations[0] );
-                }
-                else{
-                    deleteItem.html(value.variations[0]);
-                }
-                // Refresh all variation classes after removing the item
-                setTimeout(function() {
-                    refreshVariationClasses();
-                }, 50);
-                window.abmagic.definition.splice(key, 1);
-                return;
-            }
-        });
-    });
 
     function canTestOnElement(element){
 
@@ -882,6 +2389,9 @@ function selectorDetection(){
             element = document.querySelector(element);
 
         if(!element)
+            return false;
+
+        if (jQuery(element).closest('.abst-goals-column, .abst-goals-container, .remove-goal, .abst-goal-card-header, .abst-button-container').length > 0)
             return false;
 
         //dont show if on the abst-magic-bar or any parent is abst-magic-bar
@@ -897,6 +2407,16 @@ function selectorDetection(){
 
         // Skip if hovering over the box or their children
         if (element.id === 'selector-box' || jQuery.contains(document.getElementById('selector-box'), element)) {
+            return false;
+        }
+        
+        // Skip AI suggest inline buttons
+        if (jQuery(element).hasClass('abst-ai-suggest-inline') || jQuery(element).closest('.abst-ai-suggest-inline').length > 0) {
+            return false;
+        }
+        
+        // Skip AI suggested elements (green box) - let them handle their own clicks
+        if (jQuery(element).hasClass('abst-ai-suggested') || jQuery(element).closest('.abst-ai-suggested').length > 0) {
             return false;
         }
 
@@ -925,7 +2445,7 @@ function selectorDetection(){
         return true;
     }
 
-jQuery('body').on('mouseover', function(e){
+    jQuery('body').on('mouseover', function(e){
     // Clear any existing debounce timer
     if (selectorHoverDebounce) {
         clearTimeout(selectorHoverDebounce);
@@ -997,6 +2517,7 @@ jQuery('body').on('mouseover', function(e){
             borderRadius: '10px'
         });
         box.show();
+        
         // Improved element comparison to avoid flickering
         if (lastProcessedElement === element) {
             return;
@@ -1006,7 +2527,7 @@ jQuery('body').on('mouseover', function(e){
 
         
         }, 50); // Small delay to debounce
-    });
+    }); // end mouseover
         
     // Add a mouseleave handler to hide the tooltip and box when leaving the element
     jQuery('body').on('mouseout', function(e) {
@@ -1023,12 +2544,20 @@ jQuery('body').on('mouseover', function(e){
             }, 150);
         }
     });
+    
     window.magicLastFocus = null;
 
 
     
     // add element to magic bar click function
     jQuery('body').on('click', function(e){
+
+
+        // Allow normal interaction inside the magic bar and admin bar UI
+        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar'))) {
+            return;
+        }
+
     
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -1037,7 +2566,6 @@ jQuery('body').on('mouseover', function(e){
 
 
         if(!canTestOnElement(element)){
-            console.log('cant test on', element);
             return;
         }
 
@@ -1046,7 +2574,9 @@ jQuery('body').on('mouseover', function(e){
         if(!elementType)
             return;
         
-        jQuery('#variation-picker-container, #variation-editor-container, .abst-goals-column, #abst-magic-bar-start, #abst-targeting-button, .magic-test-name, .winning-mode').slideDown();
+        if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
+        jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').slideDown();
+        jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
         jQuery('.click-to-start-help').slideUp();
 
     
@@ -1091,13 +2621,16 @@ jQuery('body').on('mouseover', function(e){
         window.magicLastFocus = element;
     });
 
-}
 
-
-
-// Prevent all link clicks if .doing-abst-magic-bar is present on body
-document.body.addEventListener('click', function(e) {
-    if (document.body.classList.contains('doing-abst-magic-bar')) {
+    
+    // Prevent link clicks only when magic bar is active
+    // This uses capture phase but only prevents when the class is present
+    document.body.addEventListener('click', function(e) {
+        // Only prevent if magic bar is active
+        if (!document.body.classList.contains('doing-abst-magic-bar')) {
+            return; // Allow normal behavior when magic bar is not active
+        }
+        
         let target = e.target;
         // Allow clicks on #wpadminbar and #abst-magic-bar (and their children)
         if (
@@ -1115,15 +2648,16 @@ document.body.addEventListener('click', function(e) {
                 return false;
             }
             target = target.parentElement;
-        }
-    }
-}, true);
+                    }
+    }, true);
+}
 
 // Helper function to determine if an element is clickable for magic testing
+
 function getElementType(element) {
-    if (!element) return false;
+    if (!element) return false; 
     
-    var elementType = false;
+    var elementType = false; // Default to false for non-testable elements
     
     // Check for images
     if(element.tagName == 'IMG' || element.tagName == 'SVG')
@@ -1148,7 +2682,272 @@ function getElementType(element) {
     return elementType;
 }
 
-function setMagicBar(selector, selectorText, goal = false, type = 'text') {
+function getCurrentMagicPagePath() {
+    var path = window.location && window.location.pathname ? window.location.pathname.toLowerCase() : '';
+    return path.replace(/^\/+|\/+$/g, '');
+}
+
+function getDefaultMagicScope() {
+    var scope = {};
+
+    if (window.btab_vars && window.btab_vars.post_id !== undefined && window.btab_vars.post_id !== null && window.btab_vars.post_id !== '') {
+        var parsedId = parseInt(window.btab_vars.post_id, 10);
+        if (!isNaN(parsedId) && parsedId > 0) {
+            scope.page_id = parsedId;
+        }
+    }
+
+    var path = getCurrentMagicPagePath();
+    if (path) {
+        scope.url = path;
+    }
+
+    if (scope.page_id === undefined && !scope.url) {
+        scope.url = '*';
+    }
+
+    return scope;
+}
+
+function normalizeMagicScope(scope, fallbackToDefault) {
+    if (fallbackToDefault === undefined) {
+        fallbackToDefault = true;
+    }
+
+    var normalized = {};
+    if (scope && typeof scope === 'object') {
+        if (Object.prototype.hasOwnProperty.call(scope, 'page_id')) {
+            if (scope.page_id === '*') {
+                normalized.page_id = '*';
+            } else {
+                var parsedPageIds = [];
+                if (Array.isArray(scope.page_id)) {
+                    parsedPageIds = scope.page_id.map(function(id) {
+                        return String(id).trim();
+                    });
+                } else {
+                    parsedPageIds = String(scope.page_id || '').split(',').map(function(id) {
+                        return id.trim();
+                    });
+                }
+
+                parsedPageIds = parsedPageIds.filter(function(id) {
+                    return /^[1-9]\d*$/.test(id);
+                });
+
+                if (parsedPageIds.length === 1) {
+                    normalized.page_id = parseInt(parsedPageIds[0], 10);
+                } else if (parsedPageIds.length > 1) {
+                    normalized.page_id = parsedPageIds.map(function(id) {
+                        return parseInt(id, 10);
+                    }).filter(function(id, index, arr) {
+                        return arr.indexOf(id) === index;
+                    });
+                }
+            }
+        }
+
+        if (Object.prototype.hasOwnProperty.call(scope, 'url')) {
+            var urlValue = String(scope.url || '').trim();
+            if (urlValue === '*') {
+                normalized.url = '*';
+            } else if (urlValue !== '') {
+                normalized.url = urlValue.toLowerCase().replace(/^\/+|\/+$/g, '');
+            }
+        }
+    }
+
+    var hasPageId = normalized.page_id !== undefined && normalized.page_id !== null && normalized.page_id !== '';
+    var hasUrl = typeof normalized.url === 'string' && normalized.url !== '';
+    if (!hasPageId && !hasUrl && fallbackToDefault) {
+        return getDefaultMagicScope();
+    }
+
+    return normalized;
+}
+
+function getMagicScopeSignature(scope) {
+    var normalized = normalizeMagicScope(scope, true);
+    var signature = {};
+
+    if (normalized.page_id !== undefined) {
+        signature.page_id = Array.isArray(normalized.page_id) ? normalized.page_id.slice().sort(function(a, b) {
+            return a - b;
+        }) : normalized.page_id;
+    }
+
+    if (normalized.url !== undefined) {
+        signature.url = normalized.url;
+    }
+
+    return JSON.stringify(signature);
+}
+
+function definitionHasMixedScopes(definition) {
+    if (!Array.isArray(definition) || definition.length < 2) {
+        return false;
+    }
+
+    var scopes = {};
+    definition.forEach(function(item) {
+        if (!item || typeof item !== 'object') {
+            return;
+        }
+
+        scopes[getMagicScopeSignature(item.scope)] = true;
+    });
+
+    return Object.keys(scopes).length > 1;
+}
+
+function getMagicMixedScopeHelpText() {
+    if (!window.abmagic || !window.abmagic.editingTestId || window.abmagic.scopeDirty) {
+        return '';
+    }
+
+    if (!definitionHasMixedScopes(window.abmagic.definition)) {
+        return '';
+    }
+
+    return ' This test currently uses different scopes per element. Leave this unchanged to preserve them, or edit scope here to apply one scope to all elements.';
+}
+
+function getMagicScopeFormState(scope) {
+    var normalized = normalizeMagicScope(scope, true);
+    var hasPageId = normalized.page_id !== undefined && normalized.page_id !== null && normalized.page_id !== '';
+    var hasUrl = typeof normalized.url === 'string' && normalized.url !== '';
+
+    if (normalized.page_id === '*' || normalized.url === '*') {
+        return { mode: 'all', value: '' };
+    }
+
+    if (hasPageId) {
+        if (Array.isArray(normalized.page_id)) {
+            return { mode: 'page_id', value: normalized.page_id.join(',') };
+        }
+        return { mode: 'page_id', value: String(normalized.page_id) };
+    }
+
+    if (hasUrl) {
+        return { mode: 'url', value: normalized.url };
+    }
+
+    return { mode: 'current', value: '' };
+}
+
+function getMagicScopeFromInputs() {
+    var mode = jQuery('#abst-scope-mode').val() || 'current';
+    var value = (jQuery('#abst-scope-value').val() || '').trim();
+
+    if (mode === 'all') {
+        return { page_id: '*' };
+    }
+
+    if (mode === 'page_id') {
+        if (value === '*') {
+            return { page_id: '*' };
+        }
+        var parts = value.split(',').map(function(part) {
+            return part.trim();
+        }).filter(function(part) {
+            return part !== '';
+        });
+
+        if (parts.length && parts.every(function(part) { return /^[1-9]\d*$/.test(part); })) {
+            var ids = parts.map(function(part) {
+                return parseInt(part, 10);
+            }).filter(function(id, index, arr) {
+                return arr.indexOf(id) === index;
+            });
+
+            if (ids.length === 1) {
+                return { page_id: ids[0] };
+            }
+            if (ids.length > 1) {
+                return { page_id: ids };
+            }
+        }
+        return getDefaultMagicScope();
+    }
+
+    if (mode === 'url') {
+        if (value === '*') {
+            return { url: '*' };
+        }
+        if (value !== '') {
+            return { url: value.toLowerCase().replace(/^\/+|\/+$/g, '') };
+        }
+        return getDefaultMagicScope();
+    }
+
+    return getDefaultMagicScope();
+}
+
+function updateMagicScopeFormUi() {
+    var mode = jQuery('#abst-scope-mode').val() || 'current';
+    var $value = jQuery('#abst-scope-value');
+    var $help = jQuery('#abst-scope-help');
+    var defaultScope = getDefaultMagicScope();
+    var mixedScopeHelpText = getMagicMixedScopeHelpText();
+
+    if (!$value.length || !$help.length) {
+        return;
+    }
+
+    if (mode === 'page_id') {
+        $value.attr('placeholder', '42 or 42,108').show();
+        $help.text('Choose where this magic test can appear. Use one or more page IDs (comma-separated), or * for all pages.' + mixedScopeHelpText);
+        return;
+    }
+
+    if (mode === 'url') {
+        $value.attr('placeholder', 'pricing').show();
+        $help.text('Choose where this magic test can appear. Match pages when the current URL path contains this value, or use * for all pages.' + mixedScopeHelpText);
+        return;
+    }
+
+    if (mode === 'all') {
+        $value.hide();
+        $help.text('Choose where this magic test can appear. This setting will apply it to all pages.' + mixedScopeHelpText);
+        return;
+    }
+
+    $value.hide();
+    if (defaultScope.page_id !== undefined && defaultScope.page_id !== null && defaultScope.page_id !== '') {
+        $help.text('Choose where this magic test can appear. Default: current page ID ' + defaultScope.page_id + '.' + mixedScopeHelpText);
+    } else if (defaultScope.url) {
+        $help.text('Choose where this magic test can appear. Default: current page path "' + defaultScope.url + '".' + mixedScopeHelpText);
+    } else {
+        $help.text('Choose where this magic test can appear. Default: current page.' + mixedScopeHelpText);
+    }
+}
+
+function getMagicScopeFromDefinition(definition) {
+    if (!Array.isArray(definition) || !definition.length) {
+        return getDefaultMagicScope();
+    }
+
+    var firstItem = definition[0];
+    if (!firstItem || typeof firstItem !== 'object') {
+        return getDefaultMagicScope();
+    }
+
+    return normalizeMagicScope(firstItem.scope, true);
+}
+
+function getMagicScope() {
+    if (window.abmagic && window.abmagic.test && window.abmagic.test.targeting && window.abmagic.test.targeting.scope) {
+        return normalizeMagicScope(window.abmagic.test.targeting.scope, true);
+    }
+
+    if (jQuery('#abst-scope-mode').length) {
+        return normalizeMagicScope(getMagicScopeFromInputs(), true);
+    }
+
+    return getDefaultMagicScope();
+}
+
+function setMagicBar(selector, selectorText, goal = false, type = 'text', suppressAI = false) {
     if(!window.abmagic) window.abmagic = {};
     if(!window.abmagic.definition) window.abmagic.definition = [];
     
@@ -1171,15 +2970,12 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text') {
         return;
     }
 
-    jQuery("#ai-suggestions-list").hide();
     jQuery('#abst-selector-input').val(selector).trigger('blur');
     
     jQuery("#abst-variation-editor-container").addClass('flash');
     setTimeout(function(){
         jQuery("#abst-variation-editor-container").removeClass('flash');
     }, 2000);
-    
-    jQuery('#ai-suggestions').hide();
     
     if(goal) {
         jQuery('#abst-goal').val(goal).trigger('change');
@@ -1211,30 +3007,10 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text') {
             // Update the hidden input
             jQuery('#abst-variation-editor').val(content);
             if (type === 'text') {
-                // Show AI suggestions if it's text content
-                urlParams = new URLSearchParams(window.location.search);
-                //if url var text_to_replace == url textToReplace then add variations from URL to 
-                if(urlParams.get('text_to_replace') && urlParams.get('variations')){
-                    console.log('MAGIC TEST DEF IN URL PARAMS, building suggestions');
-                    suggestions = [];
-                    var variations = urlParams.get('variations');
-                    variations = variations.split('|');
-                    for(var i = 0; i < variations.length; i++){
-                        jQuery("#ai-suggestions-list").append('<li class="ai-suggestion-item">' + variations[i] + '</li>');
-                    }
-                    setTimeout(function(){
-                        jQuery("#ai-suggestions, #ai-suggestions-list").slideDown(400); // Fix AI suggestions display issue by ensuring proper slideDown animation
-                    }, 1000);
-                    //remove url params text_to_replace and variations
-                //    urlParams.delete('text_to_replace');
-                //    urlParams.delete('variations');
-                //    urlParams.delete('test_title');
-                    //update url
-                    window.history.replaceState(null, '', window.location.pathname + '?' + urlParams.toString());
-                }
-                else{
-                    console.log('showing AI suggestions');
-                    sendToOpenAI(content, 'magic', '#ai-suggestions-list');
+                if (!suppressAI) {
+                    showAISuggestionsForSelector(selector, content, type);
+                } else {
+                    hideAISuggestionsPanel();
                 }
                 jQuery('#imageSelector').slideUp();
                 // Show our custom toolbar
@@ -1319,7 +3095,6 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text') {
         }
     }
 }
-window.abstIgnoreSelectorPrefixes = ['abst-variation','stk-'];
 /**
  * Checks if a class or ID should be ignored based on a single global prefix list.
  * 
@@ -1327,167 +3102,11 @@ window.abstIgnoreSelectorPrefixes = ['abst-variation','stk-'];
  * - Entries starting with '#' are ID prefixes.
  * - Entries with no prefix are treated as class prefixes (for back-compat).
  */
-function isIgnored(type, value) {
-    if (!value) return false;
-    if (type === 'class' && value === 'abst-variation') return true; // Always ignore our own marker
-
-    const prefixes = window.abstIgnoreSelectorPrefixes || [];
-    const relevantPrefixes = prefixes
-        .map(p => (p || '').trim())
-        .filter(p => {
-            if (type === 'id') return p.startsWith('#');
-            if (type === 'class') return !p.startsWith('#'); // Treat no-prefix as class
-            return false;
-        })
-        .map(p => p.startsWith('.') || p.startsWith('#') ? p.slice(1) : p);
-
-    for (const prefix of relevantPrefixes) {
-        if (value.startsWith(prefix)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function getUniqueSelector(element) {
-    // If not an element, return null
-    if (!(element instanceof Element)) return null;
-    
-    // Prefer ID if present and uniquely resolves (after scoping)
-    if (element.id && !isIgnored('id', element.id)) {
-        const byId = scopeSelectorToPage('#' + element.id);
-        if (jQuery(byId).length === 1) {
-            return byId;
-        }
-        // If ID isn't unique (rare), continue to try other strategies
-    }
-
-    // Try to find a short, human-friendly selector (classes/attributes)
-    const tag = element.tagName.toLowerCase();
-
-    // 1) Try tag + a single class (rarer classes first)
-    if (element.classList && element.classList.length > 0) {
-        const classes = Array.from(element.classList)
-            .filter(cls => !isIgnored('class', cls))
-            .sort((a, b) => {
-                const aCount = jQuery('.' + a).length;
-                const bCount = jQuery('.' + b).length;
-                return aCount - bCount;
-            });
-
-        for (const cls of classes) {
-            const candidate = tag + '.' + cls;
-            const scoped = scopeSelectorToPage(candidate);
-            if (jQuery(scoped).length === 1) {
-                return scoped;
-            }
-        }
-
-        // 2) Try tag + two classes
-        if (classes.length >= 2) {
-            for (let i = 0; i < classes.length - 1; i++) {
-                for (let j = i + 1; j < classes.length; j++) {
-                    const candidate = tag + '.' + classes[i] + '.' + classes[j];
-                    const scoped = scopeSelectorToPage(candidate);
-                    if (jQuery(scoped).length === 1) {
-                        return scoped;
-                    }
-                }
-            }
-        }
-    }
-
-    // 3) Try a single important attribute
-    const importantAttrs = ['href', 'alt', 'title', 'name', 'value', 'type', 'role'];
-    for (const attrName of importantAttrs) {
-        if (element.hasAttribute && element.hasAttribute(attrName)) {
-            const raw = element.getAttribute(attrName);
-            if (raw && raw.length < 100) {
-                const candidate = tag + '[' + attrName + '="' + raw.replace(/"/g, '\\"') + '"]';
-                const scoped = scopeSelectorToPage(candidate);
-                if (jQuery(scoped).length === 1) {
-                    return scoped;
-                }
-            }
-        }
-    }
-    
-    // Fallback to the shortest structural path (already page-scoped internally)
-    return generateShortPath(element);
-}
-
-// getSimpleSelector has been inlined into getUniqueSelector to simplify the API and ensure a single
-// entry point for selector resolution.
-
-// Generate a short path to the element
-// Utility: Get the current page class (e.g., postid-123 or page-id-456)
-function getPageClass() {
-    var body = document.body;
-    return Array.from(body.classList).find(function(cls) {
-        return cls.startsWith('postid-') || cls.startsWith('page-id-') || cls.startsWith('post-type-archive-');
-    });
-}   
-
-// Utility: Prepend page class to a selector
-function scopeSelectorToPage(selector) {
-    var pageClass = getPageClass();
-    if (!pageClass) return selector;
-    return '.' + pageClass + ' ' + selector;
-}
-
-function generateShortPath(element) {
-    let path = [];
-    let current = element;
-    
-    // Walk up the DOM tree until we find an ID or reach the body
-    while (current && current !== document.body) {
-        // If we find an element with ID, use that and stop
-        if (current.id && !isIgnored('id', current.id)) {
-            path.unshift('#' + current.id);
-            break;
-        }
-        
-        // Try to create a unique selector for this level
-        const tag = current.tagName.toLowerCase();
-        let selector = tag;
-        
-        // Add a class if it helps make it more specific but not too specific
-        if (current.classList.length > 0) {
-            // Find the most specific useful class
-            for (const cls of current.classList) {
-                if (isIgnored('class', cls)) continue;
-                const testSelector = tag + '.' + cls;
-                const matches = jQuery(testSelector, current.parentNode).length;
-                if (matches === 1) {
-                    selector = testSelector;
-                    break;
-                }
-            }
-        }
-        
-        // If we still don't have a unique selector at this level, add nth-child
-        if (jQuery(selector, current.parentNode).length > 1) {
-            const index = Array.from(current.parentNode.children).indexOf(current) + 1;
-            selector += ':nth-child(' + index + ')';
-        }
-        
-        path.unshift(selector);
-        current = current.parentNode;
-        
-        // Check if our path is already unique
-        
-        const testPath = path.join(' > ');
-        if (jQuery(testPath).length === 1) {
-            // Scope the selector to the current page
-            return scopeSelectorToPage(testPath);
-        }
-    }
-    // Scope the selector to the current page
-    return scopeSelectorToPage(path.join(' > '));
-}
 
 async function takeScreenshot(node, options, retryCount = 0) {
     const maxRetries = 3;
+
+    window.abTakingScreenshot = true;
 
     try {
         // Use global modernScreenshot object from UMD build
@@ -1506,6 +3125,8 @@ async function takeScreenshot(node, options, retryCount = 0) {
         } else {
             console.error('Max retries reached, giving up on screenshot');
         }
+    } finally {
+        window.abTakingScreenshot = false;
     }
 }
 
@@ -1514,14 +3135,15 @@ function updateScreenshot() {
         console.log('Screenshot already in progress, skipping update');
         return;
     }
+
     console.log('Updating screenshot................................................');
     // Screenshot options with performance optimizations
       
     const options = {
 
         quality: 0.8,  // Reduce quality for faster processing
-        width: Math.min(window.innerWidth, 1000),  // Cap width to reduce processing
-        height: Math.min(window.innerHeight, 3000), // Cap height to reduce processing
+        width: window.innerWidth || document.body.clientWidth,  // Capture the full visible viewport width
+        height: Math.min((window.innerHeight || document.body.clientHeight), 3000), // Cap height to reduce processing
         debug: true,
         timeout: 4000,
         // Performance optimizations to reduce wait time
@@ -1554,7 +3176,6 @@ function updateScreenshot() {
 
     // Check if the modern-screenshot library is loaded
     if (typeof modernScreenshot !== 'undefined') {
-        window.abTakingScreenshot = true;
         takeScreenshot(node, options);
         return;
     } else {
@@ -1566,12 +3187,16 @@ function updateScreenshot() {
 
 function abst_magic_bar(options = {}) {
 
-    // Load dom-to-image if not already loaded and ai is enabled
-    if(!window.abaiScreenshot && btab_vars.abst_disable_ai != '1') {
+    console.log('abst_magic_bar called');
+    const hasBtabVars = typeof btab_vars !== 'undefined';
+    const isAiEnabled = hasBtabVars && btab_vars.abst_disable_ai !== '1';
+
+    // Load dom-to-image if not already loaded and ai is enabled (non-blocking)
+    if(!window.abaiScreenshot && isAiEnabled) {
+        console.log('Loading dom-to-image for magic bar');
+        // Load screenshot in background without blocking magic bar display
         updateScreenshot();
-        setTimeout(function(){
-            abst_magic_bar(options);
-        }, 500);
+        // Don't wait for screenshot - continue with magic bar setup
     }
 
     selectorDetection();
@@ -1616,9 +3241,9 @@ function abst_magic_bar(options = {}) {
     jQuery.each(abst_magic_data.roles, function(key, value) {
         //if key in array abst_magic_data.defaults
         if (abst_magic_data.defaults.includes(key))
-            rolesHtml += '<div class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '" checked> ' + value + '</div>';
+            rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '" checked><span>' + value + '</span></label>';
         else
-            rolesHtml += '<div class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"> ' + value + '</div>';
+            rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"><span>' + value + '</span></label>';
     });
     // Add content
     // --- BEGIN MAGIC BAR HTML REPLACEMENT ---
@@ -1626,9 +3251,9 @@ function abst_magic_bar(options = {}) {
     var rolesHtml = '';
     jQuery.each(abst_magic_data.roles, function(key, value) {
         if (abst_magic_data.defaults && abst_magic_data.defaults.includes(key))
-            rolesHtml += '<div class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '" checked> ' + value + '</div>';
+            rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '" checked><span>' + value + '</span></label>';
         else
-            rolesHtml += '<div class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"> ' + value + '</div>';
+            rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"><span>' + value + '</span></label>';
     });
 
     var variationOptions = [
@@ -1661,67 +3286,108 @@ function abst_magic_bar(options = {}) {
             </ol>
             <span class="hide-magic-bar" id="close-magic-bar" data-llm-instructions="this span is used to hide this help window, LLM should click it so that users can see you creating the test.">Hide Help</span>
             </div>
-        <!-- settings Column -->
-        <div class="abst-settings-column magic-test-name">
-            <h4>New AB Test</h4>
-            <p>Test Name:</p><input id="abst-magic-bar-title" class="abst-magic-bar-title" value="New Magic Test">
+        <div class="abst-magic-tabs" role="tablist" aria-label="Magic Bar sections">
+            <button type="button" class="abst-magic-tab-button" id="abst-magic-tab-chat" data-tab="chat" role="tab" aria-selected="false" aria-controls="abst-magic-panel-chat" tabindex="-1">ChatCRO</button>
+            <button type="button" class="abst-magic-tab-button is-active" id="abst-magic-tab-test" data-tab="test" role="tab" aria-selected="true" aria-controls="abst-magic-panel-test">Test</button>
         </div>
-        <!-- settings Column -->
-        <div class="abst-settings-column prompt-response">
-            <h4>CROassist</h4>
-            <div class="results"><p>Loading...</p></div>
-        </div>
-        <div class="abst-settings-column click-to-start-help" >
-            <h3>Click any text or image to start</h3>
-            <p>Select the element you want to optimize, then you can edit the content to create your first variation.</p>
-            <!-- 
-            <p><small>or</small></p>
-            <p>Generate test ideas below</p>
-            <div id="abst-ideas-general">
-            <h4>Ideas generator</h4>
-                <input type="text" id="abst-idea-input" placeholder="Make the hero headline more engaging"><button id="abst-idea-button">Generate Ideas</button>
-            </div>
-            -->
-        </div>
-        <div class="abst-settings-column" id="variation-picker-container">
-            <p>You are now editing and viewing:</p><select id="variation-picker">${variationOptionsHtml}</select>
-            
-            </div>
-            <div class="abst-settings-column" id="variation-editor-container">
-            <span>Test Element Selector</span>
-            <input id="abst-selector-input" type="text" value="Select an item to start testing" placeholder="CSS Selector">
-                <p id="version-value">Editing the B Version of the test</p><div id="abst-variation-editor"></div>
-                <div id="ai-suggestions" class="abst-ai-loading" style="display: none;">
-                <p>AI Suggestions ✨ <small>Click to add to test variations &amp; edit.</small></p>
-                <ul id="ai-suggestions-list"></ul>
+        <div class="abst-magic-tab-panels">
+        <div class="abst-magic-tab-panel" id="abst-magic-panel-chat" data-tab-panel="chat" role="tabpanel" aria-labelledby="abst-magic-tab-chat" hidden>
+        <!-- CRO Expert Chat - Subtle styling -->
+        <div class="abst-settings-column" id="abst-cro-chat-column" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0; margin: 0 !important; padding: 12px; width:100%;">
+            <div id="abst-cro-chat-container" style="display: flex; flex-direction: column;">
+                <h4 style="margin: 0 0 8px 0; color: #475569; font-size: 14px;">💬 Ask CRO Expert</h4>
+                <div id="abst-cro-chat-messages" style="flex: 1; max-height: 200px; overflow-y: auto; margin-bottom: 8px; padding: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; color: #64748b;">
+                    <div class="abst-cro-chat-response abst-cro-chat-response--assistant"><strong class="abst-cro-chat-response-label">CRO Expert:</strong><p>What would you like to optimize?</p></div>
+                </div>
+                <div id="abst-cro-chat-footer">
+                    <div id="abst-cro-chat-suggestions" style="display: none; margin-bottom: 8px; padding: 8px; background: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0;">
+                        <p style="margin: 0 0 6px 0; font-size: 11px; color: #166534;"><strong>Suggestions:</strong><small>Click to create the test</small></p>
+                        <div id="abst-cro-chat-suggestions-list"></div>
+                    </div>
+                    <div id="abst-cro-chat-input-row" style="display: flex; gap: 6px;">
+                        <input type="text" id="abst-cro-chat-input" placeholder="What should I test?" style="flex: 1; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                        <button id="abst-cro-chat-send" style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Ask</button>
+                    </div>
                 </div>
             </div>
-            <p id="abst-targeting-button" style="
-    padding: 10px 20px;
-    opacity: 0.6;
-"><span id="abst-targeting-text">Testing on all users except editors &amp; administrators. </span><a href="#" id="abst-show-targeting">Edit</a> </p>
+        </div>
+        </div>
+        <div class="abst-magic-tab-panel is-active" id="abst-magic-panel-test" data-tab-panel="test" role="tabpanel" aria-labelledby="abst-magic-tab-test">
+        <!-- Click to start help -->
+        <div class="abst-settings-column click-to-start-help">
+            <h3>Create a Split Test.</h3>
+            <p>Click on the element you want to optimize, or chat with ChatCRO below and it will help shape a great test for you.</p>
+            <div class="abst-test-empty-chat-prompt">
+                <p class="abst-test-empty-chat-label">Not sure where to start?</p>
+                <div class="abst-test-empty-chat-row">
+                    <input type="text" id="abst-test-empty-chat-input" placeholder="Ask ChatCRO what you should test">
+                    <button type="button" id="abst-test-empty-chat-send">Ask ChatCRO</button>
+                </div>
+            </div>
+        </div>
+        <!-- Test Name - Hidden until test starts -->
+        <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">
+            <label for="abst-magic-bar-title" style="font-weight: 600; white-space: nowrap;">Test Name:</label>
+            <input id="abst-magic-bar-title" class="abst-magic-bar-title" value="New Magic Test" style="flex: 1;">
+        </div>
+        <div id="variation-picker-container" style="display:none !important;">
+            <select id="variation-picker">${variationOptionsHtml}</select>
+        </div>
+        <div class="abst-settings-column" id="variation-editor-container">
+            <div class="abst-goals-title" style="display: flex; align-items: center; justify-content: center; gap: 8px;">Element <input id="abst-selector-input" type="text" value="Select an item" placeholder="CSS Selector" style="background: transparent; color: #999; font-size: 13px; padding: 0; flex: 1; text-align: center; margin: 0 !important; height: 30px;"></div>
+            <p id="version-value">Editing the B Version of the test</p>
+            <div id="abst-variation-editor"></div>
+                <div id="ai-suggestions" style="display: none;">
+                <button class="abst-ai-suggestions-toggle" aria-expanded="false">
+                    <span>AI Suggestions ✨</span>
+                    <span class="abst-ai-toggle-chevron">▾</span>
+                </button>
+                <div class="abst-ai-suggestions-content" style="display:none;">
+                    <p class="abst-ai-suggestions-hint">Click to add to test variations &amp; edit.</p>
+                    <ul id="ai-suggestions-list"></ul>
+                    <button id="ai-generate-more" class="ai-generate-more-btn" style="display:none;">✨ Generate More Suggestions</button>
+                </div>
+                </div>
+            </div>
+            <p id="abst-targeting-button"><span id="abst-targeting-text">Testing on all users except editors &amp; administrators. </span><a href="#" id="abst-show-targeting">Edit</a></p>
             <div class="abst-settings-column abst-targeting-settings" data-llm-instructions="this div contains the targeting settings for the test. it is hidden by default and can be toggled by clicking the #abst-show-targeting button only add targeting if specifically asked or logical to change, otherwise leave as default. ">
                 <div class="abst-settings-title">Targeting</div>
                 <div class="abst-settings-header closed" tabindex="0" aria-expanded="false">User Roles</div>
-                <div class="abst-targeting-option" id="abst-user-roles-container">
+                <div class="abst-targeting-option abst-hidden" id="abst-user-roles-container">
+                    <div class="abst-url-help">Choose which logged-in roles can see this test. Usually it is best to keep this focused on visitors and customer-facing users.</div>
                     ${rolesHtml}
                 </div>
                 <div class="abst-settings-header closed" tabindex="0" aria-expanded="false">Device Size</div>
                 <div class="abst-targeting-option abst-hidden">
+                    <div class="abst-url-help">Limit this test to specific screen sizes if the layout, copy, or offer changes between desktop, tablet, and mobile.</div>
                     <select id="abst-device-size" class="abst-select">
                         <option value="all" selected>All Sizes</option>
-                        <option value="desktop">Desktop</option>
-                        <option value="tablet">Tablet</option>
-                        <option value="mobile">Mobile</option>
+                        <option value="desktop">Desktop (over 767px)</option>
+                        <option value="desktop_tablet">Desktop + Tablet</option>
+                        <option value="tablet">Tablet (between 479px and 767px)</option>
+                        <option value="tablet_mobile">Tablet + Mobile</option>
+                        <option value="mobile">Mobile (under 479px)</option>
                     </select>
                 </div>
                 <div class="abst-settings-header closed" tabindex="0" aria-expanded="false">URL Filtering</div>
                 <div class="abst-targeting-option abst-hidden">
+                    <div class="abst-url-help">Match traffic by URL rules. Use <code>utm_source</code> for a query key, <code>utm_source=google</code> for an exact query match, separate OR rules with <code>|</code> or commas, use <code>NOT </code> to exclude, and use <code>*pricing*</code> to match text anywhere in the full URL.</div>
                     <input type="text" id="abst-url-query" class="abst-url-input" placeholder="utm_source=Google">
-                    <div class="abst-url-help">Test on traffic with matching URL query strings, or use a * to search the entire URL for a specific string</div>
+                </div>
+                <div class="abst-settings-header closed" tabindex="0" aria-expanded="false">Scope</div>
+                <div class="abst-targeting-option abst-hidden">
+                    <div id="abst-scope-help" class="abst-url-help">Choose where this magic test can appear. By default it only runs on the current page.</div>
+                    <select id="abst-scope-mode" class="abst-select">
+                        <option value="current" selected>Current Page (Default)</option>
+                        <option value="page_id">Specific Page ID</option>
+                        <option value="url">URL Contains</option>
+                        <option value="all">All Pages</option>
+                    </select>
+                    <input type="text" id="abst-scope-value" class="abst-url-input" placeholder="42" style="margin-top:8px; display:none;">
                 </div>
                 <div class="abst-settings-header closed" tabindex="0" aria-expanded="false">Traffic Allocation Percentage</div>
                 <div class="abst-targeting-option abst-hidden">
+                    <div class="abst-url-help">Control how much eligible traffic sees this test. Use 100% to show it to everyone who matches the targeting rules.</div>
                     <input type="number" id="abst-traffic-percentage" class="abst-number-input" value="100" min="1" max="100">
                 </div>
             </div>
@@ -1730,18 +3396,43 @@ function abst_magic_bar(options = {}) {
             <div class="abst-goals-column" data-llm-instructions="conversion goals are defined here. it's usually best to specify the overall website goal, like a purchase or a form contact, rather than a generic button, unless you are testing the text or text around that button">
                 <div class="abst-goals-title">Goals</div>
                 <div class="abst-goals-container" data-goal="0">
-                <h5>Primary Conversion Goal</h5>
+                <div class="abst-goal-card-header"><p class="abst-goal-card-title">Primary Goal</p></div>
                     <div id="abst-primary-goal-container">${abst_magic_data.goals}</div>
-                    <label id="conversion_use_order_value_container" for="conversion_use_order_value"><input type="checkbox" id="conversion_use_order_value" class="abst-checkbox" name="conversion_use_order_value"> Use Order Value as Conversion Value</label>
                     <div class="goal-value-label"></div>
                     <input type="text" class="abst-goal-input-value" placeholder="">
+                    <div id="conversion_use_order_value_container">
+                        <div class="abst-order-value-row">
+                            <label for="conversion_use_order_value">
+                                <input type="checkbox" id="conversion_use_order_value" class="abst-checkbox" name="conversion_use_order_value">
+                                <span>Use Order Value</span>
+                            </label>
+                            <button type="button" class="conversion_order_value_info abst-order-value-info" aria-expanded="false" aria-label="How order value works" title="How order value works">?</button>
+                        </div>
+                        <div class="conversion_order_value_help_panel abst-order-value-help-panel">
+                            <p>Turn this on when revenue matters more than raw conversion count.</p>
+                            <p>Instead of treating every conversion the same, the test will weigh results by order value so you can see which variation earns more revenue per visitor.</p>
+                            <p>To find the value for each conversion, we check in this order:</p>
+                            <p>AB Split Test checks for a value in this order:</p>
+                            <ol>
+                                <li>If <code>window.abst.abConversionValue</code> is already set, that exact value is used first.</li>
+                                <li>If not, it checks common URL parameters like <code>total_paid</code>, <code>amount_paid</code>, <code>payment_total</code>, <code>grand_total</code>, <code>order_total</code>, <code>ordertotal</code>, and <code>total</code>.</li>
+                                <li>If not, it looks for known order total elements used by WooCommerce, Easy Digital Downloads, SureCart, FluentCart, and generic <code>data-order-total</code> markup.</li>
+                                <li>If not, it scans visible page text for labels like <code>Order Total</code>, <code>Grand Total</code>, <code>Amount Paid</code>, <code>Total Paid</code>, and <code>Payment Total</code>.</li>
+                            </ol>
+                            <p>If none of those are found, the conversion falls back to a value of <code>1</code>.</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="abst-button-container">
                     <button class="abst-add-goal-button">+ Add Goal</button>
                 </div>
             </div>
         </div>
-        <button id="abst-magic-bar-start" class="abst-magic-bar-start">Start Test</button>
+        </div>
+        <div class="abst-magic-bar-footer">
+            <button id="abst-magic-bar-start" class="abst-magic-bar-start">Start Test</button>
+        </div>
+        </div>
 
     </div>`;
 
@@ -1762,12 +3453,63 @@ function abst_magic_bar(options = {}) {
 
     // Add the magic bar to the body
     document.body.appendChild(magicBar);
+
+    jQuery('.abst-ai-suggestions-toggle').html('<span class="abst-ai-suggestions-toggle-label"><span class="abst-ai-suggestions-icon">*</span><span>AI Suggestions</span><span class="abst-ai-suggestions-count">0</span></span><span class="abst-ai-suggestions-inline-loading ai-loading" style="display:none;"><span class="abst-ai-loading-text">Generating AI Suggestions...</span></span><span class="abst-ai-toggle-chevron">v</span>');
+
+    // AI suggestions toggle
+    jQuery(document).on('click', '.abst-ai-suggestions-toggle', function() {
+        var $toggle = jQuery(this);
+        var expanded = $toggle.attr('aria-expanded') === 'true';
+        setAISuggestionsExpanded(!expanded);
+    });
+
+    window.abmagic = window.abmagic || {};
+    window.setAbstMagicBarTab = function(tabName) {
+        var $magicBar = jQuery('#abst-magic-bar');
+        var $targetButton = $magicBar.find('.abst-magic-tab-button[data-tab="' + tabName + '"]');
+        var $targetPanel = $magicBar.find('.abst-magic-tab-panel[data-tab-panel="' + tabName + '"]');
+
+        if (!$magicBar.length || !$targetButton.length || !$targetPanel.length) {
+            return;
+        }
+
+        $magicBar.find('.abst-magic-tab-button')
+            .removeClass('is-active')
+            .attr('aria-selected', 'false')
+            .attr('tabindex', '-1');
+
+        $targetButton
+            .addClass('is-active')
+            .attr('aria-selected', 'true')
+            .attr('tabindex', '0');
+
+        $magicBar.find('.abst-magic-tab-panel')
+            .removeClass('is-active')
+            .attr('hidden', true);
+
+        $targetPanel
+            .addClass('is-active')
+            .removeAttr('hidden');
+
+        $magicBar
+            .removeClass('abst-active-tab-chat abst-active-tab-test')
+            .addClass('abst-active-tab-' + tabName);
+
+        window.abmagic.activeTab = tabName;
+    };
+
+    jQuery(magicBar).on('click', '.abst-magic-tab-button', function() {
+        window.setAbstMagicBarTab(jQuery(this).data('tab'));
+    });
+
+    window.setAbstMagicBarTab('test');
+
     //if localstorage localStorage.setItem('abst-magic-help', 'false'); then hide
     if(localStorage.getItem('abst-magic-help') === 'false'){
         jQuery('.abst-settings-column.help').hide();
     }
 
-    if( btab_vars.is_free == '1'){
+    if(hasBtabVars && btab_vars.is_free == '1'){
         jQuery('#abst-magic-bar').append('<div id="abst-magic-upgrade-overlay"><p>This is a pro feature</p><h3>Upgrade to create a Magic Test</h3><p>Also in any premium version:</p><ul><li>Unlimited Magic Tests</li><li>AI Assistant</li><li>AI Rewriter</li><li>Reports</li><li>Advanced Targeting</li><li>Analytics integrations</li></ul><a href="https://absplittest.com/pricing/?utm_source=magicupgradetab" target="_blank" class="abst-button button">Get AB Split Test Premium</a><BR><p>Your free account enables traditional tests from the block editor or <a href="'+bt_adminurl+'edit.php?post_type=bt_experiments" target="_blank">WP admin.</a></p><p class="upgrade-testy"><strong>Works well and makes me more money</strong><BR><em>This plugin is really a great addition to our website. Testing things is crucial and we have gained priceless insights so far!</em><BR>Christian - verified buyer.</p></div>'); 
     }
 
@@ -1806,7 +3548,7 @@ function abst_magic_bar(options = {}) {
             });
         }
     }, 10);
-    
+
     // Function to create editor toolbar
     function createEditorToolbar() {
         const toolbar = document.createElement('div');
@@ -1899,8 +3641,197 @@ function abst_magic_bar(options = {}) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     currentPageTitle = jQuery('h1').first().text().trim() || jQuery('title').text().trim() || 'Magic';
     const formatted = `${months[now.getMonth()]} ${now.getDate()}`;
-    jQuery('.abst-magic-bar-title').val(currentPageTitle + ' Page Test ' + formatted);
+    const defaultTitle = 'Test ' + formatted;
+    jQuery('.abst-magic-bar-title').val(defaultTitle);
    
+    // ========================================
+    // UNIFIED TEST OBJECT - Single source of truth
+    // ========================================
+    if (!window.abmagic) window.abmagic = {};
+    if (!window.abmagic.definition) window.abmagic.definition = [];
+    
+    // Initialize the unified test object
+    window.abmagic.test = {
+        title: defaultTitle,
+        conversion_style: 'bayesian',
+        use_order_value: false,
+        url_query: '',
+        targeting: {
+            device_size: ['desktop', 'tablet', 'mobile'],
+            traffic_percentage: 100,
+            allowed_roles: abst_magic_data.defaults || [],
+            scope: getDefaultMagicScope()
+        },
+        goals: {
+            primary: { type: 'click', value: '' },
+            secondary: []
+        }
+    };
+    
+    // Sync DOM → Object (called when DOM changes)
+    window.abmagic.toggleOrderValueFields = function() {
+        var $primaryGoal = jQuery('.abst-goals-container').first();
+        var $orderValue = jQuery('#conversion_use_order_value_container');
+        var goalType = $primaryGoal.find('select.goal-type').first().val() || '';
+
+        if ($primaryGoal.length && $orderValue.length) {
+            $orderValue.appendTo($primaryGoal).toggle(goalType !== '');
+        }
+    };
+
+    window.abmagic.syncFromDOM = function() {
+        if (window.abmagic.isSyncingToDOM) {
+            return;
+        }
+
+        var test = window.abmagic.test;
+        
+        // Title
+        test.title = jQuery('#abst-magic-bar-title').val() || '';
+        
+        // Conversion style
+        test.conversion_style = jQuery('#abst-conversion-style').val() || 'bayesian';
+        test.use_order_value = jQuery('#conversion_use_order_value').is(':checked');
+        
+        // URL query
+        test.url_query = jQuery('#abst-url-query').val() || '';
+        
+        // Targeting
+        test.targeting.device_size = jQuery('#abst-device-size').val() || ['desktop', 'tablet', 'mobile'];
+        test.targeting.traffic_percentage = parseInt(jQuery('#abst-traffic-percentage').val()) || 100;
+        test.targeting.allowed_roles = jQuery('#abst-user-roles-container input[type="checkbox"]:checked').map(function() {
+            return jQuery(this).val();
+        }).get();
+        test.targeting.scope = getMagicScopeFromInputs();
+        
+        // Primary goal
+        var primaryGoalType = jQuery('.abst-goals-container').first().find('select.goal-type').first().val() || 'click';
+        var primaryGoalValue = jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() || '';
+        test.goals.primary = { type: primaryGoalType, value: primaryGoalValue };
+        
+        // Secondary goals (from get_goals_from_dom)
+        test.goals.secondary = [];
+        jQuery('.abst-goals-container').each(function(index) {
+            if (index === 0) return; // Skip primary
+            var goalType = jQuery(this).find('select.goal-type').first().val();
+            var goalValue = jQuery(this).find('.abst-goal-input-value').val() || '';
+            if (goalType) {
+                test.goals.secondary.push({ type: goalType, value: goalValue });
+            }
+        });
+        
+        console.log('ABST: Synced from DOM', window.abmagic.test);
+    };
+    
+    // Sync Object → DOM (called when object changes programmatically)
+    window.abmagic.syncToDOM = function() {
+        var test = window.abmagic.test;
+        var primaryGoal = test.goals && test.goals.primary ? {
+            type: test.goals.primary.type,
+            value: test.goals.primary.value
+        } : null;
+        var secondaryGoals = Array.isArray(test.goals && test.goals.secondary) ? test.goals.secondary.map(function(goal) {
+            return {
+                type: goal.type,
+                value: goal.value
+            };
+        }) : [];
+
+        window.abmagic.isSyncingToDOM = true;
+        
+        // Title
+        jQuery('#abst-magic-bar-title').val(test.title);
+        
+        // Conversion style
+        if (jQuery('#abst-conversion-style').length) {
+            jQuery('#abst-conversion-style').val(test.conversion_style);
+        }
+
+        jQuery('#conversion_use_order_value').prop('checked', !!test.use_order_value);
+        
+        // URL query
+        jQuery('#abst-url-query').val(test.url_query);
+        
+        // Targeting - device size
+        if (jQuery('#abst-device-size').length) {
+            jQuery('#abst-device-size').val(test.targeting.device_size);
+        }
+        
+        // Targeting - traffic percentage
+        jQuery('#abst-traffic-percentage').val(test.targeting.traffic_percentage);
+        
+        // Targeting - allowed roles
+        jQuery('#abst-user-roles-container input[type="checkbox"]').each(function() {
+            var role = jQuery(this).val();
+            jQuery(this).prop('checked', test.targeting.allowed_roles.includes(role));
+        });
+
+        // Targeting - scope
+        var scopeFormState = getMagicScopeFormState(test.targeting.scope);
+        jQuery('#abst-scope-mode').val(scopeFormState.mode);
+        jQuery('#abst-scope-value').val(scopeFormState.value);
+        updateMagicScopeFormUi();
+        
+        // Primary goal
+        if (primaryGoal && primaryGoal.type) {
+            applyMagicGoalToContainer(jQuery('.abst-goals-container').first(), primaryGoal);
+        }
+
+        jQuery('.abst-goals-container').slice(1).remove();
+        if (secondaryGoals.length) {
+            secondaryGoals.forEach(function(goal, index) {
+                var goalNumber = index + 2;
+                jQuery('<div class="abst-goals-container" data-goal="' + goalNumber + '"><div class="abst-goal-card-header"><p class="abst-goal-card-title">Goal ' + goalNumber + '</p><div class="remove-goal" aria-label="Remove goal">X</div></div>' + abst_magic_data.goals + '<div class="goal-value-label"></div><input type="text" class="abst-goal-input-value" placeholder="Enter goal"></div>').insertBefore('.abst-button-container');
+                var $goalContainer = jQuery('.abst-goals-container').last();
+                applyMagicGoalToContainer($goalContainer, goal);
+            });
+        }
+        
+        // Update variation picker for definition changes
+        if (typeof updateVariationPicker === 'function') {
+            updateVariationPicker();
+        }
+
+        window.abmagic.isSyncingToDOM = false;
+        if (window.abmagic.toggleOrderValueFields) {
+            window.abmagic.toggleOrderValueFields();
+        }
+        
+        console.log('ABST: Synced to DOM', window.abmagic.test);
+    };
+    
+    // Bind DOM change events to sync to object
+    jQuery(document).on('change input', '#abst-magic-bar-title, #abst-conversion-style, #abst-url-query, #abst-device-size, #abst-traffic-percentage, #abst-scope-mode, #abst-scope-value, #conversion_use_order_value', function() {
+        var fieldId = jQuery(this).attr('id');
+        if ((fieldId === 'abst-scope-mode' || fieldId === 'abst-scope-value') && window.abmagic && !window.abmagic.isSyncingToDOM) {
+            window.abmagic.scopeDirty = true;
+        }
+        if (fieldId === 'abst-scope-mode') {
+            updateMagicScopeFormUi();
+        }
+        if (window.abmagic && window.abmagic.toggleOrderValueFields) {
+            window.abmagic.toggleOrderValueFields();
+        }
+        window.abmagic.syncFromDOM();
+    });
+    jQuery(document).on('change', '#abst-user-roles-container input[type="checkbox"]', function() {
+        updateUserRoleRowState();
+        window.abmagic.syncFromDOM();
+    });
+    jQuery(document).on('change', '.abst-goals-container select, .abst-goals-container .abst-goal-input-value', function() {
+        window.abmagic.syncFromDOM();
+    });
+    updateUserRoleRowState();
+    updateMagicScopeFormUi();
+    if (window.abmagic.toggleOrderValueFields) {
+        window.abmagic.toggleOrderValueFields();
+    }
+
+    if (window.location.search.includes('testid')) {
+        setTimeout(function() {
+            loadMagicTestFromUrl();
+        }, 80);
+    }
 
     // Show the magic bar
     setTimeout(() => {
@@ -1941,11 +3872,11 @@ function abst_magic_bar(options = {}) {
     };
 }
 
-    /**
-     * Finds and adjusts fixed elements when the magic bar is active
-     * @param {boolean} activate - Whether to activate or deactivate adjustments
-     */
-    function adjustFixedElementsForMagicBar(activate) {
+/**
+ * Finds and adjusts fixed elements when the magic bar is active
+ * @param {boolean} activate - Whether to activate or deactivate adjustments
+ */
+function adjustFixedElementsForMagicBar(activate) {
         // Get all elements in the document
         const allElements = document.querySelectorAll('*');
     
@@ -1971,25 +3902,40 @@ function abst_magic_bar(options = {}) {
         }
     });
 }
-
-// Make the function available globally
-window.abst_magic_bar = abst_magic_bar;
-
-// jQuery wrapper for the function
 (function($) {
     $(function() {
+        
+        //if url contains query string abmagic then load magic bar
+        if(window.location.search.includes('abmagic')) {
+            abst_magic_bar();
+        }
+        
 
 
         jQuery("body").on('click','.abst-settings-header',function(){
-            jQuery(this).toggleClass('closed').next('.abst-targeting-option').toggleClass('abst-hidden');
+            var $header = jQuery(this);
+            var $option = $header.next('.abst-targeting-option');
+            var isClosed = $header.hasClass('closed');
+
+            $header.toggleClass('closed', !isClosed).attr('aria-expanded', isClosed ? 'true' : 'false');
+
+            if (isClosed) {
+                $option.removeClass('abst-hidden').hide().stop(true, true).slideDown(220);
+            } else {
+                $option.stop(true, true).slideUp(150, function() {
+                    $option.addClass('abst-hidden');
+                });
+            }
         });
 
         jQuery("body").on('click','.abst-add-goal-button',function(){
-           // scroll to bottom of abst-magic-bar
             //if theres less than 11 goals
             if(jQuery('.abst-goals-container').length < 10){
+                // Remove is-active from all existing goals containers
                 goalCount = jQuery('.abst-goals-container').length + 1;
-                jQuery('<div class="abst-goals-container" data-goal="'+goalCount+'"><h5>Goal #'+goalCount+'</h5><div class="remove-goal"> X</div> ' +abst_magic_data.goals+'<div class="goal-value-label"></div><input type="text" class="abst-goal-input-value" placeholder="Enter goal"></div>').insertBefore('.abst-button-container');
+                var $newGoal = jQuery('<div class="abst-goals-container" data-goal="'+goalCount+'"><div class="abst-goal-card-header"><p class="abst-goal-card-title">Goal '+goalCount+'</p><div class="remove-goal" aria-label="Remove goal">X</div></div>' +abst_magic_data.goals+'<div class="goal-value-label"></div><input type="text" class="abst-goal-input-value" placeholder="Enter goal"></div>').insertBefore('.abst-button-container');
+                // Add is-active to the new goal
+                setGoalsContainerActive($newGoal[0], true);
             }
             else{
                 alert('You can have maximum 10 goals');
@@ -2006,47 +3952,137 @@ window.abst_magic_bar = abst_magic_bar;
             jQuery('.abst-settings-column.help').slideUp();
         })
 
-        // Make the function available in the jQuery namespace
-        $.abst_magic_bar = function(options) {
-            abst_magic_bar(options);
-        };
-        
-        // Add event listener for the admin bar menu item
-        $(document).on('click', '#wp-admin-bar-ab-new-magic-test a', function(e) {
-            e.preventDefault();
-            // Make sure the magic bar is properly initialized
-            if (typeof abst_magic_bar === 'function') {
-                abst_magic_bar();
-            } else {
-                console.error('abst_magic_bar function not found');
-            }
-            jQuery('.menupop.hover').removeClass('hover');
-        });
-
         jQuery('body').on('click','.hide-magic-bar',function(){
-            jQuery('.abst-settings-column.help').slideUp();
+            jQuery('.abst-settings-column.help').toggleClass('abst-hidden');
             //set localStorage
             localStorage.setItem('abst-magic-help', 'false');
         })
         
-        jQuery('body').on('click','.ai-suggestion-item',function(){
-            if(jQuery("#variation-picker").val() == '0'){
-                alert('Please select a variation first');
+        // AI Suggestion - "Add as Variation" button click
+        jQuery('body').on('click', '.ai-add-variation', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var $item = jQuery(this).closest('.ai-suggestion-item');
+            var text = $item.attr('data-suggestion-text') || $item.find('.ai-suggestion-text').text().trim();
+            
+            // Add as new variation
+            addVariationFromSuggestion(text);
+            
+            // Mark item as added
+            $item.css({
+                'background': '#c8e6c9',
+                'opacity': '0.7'
+            }).find('.ai-suggestion-actions').html('<span style="color: #2e7d32;">✓ Added</span>');
+            
+            console.log('Added suggestion as new variation:', text);
+        });
+        
+        // AI Suggestion - "Replace Current" button click
+        jQuery('body').on('click', '.ai-replace-current', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var $item = jQuery(this).closest('.ai-suggestion-item');
+            var text = $item.attr('data-suggestion-text') || $item.find('.ai-suggestion-text').text().trim();
+            
+            // Check if we're on a variation (not control)
+            if (jQuery("#variation-picker").val() == '0') {
+                alert('Please select a variation first (not the Control)');
                 return;
             }
-
-            //remove the item clicked
-            var theText = jQuery(this).text(); 
-            jQuery(this).fadeOut(200);
-            console.log(jQuery("#variation-picker").val());
-            // Insert HTML into editor if available
+            
+            // Replace current editor content
             if (window.abstEditor) {
-                window.abstEditor.innerHTML = theText;
+                window.abstEditor.innerHTML = text;
+                
                 // Trigger input event to mark as changed
                 const event = new Event('input', { bubbles: true });
                 window.abstEditor.dispatchEvent(event);
             }
+            
+            // Fade out the item
+            $item.fadeOut(200);
+            
+            console.log('Replaced current variation with:', text);
+        });
+        
+        // AI Suggestion - Click on item text (legacy behavior - replace current)
+        jQuery('body').on('click', '.ai-suggestion-item', function(e) {
+            // Don't trigger if clicking on buttons
+            if (jQuery(e.target).closest('.ai-suggestion-actions').length > 0) {
+                return;
+            }
+            
+            // Legacy behavior: clicking the item replaces current
+            if (jQuery("#variation-picker").val() == '0') {
+                alert('Please select a variation first');
+                return;
+            }
 
+            var text = jQuery(this).attr('data-suggestion-text') || jQuery(this).find('.ai-suggestion-text').text().trim();
+            
+            jQuery(this).fadeOut(200);
+            
+            if (window.abstEditor) {
+                window.abstEditor.innerHTML = text;
+
+                // Trigger input event to mark as changed
+                const event = new Event('input', { bubbles: true });
+                window.abstEditor.dispatchEvent(event);
+            }
+        });
+        
+        // AI Suggestion - "Generate More" button click
+        jQuery('body').on('click', '#ai-generate-more', function(e) {
+            e.preventDefault();
+            
+            var selector = jQuery('#abst-selector-input').val();
+            if (!selector) {
+                alert('Please select an element first');
+                return;
+            }
+            
+            // Get current text from editor
+            var currentText = '';
+            if (window.abstEditor) {
+                currentText = window.abstEditor.innerText || window.abstEditor.textContent || '';
+            }
+            if (!currentText) {
+                currentText = jQuery(selector).text().trim();
+            }
+            
+            if (!currentText) {
+                alert('No text content to generate suggestions for');
+                return;
+            }
+            
+            // Get history of suggestions to exclude
+            var history = getSuggestionHistory(selector);
+            
+            // Show loading state
+            var $btn = jQuery(this);
+            var originalText = $btn.text();
+            $btn.text('Generating...').prop('disabled', true);
+            
+            // Build exclusion list for the AI prompt
+            var excludeList = history.length > 0 ? history.join('|||') : '';
+            
+            console.log('Generating more suggestions, excluding:', history.length, 'previous suggestions');
+            
+            // Call AI with exclusion list
+            generateMoreSuggestions(currentText, excludeList, function(newSuggestions) {
+                $btn.text(originalText).prop('disabled', false);
+                
+                if (newSuggestions && newSuggestions.length > 0) {
+                    // Cache the new suggestions (adds to history automatically)
+                    cacheAISuggestions(selector, newSuggestions);
+                    // Append to existing list
+                    populateAISuggestionsPanel(newSuggestions, true);
+                } else {
+                    alert('No new suggestions available. Try editing the text first.');
+                }
+            });
         });
 
 
@@ -2069,21 +4105,27 @@ window.abst_magic_bar = abst_magic_bar;
                 window.abmagic.definition[elementIndex]['variations'][variationIndex] = variationValue;
                 console.log('updated variation',window.abmagic.definition[elementIndex]['variations']);
             } else {
-                //not found, add
+                //not found, add - but only if element type is valid
+                if (!variationType) {
+                    console.log('Skipping element - not a testable type2 :', selector);
+                    return;
+                }
+                
                 var originalValue;
                 if (variationType === 'image') {
-                    originalValue = jQuery(selector).attr('src');
+                    originalValue = jQuery(selector).attr('src') || '';
                 } else {
-                    originalValue = jQuery(selector).html();
+                    originalValue = jQuery(selector).html() || '';
                 }
 
                 var newVariations = [];
-                newVariations[0] = originalValue;
-                newVariations[variationIndex] = variationValue;
+                newVariations[0] = originalValue || ''; // Ensure it's never null/undefined
+                newVariations[variationIndex] = variationValue || ''; // Ensure it's never null/undefined
 
                 var newDef = {
                     type: variationType,
                     selector: selector,
+                    scope: getMagicScope(),
                     variations: newVariations
                 };
 
@@ -2111,11 +4153,12 @@ window.abst_magic_bar = abst_magic_bar;
             else{
                 jQuery("#version-value").text("Edit the " + jQuery("#variation-picker :selected").text() + " of the test");
             }
-            var variationIndex = jQuery("#variation-picker").val();
+            var variationIndexRaw = jQuery("#variation-picker").val();
+            var variationIndex = (variationIndexRaw === 'addAnother') ? 'addAnother' : (parseInt(variationIndexRaw) || 0);
 
             // if its 0 then make editor read-only
             if (window.abstEditor) {
-                if (variationIndex == 0) {
+                if (variationIndex === 0) {
                     window.abstEditor.contentEditable = 'false';
                     window.abstEditor.style.backgroundColor = '#f5f5f5';
                 } else {
@@ -2126,7 +4169,7 @@ window.abst_magic_bar = abst_magic_bar;
             
             //if the variation index is the last one, then change the label to Variation C/d/e/f/g etc and add another option below with label " Add Variation"
             
-            if(variationIndex == 'addAnother'){
+            if(variationIndex === 'addAnother'){
                 //remove existing add another option
                 jQuery("#variation-picker option[value='addAnother']").remove();
                 console.log('add variation');
@@ -2135,6 +4178,20 @@ window.abst_magic_bar = abst_magic_bar;
                 var newOptions = '<option value="'+nextIndex+'">'+label+' Version</option><option value="addAnother"> + Add Version</option>';
                 jQuery("#variation-picker").append(newOptions);
                 jQuery("#variation-picker").val(nextIndex);
+                
+                // Add new variation to ALL elements in the definition using their original (control) text
+                if (window.abmagic && window.abmagic.definition) {
+                    window.abmagic.definition.forEach(function(def) {
+                        if (def.variations && def.variations.length < nextIndex + 1) {
+                            // Pad with the original (control) text for any missing variations
+                            while (def.variations.length < nextIndex + 1) {
+                                def.variations.push(def.variations[0]); // Use original/control text
+                            }
+                        }
+                    });
+                    console.log('Added variation to all elements:', window.abmagic.definition);
+                }
+                
                 jQuery("#variation-picker").trigger('change');
 
                 console.log(newOptions,jQuery("#variation-picker"),nextIndex,label);
@@ -2177,6 +4234,7 @@ window.abst_magic_bar = abst_magic_bar;
                 
                 // Set the content directly in the contentEditable div
                 window.abstEditor.innerHTML = currentText;
+                showAISuggestionsForSelector(selector, currentText, elementDef.type);
                 
                 // Update the hidden input
                 jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
@@ -2187,38 +4245,9 @@ window.abst_magic_bar = abst_magic_bar;
             }
         });
 
-        jQuery('body').on('click', ".abst-variation-remove", function() {
-            //remove variation
-            if(jQuery("#variation-picker option:last").val() == 'addAnother'){
-                jQuery("#variation-picker option:last").remove();
-            }
-            if(jQuery("#variation-picker option").length > 2){
-
-                if(window.abmagic.definition){
-                    //each window.abmagic.definition
-                    variationIndex = parseInt(jQuery("#variation-picker option:last").val());
-                    console.log('Removing variation at index:' , variationIndex);
-                    window.abmagic.definition.forEach(function(currentDefinition) { 
-                        if (currentDefinition.variations && currentDefinition.variations.length > variationIndex) {
-                            // Remove the variation at the specified 'variationIndex'
-                            currentDefinition.variations.splice(variationIndex, 1); 
-                            console.log('Removed variation for selector:', currentDefinition.selector);
-                        } else if (currentDefinition.variations && currentDefinition.variations.length === variationIndex && variationIndex === 0 && currentDefinition.variations.length === 1){
-                            // Edge case: if removing the only variation (index 0) when variations array has 1 element.
-                            currentDefinition.variations.splice(variationIndex, 1);
-                            console.log('Removed the only variation for selector:', currentDefinition.selector);
-                        }
-                    });
-                }
-
-                jQuery("#variation-picker option:last").remove();
-                console.log(window.abmagic.definition);
-            }
-            //select last item
-            jQuery("#variation-picker").val(jQuery("#variation-picker option").length - 1);
-            jQuery("#variation-picker").trigger('change');
-            //add it back in
-            jQuery("#variation-picker").append('<option value="addAnother"> + Add Version</option>');
+        jQuery('body').on('click', ".abst-variation-remove", function(e) {
+            e.preventDefault();
+            removeMagicVariation(getMagicVariationCount() - 1);
         });
 
 
@@ -2226,7 +4255,7 @@ window.abst_magic_bar = abst_magic_bar;
         
         jQuery('body').on('click','.remove-goal',function(){
             //remove the container
-            jQuery(this).parent('.abst-goals-container').remove();
+            jQuery(this).closest('.abst-goals-container').remove();
         });
 
         jQuery('body').on('click','[magic-eid]',function(){
@@ -2237,7 +4266,6 @@ window.abst_magic_bar = abst_magic_bar;
         //on select.goal-type change if it equals 'page' then append a pageselector dropdown that updates the input value next to it
         jQuery('body').on('change', '.abst-goals-container select.goal-type', function() { // update hidden input value
             jQuery(this).parents('.abst-goals-container').find('.abst-goal-input-value').val('');
-            jQuery('#conversion_use_order_value_container').hide(); // use order value hidden unless woo order
             var type = jQuery(this).val();
             var goalContainer = jQuery(this).parents('.abst-goals-container');  
             //array of special pages to tranfer value into value
@@ -2450,8 +4478,14 @@ window.abst_magic_bar = abst_magic_bar;
             }else if (type == 'javascript'){
                 goalContainer.find('.goal-value-label').text('Create test, then view in admin to see conversion script').show();
             }
-            if (abstSpecialPages.includes(type)) { // abstSpecialPages is defined at line 1729
+            if (type == 'page') {
+                goalContainer.find('.goal-value-label').text('Choose Page that will trigger a goal when visited').show();
+            }
+            else if (abstSpecialPages.includes(type) || (type && type.startsWith(abstFormConversionPrefix))) { // abstSpecialPages or form conversions
                 goalContainer.find('.abst-goal-input-value').val(type).hide();
+                if (type && type.startsWith(abstFormConversionPrefix)) {
+                    goalContainer.find('.goal-value-label').text('Form submission will trigger this goal').show();
+                }
             }
             else if (type == 'block'){
                 goalContainer.find('.goal-value-label').text('Create test, then view in admin to track this block').show();
@@ -2475,11 +4509,12 @@ window.abst_magic_bar = abst_magic_bar;
                 goalContainer.find('.goal-value-label').text('Select an item on the page, or enter the CSS selector that when clicked will trigger a goal. e.g. "#submit-order" or ".header button"').show();
                 // Note: The window.magicLastFocus logic is handled by a separate if block that follows this main conditional chain.
             }
-            else if (abstSpecialPages.includes(type)) { // Handles 'woo-order-pay', 'woo-order-received', 'woo'
+            else if (abstSpecialPages.includes(type) || (type && type.startsWith(abstFormConversionPrefix))) { // Handles 'woo-order-pay', 'woo-order-received', 'woo', form-*
                  goalContainer.find('.abst-goal-input-value').val(type).hide();
-                 goalContainer.find('.goal-value-label').text('Goal for: ' + type).show(); 
-                 if(type == 'woo-order-received' ){
-                    jQuery('#conversion_use_order_value_container').show();
+                 if (type && type.startsWith(abstFormConversionPrefix)) {
+                     goalContainer.find('.goal-value-label').text('Form submission will trigger this goal').show();
+                 } else {
+                     goalContainer.find('.goal-value-label').text('Goal for: ' + type).show(); 
                  }
             }
             else if (type && type !== '' && !abIsInt(type)) { // Default for other known types like 'link', 'text', 'url', but not numeric page IDs from old dropdown
@@ -2492,6 +4527,11 @@ window.abst_magic_bar = abst_magic_bar;
             else { // type is '' (empty, e.g., "Select Goal Event...")
                  goalContainer.find('.goal-value-label').text('Select a goal type to define its value.').show(); 
             }
+
+            if(window.abmagic && window.abmagic.toggleOrderValueFields){
+                window.abmagic.toggleOrderValueFields();
+            }
+
 
             if(type == 'selector'){
                 console.log('selector');
@@ -2512,7 +4552,7 @@ window.abst_magic_bar = abst_magic_bar;
             }
 
             var goalType = jQuery('.abst-goals-container').first().find('.goal-type').val();
-            if (!jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() && !abstSpecialPages.includes(goalType)) {
+            if (!jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() && !abstSpecialPages.includes(goalType) && !(goalType && goalType.startsWith(abstFormConversionPrefix))) {
                 alert('Please add at least one goal to the test');
                 //scroll #abst-magic-bar to the bottom
                 jQuery('#abst-magic-bar').animate({
@@ -2521,15 +4561,68 @@ window.abst_magic_bar = abst_magic_bar;
                 return;
             }
 
+            // Sync from DOM one final time before save
+            if (window.abmagic.syncFromDOM) {
+                window.abmagic.syncFromDOM();
+            }
+
+            var selectedScope = getMagicScope();
+            var preservePerElementScopes = !!(
+                window.abmagic &&
+                window.abmagic.editingTestId &&
+                !window.abmagic.scopeDirty &&
+                definitionHasMixedScopes(window.abmagic.definition)
+            );
+
+            // Validate and sanitize magic_definition before sending
+            var sanitizedDefinition = [];
+            if (window.abmagic && window.abmagic.definition && Array.isArray(window.abmagic.definition)) {
+                sanitizedDefinition = window.abmagic.definition.map(function(item) {
+                    if (!item || typeof item !== 'object') return null;
+                    
+                    var sanitized = {
+                        type: item.type || 'text',
+                        selector: item.selector || ''
+                    };
+
+                    if (preservePerElementScopes && item.scope) {
+                        sanitized.scope = normalizeMagicScope(item.scope, true);
+                    } else {
+                        sanitized.scope = normalizeMagicScope(selectedScope, true);
+                    }
+                    
+                    // Sanitize variations array
+                    if (item.variations && Array.isArray(item.variations)) {
+                        sanitized.variations = item.variations.map(function(variation) {
+                            // Convert null/undefined to empty string
+                            if (variation === null || variation === undefined) return '';
+                            // Ensure it's a string
+                            return String(variation);
+                        });
+                    } else {
+                        sanitized.variations = [''];
+                    }
+                    
+                    return sanitized;
+                }).filter(function(item) { return item !== null; }); // Remove null items
+            }
+
+            window.abmagic.definition = sanitizedDefinition;
+            
+            // Read from unified test object (same data structure sent to server)
+            var test = window.abmagic.test;
+            var primaryGoal = test.goals.primary;
+            
             var newTestData = {
                 action: 'create_new_on_page_test',
-                post_title: jQuery('#abst-magic-bar-title').val(),
-                post_id: 'new',
-                magic_definition: JSON.stringify(window.abmagic.definition),
+                abst_magic_mode: 1,
+                post_title: test.title,
+                post_id: (window.abmagic && window.abmagic.editingTestId) ? window.abmagic.editingTestId : 'new',
+                magic_definition: JSON.stringify(sanitizedDefinition),
                 test_type: 'magic',
-                conversion_style: jQuery('#abst-conversion-style').length ? jQuery('#abst-conversion-style').val() : 'bayesian',
-                bt_experiments_url_query: jQuery("#abst-url-query").val(),
-                bt_experiments_conversion_page: jQuery(".abst-goals-container").first().find('select').val(),
+                conversion_style: test.conversion_style,
+                bt_experiments_url_query: test.url_query,
+                bt_experiments_conversion_page: primaryGoal.type,
                 bt_experiments_conversion_page_selector: '',
                 bt_experiments_conversion_url: '',
                 bt_experiments_conversion_selector: '',
@@ -2539,43 +4632,59 @@ window.abst_magic_bar = abst_magic_bar;
                 bt_experiments_conversion_order_value: jQuery('#conversion_use_order_value').is(':checked') ? 1 : 0,
                 bt_experiments_conversion_time: '',
                 bt_experiments_conversion_text: '',
-                bt_experiments_target_option_device_size: jQuery('#abst-device-size').val(),
-                bt_experiments_target_percentage: jQuery('#abst-traffic-percentage').val(),
-                bt_allowed_roles: jQuery('#abst-user-roles-container input[type="checkbox"]:checked').map(function() {
-                    return jQuery(this).val();
-                }).get(),
+                bt_experiments_target_option_device_size: test.targeting.device_size,
+                bt_experiments_target_percentage: test.targeting.traffic_percentage,
+                bt_allowed_roles: test.targeting.allowed_roles,
                 goal: get_goals_from_dom(),
                 
             };
 
-            if(jQuery(".abst-goals-container").first().find('select').val() == 'page')
-                newTestData.bt_experiments_conversion_page = jQuery(".abst-goals-container").first().find('.abst-goal-input-value').val();
+            // Set the appropriate conversion field based on goal type
+            if (primaryGoal.type === 'page')
+                newTestData.bt_experiments_conversion_page = primaryGoal.value;
 
-            if(jQuery(".abst-goals-container").first().find('select').val() == 'url')
-                newTestData.bt_experiments_conversion_url = jQuery(".abst-goals-container").first().find('.abst-goal-input-value').val();
+            if (primaryGoal.type === 'url')
+                newTestData.bt_experiments_conversion_url = primaryGoal.value;
 
-            if(jQuery(".abst-goals-container").first().find('select').val() == 'time')
-                newTestData.bt_experiments_conversion_time = jQuery(".abst-goals-container").first().find('.abst-goal-input-value').val();
+            if (primaryGoal.type === 'time')
+                newTestData.bt_experiments_conversion_time = primaryGoal.value;
 
-            if(jQuery(".abst-goals-container").first().find('select').val() == 'text')
-                newTestData.bt_experiments_conversion_text = jQuery(".abst-goals-container").first().find('.abst-goal-input-value').val();
+            if (primaryGoal.type === 'text')
+                newTestData.bt_experiments_conversion_text = primaryGoal.value;
 
-            if(jQuery(".abst-goals-container").first().find('select').val() == 'link')
-                newTestData.bt_experiments_conversion_link_pattern = jQuery(".abst-goals-container").first().find('.abst-goal-input-value').val();
+            if (primaryGoal.type === 'link')
+                newTestData.bt_experiments_conversion_link_pattern = primaryGoal.value;
             
-            if(jQuery(".abst-goals-container").first().find('select').val() == 'selector')
-                newTestData.bt_experiments_conversion_selector = jQuery(".abst-goals-container").first().find('.abst-goal-input-value').val();
+            if (primaryGoal.type === 'selector')
+                newTestData.bt_experiments_conversion_selector = primaryGoal.value;
+            
+            console.log('ABST: Saving test from unified object', { test: test, payload: newTestData });
                 
                 jQuery.ajax({
                 url: bt_ajaxurl,
                 type: 'POST',
                 data: newTestData,
                 success: function(response) {
-                    //redirect to experiment page
-                    response = JSON.parse(response);
+                    if (typeof response === 'string') {
+                        try {
+                            response = JSON.parse(response);
+                        } catch (e) {
+                            console.error('ABST: Failed to parse Magic save response', e, response);
+                            alert('The test was saved, but the response could not be understood. Please reload and confirm your changes.');
+                            return;
+                        }
+                    }
+
                     if(response.post_title && response.post_title !== ''){
-                        alert(response.post_title + " created, reloading page.");
-                        window.location.href = window.location.pathname;
+                        var message = response.updated ? ' updated.' : ' created, reloading page.';
+                        alert(response.post_title + message);
+                        var urlParams = new URLSearchParams(window.location.search);
+                        var returnTo = urlParams.get('return_to');
+                        if (response.updated && returnTo) {
+                            window.location.href = decodeURIComponent(returnTo);
+                        } else {
+                            window.location.href = window.location.pathname;
+                        }
                     }
                 }
             });
@@ -2583,6 +4692,9 @@ window.abst_magic_bar = abst_magic_bar;
       });
     });
 })(jQuery);
+
+// Make the function available globally
+window.abst_magic_bar = abst_magic_bar;
 
 function get_goals_from_dom(){
 
@@ -2615,9 +4727,9 @@ function get_abst_pageselector() {
             action: 'ab_page_selector'
         },
         success: function(response) {
-           response = JSON.parse(response);
-           response.unshift(['', "Choose a Page"]);
-           window.abst_magic_data.pages = response;
+        response = JSON.parse(response);
+        response.unshift(['', "Choose a Page"]);
+        window.abst_magic_data.pages = response;
         }
     });
 }
@@ -2626,8 +4738,9 @@ function abIsInt(value) {
 }
 
 
-        
+    
 function isInViewport(element) {
+    if (!element) return false;
     const rect = element.getBoundingClientRect();
     return (
         rect.top >= 0 &&
@@ -2640,18 +4753,20 @@ function isInViewport(element) {
 // Refreshes all variation classes by removing the class from all elements
 // and then re-adding it only to elements in the current Magic definition
 function refreshVariationClasses() {
-    // First remove the class from all elements
+    // First remove the class and markers from all elements
     jQuery('.abst-variation').removeClass('abst-variation');
+    jQuery('.abst-variation-marker').remove();
     
     // Skip if no Magic definition exists
     if (!window.abmagic || !window.abmagic.definition) return;
     
-    // Re-add the class to all elements in the definition
-    window.abmagic.definition.forEach(function(def) {
+    // Re-add the class and markers to all elements in the definition
+    window.abmagic.definition.forEach(function(def, defIndex) {
         if (def && def.selector) {
             const elements = jQuery(def.selector);
             if (elements.length > 0) {
                 elements.addClass('abst-variation');
+                addVariationMarker(elements.first(), def, defIndex);
             }
         }
     });
@@ -2659,188 +4774,796 @@ function refreshVariationClasses() {
     console.log('Refreshed variation classes');
 }
 
+/**
+ * Add a variation marker toolbar to an element
+ * Shows A, B, C, D buttons to toggle variations and X to remove
+ */
+function addVariationMarker($element, definition, defIndex) {
+    // Remove existing marker if any
+    $element.find('.abst-variation-marker').remove();
+    $element.siblings('.abst-variation-marker').remove();
+    
+    // Ensure element has position relative for absolute positioning
+    if ($element.css('position') === 'static') {
+        $element.css('position', 'relative');
+    }
+    
+    // Build variation buttons
+    var buttonsHtml = '';
+    var numVariations = definition.variations ? definition.variations.length : 2;
+    var currentVariation = parseInt(jQuery('#variation-picker').val()) || 0;
+    
+    for (var i = 0; i < numVariations; i++) {
+        var label = getVariationLabel(i);
+        var activeClass = (i === currentVariation) ? ' active' : '';
+        var title = 'Show ' + label + ' Version' + (i > 0 ? ' (right-click to remove)' : '');
+        buttonsHtml += '<button class="abst-marker-var' + activeClass + '" data-var="' + i + '" data-def="' + defIndex + '" title="' + title + '">' + label + '</button>';
+    }
+    
+    // Add "add variation" button
+    buttonsHtml += '<button class="abst-marker-add" data-def="' + defIndex + '" title="Add new variation">+</button>';
+    
+    // Add remove button
+    buttonsHtml += '<button class="abst-marker-remove" data-def="' + defIndex + '" title="Remove element from test">×</button>';
+    
+    var $marker = jQuery('<div class="abst-variation-marker">' + buttonsHtml + '</div>');
+    $element.append($marker);
+    positionVariationMarker($marker, $element);
+}
 
+function positionVariationMarker($marker, $element) {
+    if (!$marker || !$marker.length || !$element || !$element.length) {
+        return;
+    }
+
+    var markerWidth = $marker.outerWidth() || 0;
+    var markerHeight = $marker.outerHeight() || 0;
+    var elementRect = $element[0].getBoundingClientRect();
+    var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    var margin = 8;
+    var adminBarHeight = 0;
+    var $adminBar = jQuery('#wpadminbar:visible');
+
+    if ($adminBar.length) {
+        adminBarHeight = $adminBar.outerHeight() || 0;
+    }
+
+    var safeTop = Math.max(margin, adminBarHeight + margin);
+    var topPosition = elementRect.top - markerHeight - 6;
+    var bottomPosition = elementRect.bottom + 6;
+
+    var viewportLeft = elementRect.right - markerWidth + 10;
+    var viewportTop = (topPosition < safeTop) ? bottomPosition : topPosition;
+
+    viewportLeft = Math.max(margin, Math.min(viewportLeft, viewportWidth - markerWidth - margin));
+
+    $marker.css({
+        left: (viewportLeft - elementRect.left) + 'px',
+        right: 'auto',
+        top: (viewportTop - elementRect.top) + 'px',
+        display: 'inline-flex'
+    });
+}
+
+function repositionVariationMarkers() {
+    jQuery('.abst-variation-marker').each(function() {
+        var $marker = jQuery(this);
+        positionVariationMarker($marker, $marker.parent());
+    });
+}
+
+jQuery(window).on('resize scroll', function() {
+    repositionVariationMarkers();
+});
+
+// Handle variation marker button clicks - swap variation
+jQuery('body').on('click', '.abst-marker-var', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Marker var button clicked');
+    var varIndex = jQuery(this).data('var');
+    var defIndex = jQuery(this).data('def');
+    console.log('varIndex:', varIndex, 'defIndex:', defIndex);
+    
+    // Get the definition for this element
+    if (window.abmagic && window.abmagic.definition && window.abmagic.definition[defIndex]) {
+        var def = window.abmagic.definition[defIndex];
+        
+        // Update selector input to this element
+        jQuery('#abst-selector-input').val(def.selector);
+        
+        // Update editor with this variation's content
+        if (window.abstEditor) {
+            var content = def.variations[varIndex] || def.variations[0] || '';
+            window.abstEditor.innerHTML = content;
+            showAISuggestionsForSelector(def.selector, content, def.type);
+        }
+    }
+    
+    // Update the variation picker and trigger change
+    jQuery('#variation-picker').val(String(varIndex)).trigger('change');
+    
+    // Update active state on all markers
+    jQuery('.abst-variation-marker .abst-marker-var').removeClass('active');
+    jQuery('.abst-variation-marker .abst-marker-var[data-var="' + varIndex + '"]').addClass('active');
+});
+
+// Handle right-click on a variation label - remove that variation across the test
+jQuery('body').on('contextmenu', '.abst-marker-var', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var varIndex = parseInt(jQuery(this).data('var'), 10);
+    removeMagicVariation(varIndex);
+});
+
+// Handle add variation button clicks
+jQuery('body').on('click', '.abst-marker-add', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Add variation button clicked');
+    var defIndex = jQuery(this).data('def');
+    
+    // Get the definition for this element and set it as current
+    if (window.abmagic && window.abmagic.definition && window.abmagic.definition[defIndex]) {
+        var def = window.abmagic.definition[defIndex];
+        
+        // Update selector input to this element
+        jQuery('#abst-selector-input').val(def.selector);
+        showAISuggestionsForSelector(def.selector, def.variations[1] || def.variations[0] || '', def.type);
+    }
+    
+    // Trigger the "Add Version" option in the picker
+    jQuery('#variation-picker').val('addAnother').trigger('change');
+});
+
+// Handle remove button clicks
+jQuery('body').on('click', '.abst-marker-remove', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Remove button clicked');
+    
+    if (!confirm('Remove this element from the test?')) {
+        return;
+    }
+    
+    var defIndex = parseInt(jQuery(this).data('def'));
+    
+    if (window.abmagic && window.abmagic.definition && window.abmagic.definition[defIndex]) {
+        var def = window.abmagic.definition[defIndex];
+        var selector = def.selector;
+        
+        // Reset element to original content
+        if (def.type === 'image') {
+            jQuery(selector).attr('src', def.variations[0]);
+        } else {
+            jQuery(selector).html(def.variations[0]);
+        }
+        
+        // Remove class and marker from element
+        jQuery(selector).removeClass('abst-variation');
+        jQuery(selector).find('.abst-variation-marker').remove();
+        
+        // Remove from definition
+        window.abmagic.definition.splice(defIndex, 1);
+        
+        // Clear selector input if this was the selected element
+        if (jQuery('#abst-selector-input').val() === selector) {
+            jQuery('#abst-selector-input').val('');
+            if (window.abstEditor) {
+                window.abstEditor.innerHTML = '';
+            }
+        }
+        
+        // Refresh all markers (indices changed)
+        refreshVariationClasses();
+        
+        console.log('Removed element from test:', selector);
+    }
+});
 
 
 function getVariationLabel(n) {
     alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
     return alphabet[n];
 }
-    /**
-     * Parse CSS selector string into individual tags while preserving spaces in square brackets
-     * @param {string} selector - CSS selector string
-     * @return {array} Array of tag values
-     */
-    function parseCssSelector(selector) {
-        if (!selector) return [];
-        
-        // Replace spaces in square brackets with a temporary marker
-        var processedSelector = '';
-        var inBrackets = false;
-        var bracketContent = '';
-        
-        for (var i = 0; i < selector.length; i++) {
-            var char = selector[i];
-            
-            if (char === '[') {
-                inBrackets = true;
-                bracketContent = '[';
-            } else if (char === ']' && inBrackets) {
-                inBrackets = false;
-                bracketContent += ']';
-                processedSelector += bracketContent.replace(/ /g, '___SPACE___');
-                bracketContent = '';
-            } else if (inBrackets) {
-                bracketContent += char;
-            } else {
-                // Handle special CSS selector characters by adding spaces around them
-                if (char === '>' || char === '+' || char === '~') {
-                    // Add space before if there isn't one already
-                    if (processedSelector.length > 0 && processedSelector[processedSelector.length - 1] !== ' ') {
-                        processedSelector += ' ';
-                    }
-                    processedSelector += char;
-                    // Add space after
-                    if (i < selector.length - 1 && selector[i + 1] !== ' ') {
-                        processedSelector += ' ';
-                    }
-                } else {
-                    processedSelector += char;
-                }
-            }
-        }
-        
-        // If we ended while still in brackets, add the remaining content
-        if (bracketContent) {
-            processedSelector += bracketContent;
-        }
-        
-        // Split by spaces (not inside brackets)
-        var tags = processedSelector.split(' ')
-            .filter(tag => tag.trim() !== '')
-            .map(tag => tag.replace(/___SPACE___/g, ' '));
-        
-        return tags;
-    }  
-    
-    // Flag to prevent infinite loops
-    let isUpdating = false;
-    
-    function checkChangedEditor() {
-        try {
-            
-            // Get the HTML content from the editor
-            const variationIndex = parseInt(jQuery("#variation-picker").val(), 10);
-            let variationValue = window.abstEditor ? window.abstEditor.innerHTML : '';
-            
-            // Only clean if there's exactly one top-level div/p tag
-            let cleanValue = variationValue || '';
-            if (cleanValue && (cleanValue.trim().startsWith('<div') || cleanValue.trim().startsWith('<p'))) {
-                const temp = document.createElement('div');
-                temp.innerHTML = cleanValue;
-                
-                // Only clean if there's exactly one top-level element that's a div or p
-                if (temp.children.length === 1 && 
-                    (temp.firstElementChild.tagName === 'DIV' || 
-                     temp.firstElementChild.tagName === 'P')) {
-                    // Only use innerHTML if it's not empty
-                    const inner = temp.firstElementChild.innerHTML.trim();
-                    cleanValue = inner || cleanValue;
-                }
-            }
-                    
-            const selector = jQuery("#abst-selector-input").val();
-            const variationType = getElementType(jQuery(selector)[0]);
-            
-            console.log('variation index', variationIndex);
-            console.log('selector', selector);
-            console.log('variation value', cleanValue);
-            console.log('variation type', variationType);
-            
 
-            
-            if (!window.abmagic) window.abmagic = {};
-            if (!window.abmagic.definition) window.abmagic.definition = [];
+function getMagicVariationCount() {
+    var maxVariations = 1;
 
-            // Find if we already have this element in our definitions
-            let elementIndex = -1;
-            const currentElement = jQuery(selector)[0]; // Get the actual DOM element
-            
-            if (currentElement) {
-                elementIndex = getElementIndexFromMagic(selector);
-            }
-            
-            console.log('elementIndex after DOM element match:', elementIndex);
-
-            if (elementIndex !== -1) {
-                // Update existing variation with cleaned HTML
-                window.abmagic.definition[elementIndex].variations[variationIndex] = cleanValue;
-                console.log('updated variation', window.abmagic.definition[elementIndex].variations);
-            } else {
-                // Add new variation
-                let originalValue = (variationType === 'image') ? 
-                    jQuery(selector).attr('src') : 
-                    jQuery(selector).html();
-                
-                // Process original value through the same cleaning as the editor content
-                if (originalValue && variationType !== 'image') {
-                    const temp = document.createElement('div');
-                    temp.innerHTML = originalValue;
-                    const firstChild = temp.firstElementChild;
-                    if (firstChild && temp.children.length === 1 && 
-                        (firstChild.tagName === 'DIV' || firstChild.tagName === 'P')) {
-                        originalValue = firstChild.innerHTML;
-                    } else {
-                        originalValue = temp.innerHTML;
-                    }
-                }
-
-                const newVariations = [];
-                newVariations[0] = originalValue;
-                newVariations[variationIndex] = cleanValue;
-                
-                window.abmagic.definition.push({
-                    selector: selector,
-                    variations: newVariations,
-                    type: variationType || 'text'
-                });
-                
-                elementIndex = window.abmagic.definition.length - 1;
-            }
-            
-            // Update the hidden input for form submission
-            jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
-            
-            // Update the preview
-            if (variationType === 'image') {
-                console.log('setting image src', cleanValue);
-                jQuery(selector).attr('src', cleanValue);
-            } else {
-                jQuery(selector).html(cleanValue);
-            }
-            
-            // Refresh all variation classes
-            refreshVariationClasses();
-            
-        } catch (error) {
-            console.error('Error in checkChangedEditor:', error);
-        } 
+    if (!window.abmagic || !window.abmagic.definition) {
+        return maxVariations;
     }
 
+    window.abmagic.definition.forEach(function(def) {
+        if (def.variations && def.variations.length > maxVariations) {
+            maxVariations = def.variations.length;
+        }
+    });
 
-    function getElementIndexFromMagic(selector) {
+    return maxVariations;
+}
+
+function removeMagicVariation(variationIndex) {
+    if (!window.abmagic || !window.abmagic.definition || !Array.isArray(window.abmagic.definition)) {
+        return;
+    }
+
+    if (variationIndex === 0) {
+        alert('The Control version cannot be removed.');
+        return;
+    }
+
+    var variationCount = getMagicVariationCount();
+    if (variationCount <= 2) {
+        alert('A magic test needs at least one variation.');
+        return;
+    }
+
+    if (variationIndex < 1 || variationIndex >= variationCount) {
+        return;
+    }
+
+    var label = getVariationLabel(variationIndex);
+    if (!confirm('Remove Variation ' + label + ' from this magic test?')) {
+        return;
+    }
+
+    var currentValue = jQuery('#variation-picker').val();
+    var currentIndex = currentValue === 'addAnother' ? 1 : (parseInt(currentValue, 10) || 0);
+
+    window.abmagic.definition.forEach(function(def) {
+        if (def.variations && def.variations.length > variationIndex) {
+            def.variations.splice(variationIndex, 1);
+        }
+    });
+
+    var nextCount = getMagicVariationCount();
+    var nextIndex = currentIndex;
+    if (currentIndex === variationIndex) {
+        nextIndex = Math.min(variationIndex, nextCount - 1);
+    } else if (currentIndex > variationIndex) {
+        nextIndex = currentIndex - 1;
+    }
+    nextIndex = Math.max(1, Math.min(nextIndex, nextCount - 1));
+
+    jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
+    updateVariationPicker(nextIndex);
+}
+
+/**
+ * Update the variation picker dropdown based on current definition
+ * Rebuilds options to match the number of variations in the first definition entry
+ */
+function updateVariationPicker(selectedIndex) {
+    if (!window.abmagic || !window.abmagic.definition || window.abmagic.definition.length === 0) {
+        return;
+    }
+    
+    var maxVariations = getMagicVariationCount();
+    selectedIndex = (typeof selectedIndex === 'number') ? selectedIndex : 1;
+    selectedIndex = Math.max(0, Math.min(selectedIndex, maxVariations - 1));
+    
+    // Build options HTML
+    var optionsHtml = '';
+    for (var i = 0; i < maxVariations; i++) {
+        var label = getVariationLabel(i);
+        var suffix = (i === 0) ? ' Version - Control' : ' Version';
+        var selected = (i === selectedIndex) ? ' selected' : '';
+        optionsHtml += '<option value="' + i + '"' + selected + '>' + label + suffix + '</option>';
+    }
+    optionsHtml += '<option value="addAnother"> + Add Version</option>';
+    
+    // Update the picker and trigger change to refresh editor
+    jQuery('#variation-picker').html(optionsHtml).trigger('change');
+    
+    console.log('ABST: Variation picker updated with', maxVariations, 'variations');
+}
+
+/**
+ * Parse CSS selector string into individual tags while preserving spaces in square brackets
+ * @param {string} selector - CSS selector string
+ * @return {array} Array of tag values
+ */
+function parseCssSelector(selector) {
+    if (!selector) return [];
+    
+    // Replace spaces in square brackets with a temporary marker
+    var processedSelector = '';
+    var inBrackets = false;
+    var bracketContent = '';
+    
+    for (var i = 0; i < selector.length; i++) {
+        var char = selector[i];
+        
+        if (char === '[') {
+            inBrackets = true;
+            bracketContent = '[';
+        } else if (char === ']' && inBrackets) {
+            inBrackets = false;
+            bracketContent += ']';
+            processedSelector += bracketContent.replace(/ /g, '___SPACE___');
+            bracketContent = '';
+        } else if (inBrackets) {
+            bracketContent += char;
+        } else {
+            // Handle special CSS selector characters by adding spaces around them
+            if (char === '>' || char === '+' || char === '~') {
+                // Add space before if there isn't one already
+                if (processedSelector.length > 0 && processedSelector[processedSelector.length - 1] !== ' ') {
+                    processedSelector += ' ';
+                }
+                processedSelector += char;
+                // Add space after
+                if (i < selector.length - 1 && selector[i + 1] !== ' ') {
+                    processedSelector += ' ';
+                }
+            } else {
+                processedSelector += char;
+            }
+        }
+    }
+    
+    // If we ended while still in brackets, add the remaining content
+    if (bracketContent) {
+        processedSelector += bracketContent;
+    }
+    
+    // Split by spaces (not inside brackets)
+    var tags = processedSelector.split(' ')
+        .filter(tag => tag.trim() !== '')
+        .map(tag => tag.replace(/___SPACE___/g, ' '));
+    
+    return tags;
+}
+
+// Flag to prevent infinite loops
+let isUpdating = false;
+
+function checkChangedEditor() {
+    try {
+        // Get the HTML content from the editor
+        const variationIndex = parseInt(jQuery("#variation-picker").val(), 10);
+        let variationValue = window.abstEditor ? window.abstEditor.innerHTML : '';
+        
+        // Only clean if there's exactly one top-level div/p tag
+        let cleanValue = variationValue || '';
+        if (cleanValue && (cleanValue.trim().startsWith('<div') || cleanValue.trim().startsWith('<p'))) {
+            const temp = document.createElement('div');
+            temp.innerHTML = cleanValue;
+            
+            // Only clean if there's exactly one top-level element that's a div or p
+            if (temp.children.length === 1 && 
+                (temp.firstElementChild.tagName === 'DIV' || 
+                 temp.firstElementChild.tagName === 'P')) {
+                // Only use innerHTML if it's not empty
+                const inner = temp.firstElementChild.innerHTML.trim();
+                cleanValue = inner || cleanValue;
+            }
+        }
+                
+        const selector = jQuery("#abst-selector-input").val();
+        const variationType = getElementType(jQuery(selector)[0]);
+        
+        console.log('variation index', variationIndex);
         console.log('selector', selector);
-        let foundIndex = -1;
-        window.abmagic.definition.forEach(function(def, index) {
-            console.log('def.selector', def.selector);
-            if (def.selector === selector) {
-                foundIndex = index;
+        console.log('variation value', cleanValue);
+        console.log('variation type', variationType);
+        
+
+        
+        if (!window.abmagic) window.abmagic = {};
+        if (!window.abmagic.definition) window.abmagic.definition = [];
+
+        // Find if we already have this element in our definitions
+        let elementIndex = -1;
+        const currentElement = jQuery(selector)[0]; // Get the actual DOM element
+        
+        if (currentElement) {
+            elementIndex = getElementIndexFromMagic(selector);
+        }
+        
+        console.log('elementIndex after DOM element match:', elementIndex);
+
+        if (elementIndex !== -1) {
+            // Update existing variation with cleaned HTML
+            window.abmagic.definition[elementIndex].variations[variationIndex] = cleanValue;
+            console.log('updated variation', window.abmagic.definition[elementIndex].variations);
+        } else {
+            // Add new variation - but only if element type is valid
+            if (!variationType) {
+                console.log('Skipping element - not a testable type:', selector);
                 return;
             }
-            if(jQuery(selector).is(def.selector)) {
-                foundIndex = index;
-                return;
+            
+            // Add new variation
+            let originalValue = (variationType === 'image') ? 
+                jQuery(selector).attr('src') || '' : 
+                jQuery(selector).html() || '';
+            
+            // Process original value through the same cleaning as the editor content
+            if (originalValue && variationType !== 'image') {
+                const temp = document.createElement('div');
+                temp.innerHTML = originalValue;
+                const firstChild = temp.firstElementChild;
+                if (firstChild && temp.children.length === 1 && 
+                    (firstChild.tagName === 'DIV' || firstChild.tagName === 'P')) {
+                    originalValue = firstChild.innerHTML;
+                } else {
+                    originalValue = temp.innerHTML;
+                }
+            }
+
+            const newVariations = [];
+            newVariations[0] = originalValue;
+            newVariations[variationIndex] = cleanValue;
+            
+            window.abmagic.definition.push({
+                selector: selector,
+                variations: newVariations,
+                scope: getMagicScope(),
+                type: variationType
+            });
+            
+            elementIndex = window.abmagic.definition.length - 1;
+        }
+        
+        // Update the hidden input for form submission
+        jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
+        
+        // Update the preview
+        if (variationType === 'image') {
+            console.log('setting image src', cleanValue);
+            jQuery(selector).attr('src', cleanValue);
+        } else {
+            jQuery(selector).html(cleanValue);
+        }
+        
+        // Refresh all variation classes
+        refreshVariationClasses();
+        
+    } catch (error) {
+        console.error('Error in checkChangedEditor:', error);
+    }
+}
+
+function getElementIndexFromMagic(selector) {
+    console.log('selector', selector);
+    
+    // Safety check - return -1 if abmagic not initialized
+    if (!window.abmagic || !window.abmagic.definition) {
+        return -1;
+    }
+    
+    let foundIndex = -1;
+    window.abmagic.definition.forEach(function(def, index) {
+        console.log('def.selector', def.selector);
+        if (def.selector === selector) {
+            foundIndex = index;
+            return;
+        }
+        if(jQuery(selector).is(def.selector)) {
+            foundIndex = index;
+            return;
+        }
+    });
+    return foundIndex;
+}
+
+// Added proper file ending to fix syntax error
+
+/**
+ * ABST AI Context Helper Functions
+ * Provides enhanced context generation for AI features with token limiting and page metadata
+ */
+
+/**
+ * Gets page content with smart truncation to prevent token overflow
+ * @param {number} maxChars - Maximum characters to return (default 30000 ~ 8000 tokens)
+ * @returns {string} Cleaned HTML content, truncated if necessary
+ */
+function getAbPageContentEnhanced(maxChars) {
+    if (typeof maxChars === 'undefined') maxChars = 30000;
+    
+    var selectorList = [
+        '.wp-block-post-content',
+        '[itemprop="mainContentOfPage"]',
+        '[role="main"]',
+        'main',
+        '#mainContent',
+        'article',
+        '.article',
+        '.content',
+        '#content',
+        '.entry-content',
+        'body',
+    ];
+    
+    var abPageContent = false;
+    jQuery.each(selectorList, function(key, selector) {
+        if (jQuery(selector).length) {
+            abPageContent = jQuery(selector).clone();
+            return false;
+        }
+    });
+
+    if (!abPageContent || !abPageContent.length) {
+        return '';
+    }
+
+    // Remove non-content elements (keep header/footer for context)
+    abPageContent.find('source, iframe, #wpadminbar, #abst-magic-bar, script, style, #ab-ai-form, meta, link, noscript, svg, canvas, .screen-reader-text').remove();
+
+    // Clean attributes but preserve structure
+    abPageContent.find('*').removeAttr('style').removeAttr('onclick').removeAttr('onload');
+    
+    // Remove data attributes
+    abPageContent.find('*').each(function() {
+        var el = jQuery(this);
+        var attrsToRemove = [];
+        jQuery.each(this.attributes || [], function() {
+            if (this && this.name && this.name.startsWith('data-')) {
+                attrsToRemove.push(this.name);
             }
         });
-        return foundIndex;
+        for (var i = 0; i < attrsToRemove.length; i++) {
+            el.removeAttr(attrsToRemove[i]);
+        }
+    });
+
+    // Remove empty whitespace nodes
+    abPageContent.find('*').contents().filter(function() {
+        return this.nodeType === 3 && !/\S/.test(this.nodeValue);
+    }).remove();
+
+    var cleanedHtml = abPageContent.html() || '';
+
+    // Smart truncation: keep beginning (hero/intro) and end (CTAs/footer)
+    if (cleanedHtml.length > maxChars) {
+        var keepStart = Math.floor(maxChars * 0.80);
+        var keepEnd = Math.floor(maxChars * 0.15);
+        var truncatedLength = cleanedHtml.length;
+        
+        cleanedHtml = cleanedHtml.substring(0, keepStart) + 
+                   '\n\n<!-- ... ' + Math.round((truncatedLength - keepStart - keepEnd) / 1000) + 'k chars truncated ... -->\n\n' + 
+                   cleanedHtml.substring(cleanedHtml.length - keepEnd);
+        
+        console.log('ABST AI: Content truncated from ' + truncatedLength + ' to ' + cleanedHtml.length + ' chars');
     }
+
+    return cleanedHtml;
+}
+
+/**
+ * Detects the type of page based on body classes and content
+ * @returns {string} Page type identifier
+ */
+function detectPageType() {
+    var body = jQuery('body');
+    
+    if (body.hasClass('home') || body.hasClass('front-page') || window.location.pathname === '/') 
+        return 'homepage';
+    if (body.hasClass('single-product') || jQuery('.product, .woocommerce-product').length) 
+        return 'product';
+    if (body.hasClass('single-post') || (body.hasClass('single') && jQuery('article.post').length)) 
+        return 'blog-post';
+    if (body.hasClass('archive') || body.hasClass('category') || body.hasClass('tag')) 
+        return 'archive';
+    if (body.hasClass('page-template-landing') || jQuery('.landing-page, [class*="landing"]').length) 
+        return 'landing-page';
+    if (jQuery('form.checkout, .woocommerce-checkout').length) 
+        return 'checkout';
+    if (jQuery('form.cart, .add-to-cart').length) 
+        return 'product';
+    if (jQuery('form:not([role="search"])').length > 0) 
+        return 'lead-capture';
+    
+    return 'page';
+}
+
+/**
+ * Gets structured page metadata for AI context
+ * @returns {object} Page metadata object
+ */
+function getPageMetadata() {
+    var h1Text = jQuery('h1').first().text().trim();
+    var metaDesc = jQuery('meta[name="description"]').attr('content') || '';
+    
+    // Find primary CTA
+    var primaryCTA = '';
+    var ctaSelectors = [
+        'a.btn-primary, button.btn-primary',
+        '.hero a.btn, .hero button',
+        'a.cta, button.cta',
+        '.wp-block-button a',
+        'a[class*="button"]:first',
+        'button[type="submit"]'
+    ];
+    for (var i = 0; i < ctaSelectors.length; i++) {
+        var cta = jQuery(ctaSelectors[i]).first().text().trim();
+        if (cta && cta.length > 2 && cta.length < 50) {
+            primaryCTA = cta;
+            break;
+        }
+    }
+
+    return {
+        url: window.location.href,
+        path: window.location.pathname,
+        title: document.title,
+        pageType: detectPageType(),
+        h1: h1Text.substring(0, 200),
+        primaryCTA: primaryCTA,
+        metaDescription: metaDesc.substring(0, 300),
+        hasForm: jQuery('form:not([role="search"])').length > 0,
+        hasVideo: jQuery('video, iframe[src*="youtube"], iframe[src*="vimeo"]').length > 0,
+        wordCount: jQuery('body').text().split(/\s+/).length
+    };
+}
+
+/**
+ * Extracts all headlines (h1-h3) from the page
+ * @returns {array} Array of headline objects with tag and text
+ */
+function getHeadlines() {
+    var headlines = [];
+    jQuery('h1, h2, h3').each(function() {
+        var text = jQuery(this).text().trim();
+        if (text && text.length > 2 && text.length < 300) {
+            headlines.push({
+                tag: this.tagName.toLowerCase(),
+                text: text
+            });
+        }
+    });
+    return headlines.slice(0, 20);
+}
+
+/**
+ * Extracts CTA buttons and links from the page
+ * @returns {array} Array of CTA text strings
+ */
+function getCTAs() {
+    var ctas = [];
+    var seen = {};
+    
+    // Exclude Magic Bar and admin bar elements
+    jQuery('a.btn, button, .cta, .wp-block-button a, [class*="button"], a[class*="btn"], input[type="submit"]')
+        .not('#abst-magic-bar *, #wpadminbar *, #ab-ai-form *')
+        .each(function() {
+        var text = jQuery(this).text().trim() || jQuery(this).val() || '';
+        text = text.substring(0, 50);
+        
+        if (text && text.length > 1 && !seen[text.toLowerCase()]) {
+            seen[text.toLowerCase()] = true;
+            ctas.push(text);
+        }
+    });
+    
+    return ctas.slice(0, 15);
+}
+
+/**
+ * Builds complete AI context object with all page information
+ * @param {object} options - Optional settings
+ * @returns {object} Complete context object for AI
+ */
+function buildAIContext(options) {
+    options = options || {};
+    var settings = {
+        maxContentChars: options.maxContentChars || 30000,
+        includeScreenshot: options.includeScreenshot !== false,
+        includeHeadlines: options.includeHeadlines !== false,
+        includeCTAs: options.includeCTAs !== false
+    };
+    
+    var context = {
+        metadata: getPageMetadata(),
+        content: getAbPageContentEnhanced(settings.maxContentChars)
+    };
+    
+    if (settings.includeHeadlines) {
+        context.headlines = getHeadlines();
+    }
+    
+    if (settings.includeCTAs) {
+        context.ctas = getCTAs();
+    }
+    
+    if (settings.includeScreenshot && window.abaiScreenshot) {
+        context.hasScreenshot = true;
+    }
+    
+    context.stats = {
+        contentLength: context.content.length,
+        headlineCount: context.headlines ? context.headlines.length : 0,
+        ctaCount: context.ctas ? context.ctas.length : 0,
+        wasTruncated: context.content.indexOf('chars truncated') > -1
+    };
+    
+    return context;
+}
+
+/**
+ * Formats AI context into a string for the API
+ * @param {object} context - Context object from buildAIContext()
+ * @returns {string} Formatted context string
+ */
+function formatAIContext(context) {
+    var output = '';
+    
+    // Page metadata section
+    output += '<page_metadata>\n';
+    output += 'URL: ' + context.metadata.url + '\n';
+    output += 'Page Type: ' + context.metadata.pageType + '\n';
+    output += 'Title: ' + context.metadata.title + '\n';
+    if (context.metadata.h1) output += 'H1: ' + context.metadata.h1 + '\n';
+    if (context.metadata.primaryCTA) output += 'Primary CTA: ' + context.metadata.primaryCTA + '\n';
+    if (context.metadata.metaDescription) output += 'Meta Description: ' + context.metadata.metaDescription + '\n';
+    output += 'Has Form: ' + (context.metadata.hasForm ? 'Yes' : 'No') + '\n';
+    output += 'Word Count: ~' + context.metadata.wordCount + '\n';
+    output += '</page_metadata>\n\n';
+    
+    // Headlines section
+    if (context.headlines && context.headlines.length > 0) {
+        output += '<page_headlines>\n';
+        for (var i = 0; i < context.headlines.length; i++) {
+            output += context.headlines[i].tag.toUpperCase() + ': ' + context.headlines[i].text + '\n';
+        }
+        output += '</page_headlines>\n\n';
+    }
+    
+    // CTAs section
+    if (context.ctas && context.ctas.length > 0) {
+        output += '<page_ctas>\n';
+        output += context.ctas.join(' | ') + '\n';
+        output += '</page_ctas>\n\n';
+    }
+    
+    // Main content (convert to markdown if TurndownService available)
+    var contentMarkdown = context.content;
+    if (typeof TurndownService !== 'undefined') {
+        var turndownService = new TurndownService({
+            headingStyle: 'atx',
+            codeBlockStyle: 'fenced'
+        });
+        contentMarkdown = turndownService.turndown(context.content || '');
+    }
+    
+    output += '<page_content>\n';
+    output += contentMarkdown;
+    output += '\n</page_content>';
+    
+    if (context.stats.wasTruncated) {
+        output += '\n\n[Note: Page content was truncated to fit context limits]';
+    }
+    
+    return output;
+}
+
+// Export to window for global access
+window.abstAI = {
+    // Context helpers
+    getPageContent: getAbPageContentEnhanced,
+    getPageMetadata: getPageMetadata,
+    getHeadlines: getHeadlines,
+    getCTAs: getCTAs,
+    buildContext: buildAIContext,
+    formatContext: formatAIContext,
+    detectPageType: detectPageType,
+    // CRO Chat
+    croChat: {
+        send: sendCroChatMessage,
+        clear: clearCroChatHistory,
+        getHistory: function() { return window.abstCroChat.history; }
+    },
+    // Full Page Optimize
+    fullPageOptimize: {
+        request: requestFullPageOptimize,
+        apply: applyFullPageOptimization
+    }
+};
+

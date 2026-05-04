@@ -154,6 +154,9 @@ input[type=date],input[type=datetime-local],input[type=datetime],input[type=emai
     line-height: 2;
 }
 
+[tabulator-field="link"] a{
+    text-decoration: none;
+}
 /* highlight winner */
 #abst-results-table .abtest-winner {
     background: #c0f9bf;
@@ -170,3 +173,51 @@ input[type=date],input[type=datetime-local],input[type=datetime],input[type=emai
 
 #abst-results-table [tabulator-field^="subgoal"] {
     background: rgb(0 0 0 / 4%);
+}
+
+/* Share Report Button Styles */
+.abst-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.abst-results-header h2 {
+    margin: 0;
+    flex: 1;
+}
+
+.abst-share-button {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px !important;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+.abst-share-button:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.4);
+}
+
+.abst-share-button:active {
+    transform: translateY(0);
+}
+
+.abst-share-button .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}

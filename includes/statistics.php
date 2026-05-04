@@ -1,6 +1,6 @@
 <?php 
 
-require_once("vendor/autoload.php"); 
+require_once(__DIR__ . "/vendor/autoload.php"); 
 
 use BenTools\SplitTestAnalyzer\SplitTestAnalyzer;
 use BenTools\SplitTestAnalyzer\Variation;
@@ -16,20 +16,27 @@ function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
   $variations = [];
   $winnerFound = false;
   $test_age = intval($test_age);
+  // Minimum visits per variation before a winner can be declared. Keeps the
+  // server-side winner flag in sync with the UI's underpowered gate.
+  $min_visits_for_winner = apply_filters('ab_min_visits_for_winner', 50);
+  $has_min_visits = true;
   foreach ($data as $n => $d){
+    if ($n === 'bt_bb_ab_stats') continue;
     $conversions = isset($d['conversion']) ? (int)$d['conversion'] : 0;
     $visits = isset($d['visit']) ? (int)$d['visit'] : 0;
     if($visits <= $conversions)
-      return $data; // something is weird, bail out
+      return $data; // visits must exceed conversions for beta distribution
+    if($visits < $min_visits_for_winner)
+      $has_min_visits = false;
 
     $variations[] = new Variation($n, $visits, $conversions);
   }
 
   $predictor = SplitTestAnalyzer::create()->withVariations(...$variations);
   $percentage_target = apply_filters('ab_complete_confidence', 95);
-  foreach ($predictor->getResult() as $key => $value) {    
+  foreach ($predictor->getResult() as $key => $value) {
     $data[$key]['probability'] = $value;
-    if($value > $percentage_target)
+    if($value > $percentage_target && $has_min_visits)
       $winnerFound = true;
   }
   if(!$winnerFound && $test_age > 0){ // guess how long it's going to be
@@ -74,7 +81,8 @@ function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
       }
       else
       {
-        $data['bt_bb_ab_stats']['likelyDuration'] = false;
+        // 999 = "very long time" - difference too small to detect with current traffic
+        $data['bt_bb_ab_stats']['likelyDuration'] = 999;
       }
     }
   }
@@ -99,6 +107,9 @@ function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
 /**
  * Welch's T-Test for revenue-based A/B testing
  * Uses summary statistics (n, mean, estimated std dev)
+ * 
+ * Note: The 'rate' field in observations stores (total_revenue / visits) * 100
+ * So rate=664.7 means $6.647 revenue per visit
  */
 function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
   if (empty($data) || sizeof($data) < 2) {
@@ -111,16 +122,22 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
     if ($key === 'bt_bb_ab_stats') continue;
     
     $visits = isset($variation['visit']) ? (int)$variation['visit'] : 0;
-    $rate = isset($variation['rate']) ? (float)$variation['rate'] : 0;
-    
+    // Rate is stored as (revenue/visits)*100, so divide by 100 to get actual revenue per visit
+    $rate = isset($variation['rate']) ? (float)$variation['rate'] / 100 : 0;
+
     if ($visits > 0 && $rate > 0) {
-      // Estimate standard deviation as 1.5x the mean (typical for revenue data)
-      $estimated_std = $rate * 1.5;
-      
+      // Use Welford running variance if available (accurate), otherwise estimate
+      if (isset($variation['_rv_count']) && $variation['_rv_count'] > 1 && isset($variation['_rv_m2'])) {
+        $rv_std = sqrt((float)$variation['_rv_m2'] / ($variation['_rv_count'] - 1));
+      } else {
+        // Fallback for tests started before Welford tracking: estimate as 1.5x the mean
+        $rv_std = $rate * 1.5;
+      }
+
       $variations[$key] = [
         'n' => $visits,
         'mean' => $rate,
-        'std' => $estimated_std
+        'std' => $rv_std
       ];
     }
   }
@@ -139,37 +156,56 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
     }
   }
   
-  // Compare each variation against the best one
-  $confidence_threshold = 95; // 95% confidence level
+  // Use Monte Carlo simulation to calculate "probability of being best" for each variation
+  // Same approach as the Bayesian analyzer - run many simulations and count wins
+  $confidence_threshold = 95;
   $winner_found = false;
+  $num_samples = 2000;
+
+  // Minimum visits per variation before a winner can be declared. Mirrors the
+  // UI's underpowered gate so a freak small-sample win can't trip autocomplete.
+  $min_visits_for_winner = apply_filters('ab_min_visits_for_winner', 50);
+  $has_min_visits = true;
+  foreach ($variations as $stats) {
+    if ($stats['n'] < $min_visits_for_winner) {
+      $has_min_visits = false;
+      break;
+    }
+  }
   
+  // Initialize win counts
+  $win_count = [];
   foreach ($variations as $key => $stats) {
-    if ($key === $best_key) {
-      // Compare best against others to get its confidence
-      $max_p_value = 0;
-      foreach ($variations as $other_key => $other_stats) {
-        if ($other_key !== $key) {
-          $t_result = welch_t_test(
-            $stats['n'], $stats['mean'], $stats['std'],
-            $other_stats['n'], $other_stats['mean'], $other_stats['std']
-          );
-          $max_p_value = max($max_p_value, $t_result['p_value']);
-        }
+    $win_count[$key] = 0;
+  }
+  
+  // Run Monte Carlo simulation
+  for ($i = 0; $i < $num_samples; $i++) {
+    $winner_key = null;
+    $winner_value = -PHP_INT_MAX;
+    
+    // Sample from each variation's distribution and find the winner
+    foreach ($variations as $key => $stats) {
+      // Sample from normal distribution with mean and std
+      $sample = random_normal($stats['mean'], $stats['std'] / sqrt($stats['n']));
+      if ($sample > $winner_value) {
+        $winner_value = $sample;
+        $winner_key = $key;
       }
-      $confidence = (1 - $max_p_value) * 100;
-      $data[$key]['probability'] = round($confidence, 2);
-      
-      if ($confidence >= $confidence_threshold) {
-        $winner_found = true;
-      }
-    } else {
-      // Compare this variation against the best
-      $t_result = welch_t_test(
-        $variations[$best_key]['n'], $variations[$best_key]['mean'], $variations[$best_key]['std'],
-        $stats['n'], $stats['mean'], $stats['std']
-      );
-      $confidence = (1 - $t_result['p_value']) * 100;
-      $data[$key]['probability'] = round($confidence, 2);
+    }
+    
+    if ($winner_key !== null) {
+      $win_count[$winner_key]++;
+    }
+  }
+  
+  // Calculate probabilities (percentage of wins)
+  foreach ($variations as $key => $stats) {
+    $probability = round(($win_count[$key] / $num_samples) * 100);
+    $data[$key]['probability'] = $probability;
+    
+    if ($key === $best_key && $probability >= $confidence_threshold && $has_min_visits) {
+      $winner_found = true;
     }
   }
   
@@ -183,59 +219,163 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
     $data['bt_bb_ab_stats']['probability'] = $data[$best_key]['probability'];
     $data['bt_bb_ab_stats']['likelyDuration'] = false; // Test is complete
   } else {
-    $data['bt_bb_ab_stats']['best'] = '';
-    $data['bt_bb_ab_stats']['probability'] = 0;
-    // Estimate duration (simplified)
-    $data['bt_bb_ab_stats']['likelyDuration'] = 30; // Estimate 30 more days
+    $data['bt_bb_ab_stats']['best'] = $best_key;
+    $data['bt_bb_ab_stats']['probability'] = $data[$best_key]['probability'];
+    
+    // Estimate time remaining by projecting forward
+    // Calculate daily rates
+    if ($test_age > 0) {
+      $daily_rates = [];
+      foreach ($variations as $key => $stats) {
+        $daily_rates[$key] = [
+          'n_per_day' => $stats['n'] / $test_age,
+          'mean' => $stats['mean'],
+          'std' => $stats['std']
+        ];
+      }
+      
+      // Project forward until we find a winner (or give up at 500 days)
+      $projected_age = $test_age;
+      $projected_winner_found = false;
+      
+      while (!$projected_winner_found && $projected_age < 500) {
+        // Increment by 7 days (or 30 if past 120 days)
+        if ($projected_age > 120) {
+          $projected_age += 30;
+        } else {
+          $projected_age += 7;
+        }
+        
+        // Build projected variations
+        $projected_variations = [];
+        foreach ($daily_rates as $key => $rates) {
+          $projected_n = intval($rates['n_per_day'] * $projected_age);
+          if ($projected_n > 0) {
+            $projected_variations[$key] = [
+              'n' => $projected_n,
+              'mean' => $rates['mean'],
+              'std' => $rates['std']
+            ];
+          }
+        }
+        
+        if (count($projected_variations) < 2) break;
+        
+        // Run Monte Carlo on projected data
+        $projected_win_count = array_fill_keys(array_keys($projected_variations), 0);
+        
+        for ($i = 0; $i < 1000; $i++) { // Fewer samples for speed
+          $winner_key = null;
+          $winner_value = -PHP_INT_MAX;
+          
+          foreach ($projected_variations as $key => $stats) {
+            $sample = random_normal($stats['mean'], $stats['std'] / sqrt($stats['n']));
+            if ($sample > $winner_value) {
+              $winner_value = $sample;
+              $winner_key = $key;
+            }
+          }
+          
+          if ($winner_key !== null) {
+            $projected_win_count[$winner_key]++;
+          }
+        }
+        
+        // Check if any variation reaches 95%
+        $max_prob = max($projected_win_count) / 10; // /1000 * 100
+        if ($max_prob >= 95) {
+          $projected_winner_found = true;
+        }
+      }
+      
+      // 999 = "very long time" - difference too small to detect with current traffic
+      $data['bt_bb_ab_stats']['likelyDuration'] = $projected_winner_found ? $projected_age : 999;
+    } else {
+      // No test age yet, can't estimate
+      $data['bt_bb_ab_stats']['likelyDuration'] = 0;
+    }
   }
   
   return $data;
 }
 
+
 /**
- * Welch's T-Test implementation for two samples with summary statistics
+ * Generate a random sample from a normal distribution
+ * Uses Box-Muller transform
  */
-function welch_t_test($n1, $mean1, $std1, $n2, $mean2, $std2) {
-  // Welch's T-Test formula
-  $s1_squared = $std1 * $std1;
-  $s2_squared = $std2 * $std2;
+function random_normal($mean = 0, $std = 1) {
+  $u1 = mt_rand() / mt_getrandmax();
+  $u2 = mt_rand() / mt_getrandmax();
   
-  // Standard error of difference
-  $se = sqrt(($s1_squared / $n1) + ($s2_squared / $n2));
+  // Box-Muller transform
+  $z = sqrt(-2 * log($u1)) * cos(2 * M_PI * $u2);
   
-  // T-statistic
-  $t = ($mean1 - $mean2) / $se;
-  
-  // Degrees of freedom (Welch-Satterthwaite equation)
-  $numerator = pow(($s1_squared / $n1) + ($s2_squared / $n2), 2);
-  $denominator = (pow($s1_squared / $n1, 2) / ($n1 - 1)) + (pow($s2_squared / $n2, 2) / ($n2 - 1));
-  $df = $numerator / $denominator;
-  
-  // Calculate p-value (two-tailed test)
-  $p_value = 2 * (1 - t_distribution_cdf(abs($t), $df));
-  
-  return [
-    't_statistic' => $t,
-    'degrees_of_freedom' => $df,
-    'p_value' => $p_value
-  ];
+  return $mean + $std * $z;
 }
 
 /**
- * Approximation of t-distribution CDF using Wilson-Hilferty transformation
+ * Run the appropriate analyzer on each device_size slice of an observations array
+ * and stamp the per-size probability (plus derived stats block) back onto each
+ * variation's device_size bucket. Does not mutate top-level probabilities.
+ *
+ * Sizes processed: mobile, tablet, desktop.
+ * Revenue path is used when $use_revenue is truthy (test has order-value tracking).
  */
-function t_distribution_cdf($t, $df) {
-  // For large df, t-distribution approaches normal distribution
-  if ($df > 100) {
-    return normal_cdf($t);
+function bt_bb_ab_analyze_device_sizes($data, $test_age = 0, $use_revenue = false) {
+  if (!is_array($data) || empty($data)) return $data;
+
+  $sizes = array('mobile', 'tablet', 'desktop');
+
+  foreach ($sizes as $size) {
+    // Build a slice where each variation's top-level fields come from device_size[$size]
+    $slice = array();
+    foreach ($data as $vkey => $v) {
+      if ($vkey === 'bt_bb_ab_stats') continue;
+      if (!is_array($v)) continue;
+      if (!isset($v['device_size'][$size]) || !is_array($v['device_size'][$size])) continue;
+      $ds = $v['device_size'][$size];
+      $visits = isset($ds['visit']) ? (int)$ds['visit'] : 0;
+      $conversions = isset($ds['conversion']) ? (float)$ds['conversion'] : 0;
+      if ($visits <= 0) continue;
+      $entry = array(
+        'visit' => $visits,
+        'conversion' => $conversions,
+        'rate' => isset($ds['rate']) ? $ds['rate'] : round((($conversions / $visits) * 100), 2),
+      );
+      if (isset($ds['_rv_count'])) $entry['_rv_count'] = $ds['_rv_count'];
+      if (isset($ds['_rv_mean']))  $entry['_rv_mean']  = $ds['_rv_mean'];
+      if (isset($ds['_rv_m2']))    $entry['_rv_m2']    = $ds['_rv_m2'];
+      $slice[$vkey] = $entry;
+    }
+
+    if (count($slice) < 2) continue; // analyzer needs >= 2 variations
+
+    if ($use_revenue) {
+      // test_age=0 skips the expensive projection/likelyDuration loop inside the analyzer.
+      // Per-size duration estimation would be noisy and ~5-20s per admin render.
+      $analyzed = bt_bb_ab_revenue_analyzer($slice, 0);
+    } else {
+      $analyzed = bt_bb_ab_split_test_analyzer($slice, 0);
+    }
+
+    if (!is_array($analyzed)) continue;
+
+    foreach ($analyzed as $vkey => $v) {
+      if ($vkey === 'bt_bb_ab_stats') continue;
+      if (!isset($data[$vkey]['device_size'][$size])) continue;
+      if (isset($v['probability'])) {
+        $data[$vkey]['device_size'][$size]['probability'] = $v['probability'];
+      }
+    }
+    if (isset($analyzed['bt_bb_ab_stats'])) {
+      if (!isset($data['bt_bb_ab_stats'])) $data['bt_bb_ab_stats'] = array();
+      if (!isset($data['bt_bb_ab_stats']['device_size'])) $data['bt_bb_ab_stats']['device_size'] = array();
+      $data['bt_bb_ab_stats']['device_size'][$size] = $analyzed['bt_bb_ab_stats'];
+    }
   }
-  
-  // Wilson-Hilferty approximation for t-distribution
-  $h = 4 * $df + 1;
-  $x = $t / sqrt($df);
-  $z = (pow(1 + ($x * $x) / $df, 3/2) - 1) * sqrt($h) / (3 * $x);
-  
-  return normal_cdf($z);
+
+  return $data;
 }
 
 /**

@@ -29,6 +29,8 @@ class BT_BB_AB_Supports
 	{
                 include_once plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/support/gutenberg.php';
                 include_once plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/support/elementor.php';
+                include_once plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/support/breakdance.php';
+                include_once plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/support/bricks/bricks.php';
 	}
 
 	public function get_conversion_html( $param = [] )
@@ -146,8 +148,8 @@ class BT_BB_AB_Supports
 
       ob_start();
 
-      echo '<div class="bt-abtest-wrap '. $class .'" bt-eid="'. $eid .'" bt-variation="'. $variation .'">';
-        echo $content;
+      echo '<div class="bt-abtest-wrap ' . esc_attr( $class ) . '" bt-eid="' . esc_attr( $eid ) . '" bt-variation="' . esc_attr( $variation ) . '">';
+        echo wp_kses_post( $content );
       echo '</div>';
 
       return ob_get_clean();

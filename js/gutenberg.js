@@ -3,8 +3,7 @@
   const el = element.createElement;
   const { addFilter } = wp.hooks;
   const { registerBlockType } = blocks;
-  const { RichText } = editor;
-  const { InspectorControls } = wp.blockEditor;
+  const { RichText, InspectorControls, InspectorAdvancedControls } = wp.blockEditor;
   const { Fragment, useState, useEffect } = element;
 
   const {
@@ -14,6 +13,43 @@
   } = components;
 
   var controls_xhr = null;
+  var experimentsCache = window.btExperimentsCache || (window.btExperimentsCache = {});
+  var pendingRequests = window.btPendingRequests || (window.btPendingRequests = {});
+
+  const buildSearchCacheKey = (searchTerm) => `search:${searchTerm || '__empty__'}`;
+  const buildIdCacheKey = (id) => `id:${id}`;
+
+  const getCachedExperiments = (key) => (
+    Object.prototype.hasOwnProperty.call(experimentsCache, key)
+      ? experimentsCache[key]
+      : null
+  );
+
+  const saveExperimentsToCache = (key, data) => {
+    experimentsCache[key] = Array.isArray(data) ? data : [];
+  };
+
+  const clearExperimentsCache = () => {
+    console.log('ABST: Clearing experiments cache');
+    Object.keys(experimentsCache).forEach((cacheKey) => {
+      delete experimentsCache[cacheKey];
+    });
+  };
+
+  document.addEventListener('click', (event) => {
+    const button = event.target && event.target.closest('.new-on-page-test-button');
+    if (button) {
+      clearExperimentsCache();
+    }
+  });
+
+  // Clear cache when browser tab loses focus to ensure fresh data when user returns
+  document.addEventListener('visibilitychange', (event) => {
+    if (document.hidden) {
+      // Tab is now hidden, clear the cache to ensure fresh data when user returns
+      clearExperimentsCache();
+    }
+  });
 
   const conversion_fields = JSON.parse(bt_gutenberg.conversion_fields);
   const conversion_attr = set_attr();
@@ -59,6 +95,9 @@
     if (name === 'bt-experiments/gutenberg-conversion') {
       return settings;
     }
+    if (settings.attributes && settings.attributes['bt-eid']) {
+      return settings;
+    }
 
     settings.attributes = Object.assign(settings.attributes, {
       'bt-eid': {
@@ -86,8 +125,17 @@
       const variation = props.attributes['bt-variation'];
 
       const [filteredExperiments, setFilteredExperiments] = useState([]);
+      const initializedRef = element.useRef(false);
+      const fetchingRef = element.useRef(false);
+      const lastFetchedIdRef = element.useRef(null);
 
       useEffect(() => {
+        // Run only once on mount to prevent feedback loops
+        if (initializedRef.current) {
+          return;
+        }
+        initializedRef.current = true;
+
         // If we have a saved experiment, fetch it by ID so it's displayed as selected on load.
         if (experiment) {
           fetchExperimentById(experiment);
@@ -95,51 +143,133 @@
           const eidInput = document.querySelector('.bt-eid-input input');
           if (eidInput && eidInput.value !== experiment) {
             eidInput.value = experiment;
-            eidInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Removed manual input event dispatch to prevent triggering onFilterValueChange loop
           }
         } else {
           // No saved experiment, fetch default list
           fetchExperiments('');
         }
-      }, [experiment]);
+      }, []); // Empty deps - run only once on mount
+
+      // Watch for external changes to experiment (e.g., from builderhelper.js)
+      // NOTE: We intentionally exclude filteredExperiments from deps to prevent feedback loops
+      useEffect(() => {
+        if (experiment && initializedRef.current && !fetchingRef.current) {
+          // Only fetch if this is a different experiment than we last fetched
+          if (lastFetchedIdRef.current !== experiment) {
+            fetchExperimentById(experiment);
+          }
+        }
+      }, [experiment]); // Only run when experiment changes, NOT when filteredExperiments changes
 
       const fetchExperiments = (search) => {
+        const cacheKey = buildSearchCacheKey(search);
+        const cached = getCachedExperiments(cacheKey);
+        if (cached !== null) {
+          setFilteredExperiments(cached);
+          return;
+        }
+
+        // Check if there's already a pending request for this cache key
+        if (pendingRequests[cacheKey]) {
+          console.log('ABST: fetchExperiments subscribing to pending request for:', cacheKey);
+          // Subscribe to the pending request instead of making a new one
+          pendingRequests[cacheKey].then((response) => {
+            setFilteredExperiments(response);
+          }).catch(() => {
+            setFilteredExperiments([]);
+          });
+          return;
+        }
+
         if (controls_xhr !== null) {
           controls_xhr.abort();
           controls_xhr = null;
         }
 
-        controls_xhr = jQuery.ajax({
-          type: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'blocks_experiment_list',
-            search: search
-          },
-          success: function (response) {
-            setFilteredExperiments(response);
-          },
-          error: function () {
-            setFilteredExperiments([]);
-          }
+        // Create a promise that other callers can subscribe to
+        pendingRequests[cacheKey] = new Promise((resolve, reject) => {
+          controls_xhr = jQuery.ajax({
+            type: 'POST',
+            url: ajaxurl,
+            data: {
+              action: 'blocks_experiment_list',
+              search: search
+            },
+            success: function (response) {
+              console.log('ABST: fetchExperiments AJAX success for:', cacheKey, 'results:', response.length);
+              saveExperimentsToCache(cacheKey, response);
+              setFilteredExperiments(response);
+              delete pendingRequests[cacheKey];
+              resolve(response);
+            },
+            error: function (jqXHR, textStatus) {
+              // Don't log or reject for aborted requests - that's expected behavior when user types quickly
+              if (textStatus === 'abort') {
+                delete pendingRequests[cacheKey];
+                return;
+              }
+              console.log('ABST: fetchExperiments AJAX error for:', cacheKey);
+              setFilteredExperiments([]);
+              delete pendingRequests[cacheKey];
+              reject();
+            }
+          });
         });
       };
 
       const fetchExperimentById = (id) => {
-
-        jQuery.ajax({
-          type: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'blocks_experiment_list',
-            exact_id: id
-          },
-          success: function (response) {
+        // Check cache first
+        const cacheKey = buildIdCacheKey(id);
+        const cached = getCachedExperiments(cacheKey);
+        if (cached !== null) {
+          lastFetchedIdRef.current = id;
+          setFilteredExperiments(cached);
+          return;
+        }
+        
+        // Check if there's already a pending request for this cache key
+        if (pendingRequests[cacheKey]) {
+          pendingRequests[cacheKey].then((response) => {
+            lastFetchedIdRef.current = id;
             setFilteredExperiments(response);
-          },
-          error: function () {
+          }).catch(() => {
             setFilteredExperiments([]);
-          }
+          });
+          return;
+        }
+        
+        // Prevent duplicate in-flight fetches for the same ID
+        if (fetchingRef.current && lastFetchedIdRef.current === id) {
+          return;
+        }
+        
+        fetchingRef.current = true;
+        lastFetchedIdRef.current = id;
+
+        // Create a promise that other callers can subscribe to
+        pendingRequests[cacheKey] = new Promise((resolve, reject) => {
+          jQuery.ajax({
+            type: 'POST',
+            url: ajaxurl,
+            data: {
+              action: 'blocks_experiment_list',
+              exact_id: id
+            },
+            success: function (response) {
+              fetchingRef.current = false;
+              saveExperimentsToCache(cacheKey, response);
+              setFilteredExperiments(response);
+              delete pendingRequests[cacheKey];
+              resolve(response);
+            },
+            error: function () {
+              fetchingRef.current = false;
+              setFilteredExperiments([]);
+              delete pendingRequests[cacheKey];
+              reject();
+            }
+          });
         });
       };
 
@@ -153,8 +283,8 @@
       };
 
       return el(Fragment, {},
-        el(BlockEdit, props),
-        el(InspectorControls, {},
+        el(BlockEdit, { ...props, key: 'abst-block-edit' }),
+        el(InspectorAdvancedControls, { key: 'abst-inspector-controls' },
           el(PanelBody, { title: 'AB Split Test', initialOpen: true, className: 'abst-split-test-attributes' },
             el(ComboboxControl, {
               label: 'Test',
@@ -169,8 +299,8 @@
       display: 'inline-flex',
       alignItems: 'center',
       gap: '0.5em',
-      padding: '8px 16px',
-      background: '#007cba',
+      padding: '6px 12px',
+      background: '#007cbad0',
       color: '#fff',
       borderRadius: '6px',
       fontWeight: 'bold',
@@ -182,16 +312,27 @@
     onMouseOut: (e) => e.currentTarget.style.background = '#007cba',
     tabIndex: 0,
   },
-  [
-    el('span', { style: { fontSize: '1.2em', marginRight: '0.3em' } }, '➕'),
-    'Create new Test'
-  ]
+  el('span', { style: { fontSize: '1.2em', marginRight: '0.3em' , fontWeight: 'bold'} }, '+'),
+  'Create new Test'
 ),
               options: filteredExperiments,
               onChange: (newVal) => {
-                props.setAttributes({
-                  'bt-eid': newVal
-                });
+                // Predefined default variation names that should be preserved when changing tests
+                const defaultVariationNames = ['original', 'one', '1', 'default', 'standard', 'a', 'control'];
+                const currentVariation = props.attributes['bt-variation'] || '';
+                const isDefaultName = defaultVariationNames.includes(currentVariation.toLowerCase());
+                
+                // Clear variation if it's not a predefined default (prevents cross-test contamination)
+                if (currentVariation && !isDefaultName) {
+                  props.setAttributes({
+                    'bt-eid': newVal,
+                    'bt-variation': ''
+                  });
+                } else {
+                  props.setAttributes({
+                    'bt-eid': newVal
+                  });
+                }
               },
               onFilterValueChange: handleFilterValueChange,
               className: 'bt-eid-input'
@@ -237,7 +378,9 @@
     }
   };
 
+
   registerBlockType('bt-experiments/gutenberg-conversion', {
+    apiVersion: 3,
     title: 'AB test conversion',
     icon: 'plus',
     category: 'common',
@@ -252,9 +395,16 @@
   
       // Variable to hold the AJAX request so we can cancel if needed
       let controls_xhr = null;
-  
+
       // Function to fetch experiments list based on a search term
       const fetchExperiments = (search) => {
+        const cacheKey = buildSearchCacheKey(search);
+        const cached = getCachedExperiments(cacheKey);
+        if (cached !== null) {
+          setExperiments(cached);
+          return;
+        }
+
         if (controls_xhr !== null) {
           controls_xhr.abort();
           controls_xhr = null;
@@ -267,6 +417,7 @@
             search: search,
           },
           success: function (response) {
+            saveExperimentsToCache(cacheKey, response);
             setExperiments(response);
           },
           error: function () {
@@ -274,9 +425,15 @@
           },
         });
       };
-  
+
       // Function to fetch a single experiment by its ID (saved value)
       const fetchExperimentById = (id) => {
+        const cacheKey = buildIdCacheKey(id);
+        const cached = getCachedExperiments(cacheKey);
+        if (cached !== null) {
+          setExperiments(cached);
+          return;
+        }
         if (controls_xhr !== null) {
           controls_xhr.abort();
           controls_xhr = null;
@@ -289,6 +446,7 @@
             exact_id: id,
           },
           success: function (response) {
+            saveExperimentsToCache(cacheKey, response);
             setExperiments(response);
           },
           error: function () {
@@ -381,7 +539,6 @@
               help: conversion_fields['bt_experiment_type']['description'],
               onChange: (type) => {
                 conversion_attr['bt_experiment_type'] = type;
-                jQuery('.bt_click_conversion_selector').toggleClass('hidden');
                 props.setAttributes({
                   bt_experiment_type: type
                 });
@@ -445,9 +602,9 @@
   });
     
 
-})(
+})( 
   window.wp.blocks,
-  window.wp.editor,
+  window.wp.blockEditor,
   window.wp.element,
   window.wp.components
 );

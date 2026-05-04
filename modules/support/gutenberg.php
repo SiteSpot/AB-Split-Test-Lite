@@ -14,13 +14,24 @@ class BT_BB_AB_Gutenberg
 	}
 	public function allow_bt_attributes( $allowed )
 	{
-		foreach ($allowed as $tag => $args) {
-			$allowed[$tag]['bt-eid'] = true;
-        	$allowed[$tag]['bt-variation'] = true;
-        	$allowed[$tag]['bt-url'] = true;
-        }
+		// Only process if not already done (prevents timeout on large arrays)
+		static $processed = false;
+		if ($processed) {
+			return $allowed;
+		}
+		$processed = true;
+		
+		foreach ($allowed as $tag => &$args) {
+			if (is_array($args)) {
+				$args['bt-eid'] = true;
+				$args['bt-variation'] = true;
+				$args['bt-url'] = true;
+			}
+		}
+		unset($args); // Break reference
 		return $allowed;
 	}
+	
 	function register_attribute_for_blocks() {
 		$registered_blocks = \WP_Block_Type_Registry::get_instance()->get_all_registered();
 	
@@ -73,6 +84,7 @@ class BT_BB_AB_Gutenberg
 			plugins_url('js/gutenberg.js', dirname(dirname(__FILE__)) ),
 			[
 				'wp-blocks',
+				'wp-block-editor',
 				'wp-components',
 				'wp-compose',
 				'wp-dom-ready',
@@ -80,7 +92,7 @@ class BT_BB_AB_Gutenberg
 				'wp-element',
 				'wp-hooks'
 			],
-			BT_AB_TEST_LITE_VERSION
+			BT_AB_TEST_VERSION
 		);
     
     	wp_localize_script( 'bt-gutenberg', 'bt_gutenberg', [
@@ -102,6 +114,7 @@ class BT_BB_AB_Gutenberg
 			plugins_url('js/gutenberg-ab-redirect.js', dirname(dirname(__FILE__)) ),
 			[
 				'wp-blocks',
+				'wp-block-editor',
 				'wp-components',
 				'wp-compose',
 				'wp-dom-ready',
@@ -109,7 +122,7 @@ class BT_BB_AB_Gutenberg
 				'wp-element',
 				'wp-hooks'
 			],			
-			BT_AB_TEST_LITE_VERSION
+			BT_AB_TEST_VERSION
 		);
 
     	wp_localize_script( 'bt-gutenberg-ab-redirect', 'bt_gutenberg_ab_redirect', [

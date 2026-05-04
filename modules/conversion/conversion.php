@@ -48,7 +48,7 @@ if(! class_exists ( 'BtConversionModule'))
 
       return new WP_REST_Response([
         'status'  => 0,
-        'message' => __(BT_AB_TEST_LITE_WL_NAME.': Variation name does not exist', 'bt_experiment')
+        'message' => BT_AB_TEST_WL_NAME . ': ' . __( 'Variation name does not exist', 'bt_experiment' )
       ], 200);
     }
 
@@ -57,7 +57,7 @@ if(! class_exists ( 'BtConversionModule'))
         return array( // Section Fields
         'bt_experiment'     => array(
           'type'          => 'suggest',
-          'label'         => __( BT_AB_TEST_LITE_WL_ABTEST, 'bt-bb-ab' ),
+          'label'         => BT_AB_TEST_WL_ABTEST,
           'action'        => 'fl_as_posts', // Search posts.
           'data'          => 'bt_experiments', // Slug of the post type to search.
           'limit'         => 1, // Limits the number of selections that can be made.
@@ -137,7 +137,7 @@ if( class_exists('FLBuilderModule') ) {
         'name'          => __('AB test conversion', 'bt-bb-ab'),
         'description'   => __('Trigger the conversion event of your AB test when this module is loaded. Does not display anything.', 'bt-bb-ab'),
         'category'      => apply_filters( 'bt_bb_ab_conversion_category','Utilities'),
-        'group'         => apply_filters( 'bt_bb_ab_conversion_group', BT_AB_TEST_LITE_WL_NAME),
+        'group'         => apply_filters( 'bt_bb_ab_conversion_group', BT_AB_TEST_WL_NAME),
         'dir'           => BT_CONVERSION_DIR . 'modules/conversion',
         'url'           => BT_CONVERSION_URL . 'modules/conversion',
       ));  
@@ -152,7 +152,7 @@ if( class_exists('FLBuilderModule') ) {
         'title'         => __('General', 'bt-bb-ab'), // Tab title
         'sections'      => array( // Tab Sections
           'general'       => array( // Section
-            'title'         => __(BT_AB_TEST_LITE_WL_ABTEST.' Conversion Module', 'bt-bb-ab'), // Section Title
+            'title'         => BT_AB_TEST_WL_ABTEST . ' ' . __( 'Conversion Module', 'bt-bb-ab' ), // Section Title
             'fields'        => BtConversionModule::get_fields()
           ),
         )

@@ -80,6 +80,35 @@
       "location": {
         "visit": ["home","pricing","about"],
         "conversion": ["signup", "contact"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 620,
+          "conversion": 352,
+          "goals": {
+            "1": 96,
+            "2": 74
+          },
+          "rate": 5.68
+        },
+        "mobile": {
+          "visit": 420,
+          "conversion": 245,
+          "goals": {
+            "1": 65,
+            "2": 49
+          },
+          "rate": 5.83
+        },
+        "tablet": {
+          "visit": 160,
+          "conversion": 105,
+          "goals": {
+            "1": 24,
+            "2": 19
+          },
+          "rate": 6.56
+        }
       }
     },
     "magic-1": {
@@ -93,6 +122,35 @@
       "location": {
         "visit": ["home","pricing","about"],
         "conversion": ["signup", "purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 600,
+          "conversion": 370,
+          "goals": {
+            "1": 87,
+            "2": 68
+          },
+          "rate": 6.17
+        },
+        "mobile": {
+          "visit": 430,
+          "conversion": 260,
+          "goals": {
+            "1": 62,
+            "2": 49
+          },
+          "rate": 6.05
+        },
+        "tablet": {
+          "visit": 160,
+          "conversion": 102,
+          "goals": {
+            "1": 24,
+            "2": 19
+          },
+          "rate": 6.38
+        }
       }
     },
     "magic-2": {
@@ -106,6 +164,35 @@
       "location": {
         "visit": ["home","pricing","about"],
         "conversion": ["signup", "contact", "purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 610,
+          "conversion": 400,
+          "goals": {
+            "1": 82,
+            "2": 66
+          },
+          "rate": 6.56
+        },
+        "mobile": {
+          "visit": 440,
+          "conversion": 276,
+          "goals": {
+            "1": 59,
+            "2": 47
+          },
+          "rate": 6.27
+        },
+        "tablet": {
+          "visit": 160,
+          "conversion": 105,
+          "goals": {
+            "1": 22,
+            "2": 18
+          },
+          "rate": 6.56
+        }
       }
     }
   }

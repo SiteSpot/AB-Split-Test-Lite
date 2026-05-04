@@ -56,6 +56,13 @@ jQuery(function ($) {
          wizard3();
     });
 
+    jQuery('#abst_enable_user_journeys').on('change', function() {
+        if(jQuery('#abst_enable_user_journeys').is(':checked')) {
+          jQuery('.ab-test-heatmap-pages, .ab-test-heatmap-retention').show();
+        } else {
+          jQuery('.ab-test-heatmap-pages, .ab-test-heatmap-retention').hide();
+        }
+      }).trigger('change');
 
     jQuery('#use_fingerprint').on('change', function() {
         if(jQuery('#use_fingerprint').is(':checked')) {
@@ -81,6 +88,21 @@ jQuery(function ($) {
                 jQuery('.ab-test-woo-goal-status').hide();
             }
         }).trigger('change');
+
+        jQuery('body').on('click', '#remove_heatmap_data', function() {
+            if(!confirm('Are you sure you want to remove all heatmap data?')) return;   
+            
+            jQuery.ajax({
+                url: bt_adminurl + 'admin-ajax.php',
+                type: 'POST',
+                data: {
+                    action: 'abst_remove_heatmap_data'
+                },
+                success: function(response) {
+                    alert(response.data);
+                }
+            });
+        });
 });
 
 function wizard1(){
@@ -680,4 +702,56 @@ jQuery(function($){
     });
   });
   
-  
+  // heatmap settings handler
+  jQuery(document).ready(function() {
+    jQuery('body').on('change', '#heatmap_all_pages', function() {
+        if (jQuery(this).val() === 'chosen') {
+            jQuery('#heatmap_pages').parent().find('.select2-container').show();
+        } else {
+            jQuery('#heatmap_pages').parent().find('.select2-container').hide();
+        }
+    });
+    jQuery('#heatmap_all_pages').trigger('change');
+
+
+    jQuery('body').on('change', '#abst_remote_access_enabled', function() {
+      if (jQuery(this).is(':checked')) {
+        jQuery('#abst_remote_access_enabled_info_area').show();
+      } else {
+        jQuery('#abst_remote_access_enabled_info_area').hide();
+      }
+    });
+    jQuery('#abst_remote_access_enabled').trigger('change');
+
+    jQuery('body').on('click', '#abst_agency_regenerate_key', function(e) {
+      e.preventDefault();
+      jQuery('#abst_agency_site_key').val('');
+      var agencyHubVars = window.abstAgencyHubVars || {};
+      jQuery.ajax({
+        url: ajaxurl,
+        type: 'POST',
+        data: {
+          action: 'abst_regenerate_agency_key',
+          nonce: agencyHubVars.regenerateNonce || ''
+        },
+        success: function(response) {
+          if (response && response.success && response.data && response.data.key) {
+            jQuery('#abst_agency_site_key').val(response.data.key);
+          } else if (response && response.data) {
+            alert(typeof response.data === 'string' ? response.data : 'Unable to regenerate Agency Hub key.');
+          } else {
+            alert('Unable to regenerate Agency Hub key.');
+          }
+        }
+      });
+    });
+
+    jQuery('body').on('change', '#abst_heatmap_enable_user_journeys', function() {
+      if (jQuery(this).is(':checked')) {
+        jQuery('.ab-test-heatmap-pages,.ab-test-heatmap-retention').show();
+      } else {
+        jQuery('.ab-test-heatmap-pages,.ab-test-heatmap-retention').hide();
+      }
+    });
+    jQuery('#abst_heatmap_enable_user_journeys').trigger('change');
+});

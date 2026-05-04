@@ -87,31 +87,42 @@ jQuery(document).ready(function(){
             newabclose.innerHTML = 'CLOSE X';
             document.body.appendChild(newabclose);
     
-            newabclose.addEventListener('click', function(){
-                //remove iframe and button
-                document.body.removeChild(newabiframe);
-                document.body.removeChild(newabclose);
-                
-            });
-    
-            // close on escape key
-            document.addEventListener('keydown', function(e){
-                if(e.key == 'Escape'){
-                    document.body.removeChild(newabiframe);
-                    document.body.removeChild(newabclose);
-                }
-            });
-    
-            //close on click outside the iframe on parent body and remove listener
-            document.addEventListener('click', function(e){
-                if(e.target == document.body){
-                    document.body.removeChild(newabiframe);
-                    document.body.removeChild(newabclose);
-                }
-            });
-    
             //CREATE IFRAME AS A MODAL POPOVER TAKING UP 600PX WIDE FULL HEIGHT
             var newabiframe = document.createElement('iframe');
+            
+            // Function to close and cleanup
+            function closeNewAbPanel() {
+                if (newabiframe && newabiframe.parentNode) {
+                    newabiframe.parentNode.removeChild(newabiframe);
+                }
+                if (newabclose && newabclose.parentNode) {
+                    newabclose.parentNode.removeChild(newabclose);
+                }
+                // Remove event listeners
+                document.removeEventListener('keydown', escapeHandler);
+                document.removeEventListener('click', clickOutsideHandler);
+            }
+            
+            // Event handlers
+            function escapeHandler(e) {
+                if (e.key == 'Escape') {
+                    closeNewAbPanel();
+                }
+            }
+            
+            function clickOutsideHandler(e) {
+                if (e.target == document.body) {
+                    closeNewAbPanel();
+                }
+            }
+
+            newabclose.addEventListener('click', closeNewAbPanel);
+    
+            // close on escape key
+            document.addEventListener('keydown', escapeHandler);
+    
+            //close on click outside the iframe on parent body
+            document.addEventListener('click', clickOutsideHandler);
     
             // generate source
             const wp_ajax_on_page_test_create = window.ajaxurl 
@@ -138,10 +149,15 @@ jQuery(document).ready(function(){
     
             if(data.id && data.name && jQuery('.newabpanel').length > 0){
     
-                // add to blocks dropdown 
-                if(jQuery('.bt-eid-input').length > 0)
-                {
-                    wp.data.dispatch('core/block-editor').updateBlockAttributes( wp.data.select('core/block-editor').getSelectedBlockClientId(), { 'bt-eid': data.id } );
+                // add to blocks dropdown - check if we are in Gutenberg context and have a selected block
+                if (typeof wp !== 'undefined' && wp.data && wp.data.dispatch && wp.data.select('core/block-editor')) {
+                    const selectedBlockId = wp.data.select('core/block-editor').getSelectedBlockClientId();
+                    if (selectedBlockId) {
+                        wp.data.dispatch('core/block-editor').updateBlockAttributes( selectedBlockId, { 
+                            'bt-eid': data.id,
+                            'bt-variation': 'default'
+                        } );
+                    }
                 }
     
                 //add to bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks

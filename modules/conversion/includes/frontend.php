@@ -24,16 +24,16 @@ if(isset($experiment))
 ?>
 <div class="conversion-module">
   <h5>
-    <span style="display: none;">{{</span>AB test conversion for experiment: <strong><?php echo $title; ?></strong>
+    <span style="display: none;">{{</span>AB test conversion for experiment: <strong><?php echo esc_html( $title ); ?></strong>
   </h5>
   
   <h6>
-    A conversion will trigger on: <strong><?php echo $type; ?></strong>
+    A conversion will trigger on: <strong><?php echo esc_html( $type ); ?></strong>
   </h6>
   
   <?php if($type == 'click'){ ?>
   <h6>
-    Selector: "<?php echo $selector; ?>"
+    Selector: "<?php echo esc_html( $selector ); ?>"
   </h6>
   
   <?php } ?>
@@ -55,13 +55,13 @@ if(isset($experiment))
 
   $bt_conversion_vars = json_encode([
     'eid'       => $eid,
-    'title'     => $title,
-    'type'      => $type,
-    'selector'  => $selector
+    'title'     => esc_html( $title ),
+    'type'      => esc_html( $type ),
+    'selector'  => esc_html( $selector )
   ]);
 
 ?>
-<script data-cfasync="false" data-no-optimize="1" type="text/javascript">
+<script <?php echo esc_attr( ABST_CACHE_EXCLUDES ); ?> type="text/javascript">
 if(window.bt_conversion_vars)
-  bt_conversion_vars.push(<?php echo $bt_conversion_vars ?>);
+  bt_conversion_vars.push(<?php echo wp_json_encode( json_decode( $bt_conversion_vars ) ); ?>);
 </script>

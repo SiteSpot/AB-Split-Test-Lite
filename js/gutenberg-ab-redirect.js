@@ -3,7 +3,7 @@
   const el = element.createElement;
   const { addFilter } = wp.hooks;
   const { registerBlockType } = blocks;
-  const { RichText, InspectorControls } = editor;
+  const { RichText, InspectorControls } = wp.blockEditor;
   const { Fragment } = element;
   const {
     TextControl,
@@ -47,6 +47,7 @@
    * Add ab test redirect block
    */
   registerBlockType( 'bt-experiments/gutenberg-ab-redirect', {
+    apiVersion: 3,
     title: 'AB Test Page Redirect',
     icon: 'plus',
     category: 'common',
@@ -214,7 +215,7 @@
 
 })(
   window.wp.blocks,
-  window.wp.editor,
+  window.wp.blockEditor,
   window.wp.element,
   window.wp.components,
 );
