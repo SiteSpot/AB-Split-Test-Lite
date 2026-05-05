@@ -200,67 +200,6 @@ if($abst_server_convert_woo == true) {
 
 
 
-if(defined('WC_VERSION'))
-
-{
-
-  $all_woo_order_statuses = array_keys(wc_get_order_statuses());
-
-
-
-  //remove wc- from status
-
-  $all_woo_order_statuses = array_map(function($status) {
-
-    return str_replace('wc-', '', $status);
-
-  }, $all_woo_order_statuses);
-
-  $selected_statuses = !empty($abst_server_convert_woo_status) ? (array) $abst_server_convert_woo_status : array();
-
-
-
-  if(empty($selected_statuses))
-
-    $selected_statuses = array( 'processing', 'completed', 'on-hold' );
-
-
-
-  $selected_woo_order_statuses = '<div id="abst-woo-statuses" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">';
-
-  foreach($all_woo_order_statuses as $status) {
-
-    $checked = in_array($status, $selected_statuses) ? 'checked="checked"' : '';
-
-    $status_label = ucfirst(str_replace('-', ' ', $status)); // Convert to title case
-
-    $selected_woo_order_statuses .= sprintf(
-
-      '<label style="display: block; margin: 5px 0; cursor: pointer;">' .
-
-      '<input type="checkbox" name="abst_server_convert_woo_status[]" value="%s" %s style="margin-right: 5px;">' .
-
-      '%s</label>',
-
-      esc_attr($status),
-
-      $checked,
-
-      esc_html($status_label)
-
-    );
-
-  }
-
-  $selected_woo_order_statuses .= '</div>';
-
-  $selected_woo_order_statuses .= '<p class="description">Select one or more statuses that will trigger a conversion when reached. Default is when the order reaches any of these statuses: processing, completed, on-hold.</p>';
-
-}
-
-
-
-
 
 if($abst_enable_logging !== '0') {
 
@@ -438,12 +377,8 @@ if(empty($weekly_report_emails))
 
 // Lite version notice
 
-if ($user_level == 'free') {
 
   echo "<div class='free-notice'><h2>You are using the free version of AB Split Test.</h2><h4>Free version is limited to 1 active test with 1 variation. Heatmaps and session replays are limited to 1 page and 3 days of data.</h4><p><a href='https://absplittest.com/pricing?utm_source=uglite' target='_blank' class='button button-primary'>Upgrade for unlimited tests, variations, AI, and more.</a></p></div>";
-
-}
-
 
 
 ?>

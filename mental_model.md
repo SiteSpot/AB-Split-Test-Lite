@@ -178,3 +178,8 @@ Premium features are gated at three levels:
 - Public reports: Module include removed, REST returns `null`
 - Fingerprint/UUID: Hooks commented out, handlers are no-ops
 - Form-plugin conversions: WooCommerce hook removed
+
+### Lite Magic Bar AI contract
+- backend AI endpoints are disabled, and frontend Magic Bar should also avoid initiating AI flows
+- AI Suggestions remains as an expandable UI surface, but its content is upgrade-only CTA state in Lite
+- ChatCRO is presented as a disabled/grayed upsell surface with `Subscribe for AI features.` messaging

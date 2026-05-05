@@ -1,4 +1,4 @@
-var ab_highlight_timer;
+﻿var ab_highlight_timer;
 var abstSpecialPages = ['woo-order-pay', 'woo-order-received', 'woo', 'javascript', 'edd-purchase', 'surecart-order-paid', 'wp-pizza-is-checkout', 'wp-pizza-is-order-history', 'fluentcart-order-paid'];
 var abstOrderPages = [ 'woo-order-received', 'javascript', 'edd-purchase', 'surecart-order-paid', 'fluentcart-order-paid'];
 // Form submission conversions are prefixed with 'form-' and handled dynamically
@@ -55,21 +55,6 @@ function getSuggestionHistory(selector) {
     return window.abstAISuggestionHistory[selector] || [];
 }
 
-jQuery('body').on('click', '.abst-order-value-info', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    var $button = jQuery(this);
-    var expanded = $button.attr('aria-expanded') === 'true';
-    $button.attr('aria-expanded', expanded ? 'false' : 'true');
-    $button
-        .closest('#conversion_use_order_value_container')
-        .find('.conversion_order_value_help_panel')
-        .first()
-        .stop(true, true)
-        .slideToggle(180);
-});
-
 function normalizeSuggestionText(suggestion) {
     return String(typeof suggestion === 'object' ? suggestion.text : suggestion || '').trim();
 }
@@ -105,8 +90,7 @@ function formatCroChatSuggestions(variations) {
 }
 
 function updateAISuggestionToggleCount() {
-    var count = jQuery('#ai-suggestions-list li').length;
-    jQuery('.abst-ai-suggestions-count').text(count);
+    return;
 }
 
 function formatCroChatInline(text) {
@@ -191,6 +175,21 @@ function setAISuggestionsExpanded(expanded) {
 
 function setVariationEditorActive(isActive) {
     jQuery('#variation-editor-container').toggleClass('is-active', !!isActive);
+}
+
+function renderAiUpgradeState() {
+    jQuery('.abst-ai-suggestions-inline-loading').hide();
+    jQuery('#ai-generate-more').hide();
+    jQuery('#ai-suggestions-list')
+        .show()
+        .html('<li class="abst-ai-upsell-item"><p class="abst-ai-suggestions-hint">AI suggestions are a Pro feature.<a href="https://absplittest.com/pricing/?utm_source=lite-plugin&utm_medium=magic-bar&utm_campaign=ai-suggestions-upsell" target="_blank" rel="noopener noreferrer">7 day trial</a></p></li>');
+    updateAISuggestionToggleCount();
+}
+
+function renderCroChatUpgradeState() {
+    jQuery('#abst-cro-chat-messages').html(
+        '<div class="abst-cro-chat-response abst-cro-chat-response--assistant"><p>Subscribe for AI features.</p><p><a href="https://absplittest.com/pricing/?utm_source=lite-plugin&utm_medium=magic-bar&utm_campaign=chatcro-upsell" target="_blank" rel="noopener noreferrer">Upgrade to unlock ChatCRO</a></p></div>'
+    );
 }
 
 function setGoalsContainerActive(element, isActive) {
@@ -657,6 +656,7 @@ jQuery(function(){
 
             if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
             jQuery('.click-to-start-help').hide();
+            jQuery('.abst-magic-bar-footer').addClass('abst-magic-bar-footer-visible');
             jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').slideDown();
 
             jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
@@ -1356,45 +1356,11 @@ function showAISuggestionsForSelector(selector, sourceText, type) {
 
     setVariationEditorActive(true);
 
-    // Show skeleton placeholders immediately while waiting for cache or AI
-    var skeletonHtml = '';
-    for (var i = 0; i < 3; i++) {
-        skeletonHtml += '<div class="ai-skeleton-item">';
-        skeletonHtml += '<div class="ai-skeleton ai-skeleton-style"></div>';
-        skeletonHtml += '<div class="ai-skeleton ai-skeleton-text"></div>';
-        skeletonHtml += '</div>';
-    }
-    jQuery('#ai-suggestions-list').html(skeletonHtml).show();
-    jQuery('#ai-generate-more').show().prop('disabled', true);
+    renderAiUpgradeState();
     jQuery('#ai-suggestions').slideDown(650, function() {
-        setAISuggestionsExpanded(true);
+        setAISuggestionsExpanded(false);
     });
 
-    var cachedSuggestions = getCachedAISuggestions(selector);
-    if (cachedSuggestions && cachedSuggestions.length > 0) {
-        console.log('Found cached AI suggestions for:', selector);
-        populateAISuggestionsPanel(cachedSuggestions);
-        return true;
-    }
-
-    var urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.get('text_to_replace') && urlParams.get('variations')){
-        console.log('MAGIC TEST DEF IN URL PARAMS, building suggestions');
-        var variations = urlParams.get('variations').split('|');
-        cacheAISuggestions(selector, variations);
-        populateAISuggestionsPanel(variations);
-        window.history.replaceState(null, '', window.location.pathname + '?' + urlParams.toString());
-        return true;
-    }
-
-    if (sourceText && sourceText.trim()) {
-        console.log('No cached suggestions, calling AI');
-        showAILoadingState();
-        sendToOpenAI(sourceText, 'magic', '#ai-suggestions-list', selector);
-        return true;
-    }
-
-    hideAISuggestionsPanel();
     return true;
 }
 
@@ -1608,6 +1574,7 @@ function loadMagicTestFromUrl() {
 
     if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
     jQuery('.click-to-start-help').hide();
+    jQuery('.abst-magic-bar-footer').addClass('abst-magic-bar-footer-visible');
     jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').show();
     jQuery('.magic-test-name').css('display', 'flex');
     jQuery('#abst-magic-bar-start').text('Update Test');
@@ -2121,121 +2088,19 @@ function selectorDetection(){
     // CRO Chat - Send message on button click
     jQuery('body').on('click', '#abst-cro-chat-send', function(e) {
         e.preventDefault();
-        var input = jQuery('#abst-cro-chat-input');
-        var message = input.val().trim();
-        if (!message) return;
-
-        var messagesContainer = jQuery('#abst-cro-chat-messages');
-        messagesContainer.show();
-
-        // Add user message
-        messagesContainer.append('<div class="abst-cro-chat-response abst-cro-chat-response--user"><strong class="abst-cro-chat-response-label">You:</strong><p>' + jQuery('<div>').text(message).html() + '</p></div>');
-        messagesContainer.append('<div id="cro-chat-loading" class="abst-cro-chat-response abst-cro-chat-response--loading"><p><em>Thinking...</em></p></div>');
-        messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
-
-        input.val('').prop('disabled', true);
-        jQuery('#abst-cro-chat-send').prop('disabled', true);
-        
-        // After 2 seconds, show screenshot thumbnail and update to "Processing..." (if still loading)
-        var loadingTimeout = setTimeout(function() {
-            var loadingEl = jQuery('#cro-chat-loading');
-            if (loadingEl.length && !loadingEl.hasClass('has-response')) {
-                var screenshotHtml = '';
-                if (window.abaiScreenshot) {
-                    screenshotHtml = '<div class="abst-cro-chat-loading-screenshot"><img src="' + window.abaiScreenshot + '" style="width: fit-content; max-width: 100%; height: auto; background: #fff; border-radius: 4px; border: 1px solid #ddd; padding: 2px; display: block;"></div>';
-                }
-                loadingEl.html(screenshotHtml + '<p><em>Processing...</em></p>');
-                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
-            }
-        }, 2000);
-
-        window.abstAI.croChat.send(message, function(err, response) {
-            clearTimeout(loadingTimeout);
-            jQuery('#cro-chat-loading').addClass('has-response').remove();
-            input.prop('disabled', false);
-            jQuery('#abst-cro-chat-send').prop('disabled', false);
-
-            if (err) {
-                messagesContainer.append('<div class="abst-cro-chat-response abst-cro-chat-response--error"><strong class="abst-cro-chat-response-label">Error:</strong><p>' + jQuery('<div>').text(err).html() + '</p></div>');
-            } else {
-                // Parse test suggestions from response
-                var testSuggestions = [];
-                var cleanResponse = response.replace(/\[TEST:\s*([^\]]+)\]/g, function(match, content) {
-                    var parts = content.split('|').map(function(p) { return p.trim(); });
-                    if (parts.length >= 3) {
-                        testSuggestions.push({
-                            element: parts[0],
-                            original: parts[1],
-                            variations: parts.slice(2)
-                        });
-                    }
-                    return ''; // Remove from main text
-                });
-
-                var formattedResponse = formatCroChatResponse(cleanResponse);
-
-                var responseHtml = '<div class="abst-cro-chat-response abst-cro-chat-response--assistant"><strong class="abst-cro-chat-response-label">CRO Expert:</strong>' + formattedResponse + '</div>';
-
-                // Add test suggestion bubbles to sticky suggestions container (replaces previous)
-                if (testSuggestions.length > 0) {
-                    var suggestionsHtml = '';
-                    testSuggestions.forEach(function(test, idx) {
-                        var testData = JSON.stringify(test).replace(/"/g, '&quot;');
-                        // Get first few words of original text (remove em dashes)
-                        var cleanOriginal = test.original.replace(/[\u2014\u2013—–]/g, '-');
-                        var originalPreview = cleanOriginal.split(' ').slice(0, 4).join(' ');
-                        if (cleanOriginal.split(' ').length > 4) originalPreview += '...';
-                        suggestionsHtml += '<button class="cro-chat-test-bubble" data-test="' + testData + '" style="display: inline-block; margin: 2px; padding: 6px 10px; background: #fff; border: 1px solid #4CAF50; border-radius: 16px; cursor: pointer; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; line-height: 1.4; text-align: left; color: #333;">';
-                        suggestionsHtml += '<strong style="font-weight: 600; color: #2e7d32; font-size: 11px; font-family: inherit;">' + jQuery('<div>').text(test.element).html() + '</strong>: ';
-                        suggestionsHtml += '<span style="color: #666;">' + jQuery('<div>').text(originalPreview).html() + '</span>';
-                        suggestionsHtml += '</button>';
-                    });
-                    jQuery('#abst-cro-chat-suggestions-list').css({'display': 'flex', 'flex-wrap': 'wrap', 'gap': '4px'}).html(suggestionsHtml);
-                    jQuery('#abst-cro-chat-suggestions').show();
-                    
-                    // Store suggestions and add persistent buttons to matching elements
-                    window.abstCroSuggestions = testSuggestions;
-                    addAiSuggestButtonsToElements(testSuggestions);
-                }
-
-                messagesContainer.append(responseHtml);
-            }
-            
-            // For first response, scroll to top so user can read from beginning
-            // For subsequent responses, scroll to bottom to show latest
-            if (window.abstCroChat && window.abstCroChat.history && window.abstCroChat.history.length <= 2) {
-                // First exchange (1 user + 1 assistant = 2 messages)
-                messagesContainer.scrollTop(0);
-            } else {
-                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
-            }
-            input.focus();
-        });
+        renderCroChatUpgradeState();
     });
 
     // CRO Chat - Send on Enter key
     jQuery('body').on('keypress', '#abst-cro-chat-input', function(e) {
         if (e.which === 13) {
             e.preventDefault();
-            jQuery('#abst-cro-chat-send').click();
+            renderCroChatUpgradeState();
         }
     });
 
-    jQuery('body').on('click', '#abst-test-empty-chat-send', function(e) {
-        e.preventDefault();
-        var promptInput = jQuery('#abst-test-empty-chat-input');
-        var message = promptInput.val().trim();
-
-        if (!message) return;
-
-        jQuery('#abst-cro-chat-input').val(message);
-        promptInput.val('');
-
-        if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('chat');
-
-        setTimeout(function() {
-            jQuery('#abst-cro-chat-send').trigger('click');
-        }, 0);
+    jQuery('body').on('click', '#abst-test-empty-chat-send', function() {
+        renderCroChatUpgradeState();
     });
 
     jQuery('body').on('keypress', '#abst-test-empty-chat-input', function(e) {
@@ -2269,6 +2134,7 @@ function selectorDetection(){
             // Hide help, show test editor (first time only)
             if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
             jQuery('.click-to-start-help').slideUp();
+            jQuery('.abst-magic-bar-footer').addClass('abst-magic-bar-footer-visible');
             jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').slideDown();
 
             jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
@@ -2575,6 +2441,7 @@ function selectorDetection(){
             return;
         
         if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
+        jQuery('.abst-magic-bar-footer').addClass('abst-magic-bar-footer-visible');
         jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .winning-mode').slideDown();
         jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
         jQuery('.click-to-start-help').slideUp();
@@ -3273,7 +3140,7 @@ function abst_magic_bar(options = {}) {
             #variation-picker is the way to choose and add a variation to the test. 
             #abst-variation-editor-container is the way to edit the variation after you have selected it. 
             You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and add a variation. you'll see #abst-selector-input update to the new element. You can then edit the text in the editor and  swap the #variation-picker to other variations to edit those too. 
-            Click .abst-add-goal-button to add a subgoal to the test. add page visits to funnel pages with the URL visit goal, or time active of 15 seconds to gauge overall engagement. you can also add page click goals to measure if someone is clicking after seeing a test.  
+            Additional goals are a Pro feature.  
             #ai-suggestions-list contains our trained suggestions for the highlighted element - you can click on a suggestion to add it, then create a new variation. You can also define the variation on your own if you have a better option. #abst-variation-editor-container is the way to edit the variation after you have selected it. After saving test, you can go to /wp-admin/edit.php?post_type=bt_experiments to view all tests. do not edit other tests unless  specifically asked">
             <h4>How to create a new test</h4>
             <ol>
@@ -3295,18 +3162,18 @@ function abst_magic_bar(options = {}) {
         <!-- CRO Expert Chat - Subtle styling -->
         <div class="abst-settings-column" id="abst-cro-chat-column" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0; margin: 0 !important; padding: 12px; width:100%;">
             <div id="abst-cro-chat-container" style="display: flex; flex-direction: column;">
-                <h4 style="margin: 0 0 8px 0; color: #475569; font-size: 14px;">💬 Ask CRO Expert</h4>
-                <div id="abst-cro-chat-messages" style="flex: 1; max-height: 200px; overflow-y: auto; margin-bottom: 8px; padding: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; color: #64748b;">
-                    <div class="abst-cro-chat-response abst-cro-chat-response--assistant"><strong class="abst-cro-chat-response-label">CRO Expert:</strong><p>What would you like to optimize?</p></div>
+                <h4 style="margin: 0 0 8px 0; color: #94a3b8; font-size: 14px;">💬 ChatCRO</h4>
+                <div id="abst-cro-chat-messages" style="flex: 1; max-height: 200px; overflow-y: auto; margin-bottom: 8px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; color: #64748b; opacity: 0.7;">
+                    <div class="abst-cro-chat-response abst-cro-chat-response--assistant"><p>Try AI features.</p><p><a href="https://absplittest.com/pricing/?utm_source=lite-plugin&utm_medium=magic-bar&utm_campaign=chatcro-upsell" target="_blank" rel="noopener noreferrer">Try ChatCRO free for 7 days</a></p></div>
                 </div>
                 <div id="abst-cro-chat-footer">
                     <div id="abst-cro-chat-suggestions" style="display: none; margin-bottom: 8px; padding: 8px; background: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0;">
                         <p style="margin: 0 0 6px 0; font-size: 11px; color: #166534;"><strong>Suggestions:</strong><small>Click to create the test</small></p>
                         <div id="abst-cro-chat-suggestions-list"></div>
                     </div>
-                    <div id="abst-cro-chat-input-row" style="display: flex; gap: 6px;">
-                        <input type="text" id="abst-cro-chat-input" placeholder="What should I test?" style="flex: 1; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
-                        <button id="abst-cro-chat-send" style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Ask</button>
+                    <div id="abst-cro-chat-input-row" style="display: flex; gap: 6px; opacity: 0.6; pointer-events: none;">
+                        <input type="text" id="abst-cro-chat-input" placeholder="Subscribe for AI features" disabled style="flex: 1; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; background: #f1f5f9;">
+                        <button id="abst-cro-chat-send" disabled style="padding: 6px 12px; background: #94a3b8; color: white; border: none; border-radius: 4px; cursor: not-allowed; font-size: 12px;">Ask</button>
                     </div>
                 </div>
             </div>
@@ -3315,15 +3182,9 @@ function abst_magic_bar(options = {}) {
         <div class="abst-magic-tab-panel is-active" id="abst-magic-panel-test" data-tab-panel="test" role="tabpanel" aria-labelledby="abst-magic-tab-test">
         <!-- Click to start help -->
         <div class="abst-settings-column click-to-start-help">
-            <h3>Create a Split Test.</h3>
-            <p>Click on the element you want to optimize, or chat with ChatCRO below and it will help shape a great test for you.</p>
-            <div class="abst-test-empty-chat-prompt">
-                <p class="abst-test-empty-chat-label">Not sure where to start?</p>
-                <div class="abst-test-empty-chat-row">
-                    <input type="text" id="abst-test-empty-chat-input" placeholder="Ask ChatCRO what you should test">
-                    <button type="button" id="abst-test-empty-chat-send">Ask ChatCRO</button>
-                </div>
-            </div>
+            <h3 style="color: #9e9e9e;">Create a Split Test.</h3>
+            <p style="font-size: 24px; line-height: 1.25; margin: 40px 0 8px;">To start: Click the element you want to change.</p>
+            <p style="font-size: 12px; line-height: 1.6; margin: 40px 0 20px 0; color: #9e9e9e;">Not sure what to test? Upgrade to unlock AI agent suggestions and ChatCRO guidance.</p>
         </div>
         <!-- Test Name - Hidden until test starts -->
         <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">
@@ -3343,9 +3204,7 @@ function abst_magic_bar(options = {}) {
                     <span class="abst-ai-toggle-chevron">▾</span>
                 </button>
                 <div class="abst-ai-suggestions-content" style="display:none;">
-                    <p class="abst-ai-suggestions-hint">Click to add to test variations &amp; edit.</p>
                     <ul id="ai-suggestions-list"></ul>
-                    <button id="ai-generate-more" class="ai-generate-more-btn" style="display:none;">✨ Generate More Suggestions</button>
                 </div>
                 </div>
             </div>
@@ -3400,36 +3259,15 @@ function abst_magic_bar(options = {}) {
                     <div id="abst-primary-goal-container">${abst_magic_data.goals}</div>
                     <div class="goal-value-label"></div>
                     <input type="text" class="abst-goal-input-value" placeholder="">
-                    <div id="conversion_use_order_value_container">
-                        <div class="abst-order-value-row">
-                            <label for="conversion_use_order_value">
-                                <input type="checkbox" id="conversion_use_order_value" class="abst-checkbox" name="conversion_use_order_value">
-                                <span>Use Order Value</span>
-                            </label>
-                            <button type="button" class="conversion_order_value_info abst-order-value-info" aria-expanded="false" aria-label="How order value works" title="How order value works">?</button>
-                        </div>
-                        <div class="conversion_order_value_help_panel abst-order-value-help-panel">
-                            <p>Turn this on when revenue matters more than raw conversion count.</p>
-                            <p>Instead of treating every conversion the same, the test will weigh results by order value so you can see which variation earns more revenue per visitor.</p>
-                            <p>To find the value for each conversion, we check in this order:</p>
-                            <p>AB Split Test checks for a value in this order:</p>
-                            <ol>
-                                <li>If <code>window.abst.abConversionValue</code> is already set, that exact value is used first.</li>
-                                <li>If not, it checks common URL parameters like <code>total_paid</code>, <code>amount_paid</code>, <code>payment_total</code>, <code>grand_total</code>, <code>order_total</code>, <code>ordertotal</code>, and <code>total</code>.</li>
-                                <li>If not, it looks for known order total elements used by WooCommerce, Easy Digital Downloads, SureCart, FluentCart, and generic <code>data-order-total</code> markup.</li>
-                                <li>If not, it scans visible page text for labels like <code>Order Total</code>, <code>Grand Total</code>, <code>Amount Paid</code>, <code>Total Paid</code>, and <code>Payment Total</code>.</li>
-                            </ol>
-                            <p>If none of those are found, the conversion falls back to a value of <code>1</code>.</p>
-                        </div>
-                    </div>
                 </div>
                 <div class="abst-button-container">
-                    <button class="abst-add-goal-button">+ Add Goal</button>
+                    <p class="abst-goal-upgrade-text">Add additional goals, external conversions & revenue optimization (Woo, EDD, SureCart etc) by going <a href="https://absplittest.com/pricing?utm_source=lite_magic_goals" target="_blank" rel="noopener noreferrer">Pro</a>.</p>
                 </div>
             </div>
         </div>
         </div>
         <div class="abst-magic-bar-footer">
+            <button id="abst-magic-bar-save-draft" class="abst-magic-bar-save-draft">Save Draft</button>
             <button id="abst-magic-bar-start" class="abst-magic-bar-start">Start Test</button>
         </div>
         </div>
@@ -3454,7 +3292,10 @@ function abst_magic_bar(options = {}) {
     // Add the magic bar to the body
     document.body.appendChild(magicBar);
 
-    jQuery('.abst-ai-suggestions-toggle').html('<span class="abst-ai-suggestions-toggle-label"><span class="abst-ai-suggestions-icon">*</span><span>AI Suggestions</span><span class="abst-ai-suggestions-count">0</span></span><span class="abst-ai-suggestions-inline-loading ai-loading" style="display:none;"><span class="abst-ai-loading-text">Generating AI Suggestions...</span></span><span class="abst-ai-toggle-chevron">v</span>');
+    jQuery('.abst-ai-suggestions-toggle').html('<span class="abst-ai-suggestions-toggle-label"><span class="abst-ai-suggestions-icon">*</span><span>AI Suggestions</span></span><span class="abst-ai-suggestions-inline-loading ai-loading" style="display:none;"><span class="abst-ai-loading-text">Upgrade for AI Suggestions</span></span><span class="abst-ai-toggle-chevron">v</span>');
+
+    renderAiUpgradeState();
+    renderCroChatUpgradeState();
 
     // AI suggestions toggle
     jQuery(document).on('click', '.abst-ai-suggestions-toggle', function() {
@@ -3507,10 +3348,6 @@ function abst_magic_bar(options = {}) {
     //if localstorage localStorage.setItem('abst-magic-help', 'false'); then hide
     if(localStorage.getItem('abst-magic-help') === 'false'){
         jQuery('.abst-settings-column.help').hide();
-    }
-
-    if(hasBtabVars && btab_vars.is_free == '1'){
-        jQuery('#abst-magic-bar').append('<div id="abst-magic-upgrade-overlay"><p>This is a pro feature</p><h3>Upgrade to create a Magic Test</h3><p>Also in any premium version:</p><ul><li>Unlimited Magic Tests</li><li>AI Assistant</li><li>AI Rewriter</li><li>Reports</li><li>Advanced Targeting</li><li>Analytics integrations</li></ul><a href="https://absplittest.com/pricing/?utm_source=magicupgradetab" target="_blank" class="abst-button button">Get AB Split Test Premium</a><BR><p>Your free account enables traditional tests from the block editor or <a href="'+bt_adminurl+'edit.php?post_type=bt_experiments" target="_blank">WP admin.</a></p><p class="upgrade-testy"><strong>Works well and makes me more money</strong><BR><em>This plugin is really a great addition to our website. Testing things is crucial and we have gained priceless insights so far!</em><BR>Christian - verified buyer.</p></div>'); 
     }
 
 
@@ -3669,16 +3506,6 @@ function abst_magic_bar(options = {}) {
     };
     
     // Sync DOM → Object (called when DOM changes)
-    window.abmagic.toggleOrderValueFields = function() {
-        var $primaryGoal = jQuery('.abst-goals-container').first();
-        var $orderValue = jQuery('#conversion_use_order_value_container');
-        var goalType = $primaryGoal.find('select.goal-type').first().val() || '';
-
-        if ($primaryGoal.length && $orderValue.length) {
-            $orderValue.appendTo($primaryGoal).toggle(goalType !== '');
-        }
-    };
-
     window.abmagic.syncFromDOM = function() {
         if (window.abmagic.isSyncingToDOM) {
             return;
@@ -3691,7 +3518,7 @@ function abst_magic_bar(options = {}) {
         
         // Conversion style
         test.conversion_style = jQuery('#abst-conversion-style').val() || 'bayesian';
-        test.use_order_value = jQuery('#conversion_use_order_value').is(':checked');
+        test.use_order_value = false;
         
         // URL query
         test.url_query = jQuery('#abst-url-query').val() || '';
@@ -3747,8 +3574,6 @@ function abst_magic_bar(options = {}) {
             jQuery('#abst-conversion-style').val(test.conversion_style);
         }
 
-        jQuery('#conversion_use_order_value').prop('checked', !!test.use_order_value);
-        
         // URL query
         jQuery('#abst-url-query').val(test.url_query);
         
@@ -3793,24 +3618,18 @@ function abst_magic_bar(options = {}) {
         }
 
         window.abmagic.isSyncingToDOM = false;
-        if (window.abmagic.toggleOrderValueFields) {
-            window.abmagic.toggleOrderValueFields();
-        }
         
         console.log('ABST: Synced to DOM', window.abmagic.test);
     };
     
     // Bind DOM change events to sync to object
-    jQuery(document).on('change input', '#abst-magic-bar-title, #abst-conversion-style, #abst-url-query, #abst-device-size, #abst-traffic-percentage, #abst-scope-mode, #abst-scope-value, #conversion_use_order_value', function() {
+    jQuery(document).on('change input', '#abst-magic-bar-title, #abst-conversion-style, #abst-url-query, #abst-device-size, #abst-traffic-percentage, #abst-scope-mode, #abst-scope-value', function() {
         var fieldId = jQuery(this).attr('id');
         if ((fieldId === 'abst-scope-mode' || fieldId === 'abst-scope-value') && window.abmagic && !window.abmagic.isSyncingToDOM) {
             window.abmagic.scopeDirty = true;
         }
         if (fieldId === 'abst-scope-mode') {
             updateMagicScopeFormUi();
-        }
-        if (window.abmagic && window.abmagic.toggleOrderValueFields) {
-            window.abmagic.toggleOrderValueFields();
         }
         window.abmagic.syncFromDOM();
     });
@@ -3823,10 +3642,6 @@ function abst_magic_bar(options = {}) {
     });
     updateUserRoleRowState();
     updateMagicScopeFormUi();
-    if (window.abmagic.toggleOrderValueFields) {
-        window.abmagic.toggleOrderValueFields();
-    }
-
     if (window.location.search.includes('testid')) {
         setTimeout(function() {
             loadMagicTestFromUrl();
@@ -4280,8 +4095,6 @@ function adjustFixedElementsForMagicBar(activate) {
             }
             // By default, show the text input. It will be hidden again if type is 'page' or certain abstSpecialPages.
             goalContainer.find('.abst-goal-input-value').show();
-            // jQuery('#conversion_use_order_value_container').hide(); // This is done at line 1725, before this block
-
             if (type == 'page') {
                 goalContainer.find('.abst-goal-input-value').hide();
                 goalContainer.find('.goal-value-label').text('Choose Page that will trigger a goal when visited').show();
@@ -4476,7 +4289,7 @@ function adjustFixedElementsForMagicBar(activate) {
                 };
                 $container.on('remove', cleanup);
             }else if (type == 'javascript'){
-                goalContainer.find('.goal-value-label').text('Create test, then view in admin to see conversion script').show();
+                goalContainer.find('.goal-value-label').text('Create test, then view the test in the admin to see conversion script that you can paste anywhere on your site.').show();
             }
             if (type == 'page') {
                 goalContainer.find('.goal-value-label').text('Choose Page that will trigger a goal when visited').show();
@@ -4528,11 +4341,6 @@ function adjustFixedElementsForMagicBar(activate) {
                  goalContainer.find('.goal-value-label').text('Select a goal type to define its value.').show(); 
             }
 
-            if(window.abmagic && window.abmagic.toggleOrderValueFields){
-                window.abmagic.toggleOrderValueFields();
-            }
-
-
             if(type == 'selector'){
                 console.log('selector');
                 window.magicLastFocus = jQuery(this).parents('.abst-goals-container').find('.abst-goal-input-value')[0];
@@ -4542,8 +4350,10 @@ function adjustFixedElementsForMagicBar(activate) {
         }).trigger('change');
 
 
-        jQuery('body').on('click','#abst-magic-bar-start',function(){
+        function saveMagicTest(postStatus){
             //get all magic data
+            postStatus = postStatus || 'publish';
+            var isDraftSave = postStatus === 'draft';
 
             //if theres no magicdata then alert
             if(!window.abmagic || !window.abmagic.definition || window.abmagic.definition.length == 0) {
@@ -4552,7 +4362,7 @@ function adjustFixedElementsForMagicBar(activate) {
             }
 
             var goalType = jQuery('.abst-goals-container').first().find('.goal-type').val();
-            if (!jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() && !abstSpecialPages.includes(goalType) && !(goalType && goalType.startsWith(abstFormConversionPrefix))) {
+            if (!isDraftSave && !jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() && !abstSpecialPages.includes(goalType) && !(goalType && goalType.startsWith(abstFormConversionPrefix))) {
                 alert('Please add at least one goal to the test');
                 //scroll #abst-magic-bar to the bottom
                 jQuery('#abst-magic-bar').animate({
@@ -4618,6 +4428,7 @@ function adjustFixedElementsForMagicBar(activate) {
                 abst_magic_mode: 1,
                 post_title: test.title,
                 post_id: (window.abmagic && window.abmagic.editingTestId) ? window.abmagic.editingTestId : 'new',
+                post_status: postStatus,
                 magic_definition: JSON.stringify(sanitizedDefinition),
                 test_type: 'magic',
                 conversion_style: test.conversion_style,
@@ -4629,7 +4440,7 @@ function adjustFixedElementsForMagicBar(activate) {
                 bt_experiments_conversion_link_pattern: '',
                 bt_experiments_full_page_default_page: '',
                 css_test_variations: '',
-                bt_experiments_conversion_order_value: jQuery('#conversion_use_order_value').is(':checked') ? 1 : 0,
+                bt_experiments_conversion_order_value: 0,
                 bt_experiments_conversion_time: '',
                 bt_experiments_conversion_text: '',
                 bt_experiments_target_option_device_size: test.targeting.device_size,
@@ -4676,11 +4487,13 @@ function adjustFixedElementsForMagicBar(activate) {
                     }
 
                     if(response.post_title && response.post_title !== ''){
-                        var message = response.updated ? ' updated.' : ' created, reloading page.';
+                        var message = isDraftSave ? ' saved as a draft.' : (response.updated ? ' updated.' : ' created, reloading page.');
                         alert(response.post_title + message);
                         var urlParams = new URLSearchParams(window.location.search);
                         var returnTo = urlParams.get('return_to');
-                        if (response.updated && returnTo) {
+                        if (isDraftSave && response.edit_url) {
+                            window.location.href = response.edit_url;
+                        } else if (response.updated && returnTo) {
                             window.location.href = decodeURIComponent(returnTo);
                         } else {
                             window.location.href = window.location.pathname;
@@ -4689,7 +4502,15 @@ function adjustFixedElementsForMagicBar(activate) {
                 }
             });
         
-      });
+        }
+
+        jQuery('body').on('click','#abst-magic-bar-start',function(){
+            saveMagicTest('publish');
+        });
+
+        jQuery('body').on('click','#abst-magic-bar-save-draft',function(){
+            saveMagicTest('draft');
+        });
     });
 })(jQuery);
 

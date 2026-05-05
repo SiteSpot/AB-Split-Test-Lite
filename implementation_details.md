@@ -215,6 +215,11 @@ The following features have been disabled/stubbed for the lite (free) version:
 - Premium settings in `admin/partials/single-site-display.php` are visually disabled with an "(upgrade)" button/link instead of being removed.
 - AI-related settings are hidden.
 - Trial/upsell banners are replaced with a single free-version notice.
+- In the experiment editor, free-tier users now see upgrade CTAs for **Sub Goals** and **Autocomplete** instead of interactive controls that only work in higher tiers.
+- In Magic point-and-click (`js/highlighter.js`), AI panels are now upgrade-only placeholders:
+  - selecting an element no longer triggers AI requests for `type: magic`
+  - the **AI Suggestions** accordion stays user-toggleable and shows an upgrade CTA when opened
+  - **ChatCRO** is rendered as disabled/grayed and shows `Subscribe for AI features.` with an upgrade link
 
 ### Plugin Header
 - Plugin name updated to `AB Split Test Lite`.

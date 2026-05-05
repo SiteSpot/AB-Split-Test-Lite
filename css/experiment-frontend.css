@@ -496,10 +496,6 @@ ul#ai-suggestions-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: scroll;
-  height: 180px;
-  -ms-overflow-style: none; /* IE and legacy Edge */
-  scrollbar-width: none; /* Firefox */
 }
 ul#ai-suggestions-list::-webkit-scrollbar {
   width: 0;
@@ -510,6 +506,7 @@ ul#ai-suggestions-list li {
   background: linear-gradient(135deg, #e5ecff 0%, #f1f5ff 100%);
   border-radius: 12px;
   padding: 16px 20px;
+  margin-top:5px;
   border: 1px solid #d8e1ff;
   box-shadow: 0 4px 12px rgba(70, 90, 150, 0.15);
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
@@ -639,20 +636,6 @@ margin: 0 -13px -13px -13px;
   font-size: 11px;
   line-height: 1;
   color: #11b8c6;
-}
-.abst-ai-suggestions-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: #11b8c6;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
 }
 .abst-ai-toggle-chevron {
   font-size: 12px;
@@ -945,9 +928,13 @@ margin: 0 -13px -13px -13px;
     padding: 12px 14px;
     flex-shrink: 0;
     z-index: 10;
+    gap: 10px;
+}
+.abst-magic-bar-footer.abst-magic-bar-footer-visible {
+    display: flex !important;
 }
 #abst-magic-bar button#abst-magic-bar-start {
-    width: 100%;
+    flex: 1;
     color: white !important;
     font-size: 14px !important;
     font-weight: 700 !important;
@@ -965,6 +952,27 @@ margin: 0 -13px -13px -13px;
 }
 #abst-magic-bar button#abst-magic-bar-start:active {
     background: #134a78 !important;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft {
+    flex: 0 0 34%;
+    color: #3c434a !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+    border-radius: 9px !important;
+    margin: 0;
+    padding: 12px !important;
+    background: #f0f0f1 !important;
+    border: 1px solid #dcdcde !important;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft:hover {
+    background: #e4e4e7 !important;
+    border-color: #c3c4c7 !important;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft:active {
+    background: #dcdcde !important;
 }
 
 #abst-magic-bar .abst-add-goal-button, #imageSelector{
@@ -1180,6 +1188,19 @@ div#abst-variation-editor button:hover{
   font-size: 14px;
   letter-spacing: 0.01em;
   transition: background 0.15s;
+}
+.abst-magic-bar-save-draft {
+  color: #3c434a !important;
+  border: 1px solid #dcdcde !important;
+  padding: 12px;
+  font-weight: 700;
+  border-radius: 9px;
+  cursor: pointer;
+  background: #f0f0f1 !important;
+  flex: 0 0 34%;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, border-color 0.15s;
 }
 .abst-magic-bar-start:hover {
   background: #1a5c92 !important;
@@ -2644,6 +2665,22 @@ select.goal-type,
   color: #475569 !important;
   border-color: #bfc8d3 !important;
   transform: none;
+}
+
+#abst-magic-bar .abst-goal-upgrade-text {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+#abst-magic-bar .abst-goal-upgrade-text a {
+  color: #6b7280;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 

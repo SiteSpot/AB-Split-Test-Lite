@@ -1393,14 +1393,14 @@ p.experiment-status {
 }
 
 .free-notice {
-    background-color: #FF887B;
+    background-color: #fff;
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 20px;
 }
 
 .free-trial-notice {
-    background-color: #FF887B;
+    background-color: #fff;
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -1460,14 +1460,16 @@ p.experiment-status {
 }
 
 .free-notice {
-    background-color: #FF887B;
+    background-color: #e2e2e2;
     padding: 20px;
     border-radius: 10px;
+    border:thin solid grey;
+    
     margin-bottom: 20px;
 }
 
 .free-trial-notice {
-    background-color: #FF887B;
+    background-color: #fff;
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -1554,13 +1556,43 @@ button.shepherd-button {
     margin-top:15px;
 }
 .subgoal.upgrade{
-    display: none;
+    display: block;
 }
 .subgoal, .conversion-goal {
     background: #00000003;
     padding: 5px 31px 10px 15px;
     border-radius: 6px;
     border: 1px solid #bbbbbb;
+}
+
+/* Lite upsell copy inside accordion sections should read like plain helper text */
+.show_autocomplete .subgoal.upgrade,
+.show_goals .subgoal.upgrade {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 8px 0;
+}
+
+.show_autocomplete .subgoal.upgrade h4,
+.show_goals .subgoal.upgrade h4 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.show_autocomplete .subgoal.upgrade p,
+.show_goals .subgoal.upgrade p {
+    margin: 0 0 8px 0;
+    color: #50575e;
+}
+
+.show_autocomplete .subgoal.upgrade .button,
+.show_goals .subgoal.upgrade .button {
+    background: transparent;
+    border: 1px solid #c3c4c7;
+    box-shadow: none;
 }
 .subgoal .close-goal {
     position: absolute;

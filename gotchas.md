@@ -289,6 +289,21 @@ Leaving `include_once` for modules that rely on Pro-only classes can cause fatal
 - The `conversion.php` and journey modules remain because they are used by the free tier.
 - Any code that references the removed classes (e.g. `$GLOBALS['abst_public_reports']`) must also be guarded or removed.
 
+## Lite magic-bar AI: UI can look "stuck loading" if frontend still runs AI request paths
+
+Magic point-and-click in Lite should not attempt AI network calls, even if the backend already returns an upgrade error.
+
+### Symptom
+
+- selecting an element shows `Generating AI Suggestions...` with skeletons that never produce usable output
+- clicking ChatCRO appears interactive but effectively dead-ends with errors
+
+### Mitigation in ABSPLITTEST Lite
+
+- short-circuit AI suggestion loading in `showAISuggestionsForSelector()` and render an upgrade CTA panel instead
+- keep the AI Suggestions header toggle interactive (expand/collapse), but show upgrade content only
+- render ChatCRO in a disabled/grayed state with `Subscribe for AI features.` and an upgrade link
+
 ## WordPress.org checks: avoid remote assets and unescaped dynamic JS strings in admin output
 
 WordPress.org plugin checks can flag both remote script/style sources and dynamic values interpolated into inline JavaScript output.
