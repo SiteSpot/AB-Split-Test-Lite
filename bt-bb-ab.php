@@ -4680,9 +4680,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><div class='subgoal upgrade'> <h4>Upgrade  to add Subgoals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance</p><p>Upgrade also includes support for more sites, Custom Conversion Values (Order Value), Analytics integrations and more!</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
+        echo "<div class='show_goals'><div class='subgoal upgrade'> <h4>Upgrade to add Sub Goals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance.</p><p>Upgrade also includes support for more sites, custom conversion values (order value), analytics integrations, and more.</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
 
-        echo "<button class='button button-small add-goal'>+ Add Sub Goal</button></div>";
+        echo "<p><a class='button button-small' href='https://absplittest.com/pricing' target='_blank'>Upgrade to unlock Sub Goals</a></p></div>";
 
       }
 
@@ -4710,13 +4710,19 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<div class='show_autocomplete collapsed'><h3>Autocomplete</h3>";
 
-      //if its on then show it
+      if( abst_user_level()  == 'agency'){
 
-      $ac = new Ab_Tests_Autocomplete();
+        //if its on then show it
 
-      $ac->show_autocomplete($post);
+        $ac = new Ab_Tests_Autocomplete();
 
+        $ac->show_autocomplete($post);
 
+      } else {
+
+        echo "<div class='subgoal upgrade'><h4>Upgrade to unlock Autocomplete</h4><p>Automatically identify a winner after your chosen confidence and traffic thresholds are met.</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
+
+      }
 
       echo '</div><div class="submit_box"><button class="button button-primary button-large" id="submit_experiment">Save and Start Test</button></div></form></div></body></html>';
 
@@ -14717,46 +14723,25 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
       $btab_vars =  [
-
         'is_admin' => current_user_can('manage_options'),
-
         'post_id' => $post_id,
-
         'is_preview' => $is_preview,
-
         'is_agency' => ($user_level  == 'agency'),
-
         'is_free' => '1',
-
         'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
-
         'do_fingerprint' => abst_get_admin_setting( 'ab_use_fingerprint' ) ? '1' : '0',
-
         'advanced_tracking' => abst_get_admin_setting( 'ab_use_uuid' ) ? '1' : '0',
-
         'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
-
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
-
         'abst_disable_ai' => abst_get_admin_setting( 'abst_disable_ai' ) ? '1' : '0',
-
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
-
         'domain' => get_home_url(),
-
         'v' => BT_AB_TEST_VERSION,
-
         'wait_for_approval' => abst_get_admin_setting( 'abst_wait_for_approval' ) ? '1' : '0',
-
         'heatmap_pages' => abst_get_admin_setting( 'abst_heatmap_pages' ),
-
         'heatmap_all_pages' => abst_get_admin_setting( 'abst_heatmap_all_pages' ),
-
         'geo' => abst_get_admin_setting( 'abst_geo_targeting' ) ? '1' : '0',
-
       ];
-
-      
 
       // Build experiments array
 
@@ -21770,25 +21755,6 @@ function abst_add_logs_page() {
 
 
 
-  if (abst_get_admin_setting('abst_test_ideas_enabled') !== '0') {
-
-    add_submenu_page(
-
-      'edit.php?post_type=bt_experiments',
-
-      'Test Ideas',
-
-      'Test Ideas',
-
-      'manage_options',
-
-      'abst-test-ideas',
-
-      'abst_test_ideas_page_content'
-
-    );
-
-  }
 
 
 
@@ -21822,47 +21788,6 @@ add_action('admin_menu', 'abst_add_logs_page');
 
 
 
-/**
-
- * Lazy-load testideas.php only when needed to prevent file lock during updates
-
- * Loads on AJAX requests and when viewing the Test Ideas page
-
- */
-
-function abst_maybe_load_test_ideas() {
-
-  static $loaded = false;
-
-  if (!$loaded && is_admin()) {
-
-    require_once plugin_dir_path(__FILE__) . 'testideas.php';
-
-    $loaded = true;
-
-  }
-
-}
-
-
-
-// Load for Test Ideas AJAX handlers
-
-add_action('wp_ajax_abst_ti_save_idea', 'abst_maybe_load_test_ideas', 1);
-
-add_action('wp_ajax_abst_ti_delete_idea', 'abst_maybe_load_test_ideas', 1);
-
-add_action('wp_ajax_abst_ti_toggle_complete', 'abst_maybe_load_test_ideas', 1);
-
-add_action('wp_ajax_abst_ti_update_row', 'abst_maybe_load_test_ideas', 1);
-
-add_action('wp_ajax_abst_ti_convert_to_draft', 'abst_maybe_load_test_ideas', 1);
-
-
-
-// Load when viewing Test Ideas admin page
-
-add_action('load-bt_experiments_page_abst-test-ideas', 'abst_maybe_load_test_ideas');
 
 
 

@@ -221,6 +221,11 @@ The following features have been disabled/stubbed for the lite (free) version:
   - the **AI Suggestions** accordion stays user-toggleable and shows an upgrade CTA when opened
   - **ChatCRO** is rendered as disabled/grayed and shows `Subscribe for AI features.` with an upgrade link
 
+### bt-bb-ab.php selective recovery notes
+- Keep the **Primary Conversion** block fully functional in the create-test modal, and keep subgoal/autocomplete restrictions additive (upsell messaging) rather than destructive UI behavior.
+- In the create-test modal for free-tier users, **Sub Goals** and **Autocomplete** render upgrade CTAs instead of interactive controls.
+- Frontend localized settings (`$btab_vars`) should continue reading from stored settings/filters (for compatibility) and should not be hardcoded globally to fixed values.
+
 ### Plugin Header
 - Plugin name updated to `AB Split Test Lite`.
 - Description updated to reflect free-tier limitations.

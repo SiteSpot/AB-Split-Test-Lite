@@ -775,17 +775,7 @@ if(empty($weekly_report_emails))
 
             <p>Required for WooFunnels or CartFlows conversion tracking.</p>
 
-            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
-
-            <p><input type="checkbox" class="ab-toggle" id="abst_server_convert_woo" name="abst_server_convert_woo" value="1" <?php echo esc_attr($abst_server_convert_woo); ?> /> Enable server side conversion tracking for WooCommerce.</p>
-
-            <div class="ab-settings-subsection ab-test-woo-goal-status">
-
-              <label for="abst_server_convert_woo_status"><strong>WooCommerce conversion status</strong></label>
-
-              <p>Woo Order Status for conversion tracking.</p>
-
-              <?php echo wp_kses_post($selected_woo_order_statuses); ?>
+             <?php echo wp_kses_post($upgrade_link);  ?>
 
             </div>
 
@@ -1089,15 +1079,6 @@ if(empty($weekly_report_emails))
 
 
 
-          <div class="ab-settings-subsection">
-
-            <label for="abst_test_ideas_enabled"><strong>Test Ideas</strong></label>
-
-            <p>Show the Test Ideas planning board in the admin menu.</p>
-
-            <?php echo wp_kses_post($upgrade_link); ?>
-
-          </div>
 
 
 

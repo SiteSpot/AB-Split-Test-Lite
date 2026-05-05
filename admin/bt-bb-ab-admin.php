@@ -240,7 +240,6 @@ class BT_BB_AB_Admin {
     $desired_order = [
       'post-new.php?post_type=bt_experiments',
       $parent_slug,
-      'abst-test-ideas',
       'bt_bb_ab_insights',
       'abst-heatmaps',
       'abst-session-replay',
