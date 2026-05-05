@@ -220,3 +220,14 @@ The following features have been disabled/stubbed for the lite (free) version:
 - Plugin name updated to `AB Split Test Lite`.
 - Description updated to reflect free-tier limitations.
 - Trial-related wording removed to comply with WordPress.org rules.
+
+## WordPress.org plugin-check compliance (public reports + readme)
+
+To satisfy WordPress.org free-plugin checks for bundled assets and metadata consistency:
+
+- `modules/public-reports/templates/error-template.php` no longer loads remote Google Fonts.
+- `modules/public-reports/templates/report-template.php` no longer loads remote Google Fonts or CDN Chart.js directly.
+- `modules/public-reports/public-reports.php` enqueues local `js/chart.js` as `abst-public-report-chart` before rendering the standalone report template.
+- `README.md` stable tag now matches the main plugin header version (`1.0.0`).
+
+This keeps public templates self-contained while avoiding remote offloading and direct non-enqueued external asset tags that WordPress.org plugin checks flag.

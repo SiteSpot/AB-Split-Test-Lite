@@ -10,6 +10,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!isset($data) || !is_array($data)) {
+    $data = [];
+}
+
 // Include the variation label helper function
 if (!function_exists('abst_get_variation_label')) {
     function abst_get_variation_label($variation, $variation_meta = null) {
@@ -153,10 +157,7 @@ if (!empty($data['goals'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title><?php echo esc_html( $test_name ); ?> - A/B Test Report</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> <!-- phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Standalone report page template; wp_enqueue_style() not available here. -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Standalone report page template; wp_enqueue_script() not available here. -->
+    <?php wp_print_scripts( array( 'abst-public-report-chart' ) ); ?>
     <style>
         :root {
             --primary-color: #10b981;
@@ -186,7 +187,7 @@ if (!empty($data['goals'])) {
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-secondary);
             color: var(--text-primary);
             line-height: 1.6;

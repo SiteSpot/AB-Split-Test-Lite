@@ -11140,7 +11140,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
 
-      $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></script>';
+      $fingerprint_script_html = '<' . 'script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></' . 'script>';
 
       echo "<input type='text' readonly='readonly' onclick='this.select()' value='" . esc_attr($fingerprint_script_html) . "'>";
 
@@ -11200,9 +11200,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-        var selectval = '", esc_js($conversion_page), "';
+        var selectval = " . wp_json_encode( (string) $conversion_page ) . ";
 
-        jQuery('#bt_experiments_conversion_page option[value=\'', esc_js($conversion_page), '\']').first().attr('selected', 'selected');";
+        jQuery('#bt_experiments_conversion_page option').filter(function(){
+          return jQuery(this).val() === selectval;
+        }).first().attr('selected', 'selected');";
 
         if(is_numeric($conversion_page))
 
@@ -12284,6 +12286,7 @@ function abst_fluent_cart_order_paid($eventData) {
 
         'show_in_inline_dropdown'   => true,
 
+        /* translators: %s: number of test ideas. */
         'label_count'               => _n_noop( 'Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
@@ -12306,6 +12309,7 @@ function abst_fluent_cart_order_paid($eventData) {
 
         'show_in_inline_dropdown'   => true,
 
+        /* translators: %s: number of completed tests. */
         'label_count'               => _n_noop( 'Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
@@ -13036,9 +13040,9 @@ function abst_fluent_cart_order_paid($eventData) {
 
       // Enqueue Shepherd PRODUCT TOUR
 
-      wp_enqueue_style('shepherd-css', '//cdn.jsdelivr.net/npm/shepherd.js/dist/css/shepherd.css');
+      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
 
-      wp_enqueue_script('shepherd-js', '//cdn.jsdelivr.net/npm/shepherd.js/dist/js/shepherd.min.js', array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
 
       wp_enqueue_script('shepherd-tour', plugins_url('js/plugin-tour.js', __FILE__), array('shepherd-js'), BT_AB_TEST_VERSION, true);
 
@@ -19959,7 +19963,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if (isset($newPluginMetadata->upgrade_notice) && strlen(trim($newPluginMetadata->upgrade_notice)) > 0 && $message !== ''){
 
-            echo '<span style="display:block; font-weight:600; margin-top:10px;">'.$message.'</span>';
+            echo '<span style="display:block; font-weight:600; margin-top:10px;">' . wp_kses_post($message) . '</span>';
 
         }
 
@@ -21321,31 +21325,22 @@ function abst_append_post_status_list(){
 
       }
 
-        echo '
+        $abst_is_idea = ($post->post_status === 'idea');
+        $abst_status_display = $abst_is_idea ? 'Idea' : 'Test Complete';
+        $abst_publish_text = $abst_is_idea ? 'Save Idea' : 'Start ' . BT_AB_TEST_WL_ABTEST;
+        $abst_label_bool = ($label === 'true') ? 'true' : 'false';
 
-        <script>
-
+        echo '<script>
         jQuery(document).ready(function($){
-
-             $("select#post_status").append("<option value=\"idea\" '.$idea.'>Idea</option>");
-
-             $("select#post_status").append("<option value=\"complete\" '.$complete.'>Test Complete</option>");
-
-             if('.$label.')
-
+             $("select#post_status").append("<option value=\"idea\" ' . esc_js($idea) . '>Idea</option>");
+             $("select#post_status").append("<option value=\"complete\" ' . esc_js($complete) . '>Test Complete</option>");
+             if(' . esc_attr($abst_label_bool) . ')
              {
-
-             $("#post-status-display").text("'.($post->post_status == 'idea' ? 'Idea' : 'Test Complete').'");
-
+               $("#post-status-display").text(' . wp_json_encode($abst_status_display) . ');
              }
-
-             $("#publishing-action #publish").text("'.($post->post_status == 'idea' ? 'Save Idea' : 'Start ' . BT_AB_TEST_WL_ABTEST).'");
-
+             $("#publishing-action #publish").text(' . wp_json_encode($abst_publish_text) . ');
         });
-
-        </script>
-
-        ';
+        </script>';
 
       //post-status-display
 
@@ -22155,7 +22150,7 @@ function abst_heatmaps_page_content() {
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>'.BT_AB_TEST_WL_ABTEST.' Heatmaps & Scrollmaps</h1>';
+  echo '<h1>' . esc_html(BT_AB_TEST_WL_ABTEST) . ' Heatmaps & Scrollmaps</h1>';
 
   echo '<span class="abst-beta-badge">Beta <a href="https://absplittest.com/support" target="_blank">Report issues</a></span>';
 

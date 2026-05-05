@@ -106,3 +106,9 @@ Notes:
 - selector: `div#side-sortables`
 - behavior: `position: sticky`
 - top offset: `40px`
+
+## WordPress.org compliance reminders
+
+- enqueue bundled/local dependencies instead of CDN URLs for plugin-admin assets
+- when embedding values into inline JavaScript, prefer `wp_json_encode()` / `esc_js()` to raw string concatenation
+- when printing link-capable admin notices, use `wp_kses_post()` if HTML links are required

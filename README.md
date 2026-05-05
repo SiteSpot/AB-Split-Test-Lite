@@ -4,7 +4,7 @@ Contributors: tomcarless
 Tags: ab testing, split testing, conversion optimization, a/b test
 Requires at least: 5.6
 Tested up to: 7.0
-Stable tag: 2.5.1
+Stable tag: 1.0.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -41,7 +41,7 @@ Yes, AB Split Test works with most popular page builders including Elementor, Be
 
 ## Changelog
 
-= 2.5.1 =
+= 1.0.0 =
 * Initial Lite release for WordPress.org
 
 ## License

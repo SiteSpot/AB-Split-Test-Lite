@@ -353,6 +353,14 @@ class ABST_Public_Reports {
         // Set headers
         header('Content-Type: text/html; charset=utf-8');
         header('X-Robots-Tag: noindex, nofollow');
+
+        wp_enqueue_script(
+            'abst-public-report-chart',
+            BT_AB_TEST_PLUGIN_URI . 'js/chart.js',
+            array(),
+            BT_AB_TEST_VERSION,
+            false
+        );
         
         // Include the template
         include BT_AB_TEST_PLUGIN_PATH . 'modules/public-reports/templates/report-template.php';

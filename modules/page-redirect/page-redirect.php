@@ -100,7 +100,7 @@ if( class_exists('FLBuilderModule') ) {
 			{
 				$posts = BT_BB_AB_PageRedirect::abst_get_all_posts_grouped();
 
-				wp_enqueue_script( 'ab-page-redirect', BT_AB_TEST_PLUGIN_URI . 'modules/page-redirect/js/page-redirect.js', array(), '', true );  
+				wp_enqueue_script( 'ab-page-redirect', BT_AB_TEST_PLUGIN_URI . 'modules/page-redirect/js/page-redirect.js', array(), BT_AB_TEST_VERSION, true );  
 				wp_localize_script( 'ab-page-redirect', 'bt_bb_ab_predirect_vars', [
 					'posts' => json_encode($posts),
 					'select' => '<option></option>'

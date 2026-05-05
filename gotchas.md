@@ -288,3 +288,19 @@ Leaving `include_once` for modules that rely on Pro-only classes can cause fatal
 - `modules/public-reports/public-reports.php`, `modules/page-redirect/page-redirect.php`, and `modules/support/agency_hub.php` includes were removed from `bt_include_module()`.
 - The `conversion.php` and journey modules remain because they are used by the free tier.
 - Any code that references the removed classes (e.g. `$GLOBALS['abst_public_reports']`) must also be guarded or removed.
+
+## WordPress.org checks: avoid remote assets and unescaped dynamic JS strings in admin output
+
+WordPress.org plugin checks can flag both remote script/style sources and dynamic values interpolated into inline JavaScript output.
+
+### Symptom
+
+- `PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent` for CDN assets.
+- `WordPress.WP.EnqueuedResources.NonEnqueuedScript` for script-tag snippets in output strings.
+- `WordPress.Security.EscapeOutput.OutputNotEscaped` in inline admin JS blocks where variables/constants are concatenated into quoted JavaScript.
+
+### Mitigation in ABSPLITTEST Lite
+
+- Bundle third-party assets locally and enqueue them with `plugins_url(...)`.
+- For JS snippet examples shown in admin fields, avoid direct `<script ...>` literals in source code by splitting the tag string and escaping for attribute output.
+- For inline JavaScript values, use `wp_json_encode()` / `esc_js()` instead of raw concatenation.
