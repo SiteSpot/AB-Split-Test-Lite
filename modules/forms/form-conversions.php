@@ -675,14 +675,14 @@ class ABST_Form_Conversions {
         
         global $wpdb;
         $table = $wpdb->prefix . 'formcraft_b_forms';
-        
+
         // Check if table exists
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
             return $forms;
         }
-        
+
         try {
-            $fc_forms = $wpdb->get_results("SELECT id, name FROM $table ORDER BY name ASC");
+            $fc_forms = $wpdb->get_results($wpdb->prepare("SELECT id, name FROM {$table} ORDER BY name ASC"));
             
             if (is_array($fc_forms)) {
                 foreach ($fc_forms as $form) {
@@ -757,15 +757,15 @@ class ABST_Form_Conversions {
             return;
         }
         
-        $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field($_COOKIE['ab-advanced-id']) : false;
+        $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field(wp_unslash($_COOKIE['ab-advanced-id'])) : false;
         $variation = '';
         $device_size = '';
         $page_location = '';
         $already_converted = false;
-        
+
         // Try to get variation from btab cookie first
         if (isset($_COOKIE['btab_' . $eid])) {
-            $cookie = json_decode(stripslashes($_COOKIE['btab_' . $eid]), true);
+            $cookie = json_decode(stripslashes(wp_unslash($_COOKIE['btab_' . $eid])), true);
             
             if (is_array($cookie)) {
                 $variation = $cookie['variation'] ?? '';
@@ -784,7 +784,7 @@ class ABST_Form_Conversions {
         }
         // Fallback #1: Try to get variation from hidden form field (abst_data)
         elseif (isset($_POST['abst_data']) || isset($_REQUEST['abst_data'])) {
-            $abst_data_raw = isset($_POST['abst_data']) ? $_POST['abst_data'] : $_REQUEST['abst_data'];
+            $abst_data_raw = isset($_POST['abst_data']) ? wp_unslash($_POST['abst_data']) : wp_unslash($_REQUEST['abst_data']);
             $abst_data = json_decode(stripslashes(sanitize_text_field($abst_data_raw)), true);
             
             if (is_array($abst_data) && isset($abst_data[$eid])) {
@@ -792,7 +792,7 @@ class ABST_Form_Conversions {
                 abst_log("Form conversion: Found variation '{$variation}' from hidden field for eid={$eid}");
                 
                 // Check if already converted via UUID database (if UUID available from cookie)
-                if ($uuid && ab_get_admin_setting('ab_use_uuid') == 1) {
+                if ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
                     global $wpdb;
                     $table_name = $wpdb->prefix . 'abst_fingerprints';
                     $row = $wpdb->get_row($wpdb->prepare(
@@ -808,13 +808,13 @@ class ABST_Form_Conversions {
             }
         }
         // Fallback #2: Try to get variation from fingerprint database using UUID
-        elseif ($uuid && ab_get_admin_setting('ab_use_uuid') == 1) {
+        elseif ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
             global $wpdb;
             $table_name = $wpdb->prefix . 'abst_fingerprints';
-            
+
             // Check if this UUID has visited this test
             $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT variation, type FROM $table_name WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
+                "SELECT variation, type FROM {$table_name} WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
                 $uuid, $eid
             ));
             
@@ -916,15 +916,15 @@ class ABST_Form_Conversions {
             return;
         }
         
-        $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field($_COOKIE['ab-advanced-id']) : false;
+        $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field(wp_unslash($_COOKIE['ab-advanced-id'])) : false;
         $variation = '';
         $device_size = '';
         $page_location = '';
         $goal_already_completed = false;
-        
+
         // Try to get variation from btab cookie first
         if (isset($_COOKIE['btab_' . $eid])) {
-            $cookie = json_decode(stripslashes($_COOKIE['btab_' . $eid]), true);
+            $cookie = json_decode(stripslashes(wp_unslash($_COOKIE['btab_' . $eid])), true);
             
             if (!is_array($cookie)) {
                 return;
@@ -949,7 +949,7 @@ class ABST_Form_Conversions {
         }
         // Fallback #1: Try to get variation from hidden form field (abst_data)
         elseif (isset($_POST['abst_data']) || isset($_REQUEST['abst_data'])) {
-            $abst_data_raw = isset($_POST['abst_data']) ? $_POST['abst_data'] : $_REQUEST['abst_data'];
+            $abst_data_raw = isset($_POST['abst_data']) ? wp_unslash($_POST['abst_data']) : wp_unslash($_REQUEST['abst_data']);
             $abst_data = json_decode(stripslashes(sanitize_text_field($abst_data_raw)), true);
             
             if (is_array($abst_data) && isset($abst_data[$eid])) {
@@ -957,11 +957,11 @@ class ABST_Form_Conversions {
                 abst_log("Form goal: Found variation '{$variation}' from hidden field for eid={$eid}");
                 
                 // Check if goal already completed via UUID database (if UUID available from cookie)
-                if ($uuid && ab_get_admin_setting('ab_use_uuid') == 1) {
+                if ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
                     global $wpdb;
                     $table_name = $wpdb->prefix . 'abst_fingerprints';
                     $row = $wpdb->get_row($wpdb->prepare(
-                        "SELECT goals FROM $table_name WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
+                        "SELECT goals FROM {$table_name} WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
                         $uuid, $eid
                     ));
                     if ($row && !empty($row->goals)) {
@@ -974,13 +974,13 @@ class ABST_Form_Conversions {
             }
         }
         // Fallback #2: Try to get variation from fingerprint database using UUID
-        elseif ($uuid && ab_get_admin_setting('ab_use_uuid') == 1) {
+        elseif ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
             global $wpdb;
             $table_name = $wpdb->prefix . 'abst_fingerprints';
-            
+
             // Check if this UUID has visited this test
             $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT variation, goals FROM $table_name WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
+                "SELECT variation, goals FROM {$table_name} WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
                 $uuid, $eid
             ));
             
@@ -1020,7 +1020,7 @@ class ABST_Form_Conversions {
         
         // When using UUID tracking, ensure a visit record exists before logging goal.
         // This handles the race condition where form submission fires before JavaScript visit tracking completes.
-        if ($uuid && ab_get_admin_setting('ab_use_uuid') == 1 && method_exists($btab, 'log_experiment_activity')) {
+        if ($uuid && abst_get_admin_setting('ab_use_uuid') == 1 && method_exists($btab, 'log_experiment_activity')) {
             // Log visit first (will be ignored if already exists) - use page location from cookie if available
             $visit_location = !empty($page_location) ? $page_location : $location;
             $btab->log_experiment_activity($eid, $variation, 'visit', true, $visit_location, 1, $uuid, $device_size);
@@ -1432,8 +1432,8 @@ class ABST_Form_Conversions {
             $columns = $wpdb->get_results("SHOW COLUMNS FROM {$forms_table} LIKE 'deleted_at'");
             $where_clause = !empty($columns) ? "WHERE deleted_at IS NULL" : "";
             
-            $query = "SELECT id, name FROM {$forms_table} {$where_clause}";
-            $results = $wpdb->get_results($query);
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $forms_table uses $wpdb->prefix only; $where_clause is a hard-coded literal string.
+            $results = $wpdb->get_results( "SELECT id, name FROM {$forms_table} {$where_clause}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             
             if (is_array($results)) {
                 foreach ($results as $form) {

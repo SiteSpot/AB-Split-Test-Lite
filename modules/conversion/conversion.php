@@ -37,8 +37,15 @@ if(! class_exists ( 'BtConversionModule'))
 
     public function add_conversion()
     {
-      $eid = absint($_POST['eid']);
-      $variation = sanitize_text_field($_POST['variation']);
+      if ( ! isset( $_POST['eid'] ) || ! isset( $_POST['variation'] ) ) {
+        return new WP_REST_Response([
+          'status'  => 0,
+          'message' => 'Missing required parameters'
+        ], 400);
+      }
+
+      $eid = absint( sanitize_text_field( wp_unslash( $_POST['eid'] ) ) );
+      $variation = sanitize_text_field( wp_unslash( $_POST['variation'] ) );
 
       $exp_data = (array) get_post_meta($eid,'observations',true);
 
@@ -51,7 +58,7 @@ if(! class_exists ( 'BtConversionModule'))
 
       return new WP_REST_Response([
         'status'  => 0,
-        'message' => 'AB BT_AB_TEST_WL_ABTEST Lite' . ': ' . __( 'Variation name does not exist', 'ab-split-test-lite' )
+        'message' => 'AB Split Test Lite' . ': ' . __( 'Variation name does not exist', 'ab-split-test-lite' )
       ], 200);
     }
 

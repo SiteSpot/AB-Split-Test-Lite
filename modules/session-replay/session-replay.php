@@ -156,15 +156,15 @@ class ABST_Session_Replay {
             'min_pages' => isset($_POST['min_pages']) ? intval($_POST['min_pages']) : 1,
             'page_id' => isset($_POST['page_id']) ? intval($_POST['page_id']) : 0,
             'test_id' => isset($_POST['test_id']) ? intval($_POST['test_id']) : 0,
-            'converted' => isset($_POST['converted']) ? sanitize_text_field($_POST['converted']) : '',
-            'has_rage_clicks' => isset($_POST['has_rage_clicks']) && $_POST['has_rage_clicks'] === 'true',
-            'device' => isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '',
-            'date_from' => isset($_POST['date_from']) ? sanitize_text_field($_POST['date_from']) : '',
-            'date_to' => isset($_POST['date_to']) ? sanitize_text_field($_POST['date_to']) : '',
-            'referrer' => isset($_POST['referrer']) ? sanitize_text_field($_POST['referrer']) : '',
-            'utm_source' => isset($_POST['utm_source']) ? sanitize_text_field($_POST['utm_source']) : '',
-            'utm_medium' => isset($_POST['utm_medium']) ? sanitize_text_field($_POST['utm_medium']) : '',
-            'utm_campaign' => isset($_POST['utm_campaign']) ? sanitize_text_field($_POST['utm_campaign']) : '',
+            'converted' => isset($_POST['converted']) ? sanitize_text_field(wp_unslash($_POST['converted'])) : '',
+            'has_rage_clicks' => isset($_POST['has_rage_clicks']) && sanitize_text_field(wp_unslash($_POST['has_rage_clicks'])) === 'true',
+            'device' => isset($_POST['device']) ? sanitize_text_field(wp_unslash($_POST['device'])) : '',
+            'date_from' => isset($_POST['date_from']) ? sanitize_text_field(wp_unslash($_POST['date_from'])) : '',
+            'date_to' => isset($_POST['date_to']) ? sanitize_text_field(wp_unslash($_POST['date_to'])) : '',
+            'referrer' => isset($_POST['referrer']) ? sanitize_text_field(wp_unslash($_POST['referrer'])) : '',
+            'utm_source' => isset($_POST['utm_source']) ? sanitize_text_field(wp_unslash($_POST['utm_source'])) : '',
+            'utm_medium' => isset($_POST['utm_medium']) ? sanitize_text_field(wp_unslash($_POST['utm_medium'])) : '',
+            'utm_campaign' => isset($_POST['utm_campaign']) ? sanitize_text_field(wp_unslash($_POST['utm_campaign'])) : '',
         ];
         
         $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
@@ -233,8 +233,10 @@ class ABST_Session_Replay {
             wp_send_json_error('Unauthorized');
         }
 
-        $uuid = isset($_POST['uuid']) ? sanitize_text_field($_POST['uuid']) : '';
-        $dates = isset($_POST['dates']) ? array_map('sanitize_text_field', $_POST['dates']) : [];
+        $uuid = isset($_POST['uuid']) ? sanitize_text_field(wp_unslash($_POST['uuid'])) : '';
+        $dates = isset($_POST['dates']) ? array_map(function($date) {
+            return sanitize_text_field(wp_unslash($date));
+        }, wp_unslash($_POST['dates'])) : [];
         
         if (empty($uuid) || empty($dates)) {
             wp_send_json_error('Missing required parameters');
@@ -311,7 +313,7 @@ class ABST_Session_Replay {
         $sessions = [];
         
         // Get retention period
-        $retention_days = ab_get_admin_setting('abst_heatmap_retention_length') ?? 30;
+        $retention_days = abst_get_admin_setting('abst_heatmap_retention_length') ?? 30;
         
         // Scan journey files for the retention period
         for ($i = 0; $i < $retention_days; $i++) {
@@ -369,7 +371,7 @@ class ABST_Session_Replay {
                 
                 // Capture referrer from metadata (first occurrence wins)
                 if (empty($session['referrer']) && !empty($record['referrer'])) {
-                    $ref_host = parse_url($record['referrer'], PHP_URL_HOST);
+                    $ref_host = wp_parse_url($record['referrer'], PHP_URL_HOST);
                     $session['referrer'] = $ref_host ?: '';
                 }
 

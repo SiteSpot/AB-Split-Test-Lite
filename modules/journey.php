@@ -195,7 +195,7 @@ class ABST_Journeys {
 
         if (!file_exists(ABST_JOURNEY_DIR)) {
 
-            if(mkdir(ABST_JOURNEY_DIR, 0755, true)){
+            if(wp_mkdir_p(ABST_JOURNEY_DIR)){
 
                 abst_log('Created journey directory');
 
@@ -366,7 +366,7 @@ class ABST_Journeys {
 
         if($retention_days === false || $retention_days === null || $retention_days === '')
 
-            $retention_days = ab_get_admin_setting('abst_heatmap_retention_length') ?? 30;
+            $retention_days = abst_get_admin_setting('abst_heatmap_retention_length') ?? 30;
 
         $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt'); // get all txt files in format abst_journeys_20251009.txt
 
@@ -754,11 +754,17 @@ class ABST_Journeys {
 
         //}
 
-        $raw_payload = wp_unslash($_POST['data'] ?? '');
+        if ( ! isset( $_POST['data'] ) ) {
+            abst_log('Missing data payload');
+            wp_send_json_error('Invalid data');
+            return;
+        }
+
+        $raw_payload = sanitize_text_field( wp_unslash( $_POST['data'] ) );
 
 
 
-        $licence = trim(apply_filters( 'bb_bt_ab_licence_key', ab_get_admin_setting( 'bt_bb_ab_licence' )) );
+        $licence = trim(apply_filters( 'abst_licence_key', abst_get_admin_setting( 'bt_bb_ab_licence' )) );
 
         $records = json_decode($raw_payload, true);
 

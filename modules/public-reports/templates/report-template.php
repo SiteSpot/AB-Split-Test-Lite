@@ -155,8 +155,8 @@ if (!empty($data['goals'])) {
     <title><?php echo esc_html( $test_name ); ?> - A/B Test Report</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> <!-- phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Standalone report page template; wp_enqueue_style() not available here. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Standalone report page template; wp_enqueue_script() not available here. -->
     <style>
         :root {
             --primary-color: #10b981;
@@ -1188,7 +1188,7 @@ if (!empty($data['goals'])) {
                             <?php echo esc_html($var['label']); ?>
                             <?php 
                             // Add heatmap link if heatmaps are enabled
-                            $heatmaps_enabled = ab_get_admin_setting('abst_enable_user_journeys') == '1';
+                            $heatmaps_enabled = abst_get_admin_setting('abst_enable_user_journeys') == '1';
                             if ($heatmaps_enabled && !empty($data['page_url'])):
                                 // Build heatmap URL
                                 $heatmap_url = admin_url('edit.php?post_type=bt_experiments&page=abst-heatmaps');

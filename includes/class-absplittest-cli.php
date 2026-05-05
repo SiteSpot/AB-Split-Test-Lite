@@ -190,7 +190,7 @@ class ABSPLITTEST_CLI {
         
         $query_args = array(
             'post_type'      => 'bt_experiments',
-            'post_status'    => $status === 'any' ? (btab_user_level() == 'pro' ? array('idea', 'publish', 'draft', 'pending', 'complete') : array('publish', 'draft', 'pending', 'complete')) : $status,
+            'post_status'    => $status === 'any' ? (abst_user_level() == 'pro' ? array('idea', 'publish', 'draft', 'pending', 'complete') : array('publish', 'draft', 'pending', 'complete')) : $status,
             'posts_per_page' => -1,
             'orderby'        => 'date',
             'order'          => 'DESC',

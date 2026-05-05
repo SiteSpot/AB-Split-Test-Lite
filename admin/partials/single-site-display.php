@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables included inside a class method, not true globals.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -45,7 +46,7 @@ if($price_id)
 
 {  
 
-  $creditLevels = getAiLicenceInfo($price_id);
+  $creditLevels = abst_get_ai_licence_info($price_id);
 
   $aiCreditFrequency = $creditLevels['expiry'];
 
@@ -65,11 +66,11 @@ else
 
 
 
-$fathom_api_key = ab_get_admin_setting('fathom_api_key');
+$fathom_api_key = abst_get_admin_setting('fathom_api_key');
 
-$webhook_global = ab_get_admin_setting('webhook_global');
+$webhook_global = abst_get_admin_setting('webhook_global');
 
-$ab_openapi_key = ab_get_admin_setting('ab_openapi_key');
+$ab_openapi_key = abst_get_admin_setting('ab_openapi_key');
 
 // AI model constant removed in lite version
 
@@ -77,57 +78,57 @@ $ab_openapi_model = 'gpt-4o'; // placeholder for UI only
 
 $post_types = get_post_types(array('public' => true), 'objects');
 
-$selected_post_types = ab_get_admin_setting('selected_post_types');
+$selected_post_types = abst_get_admin_setting('selected_post_types');
 
-$add_canonical = ab_get_admin_setting('ab_change_canonicals');
+$add_canonical = abst_get_admin_setting('ab_change_canonicals');
 
-$use_fingerprint = ab_get_admin_setting('ab_use_fingerprint');
+$use_fingerprint = abst_get_admin_setting('ab_use_fingerprint');
 
-$fingerprint_length = ab_get_admin_setting('ab_fingerprint_length') ?: 2;
+$fingerprint_length = abst_get_admin_setting('ab_fingerprint_length') ?: 2;
 
-$use_uuid = ab_get_admin_setting('ab_use_uuid');
+$use_uuid = abst_get_admin_setting('ab_use_uuid');
 
-$uuid_length = ab_get_admin_setting('ab_uuid_length') ?: 30;
+$uuid_length = abst_get_admin_setting('ab_uuid_length') ?: 30;
 
-$enable_user_journeys = ab_get_admin_setting('abst_enable_user_journeys');
+$enable_user_journeys = abst_get_admin_setting('abst_enable_user_journeys');
 
-$enable_session_replays = ab_get_admin_setting('abst_enable_session_replays');
+$enable_session_replays = abst_get_admin_setting('abst_enable_session_replays');
 
-$abst_server_convert_woo = ab_get_admin_setting('abst_server_convert_woo');
+$abst_server_convert_woo = abst_get_admin_setting('abst_server_convert_woo');
 
-$abst_server_convert_woo_status = ab_get_admin_setting('abst_server_convert_woo_status');
+$abst_server_convert_woo_status = abst_get_admin_setting('abst_server_convert_woo_status');
 
-$abst_enable_logging = ab_get_admin_setting('abst_enable_logging');
+$abst_enable_logging = abst_get_admin_setting('abst_enable_logging');
 
-$abst_enable_heatmaps = ab_get_admin_setting('abst_enable_heatmaps');
+$abst_enable_heatmaps = abst_get_admin_setting('abst_enable_heatmaps');
 
-$heatmap_retention_length = ab_get_admin_setting('abst_heatmap_retention_length') ?: 30;
+$heatmap_retention_length = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
 
-$abst_send_weekly_reports = ab_get_admin_setting('abst_send_weekly_reports');
+$abst_send_weekly_reports = abst_get_admin_setting('abst_send_weekly_reports');
 
-$weekly_report_emails = ab_get_admin_setting('abst_weekly_report_emails');
+$weekly_report_emails = abst_get_admin_setting('abst_weekly_report_emails');
 
-$abst_notification_emails = ab_get_admin_setting('abst_notification_emails');
+$abst_notification_emails = abst_get_admin_setting('abst_notification_emails');
 
 $weekly_reports_checked = ($abst_send_weekly_reports == 1) ? 'checked' : '';
 
-$abst_thompson_sampling_enabled = ab_get_admin_setting('abst_thompson_sampling_enabled');
+$abst_thompson_sampling_enabled = abst_get_admin_setting('abst_thompson_sampling_enabled');
 
 $thompson_sampling_checked = ($abst_thompson_sampling_enabled == 1) ? 'checked' : '';
 
 $detected_caches = !empty(abst_get_detected_caches()) ? implode(', ', abst_get_detected_caches()) : 'None detected';
 
-$delete_fingerprint_db_on_uninstall = ab_get_admin_setting('ab_delete_fingerprint_db_on_uninstall');  
+$delete_fingerprint_db_on_uninstall = abst_get_admin_setting('ab_delete_fingerprint_db_on_uninstall');  
 
-$wait_for_approval = ab_get_admin_setting('abst_wait_for_approval');
+$wait_for_approval = abst_get_admin_setting('abst_wait_for_approval');
 
-$abst_agency_mode_enabled = ab_get_admin_setting('abst_agency_mode_enabled') ?: 0;
+$abst_agency_mode_enabled = abst_get_admin_setting('abst_agency_mode_enabled') ?: 0;
 
-$abst_test_ideas_enabled = ab_get_admin_setting('abst_test_ideas_enabled');
+$abst_test_ideas_enabled = abst_get_admin_setting('abst_test_ideas_enabled');
 
 $abst_test_ideas_checked = ($abst_test_ideas_enabled === '0') ? '' : 'checked';
 
-$abst_remote_access_enabled = ab_get_admin_setting('abst_remote_access_enabled') ?: 0;
+$abst_remote_access_enabled = abst_get_admin_setting('abst_remote_access_enabled') ?: 0;
 
 // Agency hub settings
 
@@ -287,7 +288,7 @@ if($abst_enable_heatmaps !== '0') {
 
 // Invert display logic: stored value 1 = disabled, so we show checked when NOT disabled
 
-$dont_clear_cache_setting = ab_get_admin_setting('ab_dont_clear_cache_on_update');
+$dont_clear_cache_setting = abst_get_admin_setting('ab_dont_clear_cache_on_update');
 
 if($dont_clear_cache_setting == true) {
 
@@ -315,7 +316,7 @@ if($wait_for_approval == true) {
 
 
 
-$visit_on_visible = ab_get_admin_setting('abst_visit_on_visible');
+$visit_on_visible = abst_get_admin_setting('abst_visit_on_visible');
 
 if($visit_on_visible)
 
@@ -375,7 +376,7 @@ if($enable_session_replays === null || $enable_session_replays === '') {
 
 // Get heatmap pages setting
 
-$heatmap_pages = ab_get_admin_setting('abst_heatmap_pages');
+$heatmap_pages = abst_get_admin_setting('abst_heatmap_pages');
 
 if (!is_array($heatmap_pages)) {
 
@@ -385,7 +386,7 @@ if (!is_array($heatmap_pages)) {
 
 
 
-$heatmap_all_pages = ab_get_admin_setting('abst_heatmap_all_pages');
+$heatmap_all_pages = abst_get_admin_setting('abst_heatmap_all_pages');
 
 if(empty($heatmap_all_pages)) {
 
@@ -867,9 +868,9 @@ if ($user_level == 'free') {
 
             <p>AI Assist gives you access to automatic test suggestions, and CRO website insights.</p>
 
-            <p>Your plan includes <?php echo isset($aiCreditAmount) ? $aiCreditAmount : ''; ?> AI requests, <?php echo (isset($aiCreditFrequency) ? $aiCreditFrequency : '') ?>.</p>
+            <p>Your plan includes <?php echo esc_html( isset($aiCreditAmount) ? $aiCreditAmount : '' ); ?> AI requests, <?php echo esc_html( isset($aiCreditFrequency) ? $aiCreditFrequency : '' ); ?>.</p>
 
-            <p><?php echo ab_get_admin_setting('abst_remaining_calls'); ?> remaining</p>
+            <p><?php echo esc_html( abst_get_admin_setting('abst_remaining_calls') ); ?> remaining</p>
 
             <p>If you need more requests, please add your OpenAI key below.</p>
 
@@ -1073,7 +1074,7 @@ if ($user_level == 'free') {
 
               <p>1 page <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to track multiple pages</a></p>
 
-              <p><input type="text" id="heatmap_page_url" name="heatmap_page_url" value="<?php echo home_url('/'); ?>" /></p>
+              <p><input type="text" id="heatmap_page_url" name="heatmap_page_url" value="<?php echo esc_url(home_url('/')); ?>" /></p>
 
               <p>By default this is your homepage.</p>
 
@@ -1291,7 +1292,7 @@ if ($user_level == 'free') {
 
                 <h4 style="margin-top: 15px;">cURL Example:</h4>
 
-                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px;"><code>curl -X POST "<?php echo esc_html(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>" \
+                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px;"><code>curl -X POST "<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>" \
 
   -u "your-username:your-application-password" \
 
@@ -1349,7 +1350,7 @@ if ($user_level == 'free') {
 
 
 
-fetch('<?php echo esc_html(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
+fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
   method: 'POST',
 
@@ -1555,13 +1556,13 @@ fetch('<?php echo esc_html(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
             <?php endif; ?>
 
-            
+
 
             <?php if (isset($_GET['mcp_install_error'])): ?>
 
             <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin-bottom: 15px;">
 
-              <strong>❌ Installation failed:</strong> <?php echo esc_html(urldecode($_GET['mcp_install_error'])); ?>
+              <strong>❌ Installation failed:</strong> <?php echo esc_html(urldecode(sanitize_text_field(wp_unslash($_GET['mcp_install_error'])))); ?>
 
             </div>
 
@@ -1623,7 +1624,7 @@ fetch('<?php echo esc_html(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
               <label for="abst_mcp_username"><strong>WordPress Username</strong></label>
 
-              <input type="text" id="abst_mcp_username" class="regular-text" value="<?php echo esc_attr(wp_get_current_user()->user_login); ?>" style="width: 100%; margin-top: 5px;" />
+              <input type="text" id="abst_mcp_username" class="regular-text" value="<?php echo esc_attr(wp_get_current_user()->user_login); ?>" style="width: 100%; margin-top: 5px;" readonly />
 
               <p class="description">Your WordPress username for MCP authentication</p>
 
@@ -1919,7 +1920,7 @@ fetch('<?php echo esc_html(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
 
 
-        <div class="floating-save-button-row"><input type="submit" class="button-primary" name="bt_save" value="<?php _e('Save Settings', 'ab-split-test-lite'); ?>" /></div>
+        <div class="floating-save-button-row"><input type="submit" class="button-primary" name="bt_save" value="<?php esc_attr_e('Save Settings', 'ab-split-test-lite'); ?>" /></div>
 
 
 
