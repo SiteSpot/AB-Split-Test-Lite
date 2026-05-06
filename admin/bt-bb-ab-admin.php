@@ -49,7 +49,6 @@ class BT_BB_AB_Admin {
       $fathom_api_key = sanitize_text_field(wp_unslash($_POST['fathom_api_key'] ?? ''));
       $webhook_global = sanitize_text_field(wp_unslash($_POST['webhook_global'] ?? ''));
       $abst_notification_emails = sanitize_text_field(wp_unslash($_POST['abst_notification_emails'] ?? ''));
-      $ab_openapi_key = sanitize_text_field(wp_unslash($_POST['ab_openapi_key'] ?? ''));
 
       $selected_post_types = isset($_POST['selected_post_types']) ? array_map('sanitize_text_field', wp_unslash($_POST['selected_post_types'])) : array();
       // update canonical url
@@ -65,14 +64,12 @@ class BT_BB_AB_Admin {
       // Lite version ignores premium-only toggles (MAB, agency, weekly reports, AI, webhooks, fingerprint, UUID)
       $abst_agency_mode_enabled = 0;
       $abst_remote_access_enabled = 0;
-      $abst_disable_ai = 1;
       $abst_send_weekly_reports = 0;
       $abst_weekly_report_emails = '';
       $abst_thompson_sampling_enabled = 0;
       $abst_test_ideas_enabled = 0;
       $use_fingerprint = 0;
       $use_uuid = 0;
-      $ab_openapi_key = '';
       $webhook_global = '';
       $abst_notification_emails = '';
       $abst_server_convert_woo = 0;
@@ -103,11 +100,8 @@ class BT_BB_AB_Admin {
       }
       $heatmap_all_pages = 'chosen'; // free always uses chosen pages (max 1)
 
-      abst_update_admin_setting('abst_disable_ai', $abst_disable_ai);
       abst_update_admin_setting( 'fathom_api_key', $fathom_api_key );
       abst_update_admin_setting( 'webhook_global', $webhook_global );
-      abst_update_admin_setting( 'ab_openapi_key', $ab_openapi_key );
-      abst_update_admin_setting( 'ab_openapi_model', 'gpt-4o' );
       abst_update_admin_setting( 'selected_post_types', $selected_post_types );
       abst_update_admin_setting( 'ab_change_canonicals', $change_canonicals );
       abst_update_admin_setting( 'ab_use_fingerprint', $use_fingerprint );

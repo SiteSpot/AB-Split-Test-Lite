@@ -38,43 +38,9 @@ $license_status = 'valid';
 
 $user_level = 'free';
 
-$price_id = false;
-
-
-
-if($price_id)
-
-{  
-
-  $creditLevels = abst_get_ai_licence_info($price_id);
-
-  $aiCreditFrequency = $creditLevels['expiry'];
-
-  $aiCreditAmount = $creditLevels['upto'];
-
-}
-
-else
-
-{
-
-  $aiCreditFrequency = 'expired';
-
-  $aiCreditAmount = 0;
-
-}
-
-
-
 $fathom_api_key = abst_get_admin_setting('fathom_api_key');
 
 $webhook_global = abst_get_admin_setting('webhook_global');
-
-$ab_openapi_key = abst_get_admin_setting('ab_openapi_key');
-
-// AI model constant removed in lite version
-
-$ab_openapi_model = 'gpt-4o'; // placeholder for UI only
 
 $post_types = get_post_types(array('public' => true), 'objects');
 
@@ -734,31 +700,6 @@ if ($license_status !== 'valid') {
 
 
 
-          <div class="ab-settings-subsection ab-settings-open-ai">
-
-            <label><strong>AI Assist</strong></label>
-
-            <p>AI Assist gives you access to automatic test suggestions, and CRO website insights.</p>
-
-            <p>Your plan includes <?php echo esc_html( isset($aiCreditAmount) ? $aiCreditAmount : '' ); ?> AI requests, <?php echo esc_html( isset($aiCreditFrequency) ? $aiCreditFrequency : '' ); ?>.</p>
-
-            <p><?php echo esc_html( abst_get_admin_setting('abst_remaining_calls') ); ?> remaining</p>
-
-            <p>If you need more requests, please add your OpenAI key below.</p>
-
-            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
-
-            <label for="ab_openapi_key">Your OpenAI API Key</label><br>
-
-            <input name="ab_openapi_key" id="ab_openapi_key" type="password" value="<?php echo esc_attr($ab_openapi_key); ?>" />
-
-            <p>Enter your OpenAI API key for text suggestions. <a href="https://platform.openai.com/" target="_blank">Get a key here.</a></p>
-
-            <p>To disable AI integrations, enter "DISABLED" in the API key field above.</p>
-
-            <?php } ?>
-
-          </div>
 
 
 
@@ -2555,23 +2496,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// Iframe message handler
-
-window.addEventListener('message', function(event) {
-
-  if (event.data === 'aidone') {
-
-    const iframe = document.getElementById('abst-insights-iframe');
-
-    if (iframe) iframe.remove();
-
-    jQuery('#abwelcomearea h3').remove();
-
-    jQuery('#abwelcomearea h2').after('<h3>Website analysed</h3><p>To view your insights <a href="admin.php?page=abst-insights">click here</a></p>');
-
-  }
-
-});
 
 
 
