@@ -26,25 +26,21 @@
 
  */
 
-if (! defined('ABSPATH')) {
-  exit;
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
 }
 
-define('BT_AB_TEST_PLUGIN_NAME', 'AB Split Test');
+define( 'BT_AB_TEST_PLUGIN_NAME', 'AB Split Test' );  
 
-define('BT_AB_TEST_VERSION', '1.0.0');
+define( 'BT_AB_TEST_VERSION', '1.0.0' );
 
-define('BT_AB_TEST_ITEM_ID', '9487');
+define( 'BT_AB_TEST_PLUGIN_DIR', __FILE__ );
 
-define('BT_AB_TEST_PLUGIN_DIR', __FILE__);
-
-define('BT_AB_TEST_PLUGIN_PATH', plugin_dir_path(__FILE__));
+define( 'BT_AB_TEST_PLUGIN_PATH', plugin_dir_path( __FILE__ )  );
 
 
 
-define('BT_AB_TEST_PLUGIN_URI', plugins_url('/', __FILE__));
-
-define('BT_AB_TEST_MERCHANT_URL', 'https://absplittest.com');
+define( 'BT_AB_TEST_PLUGIN_URI', plugins_url('/', __FILE__) ); 
 
 $abst_parts = explode('/', BT_AB_TEST_PLUGIN_PATH, -1);
 
@@ -60,17 +56,18 @@ if (!defined('BT_AB_TEST_WL_ABTEST')) {
   define('BT_AB_TEST_WL_ABTEST', $wl_ab_test);
 }
 
-if (!defined('ABST_JOURNEY_DIR')) define('ABST_JOURNEY_DIR', trailingslashit(wp_upload_dir()['basedir']) . 'abst/journeys');
+if (!defined('ABST_JOURNEY_DIR')) define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
 
-if (!defined('ABST_CACHE_EXCLUDES')) define('ABST_CACHE_EXCLUDES', " data-cfasync='false' nitro-exclude data-no-optimize='1' data-no-defer='1' data-no-minify='1' nowprocket ");
-
-
+if (!defined('ABST_CACHE_EXCLUDES')) define( 'ABST_CACHE_EXCLUDES', " data-cfasync='false' nitro-exclude data-no-optimize='1' data-no-defer='1' data-no-minify='1' nowprocket " );
 
 
 
-if (! function_exists('is_plugin_active_for_network')) {
 
-  require_once(ABSPATH . '/wp-admin/includes/plugin.php');
+
+if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+
+    require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+
 }
 
 
@@ -89,59 +86,59 @@ if (! function_exists('is_plugin_active_for_network')) {
 
 
 
-if (! class_exists('Bt_Ab_Tests')) {
+if(! class_exists ( 'Bt_Ab_Tests'))
 
-  class Bt_Ab_Tests
-  {
+{
 
+  class Bt_Ab_Tests{
 
+    
 
-    function __construct()
-    {
-
-
-
-      add_filter('post_updated_messages', array($this, 'abst_custom_post_updated_messages'));
+    function __construct(){
 
 
 
-      add_filter('init', array($this, 'bt_experiments_post_register'), 99, 2); //register post type n status
-
-      add_filter('init', array($this, 'bt_include_module'), 10, 2);
+      add_filter( 'post_updated_messages', array( $this, 'abst_custom_post_updated_messages' ) );
 
 
 
-      add_filter('init', array($this, 'bt_include_support_module'), 10, 2);
+      add_filter( 'init', array( $this,'bt_experiments_post_register'),99, 2); //register post type n status
+
+      add_filter( 'init', array( $this,'bt_include_module'),10, 2);
+
+      
+
+      add_filter( 'init', array( $this, 'bt_include_support_module' ), 10, 2 );
 
 
 
       add_action('admin_head', array($this, 'bt_include_ajax_url'), 10);
 
-      add_filter('post_row_actions', array($this, 'remove_bulk_actions'), 10, 2); // remove quick edit
+      add_filter( 'post_row_actions', array($this,'remove_bulk_actions'),10,2); // remove quick edit
 
-      add_filter('fl_builder_register_settings_form', array($this, 'add_ab_settings'), 9999999, 2); // register settings forms 
+      add_filter( 'fl_builder_register_settings_form' , array($this,'add_ab_settings'),9999999,2 ); // register settings forms 
 
-      add_filter('fl_builder_row_attributes', array($this, 'add_experiment_row_attributes'), 10, 2); // add ab settings to row
+      add_filter( 'fl_builder_row_attributes', array($this,'add_experiment_row_attributes'),10,2 ); // add ab settings to row
 
-      add_filter('fl_builder_module_attributes', array($this, 'add_experiment_row_attributes'), 10, 2); // add ab settings to module
+      add_filter( 'fl_builder_module_attributes', array($this,'add_experiment_row_attributes'),10,2 ); // add ab settings to module
 
-      add_filter('manage_bt_experiments_posts_columns', array($this, 'experiments_posts_columns'), 10, 1); // add experiment data to columns in admin
-
-
-
-      add_filter('body_class', [$this, 'updated_body_class']);
-
-      add_filter('bt_can_user_view_variations', [$this, 'can_user_view_variations'], 10, 1);
-
-      add_filter('display_post_states',  [$this, 'test_post_states'], 10, 2);
-
-      add_action('post_submitbox_misc_actions', [$this, 'render_status_lifecycle_panel'], 20, 1);
+      add_filter( 'manage_bt_experiments_posts_columns', array($this,'experiments_posts_columns'), 10, 1 ); // add experiment data to columns in admin
 
 
 
-      add_action('wp_head', array($this, 'render_experiment_config'), 10);
+      add_filter( 'body_class', [$this, 'updated_body_class'] );
 
-      add_action('wp_head', [$this, 'header_style']);
+      add_filter( 'bt_can_user_view_variations', [$this, 'can_user_view_variations'], 10, 1 );
+
+      add_filter( 'display_post_states',  [$this, 'test_post_states'], 10, 2);
+
+      add_action( 'post_submitbox_misc_actions', [$this, 'render_status_lifecycle_panel'], 20, 1 );
+
+
+
+      add_action( 'wp_head', array($this,'render_experiment_config'),10);
+
+      add_action( 'wp_head', [$this, 'header_style'] );
 
       // Premium hooks removed in lite version:
 
@@ -155,87 +152,83 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // add_action( 'admin_init', [$this, 'handle_sample_data_request']);
 
-      add_action('admin_init', [$this, 'handle_mcp_adapter_install']);
+      add_action( 'admin_init', [$this, 'handle_mcp_adapter_install']);
 
-      add_action('rest_api_init', [$this, 'register_rest_routes']);
+      add_action( 'rest_api_init', [$this, 'register_rest_routes']);
 
-      add_action('wp_abilities_api_init', [$this, 'register_abilities']);
+      add_action( 'wp_abilities_api_init', [$this, 'register_abilities']);
 
-      add_filter('views_edit-bt_experiments', [$this, 'rename_all_to_active_tests']);
+      add_filter( 'views_edit-bt_experiments', [$this, 'rename_all_to_active_tests']);
 
       //add canonical to page variations
 
-      add_filter('get_canonical_url', [$this, 'get_canonical_url'], 99, 2);
+      add_filter('get_canonical_url', [$this, 'get_canonical_url'], 99, 2 );
 
 
 
-      add_action('wp_enqueue_scripts', array($this, 'include_conversion_scripts'));
+      add_action( 'wp_enqueue_scripts', array($this,'include_conversion_scripts') );
 
 
 
-      add_action('admin_enqueue_scripts', [$this, 'enqueue_experiment_scripts']);
+      add_action( 'admin_enqueue_scripts', [$this, 'enqueue_experiment_scripts'] );
 
-      add_action('wp_ajax_ab_page_selector', [$this, 'get_posts_ajax_callback']); // wp_ajax_post_ac
+      add_action( 'wp_ajax_ab_page_selector', [$this,'get_posts_ajax_callback'] ); // wp_ajax_post_ac
 
-      add_action('wp_ajax_blocks_experiment_list', [$this, 'blocks_experiment_list']); // wp_ajax_post_ac
+      add_action( 'wp_ajax_blocks_experiment_list', [$this,'blocks_experiment_list'] ); // wp_ajax_post_ac
 
-      add_action('wp_ajax_on_page_test_create', [$this, 'on_page_test_create']); // wp_ajax_post_ac
+      add_action( 'wp_ajax_on_page_test_create', [$this,'on_page_test_create'] ); // wp_ajax_post_ac
 
-      add_action('wp_ajax_create_new_on_page_test', [$this, 'create_new_on_page_test']); // wp_ajax_post_ac
+      add_action( 'wp_ajax_create_new_on_page_test', [$this,'create_new_on_page_test'] ); // wp_ajax_post_ac
 
-      add_action('wp_ajax_ab_get_insights', [$this, 'get_insights']); // wp_ajax_post_ac
+      // AI insight hooks removed in lite version (no calls home to absplittest.com)
 
-      add_action('wp_ajax_ab_get_sitemap', [$this, 'get_sitemap']); // wp_ajax_post_ac
-
-      add_action('wp_ajax_ab_get_heatmap_summary', [$this, 'get_heatmap_summary']); // Get aggregated heatmap data for insights
-
-      add_action('wp_ajax_abst_export_data', [$this, 'abst_export_data']); // export test data to csv logge
+      add_action( 'wp_ajax_abst_export_data', [$this, 'abst_export_data'] ); // export test data to csv logge
 
       //save_variation_label 
 
-      add_action('wp_ajax_save_variation_label', [$this, 'save_variation_label']); // wp_ajax_post_ac
+      add_action( 'wp_ajax_save_variation_label', [$this, 'save_variation_label'] ); // wp_ajax_post_ac
 
 
 
-      add_action('activated_plugin', [$this, 'activate_plugin']);
+      add_action( 'activated_plugin', [$this,'activate_plugin']);
 
-      add_action('wp_enqueue_scripts', [$this, 'include_highlighter_scripts'], 9999);
+      add_action( 'wp_enqueue_scripts', [$this,'include_highlighter_scripts'],9999 );
 
-      add_action('enqueue_block_assets', [$this, 'include_highlighter_scripts'], 9999);
+      add_action( 'enqueue_block_assets', [$this,'include_highlighter_scripts'],9999 );
 
-      add_action('elementor/editor/before_enqueue_scripts', [$this, 'include_highlighter_scripts'], 9999);
+      add_action( 'elementor/editor/before_enqueue_scripts', [$this,'include_highlighter_scripts'],9999 );
 
-      add_action('oxygen_after_add_components', [$this, 'add_oxy_split_options']);
+      add_action( 'oxygen_after_add_components', [$this,'add_oxy_split_options']);
 
-      add_filter('render_block', [$this, 'add_btvar_attribute_to_all_blocks'], 10, 3);
+      add_filter( 'render_block', [$this,'add_btvar_attribute_to_all_blocks'], 10, 3 );
 
-      add_filter('op3_script_is_allowed_in_blank_template', [$this, 'allowInOptimizePress'], 10, 2); // optimizepress dont minify us
+      add_filter( 'op3_script_is_allowed_in_blank_template', [$this, 'allowInOptimizePress'], 10, 2); // optimizepress dont minify us
 
-      add_filter('cmplz_whitelisted_script_tags', [$this, 'allowInComplianz'], 10, 1); // complianz: don't block our scripts
+      add_filter( 'cmplz_whitelisted_script_tags', [$this, 'allowInComplianz'], 10, 1 ); // complianz: don't block our scripts
 
 
 
       register_deactivation_hook(__FILE__, array($this, 'bt_ab_uninstall'));
 
-
+      
 
       // Also hook into plugin update process to catch automatic/remote updates
 
       add_action('upgrader_process_complete', array($this, 'on_plugin_update'), 10, 2);
 
-      add_action('wp_ajax_bt_experiment_w', array($this, 'abst_log_experiment_activity'), 10, 6); // render js to show tests and log interactions 
+      add_action( 'wp_ajax_bt_experiment_w', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions 
 
-      add_action('wp_ajax_nopriv_bt_experiment_w', array($this, 'abst_log_experiment_activity'), 10, 6); // render js to show tests and log interactions - logged out user
+      add_action( 'wp_ajax_nopriv_bt_experiment_w', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
-      add_action('wp_ajax_abstdata', array($this, 'process_batch_data'), 10, 6); // render js to show tests and log interactions 
+      add_action( 'wp_ajax_abstdata', array($this,'process_batch_data'), 10, 6 ); // render js to show tests and log interactions 
 
-      add_action('wp_ajax_nopriv_abstdata', array($this, 'process_batch_data'), 10, 6); // render js to show tests and log interactions - logged out user
+      add_action( 'wp_ajax_nopriv_abstdata', array($this,'process_batch_data'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
-      add_action('wp_ajax_abst_event', array($this, 'abst_log_experiment_activity'), 10, 6); // render js to show tests and log interactions 
+      add_action( 'wp_ajax_abst_event', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions 
 
-      add_action('wp_ajax_nopriv_abst_event', array($this, 'abst_log_experiment_activity'), 10, 6); // render js to show tests and log interactions - logged out user
+      add_action( 'wp_ajax_nopriv_abst_event', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
-      add_action('wp_ajax_abst_delete_variation', array($this, 'abst_delete_variation'), 10, 6); // render js to show tests and log interactions - logged out user
+      add_action( 'wp_ajax_abst_delete_variation', array($this,'abst_delete_variation'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
       // Fingerprint/UUID tracking removed in lite version
 
@@ -255,33 +248,33 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      add_action('bt_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9);
+      add_action( 'bt_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9 );
 
-      add_action('manage_bt_experiments_posts_custom_column', array($this, 'manage_bt_experiments_posts_custom_column'), 10, 2); // add data to admin columns
+      add_action( 'manage_bt_experiments_posts_custom_column', array($this,'manage_bt_experiments_posts_custom_column'),10,2); // add data to admin columns
 
-      add_action('add_meta_boxes', array($this, 'add_experiment_meta_box'), 10, 1);  // meta boxes for experiments
+      add_action( 'add_meta_boxes', array($this,'add_experiment_meta_box'),10,1 );  // meta boxes for experiments
 
-      add_action('save_post_bt_experiments', array($this, 'save_postdata'), 10, 1); // catch page save to get update conversion URL meta
+      add_action( 'save_post_bt_experiments', array($this,'save_postdata'),10,1 ); // catch page save to get update conversion URL meta
 
-      add_action('trashed_post', array($this, 'experiment_trash_handler'), 10, 1); // trashed, refresh conversions pages
+      add_action( 'trashed_post', array($this,'experiment_trash_handler'),10,1 ); // trashed, refresh conversions pages
 
-      add_action('untrash_post', array($this, 'experiment_trash_handler'), 10, 1); // restore trashed post, refresh conversions pages
+      add_action( 'untrash_post', array($this,'experiment_trash_handler'),10,1 ); // restore trashed post, refresh conversions pages
 
-      add_action('pre_get_posts', array($this, 'abst_authors_see_own_posts_filter'));
+      add_action( 'pre_get_posts', array($this, 'abst_authors_see_own_posts_filter'));
 
-      add_action('post_updated', array($this, 'refresh_on_update'), 10, 3);
+      add_action( 'post_updated', array($this,'refresh_on_update'),10,3 );
 
-      add_action('transition_post_status', array($this, 'post_status_transition'), 10, 3);
+      add_action( 'transition_post_status', array($this,'post_status_transition'), 10, 3);
 
 
 
-      add_action('wp_head', array($this, 'conversion_targeting'), 10, 1); // add conversion targeting page script
+      add_action( 'wp_head', array($this,'conversion_targeting'),10,1); // add conversion targeting page script
 
-      add_action('wp_head', [$this, 'fl_preview_script']);
+      add_action( 'wp_head', [$this, 'fl_preview_script'] );
 
-      add_action('after_setup_theme', [$this, 'hide_admin_bar_in_heatmap_iframe']); // hide admin bar in heatmap iframe
+      add_action( 'after_setup_theme', [$this, 'hide_admin_bar_in_heatmap_iframe'] ); // hide admin bar in heatmap iframe
 
-      add_action('wp_ajax_bt_clear_experiment_results',   array($this, 'wp_ajax_bt_clear_results'), 10, 2);  // render js to show tests and log interactions 
+      add_action( 'wp_ajax_bt_clear_experiment_results',   array($this,'wp_ajax_bt_clear_results'), 10, 2 );  // render js to show tests and log interactions 
 
       // Premium conversion integrations removed in lite version:
 
@@ -295,7 +288,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // add_action( 'load-plugins.php', [$this, 'wp_plugin_update_rows'], 30 );
 
-      add_action('wp_ajax_bt_generate_embed_code', [$this, 'bt_generate_embed_code']);
+      add_action( 'wp_ajax_bt_generate_embed_code', [$this, 'bt_generate_embed_code'] );
 
 
 
@@ -305,21 +298,21 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       add_action('vc_after_init', [$this, 'add_split_test_params_to_bakery']);
 
-      add_filter('vc_autocomplete_vc_row_test_id_callback', [$this, 'bakery_autocomplete'], 10, 3);
+      add_filter( 'vc_autocomplete_vc_row_test_id_callback', [$this, 'bakery_autocomplete'], 10, 3 ); 
 
-      add_filter('vc_autocomplete_vc_row_test_id_render', [$this, 'bakery_autocomplete_render'], 10, 3);
+      add_filter( 'vc_autocomplete_vc_row_test_id_render', [$this, 'bakery_autocomplete_render'], 10, 3 ); 
 
-      add_filter('vc_autocomplete_vc_section_test_id_callback', [$this, 'bakery_autocomplete'], 10, 3);
+      add_filter( 'vc_autocomplete_vc_section_test_id_callback', [$this, 'bakery_autocomplete'], 10, 3 ); 
 
-      add_filter('vc_autocomplete_vc_section_test_id_render', [$this, 'bakery_autocomplete_render'], 10, 3);
-
-
-
-      add_shortcode('ab_split_test_report', [$this, 'ab_split_test_report']);
-
-      add_shortcode('ab_split_test', [$this, 'convert_ab_split_test_shortcode']);
+      add_filter( 'vc_autocomplete_vc_section_test_id_render', [$this, 'bakery_autocomplete_render'], 10, 3 ); 
 
 
+
+      add_shortcode( 'ab_split_test_report', [$this,'ab_split_test_report'] );
+
+      add_shortcode('ab_split_test', [$this,'convert_ab_split_test_shortcode']);
+
+      
 
       // Handle ?ssr=1 parameter for full page split tests
 
@@ -327,31 +320,38 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       add_filter('template_include', [$this, 'abtest_swap_page_content'], 8);
 
-
+    
 
       // fix for bad oxy code update in 4.3 where second argument sometimes doesnt exist
 
-      add_action('oxygen_vsb_component_attr', function ($options) {
+      add_action('oxygen_vsb_component_attr', function ($options){
 
-        if (!empty($options['btVar']) && !empty($options['btExperiment']))
+        if(!empty($options['btVar']) && !empty($options['btExperiment']) )
 
-          echo " bt-variation='" . esc_attr($options['btVar']) . "' bt-eid='" . esc_attr($options['btExperiment']) . "' ";
+          echo " bt-variation='".esc_attr($options['btVar'])."' bt-eid='".esc_attr($options['btExperiment'])."' ";
+
       });
 
 
 
       //admin 
 
-      if (is_admin()) {
+      if(is_admin())
 
-        include_once(plugin_dir_path(__FILE__) . 'admin/bt-bb-ab-admin.php');
+      {
+
+        include_once( plugin_dir_path(__FILE__) . 'admin/bt-bb-ab-admin.php');
 
         $bt_bb_ab_admin = new BT_BB_AB_Admin;
 
-        add_action('admin_enqueue_scripts', array($this, 'render_admin_scripts_styles'));
+        add_action('admin_enqueue_scripts', array($this,'render_admin_scripts_styles'));
 
-        add_filter('all_plugins', 'abst_filter_all_plugins', 10, 1);
+        add_filter( 'all_plugins', 'abst_filter_all_plugins', 10, 1 ); 
+
       }
+
+
+
     } // end _construct
 
 
@@ -372,43 +372,46 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    public function abst_authors_see_own_posts_filter($query)
-    {
-
-      if (
-
-        is_admin() &&
-
-        $query->is_main_query() &&
-
-        $query->get('post_type') === 'bt_experiments'
-
-      ) {
-
-        // Exclude completed tests from default view unless specifically filtered
-
-        if (!isset($_GET['post_status'])) {
-
-          $query->set('post_status', array('publish', 'draft', 'pending', 'private'));
-        }
-
-
-
-        // Author filtering for non-admin users
+    public function abst_authors_see_own_posts_filter($query) {
 
         if (
 
-          apply_filters('abst_authors_see_own_posts', false) &&
+            is_admin() &&
 
-          !current_user_can('manage_options') &&
+            $query->is_main_query() &&
 
-          !current_user_can('edit_others_posts')
+            $query->get('post_type') === 'bt_experiments'
 
         ) {
 
-          $query->set('author', get_current_user_id());
+            // Exclude completed tests from default view unless specifically filtered
+
+            if (!isset($_GET['post_status'])) {
+
+                $query->set('post_status', array('publish', 'draft', 'pending', 'private'));
+
+            }
+
+            
+
+            // Author filtering for non-admin users
+
+            if (
+
+                apply_filters('abst_authors_see_own_posts', false) &&
+
+                !current_user_can('manage_options') &&
+
+                !current_user_can('edit_others_posts')
+
+            ) {
+
+                $query->set('author', get_current_user_id());
+
+            }
+
         }
-      }
+
     }
 
 
@@ -421,88 +424,92 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    public function rename_all_to_active_tests($views)
-    {
+    public function rename_all_to_active_tests($views) {
 
-      if (isset($views['all'])) {
+        if (isset($views['all'])) {
 
-        $views['all'] = str_replace('All', 'Active Tests', $views['all']);
-      }
+            $views['all'] = str_replace('All', 'Active Tests', $views['all']);
 
-      if (isset($views['publish'])) {
+        }
 
-        $views['publish'] = str_replace('Published', 'Running', $views['publish']);
-      }
+        if (isset($views['publish'])) {
 
-      return $views;
+            $views['publish'] = str_replace('Published', 'Running', $views['publish']);
+
+        }
+
+        return $views;
+
     }
 
 
 
-    function add_split_test_params_to_bakery()
-    {
+    function add_split_test_params_to_bakery() {
 
-      // Fetch published bt_experiments for dropdown
+        // Fetch published bt_experiments for dropdown
 
-      vc_add_param('vc_row', array(
+        vc_add_param('vc_row', array(
 
-        'type' => 'autocomplete',
+            'type' => 'autocomplete',
 
-        'heading' => __('Choose a Test or  <a class="new-on-page-test-button" style="display:inline-block;margin-bottom:10px;" href="javascript:void(0);"> Create a new test</a>', 'ab-split-test-lite'),
+            'heading' => __('Choose a Test or  <a class="new-on-page-test-button" style="display:inline-block;margin-bottom:10px;" href="javascript:void(0);"> Create a new test</a>', 'ab-split-test-lite'),
 
-        'param_name' => 'test_id',
+            'param_name' => 'test_id',
 
-        'description' => __('Choose an existing split test', 'ab-split-test-lite'),
+            'description' => __('Choose an existing split test', 'ab-split-test-lite'),
 
-        'group' => __('Split Test Settings', 'ab-split-test-lite'),
+            'group' => __('Split Test Settings', 'ab-split-test-lite'),
 
-      ));
+        ));
 
-      vc_add_param('vc_row', array(
+        vc_add_param('vc_row', array(
 
-        'type' => 'textfield',
+            'type' => 'textfield',
 
-        'heading' => __('Test Variation', 'ab-split-test-lite'),
+            'heading' => __('Test Variation', 'ab-split-test-lite'),
 
-        'param_name' => 'test_variation',
+            'param_name' => 'test_variation',
 
-        'description' => __('Enter the test variation name.', 'ab-split-test-lite'),
+            'description' => __('Enter the test variation name.', 'ab-split-test-lite'),
 
-        'group' => __('Split Test Settings', 'ab-split-test-lite'),
+            'group' => __('Split Test Settings', 'ab-split-test-lite'),
 
-      ));
-
+        ));
 
 
-      //do the same for vc_section
 
-      vc_add_param('vc_section', array(
+        //do the same for vc_section
 
-        'type' => 'autocomplete',
+        vc_add_param('vc_section', array(
 
-        'heading' => __('Choose a Test or  <a class="new-on-page-test-button" style="display:inline-block;margin-bottom:10px;" href="javascript:void(0);"> Create a new test</a>', 'ab-split-test-lite'),
+            'type' => 'autocomplete',
 
-        'param_name' => 'test_id',
+            'heading' => __('Choose a Test or  <a class="new-on-page-test-button" style="display:inline-block;margin-bottom:10px;" href="javascript:void(0);"> Create a new test</a>', 'ab-split-test-lite'),
 
-        'description' => __('Choose an existing split test', 'ab-split-test-lite'),
+            'param_name' => 'test_id',
 
-        'group' => __('BT_AB_TEST_WL_ABTEST Settings', 'ab-split-test-lite'),
+            'description' => __('Choose an existing split test', 'ab-split-test-lite'),
 
-      ));
+            'group' => __('BT_AB_TEST_WL_ABTEST Settings', 'ab-split-test-lite'),
 
-      vc_add_param('vc_section', array(
+        ));
 
-        'type' => 'textfield',
+        vc_add_param('vc_section', array(
 
-        'heading' => __('Test Variation', 'ab-split-test-lite'),
+            'type' => 'textfield',
 
-        'param_name' => 'test_variation',
+            'heading' => __('Test Variation', 'ab-split-test-lite'),
 
-        'description' => __('Enter the test variation name.', 'ab-split-test-lite'),
+            'param_name' => 'test_variation',
 
-        'group' => __('Split Test Settings', 'ab-split-test-lite'),
+            'description' => __('Enter the test variation name.', 'ab-split-test-lite'),
 
-      ));
+            'group' => __('Split Test Settings', 'ab-split-test-lite'),
+
+        ));
+
+
+
     }
 
 
@@ -511,133 +518,143 @@ if (! class_exists('Bt_Ab_Tests')) {
 
     // Autocomplete callback for Test ID (bt_experiment posts with test_type=on_page)
 
-    function bakery_autocomplete($query, $tag, $param_name)
-    {
+    function bakery_autocomplete( $query, $tag, $param_name ) {
 
 
 
       //if qiery is id
 
-      if (is_numeric($query)) {
+      if(is_numeric($query))
+
+      {
 
         $post = get_post($query);
 
-        if ($post && $post->post_type == 'bt_experiments' && $post->post_status == 'publish') {
+        if($post && $post->post_type == 'bt_experiments' && $post->post_status == 'publish')
+
+        {
 
           return array(
 
-            'value' => $post->ID,
+              'value' => $post->ID,
 
-            'label' => $post->ID . ' - ' . $post->post_title . ' [' . $post->post_name . ']',
+              'label' => $post->ID . ' - ' . $post->post_title . ' [' . $post->post_name . ']',
 
           );
+
         }
+
       }
 
 
 
       $args = array(
 
-        'post_type'      => 'bt_experiments',
+          'post_type'      => 'bt_experiments',
 
-        'post_status'    => 'publish',
+          'post_status'    => 'publish',
 
-        'posts_per_page' => 10,
+          'posts_per_page' => 10,
 
-        'meta_query'     => array(
+          'meta_query'     => array(
 
-          array(
+              array(
 
-            'key'   => 'test_type',
+                  'key'   => 'test_type',
 
-            'value' => 'ab_test',
+                  'value' => 'ab_test',
+
+              ),
 
           ),
 
-        ),
-
-        's'              => $query,
+          's'              => $query,
 
       );
 
-      $posts = get_posts($args);
+      $posts = get_posts( $args );
 
       $results = array();
 
-      foreach ($posts as $post) {
+      foreach ( $posts as $post ) {
 
-        $results[] = array(
+          $results[] = array(
 
-          'value' => $post->ID,
+              'value' => $post->ID,
 
-          'label' => $post->ID . ' - ' . $post->post_title . ' [' . $post->post_name . ']',
+              'label' => $post->ID . ' - ' . $post->post_title . ' [' . $post->post_name . ']',
 
-        );
+          );
+
       }
 
       return $results;
+
     }
 
+    
 
+    function bakery_autocomplete_render( $value, $settings, $tag ) {
 
-    function bakery_autocomplete_render($value, $settings, $tag)
-    {
+      $post = get_post( $value['value'] ?? $value );
 
-      $post = get_post($value['value'] ?? $value);
+      if ( $post && $post->post_type === 'bt_experiments' ) {
 
-      if ($post && $post->post_type === 'bt_experiments') {
+          return array(
 
-        return array(
+              'value' => $post->ID,
 
-          'value' => $post->ID,
+              'label' => $post->ID . ' - ' . $post->post_title . ' [' . $post->post_name . ']',
 
-          'label' => $post->ID . ' - ' . $post->post_title . ' [' . $post->post_name . ']',
+          );
 
-        );
       }
 
       return $value;
+
     }
 
 
 
 
 
-    function add_split_test_attributes_to_bakery($class_string, $tag, $atts = null)
-    {
+    function add_split_test_attributes_to_bakery($class_string, $tag, $atts = null) {
 
       // Early return if no atts provided or not the right tag
 
       if (!$atts || !is_array($atts) || !in_array($tag, ['vc_row', 'vc_section'])) {
 
-        return $class_string;
+          return $class_string;
+
       }
 
-
+      
 
       if (isset($atts['test_id']) && !empty($atts['test_id'])) {
 
-        $class_string .= ' ab-' . sanitize_html_class($atts['test_id']);
+          $class_string .= ' ab-'. sanitize_html_class($atts['test_id']);
+
       }
 
       if (isset($atts['test_variation']) && !empty($atts['test_variation'])) {
 
-        $class_string .= ' ab-var-' . sanitize_html_class($atts['test_variation']);
+          $class_string .= ' ab-var-'. sanitize_html_class($atts['test_variation']);
+
       }
 
-
+      
 
       return $class_string;
-    }
+
+  }
+
+  
 
 
 
+  
 
-
-
-
-    function add_canonical_to_page_variations()
-    {
+    function add_canonical_to_page_variations() {
 
       // add rel="canonical" to variation pages pointing to default page
 
@@ -653,114 +670,32 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-    public function wp_plugin_update_rows()
+    function activate_plugin($plugin) {
 
-    {
+      if($plugin == plugin_basename(__FILE__)) {
 
-      $license = abst_licence_details();
+          if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php')) {
 
+              wp_safe_redirect(network_admin_url('admin.php?page=bt_bb_ab_test&wizard=1'));
 
+          } else {
 
-      if ($license->active != 'valid') {
+              wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&wizard=1'));
 
-        remove_action('after_plugin_row_bt-bb-ab/bt-bb-ab.php', 'wp_plugin_update_row', 10, 2);
-
-        add_action('after_plugin_row_bt-bb-ab/bt-bb-ab.php', [$this, 'custom_plugin_new_update_text'], 10, 2);
-      }
-    }
-
-
-
-    function activate_plugin($plugin)
-    {
-
-
-
-      // if using fingerprint or uuiiod from previously activated, check table exists
-
-      if (abst_get_admin_setting('ab_use_fingerprint') == 1 || abst_get_admin_setting('ab_use_uuid') == 1) {
-
-        $this->create_fingerprint_db();
-
-        abst_log('fingerprint table created on activation , ' . abst_get_admin_setting('ab_use_fingerprint') . ' ' . abst_get_admin_setting('ab_use_uuid'));
-      }
-
-
-
-      if ($plugin == plugin_basename(__FILE__)) {
-
-        $purchased_license_file = plugin_dir_path(__FILE__) . 'purchased_license.php';
-
-
-
-        if (file_exists($purchased_license_file)) {
-
-          $license_contents = file_get_contents($purchased_license_file);
-
-
-
-          if ($license_contents !== false) {
-
-            $license_key = preg_replace('/<\?(?:php)?|\?>/i', '', $license_contents);
-
-            $license_key = preg_replace('/^\s*return\s+/i', '', $license_key);
-
-            $license_key = trim($license_key);
-
-            $license_key = rtrim($license_key, ';');
-
-            $license_key = trim($license_key, " \t\n\r\0\x0B'\"");
-
-
-
-            if ($license_key !== '') {
-
-              abst_update_admin_setting('bt_bb_ab_licence', $license_key);
-            }
           }
 
+          exit;
 
-
-          wp_delete_file($purchased_license_file);
-        }
-
-
-
-        if (is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php')) {
-
-          wp_safe_redirect(network_admin_url('admin.php?page=bt_bb_ab_test&wizard=1'));
-        } else {
-
-          wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&wizard=1'));
-        }
-
-        exit;
       }
+
     }
 
 
 
-    function create_fingerprint_db()
-    {
-
-      // Delegate to the admin initializer to ensure all required columns exist
-
-      if (class_exists('BT_BB_AB_Admin')) {
-
-        BT_BB_AB_Admin::initialize_fingerprint_database();
-      }
-    }
-
-
-
-    function bt_ab_uninstall()
-    {
+     function bt_ab_uninstall() {
 
       abst_log('bt_ab_uninstall');
 
-      //actions performend on uninstall
-
-      $this->delete_fingerprint_db_on_uninstall();
     }
 
 
@@ -789,28 +724,29 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    function on_plugin_update($upgrader_object, $options)
-    {
+    function on_plugin_update($upgrader_object, $options) {
 
       // Check if this is a plugin update
 
       if (!isset($options['action']) || $options['action'] !== 'update') {
 
         return;
+
       }
 
       if (!isset($options['type']) || $options['type'] !== 'plugin') {
 
         return;
+
       }
 
-
+      
 
       // Check if our plugin was updated
 
       $our_plugin = plugin_basename(__FILE__);
 
-
+      
 
       if (isset($options['plugins'])) {
 
@@ -823,14 +759,19 @@ if (! class_exists('Bt_Ab_Tests')) {
             $this->clear_cache_on_update();
 
             break;
+
           }
+
         }
+
       } elseif (isset($options['plugin']) && $options['plugin'] === $our_plugin) {
 
         // Single plugin update
 
         $this->clear_cache_on_update();
+
       }
+
     }
 
 
@@ -843,22 +784,21 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    function clear_cache_on_update()
-    {
+    function clear_cache_on_update() {
 
       $stored_version = get_option('abst_plugin_version');
 
       $current_version = BT_AB_TEST_VERSION;
 
-
+      
 
       abst_log('Plugin updated from ' . ($stored_version ?: 'unknown') . ' to ' . $current_version . ' - clearing all caches if allowed');
 
-
+      
 
       $this->refresh_conversion_pages();
 
-
+      
 
       // Run version-specific upgrades
 
@@ -867,6 +807,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         $this->upgrade_to_241();
 
         update_option('abst_upgrade_241_complete', true);
+
       }
 
 
@@ -876,6 +817,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!$stored_version || version_compare($stored_version, '2.5.0', '<')) {
 
         $this->upgrade_to_250();
+
       }
 
 
@@ -885,21 +827,23 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!$stored_version || version_compare($stored_version, '2.5.1', '<')) {
 
         $this->upgrade_to_251();
+
       }
 
 
 
       $this->refresh_conversion_pages();
 
-
+      
 
       // Update the stored version
 
       update_option('abst_plugin_version', $current_version, false);
 
-
+      
 
       abst_log('All caches cleared and version updated to ' . $current_version);
+
     }
 
 
@@ -912,8 +856,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    function upgrade_to_241()
-    {
+    function upgrade_to_241() {
 
       abst_log('Plugin upgrade_to_241');
 
@@ -948,6 +891,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         abst_log('No experiments found needing upgrade');
 
         return;
+
       }
 
 
@@ -961,11 +905,13 @@ if (! class_exists('Bt_Ab_Tests')) {
         update_post_meta($exp_id, 'log_on_visible', '1');
 
         $upgraded_count++;
+
       }
 
 
 
       abst_log('Upgrade to 2.4.1: Set log_on_visible=1 for ' . $upgraded_count . ' existing tests');
+
     }
 
 
@@ -978,8 +924,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    function upgrade_to_250()
-    {
+    function upgrade_to_250() {
 
 
 
@@ -1030,6 +975,7 @@ if (! class_exists('Bt_Ab_Tests')) {
           if (!preg_match('/^magic-(?:\d+-)?(\d+)$/', (string) $key, $matches)) {
 
             continue;
+
           }
 
 
@@ -1043,7 +989,9 @@ if (! class_exists('Bt_Ab_Tests')) {
             unset($obs[$key]);
 
             $test_removed++;
+
           }
+
         }
 
 
@@ -1053,22 +1001,30 @@ if (! class_exists('Bt_Ab_Tests')) {
           update_post_meta($test->ID, 'observations', $obs);
 
           $removed += $test_removed;
+
         }
+
       }
 
-      if ($removed > 0) {
+      if($removed > 0) {
 
         abst_log('upgraded to v2.5.0: Removed ' . $removed . ' orphaned variation(s)');
-      } else {
+
+      }
+
+      else
+
+      {
 
         abst_log('upgraded to v2.5.0');
+
       }
+
     }
 
 
 
-    function upgrade_to_251()
-    {
+    function upgrade_to_251() {
 
       abst_log('upgrading to v2.5.1');
 
@@ -1129,7 +1085,9 @@ if (! class_exists('Bt_Ab_Tests')) {
             $magic_def[$index]['scope'] = ['page_id' => '*'];
 
             $needs_update = true;
+
           }
+
         }
 
 
@@ -1143,6 +1101,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         update_post_meta($test->ID, 'magic_definition', wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $updated++;
+
       }
 
 
@@ -1156,6 +1115,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!is_array($legacy_ideas)) {
 
         $legacy_ideas = [];
+
       }
 
 
@@ -1167,6 +1127,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (!is_array($legacy_idea)) {
 
           continue;
+
         }
 
 
@@ -1188,16 +1149,21 @@ if (! class_exists('Bt_Ab_Tests')) {
           if ($page !== '') {
 
             $title = $page;
+
           } elseif ($problem !== '') {
 
             $title = wp_trim_words($problem, 6, '');
+
           } elseif ($hypothesis !== '') {
 
             $title = wp_trim_words($hypothesis, 6, '');
+
           } else {
 
             $title = 'Test Idea';
+
           }
+
         }
 
 
@@ -1205,6 +1171,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($hypothesis === '') {
 
           continue;
+
         }
 
 
@@ -1230,6 +1197,7 @@ if (! class_exists('Bt_Ab_Tests')) {
           $post_data['post_date'] = wp_date('Y-m-d H:i:s', $created_timestamp);
 
           $post_data['post_date_gmt'] = gmdate('Y-m-d H:i:s', $created_timestamp);
+
         }
 
 
@@ -1239,6 +1207,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (is_wp_error($idea_post_id) || !$idea_post_id) {
 
           continue;
+
         }
 
 
@@ -1258,16 +1227,19 @@ if (! class_exists('Bt_Ab_Tests')) {
           if (!isset($legacy_idea[$idea_score_key]) || $legacy_idea[$idea_score_key] === '') {
 
             continue;
+
           }
 
 
 
           update_post_meta($idea_post_id, 'abst_idea_' . $idea_score_key, max(1, min(5, intval($legacy_idea[$idea_score_key]))));
+
         }
 
 
 
         $migrated_ideas++;
+
       }
 
 
@@ -1275,57 +1247,19 @@ if (! class_exists('Bt_Ab_Tests')) {
       delete_option('abst_plugin_test_ideas');
 
       abst_log('upgraded to v2.5.1: Migrated ' . $migrated_ideas . ' legacy test idea(s)');
+
     }
 
 
 
-    function handle_ab251_upgrade()
-    {
-
-      if (!is_admin() || !isset($_GET['ab251']) || !current_user_can('manage_options')) {
-
-        return;
-      }
-
-
-
-      $this->upgrade_to_251();
-
-
-
-      if (isset($_GET['ab251_done'])) {
-
-        return;
-      }
-
-
-
-      $redirect_url = remove_query_arg(['ab251'], wp_get_referer());
-
-      if (!$redirect_url) {
-
-        $redirect_url = admin_url();
-      }
-
-
-
-      $redirect_url = add_query_arg('ab251_done', '1', $redirect_url);
-
-      wp_safe_redirect($redirect_url);
-
-      exit;
-    }
-
-
-
-    function save_idea_config($post_id, $data = array())
-    {
+    function save_idea_config($post_id, $data = array()) {
 
       if (array_key_exists('abst_idea_hypothesis', $data) || array_key_exists('hypothesis', $data)) {
 
         $idea_hypothesis = sanitize_textarea_field($data['abst_idea_hypothesis'] ?? $data['hypothesis'] ?? '');
 
         update_post_meta($post_id, 'abst_idea_hypothesis', $idea_hypothesis);
+
       }
 
 
@@ -1335,6 +1269,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         $idea_page_flow = sanitize_textarea_field($data['abst_idea_page_flow'] ?? $data['page'] ?? '');
 
         update_post_meta($post_id, 'abst_idea_page_flow', $idea_page_flow);
+
       }
 
 
@@ -1344,6 +1279,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         $idea_problem = sanitize_textarea_field($data['abst_idea_observed_problem'] ?? $data['problem'] ?? '');
 
         update_post_meta($post_id, 'abst_idea_observed_problem', $idea_problem);
+
       }
 
 
@@ -1353,6 +1289,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         $idea_next_step = sanitize_textarea_field($data['abst_idea_next_step'] ?? $data['nextstep'] ?? '');
 
         update_post_meta($post_id, 'abst_idea_next_step', $idea_next_step);
+
       }
 
 
@@ -1366,6 +1303,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (!$has_value) {
 
           continue;
+
         }
 
 
@@ -1379,12 +1317,15 @@ if (! class_exists('Bt_Ab_Tests')) {
           delete_post_meta($post_id, $meta_key);
 
           continue;
+
         }
 
 
 
         update_post_meta($post_id, $meta_key, max(1, min(5, intval($raw_value))));
+
       }
+
     }
 
 
@@ -1392,144 +1333,150 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-    public function abtest_shortcode($atts, $content = "")
+    public function abtest_shortcode( $atts, $content = "" )
     {
       $attr = shortcode_atts([
         'eid' => -1,
         'variation' => '',
         'class' => ''
       ], $atts);
-
+      
       extract($attr);
 
       ob_start();
 
 
 
-      echo '<div class="bt-abtest-wrap ' . esc_attr($class) . '" bt-eid="' . intval($eid) . '" bt-variation="' . esc_attr($variation) . '">';
+      echo '<div class="bt-abtest-wrap '. esc_attr($class) .'" bt-eid="'. intval($eid) .'" bt-variation="'. esc_attr($variation) .'">';
 
-      echo wp_kses_post($content);
+        echo wp_kses_post($content);
 
       echo '</div>';
 
 
 
       return ob_get_clean();
+
     }
 
 
 
 
 
-    function remove_bulk_actions($actions, $post)
-    {
+    function remove_bulk_actions( $actions, $post ){
 
-      if ($post->post_type == "bt_experiments") {
+      if ( $post->post_type == "bt_experiments" ) {
 
-        unset($actions['inline hide-if-no-js']);
-
+        unset( $actions['inline hide-if-no-js'] );
 
 
-        if (isset($actions['edit'])) {
 
-          $actions['edit'] = str_replace("Edit", "View", $actions['edit']);
-        }
+        if( isset($actions['edit']) ) {
+
+          $actions['edit'] = str_replace("Edit","View",$actions['edit']);  
+
+        }        
+
       }
 
-      return $actions;
+        return $actions;
+
     }
 
+    
 
+    function bt_include_ajax_url(){
 
-    function bt_include_ajax_url()
-    {
+      if(!wp_doing_ajax()){
 
-      if (!wp_doing_ajax()) {
+        echo "<script  id='abst_ajax'>var bt_ajaxurl = '".esc_url(admin_url( 'admin-ajax.php' ))."';";
 
-        echo "<script  id='abst_ajax'>var bt_ajaxurl = '" . esc_url(admin_url('admin-ajax.php')) . "';";
-
-        echo "var bt_adminurl = '" . esc_url(admin_url()) . "';";
+        echo "var bt_adminurl = '".esc_url(admin_url())."';";
 
         //include plugin url
 
-        echo "var bt_pluginurl = '" . esc_url(plugin_dir_url(__FILE__)) . "';";
+        echo "var bt_pluginurl = '".esc_url(plugin_dir_url( __FILE__ ))."';";
 
-        echo "var bt_homeurl = '" . esc_url(home_url()) . "';</script>";
+        echo "var bt_homeurl = '".esc_url(home_url())."';</script>";
+
       }
+
     }
 
 
 
+    
 
 
 
-
-    function value_currency_symbol()
-    {
+    function value_currency_symbol(){
 
 
 
-      if (class_exists('woocommerce'))
+      if ( class_exists( 'woocommerce' ) )
 
         return get_woocommerce_currency_symbol(); // woostuffs
 
+      
 
-
-      return '$'; //default
+      return '$';//default
 
     }
 
-
+    
 
     function bt_include_module()
 
     {
 
-      define('BT_CONVERSION_DIR', plugin_dir_path(__FILE__));
+      define( 'BT_CONVERSION_DIR', plugin_dir_path( __FILE__ ) );
 
-      define('BT_CONVERSION_URL', plugins_url('/', __FILE__));
+      define( 'BT_CONVERSION_URL', plugins_url( '/', __FILE__ ) );
 
 
 
-      define('BT_MODULES_DIR', plugin_dir_path(__FILE__));
+      define( 'BT_MODULES_DIR', plugin_dir_path( __FILE__ ) );
 
-      define('BT_MODULES_URL', plugins_url('/', __FILE__));
+      define( 'BT_MODULES_URL', plugins_url( '/', __FILE__ ) );
 
 
 
       // Lite: only include core modules (conversion, journey)
 
-      include_once(plugin_dir_path(__FILE__) . 'modules/conversion/conversion.php');
+      include_once ( plugin_dir_path( __FILE__ ) . 'modules/conversion/conversion.php');
 
       $this->maybe_include_journey_module();
+
     }
 
 
 
-    function maybe_include_journey_module()
-    {
+    function maybe_include_journey_module() {
 
-      if (abst_get_admin_setting('abst_enable_user_journeys') == 1) {
+      if(abst_get_admin_setting('abst_enable_user_journeys') == 1) {
 
-        include_once(plugin_dir_path(__FILE__) . 'modules/journey.php');
+        include_once ( plugin_dir_path( __FILE__ ) . 'modules/journey.php');
 
         // Session replay depends on journey module AND session replays being enabled
 
-        if (abst_get_admin_setting('abst_enable_session_replays') == 1) {
+        if(abst_get_admin_setting('abst_enable_session_replays') == 1) {
 
-          include_once(plugin_dir_path(__FILE__) . 'modules/session-replay/session-replay.php');
+          include_once ( plugin_dir_path( __FILE__ ) . 'modules/session-replay/session-replay.php');
+
         }
+
       }
+
     }
 
 
 
-    function bt_include_support_module()
-    {
+    function bt_include_support_module() {
 
-      include_once(plugin_dir_path(__FILE__) . 'modules/support/cache.php');
+      include_once( plugin_dir_path( __FILE__ ) . 'modules/support/cache.php' );
 
-      include_once(plugin_dir_path(__FILE__) . 'modules/support/support.php');
+      include_once ( plugin_dir_path( __FILE__ ) . 'modules/support/support.php'); 
+
     }
 
 
@@ -1538,11 +1485,12 @@ if (! class_exists('Bt_Ab_Tests')) {
 
     {
 
-      if (class_exists('FLBuilderModel') && FLBuilderModel::is_builder_active()) :
+      if( class_exists('FLBuilderModel') && FLBuilderModel::is_builder_active() ) :
 
-?>
+      ?>
 
         <style type="text/css">
+
           form[data-form-id="conversion"] #fl-builder-settings-section-ab_test_rows,
 
           form[data-form-id="page-redirect"] #fl-builder-settings-section-ab_test_rows {
@@ -1550,11 +1498,13 @@ if (! class_exists('Bt_Ab_Tests')) {
             display: none !important;
 
           }
+
         </style>
 
-<?php
+      <?php
 
       endif;
+
     }
 
 
@@ -1565,18 +1515,20 @@ if (! class_exists('Bt_Ab_Tests')) {
 
      */
 
-    function hide_admin_bar_in_heatmap_iframe()
-    {
+    function hide_admin_bar_in_heatmap_iframe() {
 
       //if logged in and can edit posts
 
-      if (current_user_can('edit_posts')) {
+      if ( current_user_can('edit_posts') ) {
 
-        if (isset($_GET['abst_heatmap_view']) && $_GET['abst_heatmap_view'] == '1') {
+        if ( isset( $_GET['abst_heatmap_view'] ) && $_GET['abst_heatmap_view'] == '1' ) {
 
-          show_admin_bar(false);
+          show_admin_bar( false );
+
         }
+
       }
+
     }
 
 
@@ -1587,8 +1539,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-    function conversion_targeting()
-    {
+    function conversion_targeting(){
 
 
 
@@ -1598,97 +1549,108 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //bail on ajax
 
-      if (wp_doing_ajax())
+      if(wp_doing_ajax())
 
         return;
 
-
+      
 
       $queried_object = get_queried_object();
 
       $target_post_id = [];
 
-      $conversion_pages = get_option('bt_conversion_pages', false);
+      $conversion_pages = get_option('bt_conversion_pages',false);
 
 
 
       // dont brick pages with no queried object (i.e. 404's)
 
-      if (!empty($queried_object)) {
+      if(!empty($queried_object))
+
+      {
 
         if (is_archive()) {
 
-          // 1. Post Type Archives
+            // 1. Post Type Archives
 
-          if (is_post_type_archive()) {
+            if (is_post_type_archive()) {
 
-            $post_type = is_string($queried_object) ? $queried_object : $queried_object->name;
+                $post_type = is_string($queried_object) ? $queried_object : $queried_object->name;
 
-            $target_post_id[] = 'post-type-archive-' . $post_type;
+                $target_post_id[] = 'post-type-archive-' . $post_type;
 
-            $target_post_id[] = 'archive-' . $post_type; // Backwards compat for tests created before 2.4.2
+                $target_post_id[] = 'archive-' . $post_type; // Backwards compat for tests created before 2.4.2
 
-          }
+            } 
 
-          // 2. Taxonomy Archives (category, tag, custom taxonomy)
+            // 2. Taxonomy Archives (category, tag, custom taxonomy)
 
-          elseif (is_tax() || is_category() || is_tag()) {
+            elseif (is_tax() || is_category() || is_tag()) {
 
-            $taxonomy = $queried_object->taxonomy;
+                $taxonomy = $queried_object->taxonomy;
 
-            $term_id = $queried_object->term_id;
+                $term_id = $queried_object->term_id;
 
-            $target_post_id[] = 'taxonomy-' . $taxonomy . '-' . $term_id;
+                $target_post_id[] = 'taxonomy-' . $taxonomy . '-' . $term_id;
 
+                
 
+                // Also include the general taxonomy archive
 
-            // Also include the general taxonomy archive
+                $target_post_id[] = 'taxonomy-' . $taxonomy;
 
-            $target_post_id[] = 'taxonomy-' . $taxonomy;
-          }
-
-          // 3. Author Archives
-
-          elseif (is_author()) {
-
-            $target_post_id[] = 'author-' . get_queried_object_id();
-          }
-
-          // 4. Date-based Archives
-
-          elseif (is_date()) {
-
-            $date_parts = [get_query_var('year')];
-
-            if (get_query_var('monthnum')) {
-
-              $date_parts[] = get_query_var('monthnum');
             }
 
-            if (get_query_var('day')) {
+            // 3. Author Archives
 
-              $date_parts[] = get_query_var('day');
+            elseif (is_author()) {
+
+                $target_post_id[] = 'author-' . get_queried_object_id();
+
             }
 
-            $target_post_id[] = 'date-' . implode('-', $date_parts);
-          }
+            // 4. Date-based Archives
+
+            elseif (is_date()) {
+
+                $date_parts = [get_query_var('year')];
+
+                if (get_query_var('monthnum')) {
+
+                    $date_parts[] = get_query_var('monthnum');
+
+                }
+
+                if (get_query_var('day')) {
+
+                    $date_parts[] = get_query_var('day');
+
+                }
+
+                $target_post_id[] = 'date-' . implode('-', $date_parts);
+
+            }
+
         }
 
         // Handle singular posts/pages
 
         elseif (isset($queried_object->ID)) {
 
-          $target_post_id[] = $queried_object->ID;
+            $target_post_id[] = $queried_object->ID;
+
         }
+
       }
 
-
+        
 
       // Handle home and blog (posts index) pages specifically
 
       if (is_front_page()) {
 
         $target_post_id[] = get_option('page_on_front');
+
       }
 
       if (is_home()) {
@@ -1716,28 +1678,33 @@ if (! class_exists('Bt_Ab_Tests')) {
           $target_post_id[] = 'archive-post'; // Backwards compat
 
         }
+
       }
 
-
+    
 
       //woo 
 
-      if (class_exists('WooCommerce')) {
+      if ( class_exists( 'WooCommerce' ) ) {
 
-        if (is_shop()) {
+        if(is_shop()){
 
           $target_post_id[] = wc_get_page_id('shop');
+
         }
 
-        if (is_wc_endpoint_url('order-pay')) {
+        if(is_wc_endpoint_url( 'order-pay' )){
 
           $target_post_id[] = 'woo-order-pay';
+
         }
 
-        if (is_wc_endpoint_url('order-received') && (abst_get_admin_setting('abst_server_convert_woo') !== '1')) { // if its order recieved and we arent doing it server side
+        if(is_wc_endpoint_url( 'order-received' ) && (abst_get_admin_setting( 'abst_server_convert_woo' ) !== '1')){ // if its order recieved and we arent doing it server side
 
           $target_post_id[] = 'woo-order-received';
+
         }
+
       }
 
       //end woo
@@ -1746,17 +1713,20 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //WP Pizza
 
-      if (class_exists('WPPIZZA')) {
+      if ( class_exists( 'WPPIZZA' ) ) {
 
-        if (wppizza_is_checkout()) {
+        if(wppizza_is_checkout()){
 
           $target_post_id[] = 'wp-pizza-is-checkout';
+
         }
 
-        if (wppizza_is_orderhistory()) {
+        if(wppizza_is_orderhistory()){
 
           $target_post_id[] = 'wp-pizza-is-order-history';
+
         }
+
       }
 
       //end pizza
@@ -1765,28 +1735,31 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-
+      
 
       //if its 404
 
-      if (is_404()) {
+      if(is_404())
+
+      {
 
         $target_post_id[] = '404-not-found';
+
       }
 
+      
 
+      echo "<script ".esc_attr(ABST_CACHE_EXCLUDES)." id='abst_conv_details'>
 
-      echo "<script " . esc_attr(ABST_CACHE_EXCLUDES) . " id='abst_conv_details'>
+          var conversion_details = ".json_encode($conversion_pages).";
 
-          var conversion_details = " . json_encode($conversion_pages) . ";
-
-          var current_page = " . json_encode($target_post_id) . ";
+          var current_page = ".json_encode($target_post_id).";
 
         </script>";
+
     }
 
-    function get_url_from_slug($slug)
-    {
+    function get_url_from_slug($slug) {
 
 
 
@@ -1794,7 +1767,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $post = false;
 
-      if (is_numeric($slug))
+      if(is_numeric($slug))
 
         $post = get_post($slug);
 
@@ -1802,77 +1775,91 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //when its not a post id it should get by slug
 
-      if (empty($post))
+      if(empty($post))
 
         $post = get_page_by_path($slug, OBJECT, 'any');
 
 
 
-      if (empty($post)) {
+      if(empty($post))
 
-        $post = get_posts(array(
+      {
 
-          'name'   => $slug,
+        $post = get_posts(array
 
-          'post_type'   => 'any',
+        (
 
-          'post_per_page' => 1
+            'name'   => $slug,
+
+            'post_type'   => 'any',
+
+            'post_per_page' => 1
 
         ));
 
-        if (!empty($post)) {
+        if(!empty($post))
+
+        {
 
           $post = $post[0];
+
         }
+
       }
 
 
 
       if (!empty($post))
 
-        return get_permalink($post->ID) ?? $slug;
+          return get_permalink($post->ID) ?? $slug;
 
-
+      
 
       return $slug;
-    }
+
+  }
 
 
 
-    function save_test_config($post_id, $data = array())
+  function save_test_config( $post_id, $data = array() ) {
+
+
+
+    
+
+    if(empty($data))
+
     {
 
+    // wl('no data');
 
+      $data = $_POST;
 
+    }
 
-
-      if (empty($data)) {
-
-        // wl('no data');
-
-        $data = $_POST;
-      }
-
-      // get user level
+          // get user level
 
 
       //count all custom posts bt_experiments
 
       $count = wp_count_posts('bt_experiments');
 
-      if ($count->publish > 1) {
+      if($count->publish > 1)
+
+      {
 
         //change current post status to draft
 
-        remove_action('save_post_bt_experiments', [$this, 'save_postdata'], 10);
+        remove_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10 );
 
         wp_update_post(['ID' => $post_id, 'post_status' => 'draft']);
 
-        add_action('save_post_bt_experiments', [$this, 'save_postdata'], 10, 1);
+        add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
 
         abst_log('Free licence limited to one active test. Upgrade https://absplittest.com/pricing?utm_source=ug');
 
         return;
+
       }
 
       // Lite: limit to 1 variation maximum across all test types
@@ -1880,11 +1867,13 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!empty($data['page_variations'])) {
 
         $data['page_variations'] = array_slice((array)$data['page_variations'], 0, 1, true);
+
       }
 
       if (!empty($data['css_test_variations']) && intval($data['css_test_variations']) > 1) {
 
         $data['css_test_variations'] = 1;
+
       }
 
       if (!empty($data['magic_definition'])) {
@@ -1898,76 +1887,84 @@ if (! class_exists('Bt_Ab_Tests')) {
             if (isset($element['variations']) && is_array($element['variations']) && count($element['variations']) > 2) {
 
               $element['variations'] = array_slice($element['variations'], 0, 2);
+
             }
+
           }
 
           $data['magic_definition'] = json_encode($magic_def);
+
         }
+
       }
 
+    
 
+    $requested_status = sanitize_text_field((string) ($data['post_status'] ?? get_post_status($post_id)));
 
-      $requested_status = sanitize_text_field((string) ($data['post_status'] ?? get_post_status($post_id)));
+    if($requested_status === 'idea')
 
-      if ($requested_status === 'idea') {
+    {
 
-        $this->save_idea_config($post_id, $data);
+      $this->save_idea_config($post_id, $data);
 
-        return;
-      }
+      return;
 
-
-
-      if (
-
-        isset($data['abst_idea_hypothesis']) ||
-
-        isset($data['abst_idea_page_flow']) ||
-
-        isset($data['abst_idea_observed_problem']) ||
-
-        isset($data['abst_idea_next_step']) ||
-
-        isset($data['abst_idea_impact']) ||
-
-        isset($data['abst_idea_reach']) ||
-
-        isset($data['abst_idea_confidence']) ||
-
-        isset($data['abst_idea_effort'])
-
-      ) {
-
-        $this->save_idea_config($post_id, $data);
-      }
-
-      //test type 
+    }
 
 
 
-      $url_query = sanitize_text_field($data['test_type'] ?? ''); //ab_test full_page css_test magic
+    if(
 
-      update_post_meta($post_id, 'test_type', $url_query);
+      isset($data['abst_idea_hypothesis']) ||
+
+      isset($data['abst_idea_page_flow']) ||
+
+      isset($data['abst_idea_observed_problem']) ||
+
+      isset($data['abst_idea_next_step']) ||
+
+      isset($data['abst_idea_impact']) ||
+
+      isset($data['abst_idea_reach']) ||
+
+      isset($data['abst_idea_confidence']) ||
+
+      isset($data['abst_idea_effort'])
+
+    ) {
+
+      $this->save_idea_config($post_id, $data);
+
+    }
+
+    //test type 
+
+    
+
+    $url_query = sanitize_text_field($data['test_type'] ?? ''); //ab_test full_page css_test magic
+
+    update_post_meta( $post_id, 'test_type', $url_query );
 
 
 
-      //get json magic definition
+    //get json magic definition
 
-      // magic test
+    // magic test
 
-      $magic_definition = $data['magic_definition'] ?? '';
+    $magic_definition = $data['magic_definition'] ?? '';
 
-      if (!empty($magic_definition)) {
+    if (!empty($magic_definition)) {
 
-        require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
+      require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
+      
 
+      $decoded = json_decode($magic_definition, true);
 
-        $decoded = json_decode($magic_definition, true);
+      
 
-
-
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+      if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 
           $existing_magic_definition = get_post_meta($post_id, 'magic_definition', true);
 
@@ -1977,30 +1974,34 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           if ($is_legacy_magic_update) {
 
-            // Backfill wildcard scope for pre-2.5 magic tests so legacy configs stay editable.
+              // Backfill wildcard scope for pre-2.5 magic tests so legacy configs stay editable.
 
-            foreach ($decoded as $index => $element) {
+              foreach ($decoded as $index => $element) {
 
-              if (!is_array($element)) {
+                  if (!is_array($element)) {
 
-                continue;
+                      continue;
+
+                  }
+
+
+
+                  $scope = isset($element['scope']) && is_array($element['scope']) ? $element['scope'] : [];
+
+                  $has_scope_page_id = isset($scope['page_id']) && $scope['page_id'] !== '';
+
+                  $has_scope_url = isset($scope['url']) && trim((string) $scope['url']) !== '';
+
+
+
+                  if (!$has_scope_page_id && !$has_scope_url) {
+
+                      $decoded[$index]['scope'] = ['page_id' => '*'];
+
+                  }
+
               }
 
-
-
-              $scope = isset($element['scope']) && is_array($element['scope']) ? $element['scope'] : [];
-
-              $has_scope_page_id = isset($scope['page_id']) && $scope['page_id'] !== '';
-
-              $has_scope_url = isset($scope['url']) && trim((string) $scope['url']) !== '';
-
-
-
-              if (!$has_scope_page_id && !$has_scope_url) {
-
-                $decoded[$index]['scope'] = ['page_id' => '*'];
-              }
-            }
           }
 
 
@@ -2009,7 +2010,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           $decoded = abst_normalize_magic_definition($decoded);
 
-
+          
 
           // Validate magic definition including scope requirement
 
@@ -2017,36 +2018,41 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           if (is_wp_error($validation_result)) {
 
-            abst_log('ERROR: Magic definition validation failed: ' . $validation_result->get_error_message());
+              abst_log('ERROR: Magic definition validation failed: ' . $validation_result->get_error_message());
 
-            // Don't save invalid data - keep existing value
+              // Don't save invalid data - keep existing value
 
-            return;
+              return;
+
           }
 
-
+          
 
           // Sanitize each element - but only for untrusted input
 
           foreach ($decoded as $index => $element) {
 
-            if (isset($element['selector'])) {
+              if (isset($element['selector'])) {
 
-              $decoded[$index]['selector'] = sanitize_text_field($element['selector']);
-            }
+                  $decoded[$index]['selector'] = sanitize_text_field($element['selector']);
 
-            if (isset($element['type'])) {
+              }
 
-              $decoded[$index]['type'] = sanitize_text_field($element['type']);
-            }
+              if (isset($element['type'])) {
+
+                  $decoded[$index]['type'] = sanitize_text_field($element['type']);
+
+              }
+
           }
 
-
+          
 
           // Re-encode as JSON
 
           $magic_definition = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        } else {
+
+      } else {
 
           // Don't wipe data on JSON error - preserve what was submitted
 
@@ -2056,340 +2062,379 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           // Keep the submitted value - admin may be fixing it
 
-        }
       }
 
+  }
 
+  
 
-      update_post_meta($post_id, 'magic_definition', $magic_definition);
+    update_post_meta( $post_id, 'magic_definition', $magic_definition );
 
+    
 
+    // base page for full page split test
 
-      // base page for full page split test
+    // bt_experiments_full_page_default_page
 
-      // bt_experiments_full_page_default_page
+    $url_query = $data['bt_experiments_full_page_default_page'] ?? '';
 
-      $url_query = $data['bt_experiments_full_page_default_page'] ?? '';
+    update_post_meta( $post_id, 'bt_experiments_full_page_default_page', $url_query );
 
-      update_post_meta($post_id, 'bt_experiments_full_page_default_page', $url_query);
 
 
+    //page_variations
 
-      //page_variations
+    $page_variations = (array) ($data['page_variations'] ?? []);
 
-      $page_variations = (array) ($data['page_variations'] ?? []);
+    foreach($page_variations as $k => $v){
 
-      foreach ($page_variations as $k => $v) {
+      $page_variations[$v] = $this->get_url_from_slug($v);
 
-        $page_variations[$v] = $this->get_url_from_slug($v);
+      unset($page_variations[$k]);
 
-        unset($page_variations[$k]);
-      }
-
-      $page_variations = array_map('esc_attr', $page_variations);
-
-
-
-      update_post_meta($post_id, 'page_variations', $page_variations);
-
-
-
-      //get variation meta
-
-      $variation_meta = get_post_meta($post_id, 'variation_meta', true);
-
-
-
-      if (empty($variation_meta)) {
-
-        //variation meta
-
-        // variation meta (labels and screenshots)
-
-        $variation_labels = $data['variation_label'] ?? array();
-
-        $variation_images = $data['variation_image'] ?? array();
-
-        $variation_meta = array();
-
-        foreach ($page_variations as $key => $url) {
-
-          $variation_meta[$key] = array(
-
-            'label' => sanitize_text_field($variation_labels[$key] ?? ''),
-
-            'image' => esc_url_raw($variation_images[$key] ?? ''),
-
-            'weight' => 1
-
-          );
-        }
-
-        update_post_meta($post_id, 'variation_meta', $variation_meta);
-      }
-
-
-
-      //css test
-
-      $css_test_variations = intval($data['css_test_variations']);
-
-      update_post_meta($post_id, 'css_test_variations', $css_test_variations);
-
-
-
-      // optimization type conversion_style bayesian or thompson(multi-armed-bandit) its a radio input
-
-      $optimization_type = sanitize_text_field($data['conversion_style'] ?? 'bayesian');
-
-      update_post_meta($post_id, 'conversion_style', $optimization_type);
-
-
-
-      // Clear weights if conversion style is being changed to non-thompson
-
-      if ($optimization_type != 'thompson') {
-
-        $this->clear_test_variation_weights($post_id);
-      }
-
-
-
-      //url query
-
-      $url_query = sanitize_textarea_field($data['bt_experiments_url_query']);
-
-      update_post_meta($post_id, 'url_query', $url_query);
-
-
-
-      //webhook url
-
-      $webhook_url = isset($data['bt_webhook_url']) ? esc_url($data['bt_webhook_url']) : false;
-
-      update_post_meta($post_id, 'webhook_url', $webhook_url);
-
-
-
-      $allowed_roles = isset($data['bt_allowed_roles']) ? (array) $data['bt_allowed_roles'] : [];
-
-      $allowed_roles = array_map('esc_attr', $allowed_roles);
-
-      update_post_meta($post_id, 'bt_allowed_roles', $allowed_roles);
-
-
-
-      $target_percentage = sanitize_text_field($data['bt_experiments_target_percentage']);
-
-      if ($target_percentage == '')
-
-        $target_percentage = '100';
-
-      update_post_meta($post_id, 'target_percentage', $target_percentage);
-
-
-
-      // new target option device size desktop tablet mobile
-
-      $target_option_device_size = sanitize_text_field($data['bt_experiments_target_option_device_size'] ?? false);
-
-      update_post_meta($post_id, 'target_option_device_size', $target_option_device_size);
-
-
-
-      // log on visible - when enabled, visits are only logged when element becomes visible
-
-      $log_on_visible = isset($data['bt_experiments_log_on_visible']) ? '1' : '0';
-
-      update_post_meta($post_id, 'log_on_visible', $log_on_visible);
-
-
-
-      $conversion_page = sanitize_text_field($data['bt_experiments_conversion_page']);
-
-      $conversion_time = isset($data['bt_experiments_conversion_time']) ? intval($data['bt_experiments_conversion_time']) : 0;
-
-      $conversion_scroll = isset($data['bt_experiments_conversion_scroll']) ? intval($data['bt_experiments_conversion_scroll']) : 0;
-
-      $conversion_use_order_value = 0; // Lite: disable revenue tracking
-
-      $conversion_text = sanitize_text_field($data['bt_experiments_conversion_text'] ?? false);
-
-
-
-      if ($conversion_page == '0')
-
-        $conversion_page = '';
-
-
-
-      if ($conversion_page == 'page') // if its a page the get the page int for back compat its one field
-
-        $conversion_page = intval($data['bt_experiments_conversion_page_selector']);
-
-
-
-      update_post_meta($post_id, 'conversion_page', $conversion_page);
-
-      update_post_meta($post_id, 'conversion_time', $conversion_time);
-
-      update_post_meta($post_id, 'conversion_scroll', $conversion_scroll);
-
-      update_post_meta($post_id, 'conversion_text', $conversion_text);
-
-
-
-      update_post_meta($post_id, 'conversion_use_order_value', 0);
-
-
-
-      if ($conversion_page == 'url') {
-
-        $conversion_url = sanitize_text_field($data['bt_experiments_conversion_url']);
-
-        $conversion_url = str_replace(site_url(), "", $conversion_url); // remove the site URL if entered in error
-
-        $conversion_url = ltrim($conversion_url, '/');  //ditch the slashes
-
-        $conversion_url = rtrim($conversion_url, '/');
-      } else {
-
-        $conversion_url = '';
-      }
-
-
-
-      update_post_meta($post_id, 'conversion_url', $conversion_url);
-
-
-
-
-
-      if ($conversion_page == 'selector')
-
-        $conversion_selector = sanitize_text_field($data['bt_experiments_conversion_selector']);
-
-      else
-
-        $conversion_selector = '';
-
-
-
-      update_post_meta($post_id, 'conversion_selector', $conversion_selector);
-
-
-
-      // Save conversion_link_pattern (Link Click trigger)
-
-      if (isset($data['bt_experiments_conversion_link_pattern'])) {
-
-        $conversion_link_pattern = sanitize_text_field($data['bt_experiments_conversion_link_pattern']);
-
-        if (!empty($conversion_link_pattern)) {
-
-          update_post_meta($post_id, 'conversion_link_pattern', $conversion_link_pattern);
-        } else {
-
-          delete_post_meta($post_id, 'conversion_link_pattern');
-        }
-      }
-
-
-
-      if ($data['test_type'] == 'magic' && isset($data['goal']) && (isset($_POST['action']) && $_POST['action'] != 'editpost')) {
-
-        // Sanitize magic test goals before saving
-
-        $sanitized_goals = array();
-
-        if (is_array($data['goal'])) {
-
-          foreach ($data['goal'] as $key => $goal_data) {
-
-            if (is_array($goal_data)) {
-
-              $sanitized_goal = array();
-
-              foreach ($goal_data as $goal_key => $goal_value) {
-
-                $sanitized_goal[$goal_key] = sanitize_text_field($goal_value);
-              }
-
-              $sanitized_goals[$key] = $sanitized_goal;
-            } else {
-
-              $sanitized_goals[$key] = sanitize_text_field($goal_data);
-            }
-          }
-        }
-
-        update_post_meta($post_id, 'goals', $sanitized_goals);
-      } else {
-
-        $goals = [];
-
-        $max_goals = 20; // Set a maximum number of goals to avoid infinite loops
-
-        for ($i = 1; $i <= $max_goals; $i++) {
-
-          if (isset($data['goal'][$i])) {
-
-            // Check if goal_page is set, if so, set goal_page_id, otherwise set goal_value
-
-            if ($data['goal'][$i] == 'page' && isset($data['goal_page'][$i])) {
-
-              $goals[$i] = [
-
-                $data['goal'][$i] => $data['goal_page'][$i]
-
-              ];
-            } else if (is_numeric($data['goal'][$i])) { // if the key is an integer, then its a page
-
-              $goals[$i] = [
-
-                'page' => $data['goal'][$i]
-
-              ];
-            } else {
-
-              $goals[$i] = [
-
-                $data['goal'][$i] => sanitize_text_field($data['goal_value'][$i])
-
-              ];
-            }
-          }
-        }
-
-        update_post_meta($post_id, 'goals', $goals);
-      }
-
-
-
-
-
-      // Lite: disable subgoals and autocomplete
-
-      delete_post_meta($post_id, 'goals');
-
-      update_post_meta($post_id, 'autocomplete_on', 0);
-
-      update_post_meta($post_id, 'ac_min_days', 7);
-
-      update_post_meta($post_id, 'ac_min_views', 50);
-
-      $this->refresh_conversion_pages();
     }
 
-    function save_postdata($post_id)
+    $page_variations = array_map( 'esc_attr', $page_variations );
+
+
+
+    update_post_meta( $post_id, 'page_variations', $page_variations );
+
+
+
+    //get variation meta
+
+    $variation_meta = get_post_meta( $post_id, 'variation_meta', true );
+
+
+
+    if(empty($variation_meta))
+
     {
 
+      //variation meta
+
+      // variation meta (labels and screenshots)
+
+      $variation_labels = $data['variation_label'] ?? array();
+
+      $variation_images = $data['variation_image'] ?? array();
+
+      $variation_meta = array();
+
+      foreach($page_variations as $key => $url){
+
+        $variation_meta[$key] = array(
+
+          'label' => sanitize_text_field($variation_labels[$key] ?? ''),
+
+          'image' => esc_url_raw($variation_images[$key] ?? ''),
+
+          'weight' => 1
+
+        );
+
+      }
+
+      update_post_meta( $post_id, 'variation_meta', $variation_meta );
+
+    }
 
 
-      if (isset($_POST['original_post_status']) && $_POST['original_post_status'] === 'auto-draft') {
+
+    //css test
+
+    $css_test_variations = intval($data['css_test_variations']);
+
+    update_post_meta( $post_id, 'css_test_variations', $css_test_variations );
+
+
+
+    // optimization type conversion_style bayesian or thompson(multi-armed-bandit) its a radio input
+
+    $optimization_type = sanitize_text_field($data['conversion_style'] ?? 'bayesian');
+
+    update_post_meta( $post_id, 'conversion_style', $optimization_type );
+
+    
+
+    // Clear weights if conversion style is being changed to non-thompson
+
+    if($optimization_type != 'thompson') {
+
+      $this->clear_test_variation_weights($post_id);
+
+    }
+
+
+
+    //url query
+
+    $url_query = sanitize_textarea_field($data['bt_experiments_url_query']);
+
+    update_post_meta( $post_id, 'url_query', $url_query );
+
+
+
+    //webhook url
+
+    $webhook_url = isset($data['bt_webhook_url']) ? esc_url($data['bt_webhook_url']) : false;      
+
+    update_post_meta( $post_id, 'webhook_url', $webhook_url );
+
+
+
+    $allowed_roles = isset( $data['bt_allowed_roles'] ) ? (array) $data['bt_allowed_roles'] : [];
+
+    $allowed_roles = array_map( 'esc_attr', $allowed_roles );
+
+    update_post_meta( $post_id, 'bt_allowed_roles', $allowed_roles );
+
+
+
+    $target_percentage = sanitize_text_field($data['bt_experiments_target_percentage']);
+
+    if($target_percentage == '')
+
+      $target_percentage = '100';
+
+    update_post_meta($post_id,'target_percentage',$target_percentage);
+
+    
+
+    // new target option device size desktop tablet mobile
+
+    $target_option_device_size = sanitize_text_field($data['bt_experiments_target_option_device_size'] ?? false);
+
+    update_post_meta($post_id,'target_option_device_size',$target_option_device_size);
+
+
+
+    // log on visible - when enabled, visits are only logged when element becomes visible
+
+    $log_on_visible = isset($data['bt_experiments_log_on_visible']) ? '1' : '0';
+
+    update_post_meta($post_id,'log_on_visible',$log_on_visible);
+
+
+
+    $conversion_page = sanitize_text_field($data['bt_experiments_conversion_page']);
+
+    $conversion_time = isset($data['bt_experiments_conversion_time']) ? intval($data['bt_experiments_conversion_time']) : 0;
+
+    $conversion_scroll = isset($data['bt_experiments_conversion_scroll']) ? intval($data['bt_experiments_conversion_scroll']) : 0;
+
+    $conversion_use_order_value = 0; // Lite: disable revenue tracking
+
+    $conversion_text = sanitize_text_field($data['bt_experiments_conversion_text'] ?? false);
+
+
+
+    if( $conversion_page == '0' )
+
+      $conversion_page = '';
+
+
+
+    if($conversion_page == 'page') // if its a page the get the page int for back compat its one field
+
+      $conversion_page = intval($data['bt_experiments_conversion_page_selector']);
+
+
+
+    update_post_meta($post_id,'conversion_page', $conversion_page);
+
+    update_post_meta($post_id,'conversion_time', $conversion_time);
+
+    update_post_meta($post_id,'conversion_scroll', $conversion_scroll);
+
+    update_post_meta($post_id,'conversion_text', $conversion_text);
+
+
+
+    update_post_meta($post_id,'conversion_use_order_value', 0);
+
+
+
+    if( $conversion_page == 'url' ){
+
+      $conversion_url = sanitize_text_field( $data['bt_experiments_conversion_url'] );
+
+      $conversion_url = str_replace(site_url(),"",$conversion_url); // remove the site URL if entered in error
+
+      $conversion_url = ltrim($conversion_url, '/');  //ditch the slashes
+
+      $conversion_url = rtrim($conversion_url, '/'); 
+
+    }
+
+    else
+
+    {
+
+        $conversion_url = '';
+
+    }
+
+    
+
+    update_post_meta( $post_id, 'conversion_url', $conversion_url );
+
+
+
+
+
+    if( $conversion_page == 'selector' )
+
+      $conversion_selector = sanitize_text_field( $data['bt_experiments_conversion_selector'] );
+
+    else
+
+      $conversion_selector = '';
+
+
+
+    update_post_meta( $post_id, 'conversion_selector', $conversion_selector );
+
+
+
+  // Save conversion_link_pattern (Link Click trigger)
+
+  if (isset($data['bt_experiments_conversion_link_pattern'])) {
+
+    $conversion_link_pattern = sanitize_text_field($data['bt_experiments_conversion_link_pattern']);
+
+    if (!empty($conversion_link_pattern)) {
+
+      update_post_meta($post_id, 'conversion_link_pattern', $conversion_link_pattern);
+
+    } else {
+
+      delete_post_meta($post_id, 'conversion_link_pattern');
+
+    }
+
+  }
+
+    
+
+    if($data['test_type'] == 'magic' && isset($data['goal']) && (isset($_POST['action']) && $_POST['action'] != 'editpost'))
+
+    {
+
+      // Sanitize magic test goals before saving
+
+      $sanitized_goals = array();
+
+      if(is_array($data['goal'])) {
+
+        foreach($data['goal'] as $key => $goal_data) {
+
+          if(is_array($goal_data)) {
+
+            $sanitized_goal = array();
+
+            foreach($goal_data as $goal_key => $goal_value) {
+
+              $sanitized_goal[$goal_key] = sanitize_text_field($goal_value);
+
+            }
+
+            $sanitized_goals[$key] = $sanitized_goal;
+
+          } else {
+
+            $sanitized_goals[$key] = sanitize_text_field($goal_data);
+
+          }
+
+        }
+
+      }
+
+      update_post_meta($post_id,'goals',$sanitized_goals);
+
+    }
+
+    else
+
+    {
+
+      $goals = [];
+
+      $max_goals = 20; // Set a maximum number of goals to avoid infinite loops
+
+      for ($i = 1; $i <= $max_goals; $i++) {
+
+          if(isset($data['goal'][$i]) ) {
+
+              // Check if goal_page is set, if so, set goal_page_id, otherwise set goal_value
+
+              if($data['goal'][$i] == 'page' && isset($data['goal_page'][$i])) {
+
+                  $goals[$i] = [
+
+                    $data['goal'][$i] => $data['goal_page'][$i]
+
+                  ];
+
+              }
+
+             else if (is_numeric($data['goal'][$i])) { // if the key is an integer, then its a page
+
+                  $goals[$i] = [
+
+                    'page' => $data['goal'][$i]
+
+                  ];
+
+            }else {
+
+                  $goals[$i] = [
+
+                    $data['goal'][$i] => sanitize_text_field($data['goal_value'][$i])
+
+                  ];
+
+              }
+
+          } 
+
+      }
+
+      update_post_meta($post_id,'goals',$goals);
+
+    }
+
+  
+
+
+
+    // Lite: disable subgoals and autocomplete
+
+    delete_post_meta($post_id, 'goals');
+
+    update_post_meta($post_id, 'autocomplete_on', 0);
+
+    update_post_meta($post_id, 'ac_min_days', 7);
+
+    update_post_meta($post_id, 'ac_min_views', 50);
+
+    $this->refresh_conversion_pages();
+
+
+
+  }
+
+    function save_postdata( $post_id ) {
+
+
+
+    if (isset($_POST['original_post_status']) && $_POST['original_post_status'] === 'auto-draft') {
 
         update_post_meta($post_id, '_abst_is_new', 'true');
-      }
+
+    }
 
       /*
 
@@ -2401,197 +2446,187 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // Check if our nonce is set.
 
-      if (! isset($_POST['bt_experiments_inner_custom_box_nonce']))
+      if ( ! isset( $_POST['bt_experiments_inner_custom_box_nonce'] ) )
 
         return $post_id;
 
-      $nonce = isset($_POST['bt_experiments_inner_custom_box_nonce']) ? sanitize_text_field(wp_unslash($_POST['bt_experiments_inner_custom_box_nonce'])) : '';
+      $nonce = isset( $_POST['bt_experiments_inner_custom_box_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['bt_experiments_inner_custom_box_nonce'] ) ) : '';
 
       // Verify that the nonce is valid.
 
-      if (! wp_verify_nonce($nonce, 'myplugin_inner_custom_box'))
+      if ( ! wp_verify_nonce( $nonce, 'myplugin_inner_custom_box' ) )
 
-        return $post_id;
+          return $post_id;
 
       // If this is an autosave, our form has not been submitted, so we don't want to do anything.
 
-      if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
+      if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
 
-        return $post_id;
+          return $post_id;
 
       // Check the user's permissions.
 
-      if (! current_user_can('edit_post', $post_id))
+      if ( ! current_user_can( 'edit_post', $post_id ) )
 
-        return $post_id;
+          return $post_id;
 
-
+      
 
       /* OK, its safe for us to save the data now. */
 
-      $this->save_test_config($post_id, $_POST);
+      $this->save_test_config( $post_id, $_POST );
+
+
+
     }
 
 
 
     //refresh conversion pages on trashed/untrashed experiments
 
+    
 
+  function abst_custom_post_updated_messages( $messages ) {
 
-    function abst_custom_post_updated_messages($messages)
-    {
-
-      global $post;
-
-
-
-      if (! is_object($post) || 'bt_experiments' !== get_post_type($post->ID)) {
-
-        return $messages;
-      }
-
-      //if post created was in the last minute its new
-
-      $post_time = get_the_time('U', $post->ID);
-
-      $is_new = time() - $post_time <= 60;
-
-      $status = get_post_status($post->ID);
+    global $post;
 
 
 
-      if ($is_new) {
+    if ( ! is_object( $post ) || 'bt_experiments' !== get_post_type( $post->ID ) ) {
 
-        $message_text = 'Split Test Created.';
-      } else if ($status === 'publish') {
+      return $messages;
 
-        $message_text = 'Split Test Running.';
-      } else if ($status === 'pending') {
+  }
 
-        $message_text = 'Split Test Paused.';
-      } else if ($status === 'complete') {
+ //if post created was in the last minute its new
 
-        $message_text = 'Split Test Marked Complete.';
-      } else if ($status === 'draft') {
+ $post_time = get_the_time('U', $post->ID);
 
-        $message_text = 'Split Test Draft Saved.';
-      } else {
+ $is_new = time() - $post_time <= 60;
 
-        $message_text = 'Split Test Updated.';
-      }
+ $status = get_post_status($post->ID);
 
 
 
-      $cache_message = '';
+ if ($is_new) {
 
-      $detected_caches = abst_get_detected_caches();
+     $message_text = 'Split Test Created.';
 
-      $cache_list = implode(', ', $detected_caches);
+ } else if ($status === 'publish') {
 
-      if (abst_get_admin_setting('ab_dont_clear_cache_on_update') == '1') {
+     $message_text = 'Split Test Running.';
+
+ } else if ($status === 'pending') {
+
+     $message_text = 'Split Test Paused.';
+
+ } else if ($status === 'complete') {
+
+     $message_text = 'Split Test Marked Complete.';
+
+ } else if ($status === 'draft') {
+
+     $message_text = 'Split Test Draft Saved.';
+
+ } else {
+
+     $message_text = 'Split Test Updated.';
+
+   }
+
+
+
+    $cache_message = '';
+
+    $detected_caches = abst_get_detected_caches();
+
+    $cache_list = implode(', ', $detected_caches);
+
+    if ( abst_get_admin_setting('ab_dont_clear_cache_on_update') == '1' ) {
 
         $cache_message = ' <strong>IMPORTANT: You\'ll need to manually clear your cache. </strong><BR> The following caches have been detected: ' . $cache_list;
-      } else {
 
-        if (! empty($detected_caches)) {
+    } else {
 
-          $cache_message = ' These caches have been cleared: ' . esc_html($cache_list) . '.';
+        if ( ! empty( $detected_caches ) ) {
+
+            $cache_message = ' These caches have been cleared: ' . esc_html($cache_list) . '.';
+
         }
 
         $cache_message .= ' If you are running any other website caching, clear that now.';
-      }
 
-
-
-      $full_message = esc_html($message_text) . "<br/><br/>" . $cache_message;
-
-
-
-      $custom_messages = array(
-
-        1  => $full_message,
-
-        4  => $full_message,
-
-        6  => $status === 'publish' ? $full_message : esc_html('Split Test Running.') . "<br/><br/>" . $cache_message,
-
-        8  => $status === 'pending' ? $full_message : esc_html('Split Test Submitted.') . "<br/><br/>" . $cache_message,
-
-        9  => esc_html('Split Test Scheduled.') . "<br/><br/>" . $cache_message,
-
-        10 => $status === 'draft' ? $full_message : esc_html('Split Test Draft Saved.') . "<br/><br/>" . $cache_message,
-
-      );
-
-
-
-      $messages['bt_experiments'] = isset($messages['bt_experiments']) && is_array($messages['bt_experiments'])
-
-        ? array_replace($messages['bt_experiments'], $custom_messages)
-
-        : $custom_messages;
-
-
-
-      $messages['post'][1] = $custom_messages[1]; // Updated
-
-      $messages['post'][4] = $custom_messages[4]; // Post updated.
-
-      $messages['post'][6] = $custom_messages[6]; // Published
-
-      $messages['post'][8] = $custom_messages[8]; // Submitted
-
-      $messages['post'][9] = $custom_messages[9]; // Scheduled
-
-      $messages['post'][10] = $custom_messages[10]; // Draft updated
-
-
-
-      return $messages;
     }
 
 
 
-    function experiment_trash_handler($post_id)
-    {
+    $full_message = esc_html($message_text) . "<br/><br/>" . $cache_message ;
+
+
+
+    $custom_messages = array(
+
+      1  => $full_message,
+
+      4  => $full_message,
+
+      6  => $status === 'publish' ? $full_message : esc_html('Split Test Running.') . "<br/><br/>" . $cache_message,
+
+      8  => $status === 'pending' ? $full_message : esc_html('Split Test Submitted.') . "<br/><br/>" . $cache_message,
+
+      9  => esc_html('Split Test Scheduled.') . "<br/><br/>" . $cache_message,
+
+      10 => $status === 'draft' ? $full_message : esc_html('Split Test Draft Saved.') . "<br/><br/>" . $cache_message,
+
+    );
+
+
+
+    $messages['bt_experiments'] = isset($messages['bt_experiments']) && is_array($messages['bt_experiments'])
+
+      ? array_replace($messages['bt_experiments'], $custom_messages)
+
+      : $custom_messages;
+
+
+
+    $messages['post'][1] = $custom_messages[1]; // Updated
+
+    $messages['post'][4] = $custom_messages[4]; // Post updated.
+
+    $messages['post'][6] = $custom_messages[6]; // Published
+
+    $messages['post'][8] = $custom_messages[8]; // Submitted
+
+    $messages['post'][9] = $custom_messages[9]; // Scheduled
+
+    $messages['post'][10] = $custom_messages[10]; // Draft updated
+
+
+
+    return $messages;
+
+  }
+
+
+
+  function experiment_trash_handler( $post_id ) {
 
       //only on experiments
 
-      if ('bt_experiments' != get_post_type($post_id))
+      if ( 'bt_experiments' != get_post_type( $post_id ))
 
         return;
 
 
 
-      $this->refresh_conversion_pages();
+       $this->refresh_conversion_pages();
+
     }
 
 
 
-    function ab_fingerprint_event()
-    {
-
-      // Fingerprint/UUID tracking is PRO only — disabled in lite version
-
-      wp_die();
-    }
-
-
-
-    function fingerprint_event()
-    {
-
-      // Fingerprint/UUID tracking is PRO only — disabled in lite version
-
-      wp_die();
-    }
-
-
-
-
-
-    function refresh_on_update($post_ID, $post_after, $post_before)
-    {
+    function refresh_on_update($post_ID, $post_after, $post_before){
 
 
 
@@ -2605,25 +2640,27 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       if ($old_title !== $new_title) {
 
-        delete_option('all_testable_posts'); //  refresh it
+          delete_option('all_testable_posts'); //  refresh it
 
       }
 
 
 
-      //    if ($post_after->post_type !== 'bt_experiments')
+  //    if ($post_after->post_type !== 'bt_experiments')
 
-      //        return;
+//        return;
 
-
+      
 
       $this->refresh_conversion_pages();
-    }
+
+      
+
+    } 
 
 
 
-    function refresh_conversion_pages()
-    { // and canonicals
+    function refresh_conversion_pages(){ // and canonicals
 
 
 
@@ -2655,56 +2692,68 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       foreach ($post_ids as $post_id) {
 
-        $conversion_page = get_post_meta($post_id, 'conversion_page', true);
+        $conversion_page = get_post_meta($post_id,'conversion_page',true);
 
-        $conversion_url = get_post_meta($post_id, 'conversion_url', true);
+        $conversion_url = get_post_meta($post_id,'conversion_url',true);
 
-        $conversion_time = get_post_meta($post_id, 'conversion_time', true);
+        $conversion_time = get_post_meta($post_id,'conversion_time',true);
 
-        $conversion_scroll = get_post_meta($post_id, 'conversion_scroll', true);
+        $conversion_scroll = get_post_meta($post_id,'conversion_scroll',true);
 
-        $target_percentage = get_post_meta($post_id, 'target_percentage', true);
+        $target_percentage = get_post_meta($post_id,'target_percentage',true);     
 
-        $url_query = get_post_meta($post_id, 'url_query', true);
+        $url_query = get_post_meta($post_id,'url_query',true);        
 
-        $use_order_value = get_post_meta($post_id, 'conversion_use_order_value', true);
+        $use_order_value = get_post_meta($post_id,'conversion_use_order_value',true);     
 
-        $conversion_text = get_post_meta($post_id, 'conversion_text', true);
+        $conversion_text = get_post_meta($post_id,'conversion_text',true);        
 
-        $test_type = get_post_meta($post_id, 'test_type', true);
+        $test_type = get_post_meta($post_id,'test_type',true);
 
-        $bt_experiments_full_page_default_page = get_post_meta($post_id, 'bt_experiments_full_page_default_page', true);
+        $bt_experiments_full_page_default_page = get_post_meta($post_id,'bt_experiments_full_page_default_page',true);
 
+              
 
+        if($test_type == 'full_page' && abst_get_admin_setting('ab_change_canonicals') == 1)
 
-        if ($test_type == 'full_page' && abst_get_admin_setting('ab_change_canonicals') == 1) {
+        {
 
-          $canonical = get_permalink($bt_experiments_full_page_default_page); // gets default page
+          $canonical = get_permalink($bt_experiments_full_page_default_page);// gets default page
 
-          $variatons = get_post_meta($post_id, 'page_variations', true); //gets variations
+          $variatons = get_post_meta($post_id,'page_variations',true);//gets variations
 
-          foreach ($variatons as $key => $value) { //loop through variations
+          foreach ($variatons as $key => $value) {//loop through variations
 
             $canonical_list[$key] = $canonical; //add to canonical list
 
           }
+
         }
 
 
 
-        if ($conversion_page == '0') {
+        if($conversion_page == '0') {
 
           continue;
+
         }
 
+          
 
+        if($conversion_page == 'url' && !empty($conversion_url))
 
-        if ($conversion_page == 'url' && !empty($conversion_url)) {
+        {
 
           $conversion_pages[$post_id]['conversion_page_url'] = $conversion_url;
-        } elseif ($conversion_page !== 'url' && $conversion_page !== '' && $conversion_page !== '0') {
 
-          $conversion_pages[$post_id]['conversion_page_id'] = $conversion_page;
+        }
+
+        elseif($conversion_page !== 'url' && $conversion_page !== '' && $conversion_page !== '0')
+
+        {
+
+            $conversion_pages[$post_id]['conversion_page_id'] = $conversion_page;
+
         }
 
 
@@ -2722,13 +2771,14 @@ if (! class_exists('Bt_Ab_Tests')) {
         $conversion_pages[$post_id]['conversion_text'] = $conversion_text;
 
         $conversion_pages[$post_id]['use_order_value'] = $use_order_value;
+
       }
 
 
 
-      update_option('bt_conversion_pages', $conversion_pages);
+      update_option('bt_conversion_pages',$conversion_pages);
 
-      update_option('ab_test_canonical', $canonical_list);
+      update_option('ab_test_canonical',$canonical_list);
 
 
 
@@ -2738,9 +2788,13 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // add_filter('abst_clear_caches', '__return_false'); //disable cache clearing on page and test update
 
-      if (apply_filters('abst_clear_caches', true) && (abst_get_admin_setting('ab_dont_clear_cache_on_update') !== '1')) {
+      if( apply_filters('abst_clear_caches', true) && (abst_get_admin_setting('ab_dont_clear_cache_on_update') !== '1') )
 
-        if (class_exists('FLBuilderModel')) {
+      {
+
+        if( class_exists('FLBuilderModel') ) 
+
+        {
 
           abst_log('clearing BB cache');
 
@@ -2750,208 +2804,255 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-        if (function_exists('sg_cachepress_purge_cache')) {
+        if (function_exists('sg_cachepress_purge_cache')){
 
           abst_log('clearing sg cache');
 
           sg_cachepress_purge_cache();
+
         }
 
+      
 
+        if(function_exists('nitropack_sdk_purge'))
 
-        if (function_exists('nitropack_sdk_purge')) {
+        {
 
           abst_log('clearing nitropack cache');
 
           nitropack_sdk_purge(NULL, NULL, "ABST: Clear after test update");
+
         }
 
+      
 
+        if(class_exists('WP_Optimize'))
 
-        if (class_exists('WP_Optimize')) {
+        {
 
           abst_log('clearing wp optimize cache');
 
           WP_Optimize()->get_page_cache()->purge();
+
         }
 
+    
 
+        if ( class_exists( '\FlyingPress\Purge' ) )
 
-        if (class_exists('\FlyingPress\Purge')) {
+        {
 
           abst_log('clearing flyingpress cache');
 
           \FlyingPress\Purge::purge_everything();
+
         }
 
 
 
-        if (class_exists('autoptimizeCache')) {
+        if ( class_exists( 'autoptimizeCache' ) )
+
+        {
 
           abst_log('clearing autoptimize cache');
 
           \autoptimizeCache::clearall();
+
         }
 
 
 
-        do_action('breeze_clear_all_cache');
+        do_action( 'breeze_clear_all_cache' );
 
 
 
-        if (class_exists('\WebSharks\CometCache\Classes\ApiBase')) {
+        if ( class_exists( '\WebSharks\CometCache\Classes\ApiBase' ) )
+
+        {
 
           abst_log('clearing comet cache');
 
           \WebSharks\CometCache\Classes\ApiBase::clear();
+
         }
 
+        
 
+        if ( class_exists( '\WebSharks\CometCache\Pro\Classes\ApiBase' ) )
 
-        if (class_exists('\WebSharks\CometCache\Pro\Classes\ApiBase')) {
+        {
 
           abst_log('clearing comet pro cache');
 
           \WebSharks\CometCache\Pro\Classes\ApiBase::clear();
+
         }
 
 
 
-        if (class_exists('\WPaaS\Cache') && function_exists('ccfm_godaddy_purge')) {
+        if ( class_exists( '\WPaaS\Cache' ) && function_exists( 'ccfm_godaddy_purge' ) ) {
 
           abst_log('clearing godaddy cache');
 
           ccfm_godaddy_purge();
+
         }
 
+      
 
+        if ( class_exists( '\Kinsta\Cache' ) && ! empty( $kinsta_cache ) ) 
 
-        if (class_exists('\Kinsta\Cache') && ! empty($kinsta_cache)) {
+        {
 
           abst_log('clearing kinsta cache');
 
           $kinsta_cache->kinsta_cache_purge->purge_complete_caches();
+
         }
 
-
+      
 
         if (class_exists('\LiteSpeed\Purge')) {
 
           abst_log('clearing litespeed cache');
 
           \LiteSpeed\Purge::purge_all();
+
         }
 
 
 
-        if (class_exists('RapidLoad_Cache') && method_exists('RapidLoad_Cache', 'clear_site_cache')) {
+        if ( class_exists( 'RapidLoad_Cache' ) && method_exists( 'RapidLoad_Cache', 'clear_site_cache' ) ) 
+
+        {
 
           abst_log('clearing rapidload cache');
 
           \RapidLoad_Cache::clear_site_cache();
+
         }
 
+    
 
-
-        if (class_exists('W3_Plugin_TotalCacheAdmin')) {
+        if ( class_exists( 'W3_Plugin_TotalCacheAdmin' ) ) {
 
           abst_log('clearing total cache');
 
-          $plugin = &w3_instance('W3_Plugin_TotalCacheAdmin');
+          $plugin = & w3_instance( 'W3_Plugin_TotalCacheAdmin' );
 
           $plugin->flush_all();
+
         }
 
 
 
-        if (function_exists('wp_cache_flush')) {
+        if ( function_exists( 'wp_cache_flush' ) ) 
+
+        {
 
           abst_log('clearing wp cache');
 
           wp_cache_flush();
+
         }
 
-
+        
 
         global $wp_fastest_cache;
 
-        if (! empty($wp_fastest_cache) && method_exists($wp_fastest_cache, 'deleteCache')) {
+        if ( ! empty( $wp_fastest_cache ) && method_exists( $wp_fastest_cache, 'deleteCache' ) )
+
+        {
 
           abst_log('clearing wp fastest cache');
 
-          $wp_fastest_cache->deleteCache(true);
+          $wp_fastest_cache->deleteCache( true );
+
         }
 
 
 
-        if (function_exists('wp_cache_clean_cache')) {
+        if ( function_exists( 'wp_cache_clean_cache' ) ) 
+
+        {
 
           abst_log('clearing wp cache clean cache');
 
           global $file_prefix;
 
-          wp_cache_clean_cache($file_prefix, true);
+          wp_cache_clean_cache( $file_prefix, true );
+
         }
 
+        
 
+        if ( function_exists( 'flush_wp_rocket' ) ) 
 
-        if (function_exists('flush_wp_rocket')) {
+        {
 
           abst_log('clearing wp rocket cache');
 
           flush_wp_rocket();
+
         }
 
+        
 
+        if ( function_exists( 'rocket_clean_domain' ) ) 
 
-        if (function_exists('rocket_clean_domain')) {
+        {
 
           abst_log('clearing wp rocket domain cache');
 
           rocket_clean_domain();
+
         }
 
 
 
         global $nginx_purger;
 
-        if (isset($nginx_purger) && method_exists($nginx_purger, 'purge_all')) {
+        if (  isset( $nginx_purger ) && method_exists( $nginx_purger, 'purge_all' ) ) {
 
           abst_log('purged nginx');
 
           $nginx_purger->purge_all();
+
         }
 
+      
 
+        if (  class_exists( 'WpeCommon' ) ) {
 
-        if (class_exists('WpeCommon')) {
-
-          if (method_exists('WpeCommon', 'purge_memcached'))
+          if ( method_exists( 'WpeCommon', 'purge_memcached' ) ) 
 
             \WpeCommon::purge_memcached();
 
-          if (method_exists('WpeCommon', 'clear_maxcdn_cache'))
+          if ( method_exists( 'WpeCommon', 'clear_maxcdn_cache' ) ) 
 
             \WpeCommon::clear_maxcdn_cache();
 
-          if (method_exists('WpeCommon', 'purge_varnish_cache'))
+          if ( method_exists( 'WpeCommon', 'purge_varnish_cache' ) ) 
 
             \WpeCommon::purge_varnish_cache();
 
           abst_log('clearing wpe cache');
-        }
-      } // end if clear cache is yes
+
+        }        
+
+
+
+      }// end if clear cache is yes
 
     }
 
 
 
+    
 
+    function add_experiment_meta_box() {
 
-    function add_experiment_meta_box()
-    {
-
-
+          
 
       // one meta box style
 
@@ -2961,14 +3062,15 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         'Split Test',
 
-        array($this, 'all_boxes'),
+        array($this,'all_boxes'),
 
         'bt_experiments'
 
       );
+
     }
 
-
+    
 
     //combines all the sections into one output;
 
@@ -2976,8 +3078,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
     //get the output of all boxes in an iframe
 
-    function get_all_boxes($post)
-    {
+    function get_all_boxes($post){
 
       ob_start();
 
@@ -2988,18 +3089,18 @@ if (! class_exists('Bt_Ab_Tests')) {
       ob_end_clean();
 
       return $output;
+
     }
 
 
 
-    function create_new_on_page_test()
-    {
+    function create_new_on_page_test(){
 
       // ONLY FOR LOGGD IN USERS
 
       // if user has edittor role, then allow to create experiment
 
-      if (!current_user_can('edit_posts'))
+      if(!current_user_can('edit_posts'))
 
         wp_die('You do not have the correct permissions to create a test.');
 
@@ -3011,19 +3112,21 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //sanitize it!
 
-      if (empty($data))
+      if(empty($data))
 
         wp_die('No data received.');
 
 
 
-      $expects_json = !empty($data['abst_magic_mode']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos(sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT'])), 'application/json') !== false);
+      $expects_json = !empty($data['abst_magic_mode']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ) ), 'application/json') !== false);
 
 
 
       $createdNew = false;
 
-      if ($data['post_id'] == 'new') {
+      if($data['post_id'] == 'new')
+
+      {
 
         $my_post = array(
 
@@ -3035,14 +3138,19 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           'post_date'    => current_time('mysql'),
 
-          'post_date_gmt' => current_time('mysql', 1),
+          'post_date_gmt'=> current_time('mysql', 1),
 
         );
 
-        $data['post_id'] = wp_insert_post($my_post);
+        $data['post_id'] = wp_insert_post( $my_post );
 
         $createdNew = true;
-      } else {
+
+      }
+
+      else
+
+      {
 
         $my_post = array(
 
@@ -3052,16 +3160,19 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         );
 
-        wp_update_post($my_post);
+        wp_update_post( $my_post );
+
       }
 
+      
+
+      $this->save_test_config( $data['post_id'], $data);
 
 
-      $this->save_test_config($data['post_id'], $data);
 
+      if($expects_json)
 
-
-      if ($expects_json) {
+      {
 
         wp_send_json([
 
@@ -3074,14 +3185,22 @@ if (! class_exists('Bt_Ab_Tests')) {
           'updated' => !$createdNew,
 
         ]);
+
       }
 
 
 
-      if ($createdNew) {
+      if($createdNew)
+
+      {
 
         echo json_encode($data);
-      } else {
+
+      }
+
+      else
+
+      {
 
         echo "<body style='background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;'>";
 
@@ -3095,13 +3214,13 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         echo "<h1 style='font-size: 24px; font-weight: 600; color: #1e293b; margin: 0 0 8px 0;'>Test Created!</h1>";
 
-        echo "<p style='font-size: 16px; color: #64748b; margin: 0 0 4px 0;'>" . esc_html($data['post_title']) . "</p>";
+        echo "<p style='font-size: 16px; color: #64748b; margin: 0 0 4px 0;'>".esc_html($data['post_title'])."</p>";
 
         echo "<p style='font-size: 13px; color: #94a3b8; margin: 0;'>Closing automatically...</p>";
 
         echo "</div>";
 
-
+      
 
         echo '<script>
 
@@ -3119,9 +3238,9 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           window.parent.postMessage({
 
-            "id":"' . esc_html($data['post_id']) . '",
+            "id":"'.esc_html($data['post_id']).'",
 
-            "name":"' . esc_html($data['post_title']) . '"
+            "name":"'.esc_html($data['post_title']).'"
 
         },"*");
 
@@ -3140,21 +3259,26 @@ if (! class_exists('Bt_Ab_Tests')) {
         })
 
         </script></body>';
+
       }
 
 
 
       wp_die();
+
     }
 
 
 
-    function magic_test_render_goals_inputs() {}
+    function magic_test_render_goals_inputs(){
+
+      
+
+    }
 
 
 
-    function save_variation_label()
-    {
+    function save_variation_label(){
 
 
 
@@ -3164,19 +3288,21 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      $pid = isset($_POST['pid']) ? intval(wp_unslash($_POST['pid'])) : 0;
+      $pid = isset( $_POST['pid'] ) ? intval( wp_unslash( $_POST['pid'] ) ) : 0;
 
-      $variation_name = isset($_POST['variation_name']) ? sanitize_text_field(wp_unslash($_POST['variation_name'])) : '';
+      $variation_name = isset( $_POST['variation_name'] ) ? sanitize_text_field( wp_unslash( $_POST['variation_name'] ) ) : '';
 
-      $variation_id = isset($_POST['variation_id']) ? sanitize_text_field(wp_unslash($_POST['variation_id'])) : '';
+      $variation_id = isset( $_POST['variation_id'] ) ? sanitize_text_field( wp_unslash( $_POST['variation_id'] ) ) : '';
 
       //sanitized
 
-
+    
 
       //if test is experiment
 
-      if (get_post_type($pid) == 'bt_experiments') {
+      if(get_post_type($pid) == 'bt_experiments')
+
+      {
 
 
 
@@ -3192,42 +3318,54 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         //update variation_name meta
 
-        if ($variation_meta === false || !is_array($variation_meta)) {
+        if($variation_meta === false || !is_array($variation_meta))
+
+        {
 
           $variation_meta = array();
+
         }
 
-
+        
 
         // Set the label for this variation ID
 
         $variation_meta[$variation_id]['label'] = $variation_name;
 
-
+        
 
         update_post_meta($pid, 'variation_meta', $variation_meta);
 
         abst_log('variation label saved: ' . $variation_name . ' for variation id ' . $variation_id . ' for test id ' . $pid);
 
         echo json_encode(array('success' => true, 'variation_meta' => $variation_meta));
-      } else {
+
+      }
+
+      else
+
+      {
 
         echo json_encode(array('success' => false, 'error' => 'Invalid post type'));
+
       }
 
       wp_die();
+
     }
 
 
 
     // wp ajax call loaded into iframe to create form to create a new on page test
 
-    function  on_page_test_create()
-    {
+    function  on_page_test_create() {
 
-      if (!current_user_can('edit_posts')) {
+      if (!current_user_can('edit_posts'))
+
+      {
 
         wp_die('You do not have the correct permissions to create a test.');
+
       }
 
 
@@ -4270,7 +4408,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       ));
 
-
+    
 
       if (is_wp_error($post_id)) {
 
@@ -4279,6 +4417,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo '</div></div></form></body></html>';
 
         wp_die();
+
       }
 
 
@@ -4291,7 +4430,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo '<div class="conversion-goal">';
 
-      $this->bt_experiments_inner_custom_box($post); // conversions / goals area
+      $this->bt_experiments_inner_custom_box($post);// conversions / goals area
 
       echo '</div>';
 
@@ -4299,29 +4438,29 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
+      
 
-
-      if (abst_user_level()  == 'agency') {
+      if( abst_user_level()  == 'agency'){
 
         $max_goals = 10;
 
         echo "<div class='show_goals'>";
 
-        $subgoals = range(1, $max_goals);
+        $subgoals = range(1,$max_goals);
+
+        
+
+        foreach($subgoals as $i){
 
 
 
-        foreach ($subgoals as $i) {
-
-
-
-          echo "<div class='subgoal hidden test-goal-" . esc_attr($i) . "'>";
+          echo "<div class='subgoal hidden test-goal-".esc_attr($i)."'>";
 
           echo "<span class='close-goal'>x</span>";
 
-          echo "<h4>Sub Goal " . esc_html($i) . "</h4>";
+          echo "<h4>Sub Goal ".esc_html($i)."</h4>";
 
-          echo "<select class='goal-type' name='goal[" . esc_attr($i) . "]'>";
+          echo "<select class='goal-type' name='goal[".esc_attr($i)."]'>";
 
           echo "<option value=''>Select Goal Trigger...</option>";
 
@@ -4347,40 +4486,56 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           if (function_exists('abst_get_form_optgroups')) {
 
-            echo wp_kses_post(abst_get_form_optgroups());
+            echo wp_kses_post( abst_get_form_optgroups() );
+
           }
 
-
+          
 
           echo "</select>";
 
-          echo "<label class='goal-value-label' for='goal_value[" . esc_attr($i) . "]'>Goal Value</label>";
+          echo "<label class='goal-value-label' for='goal_value[".esc_attr($i)."]'>Goal Value</label>";
 
-          echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr($i) . "]' placeholder='' />";
+          echo "<input class='goal-value' type='text' name='goal_value[".esc_attr($i)."]' placeholder='' />";
 
-          echo "<select class='goal-page' name='goal_page[" . esc_attr($i) . "]'>";
+          echo "<select class='goal-page' name='goal_page[".esc_attr($i)."]'>";
 
           echo "</select></div>";
+
+          
+
         }
 
         echo "<button class='button button-small add-goal'>+ Add Goal</button>";
 
         echo "</div>";
-      } else {
+
+      }
+
+      else
+
+      {
 
         echo "<div class='show_goals'><div class='subgoal upgrade'> <h4>Upgrade to add Sub Goals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance.</p><p>Upgrade also includes support for more sites, custom conversion values (order value), analytics integrations, and more.</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
 
         echo "<p><a class='button button-small' href='https://absplittest.com/pricing' target='_blank'>Upgrade to unlock Sub Goals</a></p></div>";
+
       }
 
       echo "</div>";
 
-      if ($thompson_sampling_enabled) {
+      if($thompson_sampling_enabled) {
 
         echo '<div class="show_conversion_style"><h3>Winning Mode:</h3><select id="conversion_style" name="conversion_style"><option value="bayesian">Standard - Bayesian</option><option value="thompson">Dynamic - Multi Armed Bandit</option></select></div>';
-      } else {
 
-        echo '<input type="hidden"  name="conversion_style" value="bayesian"/>';
+      }
+
+      else
+
+      {
+
+          echo '<input type="hidden"  name="conversion_style" value="bayesian"/>';
+
       }
 
 
@@ -4397,16 +4552,17 @@ if (! class_exists('Bt_Ab_Tests')) {
       // End wp ajax call
 
       wp_die();
+
     }
 
 
 
-    function get_magic_scope_summary($magic_definition)
-    {
+    function get_magic_scope_summary($magic_definition) {
 
       if (empty($magic_definition)) {
 
         return '';
+
       }
 
 
@@ -4416,6 +4572,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!is_array($decoded) || empty($decoded)) {
 
         return '';
+
       }
 
 
@@ -4429,6 +4586,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (!is_array($item) || empty($item['scope']) || !is_array($item['scope'])) {
 
           continue;
+
         }
 
 
@@ -4444,6 +4602,7 @@ if (! class_exists('Bt_Ab_Tests')) {
           if ((string) $scope['page_id'] === '*') {
 
             $label = 'All pages';
+
           } else {
 
             $page_ids = is_array($scope['page_id']) ? $scope['page_id'] : [$scope['page_id']];
@@ -4455,6 +4614,7 @@ if (! class_exists('Bt_Ab_Tests')) {
               if (count($page_ids) > 1) {
 
                 $label = count($page_ids) . ' specific pages';
+
               } else {
 
                 $page_id = $page_ids[0];
@@ -4462,15 +4622,21 @@ if (! class_exists('Bt_Ab_Tests')) {
                 if ((int) get_option('page_on_front') === $page_id) {
 
                   $label = 'Home page';
+
                 } else {
 
                   $page_title = get_the_title($page_id);
 
                   $label = !empty($page_title) ? $page_title : 'Page ID ' . $page_id;
+
                 }
+
               }
+
             }
+
           }
+
         }
 
 
@@ -4482,10 +4648,13 @@ if (! class_exists('Bt_Ab_Tests')) {
           if ($scope_url === '*') {
 
             $label = 'All pages';
+
           } elseif ($scope_url !== '') {
 
             $label = 'URL contains "' . $scope_url . '"';
+
           }
+
         }
 
 
@@ -4493,7 +4662,9 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (!empty($label)) {
 
           $labels[] = $label;
+
         }
+
       }
 
 
@@ -4505,6 +4676,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (empty($labels)) {
 
         return '';
+
       }
 
 
@@ -4512,17 +4684,18 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (count($labels) === 1) {
 
         return $labels[0];
+
       }
 
 
 
       return 'Mixed scope (' . count($labels) . ' rules)';
+
     }
 
 
 
-    function get_magic_edit_url($magic_definition, $fallback_scope_hint = '')
-    {
+    function get_magic_edit_url($magic_definition, $fallback_scope_hint = '') {
 
       $target_url = get_home_url();
 
@@ -4541,6 +4714,7 @@ if (! class_exists('Bt_Ab_Tests')) {
             if (!is_array($item) || empty($item['scope']) || !is_array($item['scope'])) {
 
               continue;
+
             }
 
 
@@ -4566,9 +4740,13 @@ if (! class_exists('Bt_Ab_Tests')) {
                     $target_url = $permalink;
 
                     break 2;
+
                   }
+
                 }
+
               }
+
             }
 
 
@@ -4580,6 +4758,7 @@ if (! class_exists('Bt_Ab_Tests')) {
               if ($scope_url === '' || $scope_url === '*') {
 
                 continue;
+
               }
 
 
@@ -4587,15 +4766,21 @@ if (! class_exists('Bt_Ab_Tests')) {
               if (preg_match('#^https?://#i', $scope_url)) {
 
                 $target_url = $scope_url;
+
               } else {
 
                 $target_url = home_url('/' . ltrim($scope_url, '/'));
+
               }
 
               break;
+
             }
+
           }
+
         }
+
       } else {
 
         $scope_hint = trim((string) $fallback_scope_hint);
@@ -4605,9 +4790,11 @@ if (! class_exists('Bt_Ab_Tests')) {
           if (preg_match('#^https?://#i', $scope_hint)) {
 
             $target_url = $scope_hint;
+
           } elseif ($scope_hint[0] === '/') {
 
             $target_url = home_url($scope_hint);
+
           } else {
 
             $slug_candidate = sanitize_title($scope_hint);
@@ -4623,29 +4810,37 @@ if (! class_exists('Bt_Ab_Tests')) {
                 if (!empty($permalink)) {
 
                   $target_url = $permalink;
+
                 }
+
               } elseif (preg_match('#^[a-z0-9/_-]+$#i', $scope_hint)) {
 
                 $target_url = home_url('/' . ltrim($scope_hint, '/'));
+
               }
+
             }
+
           }
+
         }
+
       }
 
 
 
       return add_query_arg('abmagic', '1', $target_url);
+
     }
 
 
 
-    function get_magic_variation_count($magic_definition)
-    {
+    function get_magic_variation_count($magic_definition) {
 
       if (empty($magic_definition)) {
 
         return 0;
+
       }
 
 
@@ -4655,6 +4850,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!is_array($decoded) || empty($decoded)) {
 
         return 0;
+
       }
 
 
@@ -4666,6 +4862,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (!is_array($item) || empty($item['variations']) || !is_array($item['variations'])) {
 
           continue;
+
         }
 
 
@@ -4675,22 +4872,25 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($count > $max_variations) {
 
           $max_variations = $count;
+
         }
+
       }
 
 
 
       return $max_variations;
+
     }
 
 
 
-    function format_status_lifecycle_date($timestamp, $include_time = false)
-    {
+    function format_status_lifecycle_date($timestamp, $include_time = false) {
 
       if (empty($timestamp)) {
 
         return '-';
+
       }
 
 
@@ -4698,16 +4898,17 @@ if (! class_exists('Bt_Ab_Tests')) {
       $format = $include_time ? 'M j, Y \a\t H:i' : 'M j, Y';
 
       return wp_date($format, intval($timestamp));
+
     }
 
 
 
-    function get_status_lifecycle_variation_count($post, $stats = null)
-    {
+    function get_status_lifecycle_variation_count($post, $stats = null) {
 
       if (is_array($stats) && !empty($stats['variations']) && is_array($stats['variations'])) {
 
         return count($stats['variations']);
+
       }
 
 
@@ -4721,6 +4922,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if ($test_type === 'magic') {
 
         return max(0, intval($this->get_magic_variation_count(get_post_meta($pid, 'magic_definition', true))));
+
       }
 
 
@@ -4730,6 +4932,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         $page_variations = get_post_meta($pid, 'page_variations', true);
 
         return is_array($page_variations) ? count($page_variations) : 0;
+
       }
 
 
@@ -4737,6 +4940,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if ($test_type === 'css_test') {
 
         return max(0, intval(get_post_meta($pid, 'css_test_variations', true)));
+
       }
 
 
@@ -4744,16 +4948,17 @@ if (! class_exists('Bt_Ab_Tests')) {
       $variation_meta = get_post_meta($pid, 'variation_meta', true);
 
       return is_array($variation_meta) ? count($variation_meta) : 0;
+
     }
 
 
 
-    function get_status_lifecycle_total_visits($stats)
-    {
+    function get_status_lifecycle_total_visits($stats) {
 
       if (!is_array($stats) || empty($stats['variations']) || !is_array($stats['variations'])) {
 
         return 0;
+
       }
 
 
@@ -4763,21 +4968,23 @@ if (! class_exists('Bt_Ab_Tests')) {
       foreach ($stats['variations'] as $variation) {
 
         $total_visits += intval($variation['visits'] ?? 0);
+
       }
 
 
 
       return $total_visits;
+
     }
 
 
 
-    function get_status_lifecycle_winner_summary($post, $stats)
-    {
+    function get_status_lifecycle_winner_summary($post, $stats) {
 
       if (!is_array($stats)) {
 
         return '-';
+
       }
 
 
@@ -4787,6 +4994,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (empty($winner_key)) {
 
         return '-';
+
       }
 
 
@@ -4808,27 +5016,31 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($uplift > 0) {
 
           return $winner_label . ' +' . $uplift . '%';
+
         }
 
         if ($uplift < 0) {
 
           return $winner_label . ' ' . $uplift . '%';
+
         }
+
       }
 
 
 
       return $winner_label;
+
     }
 
 
 
-    function build_status_lifecycle_panel($post)
-    {
+    function build_status_lifecycle_panel($post) {
 
       if (!$post || $post->post_type !== 'bt_experiments') {
 
         return null;
+
       }
 
 
@@ -4838,6 +5050,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!$status || $status === 'auto-draft') {
 
         $status = 'draft';
+
       }
 
 
@@ -4903,7 +5116,9 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($trash_link) {
 
           $panel['footer_links'][] = ['label' => 'Delete', 'href' => $trash_link, 'class' => 'submitdelete deletion'];
+
         }
+
       } elseif ($status === 'publish') {
 
         $panel['rows'] = [
@@ -4933,7 +5148,9 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($trash_link) {
 
           $panel['footer_links'][] = ['label' => 'Cancel test', 'href' => $trash_link, 'class' => 'submitdelete deletion'];
+
         }
+
       } elseif ($status === 'pending') {
 
         $panel['rows'] = [
@@ -4959,7 +5176,9 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($trash_link) {
 
           $panel['footer_links'][] = ['label' => 'Cancel test', 'href' => $trash_link, 'class' => 'submitdelete deletion'];
+
         }
+
       } elseif ($status === 'complete') {
 
         $panel['rows'] = [
@@ -4975,6 +5194,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($confidence > 0) {
 
           $panel['header_badge'] = $confidence . '% confidence';
+
         }
 
         $panel['primary_action'] = ['label' => 'View Results', 'action' => 'view-results', 'class' => 'button button-primary button-large'];
@@ -4982,7 +5202,9 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($trash_link) {
 
           $panel['footer_links'][] = ['label' => 'Archive', 'href' => $trash_link, 'class' => 'submitdelete deletion'];
+
         }
+
       } else {
 
         $variant_value = $variation_count > 0 ? number_format_i18n($variation_count) . ' configured' : 'Not configured yet';
@@ -5004,24 +5226,27 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($trash_link) {
 
           $panel['footer_links'][] = ['label' => 'Delete draft', 'href' => $trash_link, 'class' => 'submitdelete deletion'];
+
         }
+
       }
 
 
 
       return $panel;
+
     }
 
 
 
-    function render_status_lifecycle_panel($post)
-    {
+    function render_status_lifecycle_panel($post) {
 
       $panel = $this->build_status_lifecycle_panel($post);
 
       if (empty($panel)) {
 
         return;
+
       }
 
 
@@ -5037,6 +5262,7 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (!empty($panel['header_badge'])) {
 
         echo '<span class="abst-status-lifecycle__badge">' . esc_html($panel['header_badge']) . '</span>';
+
       }
 
       echo '</div>';
@@ -5056,9 +5282,11 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($row['value'] !== '') {
 
           echo '<strong class="abst-status-lifecycle__value">' . esc_html($row['value']) . '</strong>';
+
         }
 
         echo '</div>';
+
       }
 
 
@@ -5078,6 +5306,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo '</div>';
 
         echo '</div>';
+
       }
 
 
@@ -5099,6 +5328,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($render_primary_with_secondary) {
 
           $secondary_row_class .= ' abst-status-lifecycle__actions-row--split';
+
         }
 
         echo '<div class="' . esc_attr($secondary_row_class) . '">';
@@ -5106,14 +5336,17 @@ if (! class_exists('Bt_Ab_Tests')) {
         foreach ($panel['secondary_actions'] as $action) {
 
           echo '<button type="button" class="' . esc_attr($action['class']) . ' abst-lifecycle-action" data-action="' . esc_attr($action['action']) . '">' . esc_html($action['label']) . '</button>';
+
         }
 
         if ($render_primary_with_secondary) {
 
           echo '<button type="button" class="' . esc_attr($panel['primary_action']['class']) . ' abst-lifecycle-action" data-action="' . esc_attr($panel['primary_action']['action']) . '">' . esc_html($panel['primary_action']['label']) . '</button>';
+
         }
 
         echo '</div>';
+
       }
 
 
@@ -5125,12 +5358,15 @@ if (! class_exists('Bt_Ab_Tests')) {
         if (!empty($panel['primary_action']['href'])) {
 
           echo '<a href="' . esc_url($panel['primary_action']['href']) . '" target="_blank" class="' . esc_attr($panel['primary_action']['class']) . '">' . esc_html($panel['primary_action']['label']) . '</a>';
+
         } else {
 
           echo '<button type="button" class="' . esc_attr($panel['primary_action']['class']) . ' abst-lifecycle-action" data-action="' . esc_attr($panel['primary_action']['action']) . '">' . esc_html($panel['primary_action']['label']) . '</button>';
+
         }
 
         echo '</div>';
+
       }
 
 
@@ -5142,9 +5378,11 @@ if (! class_exists('Bt_Ab_Tests')) {
         foreach ($panel['footer_links'] as $link) {
 
           echo '<a class="' . esc_attr($link['class']) . '" href="' . esc_url($link['href']) . '">' . esc_html($link['label']) . '</a>';
+
         }
 
         echo '</div>';
+
       }
 
 
@@ -5154,12 +5392,12 @@ if (! class_exists('Bt_Ab_Tests')) {
       echo '</div>';
 
       echo '</div>';
+
     }
 
 
 
-    function all_boxes($post)
-    {
+    function all_boxes($post){
 
 
 
@@ -5171,23 +5409,26 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $graphicon = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg>';
 
-      $webhook_url = get_post_meta($pid, 'webhook_url', true);
+      $webhook_url = get_post_meta($pid,'webhook_url',true); 
 
-      $magic_definition = get_post_meta($pid, 'magic_definition', true);
+      $magic_definition = get_post_meta($pid,'magic_definition',true); 
 
-      if (abst_user_level() == 'free') {
+      if( abst_user_level() == 'free' )
+
+      {
 
         //if post status is publish
 
         $active_tests = wp_count_posts('bt_experiments');
 
-        if ($active_tests->publish > 0 && (get_post_status($pid) !== 'publish'))
+        if($active_tests->publish > 0 && (get_post_status($pid) !== 'publish'))
 
           echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p></div>";
 
-        if ($active_tests->publish > 1 && (get_post_status($pid) == 'publish'))
+        if($active_tests->publish > 1 && (get_post_status($pid) == 'publish'))
 
           echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p></div>";
+
       }
 
       echo "<div class='ab-layout-wrapper'>";
@@ -5214,7 +5455,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $show_idea_tab = false;
 
-      if ($show_idea_tab)
+      if($show_idea_tab)
 
         echo "<button class='ab-tab-idea-button ab-nav-pill' href='#idea'><svg class='w-6 h-6' fill='currentColor' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><path d='M4 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V9.414A2 2 0 0013.414 8L9 3.586A2 2 0 007.586 3H4zm5 1.5L13.5 9H10a1 1 0 01-1-1V4.5zM6 11a1 1 0 011-1h4a1 1 0 110 2H7a1 1 0 01-1-1zm1 2a1 1 0 100 2h6a1 1 0 100-2H7z'></path></svg> Idea</button>";
 
@@ -5222,11 +5463,11 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "<button class='ab-tab-results-button ab-nav-pill' href='#results'><svg class='w-6 h-6' fill='currentColor' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><path d='M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z'></path></svg> Results</button>";
 
-
+      
 
       // Hook for adding additional navigation buttons
 
-
+      
 
       echo "</div>";
 
@@ -5240,7 +5481,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "</div></div><div id='magic_settings' class='magic_definition'><h3 class='magic_definition'>Magic Test</h3>";
 
-      if (!empty($magic_definition)) {
+      if(!empty($magic_definition)) {
 
         $scope_summary = $this->get_magic_scope_summary($magic_definition);
 
@@ -5285,6 +5526,7 @@ if (! class_exists('Bt_Ab_Tests')) {
           echo "<details class='abst-magic-advanced'><summary>View advanced config</summary><p>Magic test configuration:</p><textarea id='magic_definition' name='magic_definition' style='width:100%' rows='12' class='code'>" . esc_textarea($formatted_json) . "</textarea></details>";
 
           echo "</div>";
+
         } else {
 
           // If not valid JSON, display as is with a warning
@@ -5292,7 +5534,9 @@ if (! class_exists('Bt_Ab_Tests')) {
           echo "<p id='magicjsonerror'>Warning: The magic test configuration contains invalid JSON. Please review and correct it.</p>"; // this on page triggers a cleanup function
 
           echo "<details class='abst-magic-advanced' open><summary>View advanced config</summary><p>Magic test configuration (raw):</p><textarea id='magic_definition' name='magic_definition' style='width:100%' rows='12' class='code'>" . esc_textarea($magic_definition) . "</textarea></details>";
+
         }
+
       } else {
 
         $return_to_url = admin_url('post.php?post=' . $pid . '&action=edit');
@@ -5305,18 +5549,20 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         ], $this->get_magic_edit_url('', $idea_page_flow));
 
-        echo "<p>To create a magic test, visit the page you want to test then click on " . 'Split Test' . " > New Magic Test in the Admin Bar.</p>";
+        echo "<p>To create a magic test, visit the page you want to test then click on ". 'Split Test' ." > New Magic Test in the Admin Bar.</p>";
 
         if (!empty($idea_page_flow)) {
 
           echo "<p class='description'>Suggested page/flow: <strong>" . esc_html($idea_page_flow) . "</strong></p>";
+
         }
 
         echo "<p><a href='" . esc_url($start_magic_url) . "' class='button button-primary'>Launch Magic Setup</a></p>";
 
-        echo "<p><a href='" . esc_url(get_home_url()) . "' class='button'>Go to your home page</a></p>";
+        echo "<p><a href='".esc_url(get_home_url())."' class='button'>Go to your home page</a></p>";
 
         echo "<p><img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAecAAACPCAYAAADA3RPXAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAByvSURBVHhe7Z17bFTXncf93+4faFWp0qpaqVW1q24jbZVWW6WkVamyUViltJulpaXZbJJSorbQBAykBAIYYjAYjDHEdmxjjG1sXuEVwvv9SHi0JAG6CU2UtEooiCBQSkIUAmna3+p7xnfm3N99eB537Dtzvx/pKzP3PXMP9zPn3HPPVFRW1QjDMAzDMPFJxef/5cvCMAxTLvnK1+9kSjz6nCYxlDPDMGUVfaFnSi/6nCYxlDPDMGUVfaFnSi/6nCYxlDPDMGUVfaFnSi/6nCYxlDPDMGUVfaFnSi/6nCYxlDPDMGUVfaFnSi/6nCYxlDPDMGUVfaFnSi/6nCYxvnIeP2WSnDv/hly6fnnAg/1i//qYGIZhsom+0DOlF31OkxhfOQ+WmJ1g//qYosrd4xbI4s510tHTJTPHeuczDFPa0Rd6pvSiz2kS4ytnLcvBiD6mgjPsQams75KOHog5ldpKn+WYyPONUeOlsrpBahu7pLWtRWrr62TaY2Nk2B3eZeOeux9rkObuTBkKTXeP1E75vmcbTHGjL/S55hePTZbGlg7f/OThRzzLM9FHn9MkJhFyztSWrbRUy30+yzIRZtiD8viyHq+0nHS2yMxxpSSvCTIvWzE76W6QsZ7txC1TpTZ9zI3yK8/80oq+0Oeab939n0bEU2fMMTJG8O/uNRvMPL08E330OU1iylzO35ex1SukVV8w0aT90FCf5Us/nWc+kPfP9HimD3welGkt6nPv7JHWDi3rUqpd2hLLNqUgO8pZR9eS8W9M08vFP73y8JY/yMjRzr8vycMT9TLxiz6nSUxucn69Rr40fIj8YL97+ttnmqRy7W55Qy9fQPQx5Zw7xsi0Zi2CVJqrx8jtevnQ9Mjp9z+Q99M5K52eZbIPBHrhwFzP9PLJUPnGsKFy95RG88WotXmB/HLUXZn5d/xIxla3WF+aWuTxEXob/aXvnKgvIrMOXIzsPHlTfDnf893vS3VNrSxYVC81tXUy6if/61km+kQl57my78IH8v6FgzJLzcN5Gagyry/0+SRKOQ+d9weZsuWU3OM7/VImvXtkqM/6Tu5pspZNC7e/2HJWmXgqcJ+eY8vyGP2C4x4/r9YzPSz6nCYxkcj5aPtXpWL0JNmuly8g+phyyh1jZGabvkj2pX2BjM7lXmfPWXOhP91jTas6KKcLuNCUu5yNlDsb5Vcjhsro8RNkRMDn7cjbnJe6yVl/YUoJ+Kzsw1+XnOfKvgOZ19G3IhRXzncO+w+ZNWeuPDz25+Y1/kLUELZeNtpEKeeLcuGCt3yXopx1s3Z+coYcT8nDTd4aKwRoSytMYkbMTb2ZaaP3yMisasD5yTmTWhnZ6z32XBL2voKiz2kSE4mcixF9TLlkdLW741cmuTZno3Z2UfZV6en2fHftDELIiNyucWM7fTULn5qdu8Zn77PvGA6kviSkvyj0fWnQXxzS4q86KBdctX13jcaIq296lBdNl3Db+vsidK9ULutbNo97s+YzC5MvPqOw+TmnuHJGLXn6rDlG0nitZV28RCvnfVXe/zceObvKZ9//A0yza92mjFv/v7I8n/pCn08gYtxjtpOXnCFASNX5a83Tcja1VbWMEwguSJAp+fUaiXpr1bpZO/VvXTMO2ravnEfvkfHpde0WgVSzeeYYUutm9uNtPQiKPqdJTCRy7q0eIhWP1Mhvru+Wn40cIl9oPd4377w88+QQqXiyXd6+flnO7vmZfOW/hkjF8CHyd49Mkt7zPvsoVM53TA7stLN4eo41EFwMfJroMgmTc0rErhq3tYzrQqUvQubC5bxWzbeOlF2vM+t6tp3eRuZi6ZZa8HHmmtsfWiDN6jNvba72EfQ9MnZBl7n/3GqdK/O6rU7Gfkcv75/+5Oz+ohRFiitnSHjq9FmuaXj9aOUUz7L5p5jvwZGz9/+OW85K3ullrfXNOmflgvU62/OpL/T5RIs5XzlnpOqtwbrlDJEF1HARyD2gBpxq7rbmmWUdEfrLOb1czjXnoG3o5TJhzTm/RCzny3K09TapeOAJOYp5V9plxL2flZ8duyyXToyTfxj1gHRAyNfelI45n01L27OfQuT8SJ1PB7B10lo/Ve7Wy/aXfr+ph8k5SJR6ur8cM9vRtZDw1377dE/T6+sLZ575zgSZ06Y6fHWnXjcvmCDf1Mv79gnIrWXDV84BLQrRpJhi+7KRsJYzppWknFW5s8uY97xl/h9l1sG2Urcu7NfZ9CHQF/pcg2ZsLWYnOT1KZWqYmdqilpSuvU4JqDW7t6drxt7tuoUarZy9tftUsz3eo/c4UgmaHhZ9TpOYyOV86XdPyBeGf1Vmv35ZLu1/QCpGjpMN1y5Lb02qxuyKs45P9DFlncpGz8WleeHk3MWMFFRzRjLN2Lb8vHL2Np1nLmZapuGvPXL2fMHoq4nraMnlHetxo8aq8M/d1Tcg917b3ou8O/gsws9frimm2Mqs5mxeZ8qmR866/Dll2CmvaD3Sf7M8l/pCn0vwqJRdU9ZyxrRsH6fyiEzJUDdr6/mB6ZO0I0w/+fnX2COSs/2FwvVlIdOMne299KDoc5rERC/n66/K/EeHyJdWHjfTnSZuI+eJTXJWbzMg+phCc8eP5KeVM6Sycrzcd88YebyhS1rbV0htTZX81O4lnHO0CHX6k7MTd+3YK2fvOtHUnL3H5z8tygyVX9Y5F/UQ4aLH9vgxcvuIqVLbGbJcSPqTc/TvtbjPOUPOuMdc+vecrWl9X3A7lZyDW2r6zlnPWav8p14Hr+OOvtDnknmLlqRFjNcYkEQLGsvo9bzR91szsUXnllamFurdnop1D9srP7uJPHo59y9a9zre4+s/+pwmMXnJecTmV+Xs+VTeuKLlfFnOrh0mFROHy7fv7atB43Gr7aOkYvg/yQ92vWqast9+vUkqN7/k3UeuctY9s9EJSS9TQFLf8tUFJ91bW4m1r0lVixaxpalrt6l9hN1zDpaxfq33E3Qs4VIrMCOqZHH6Yt8jS6sny33DMvO/MWqyzDRN2ikp3z7srqx7atvxyLnqoOyz3q+Zn2VtK9vkNkJYl8x7LPsvHVrGWtbFSxHl7JQ3u/XIlG/vcvY23Pea3a/7i77QZxstYqeHtpYzgmX1+q4EiM+uTXtEF7COkV2Te7rdezt1zzkjdbOP9HailXOq1u5/79uOLWTKOb/kJWe7afpLK1/yyPnS+Sb5NuY/Wm/VlN+U7StHyT9+r69D2EPDZdqJ89595Cjn+2avUBfFLpn5oHe5gmLdxzTx9CjNNA1nhJhp0vY0G6d7qmaE7G7qs2t74TLWr9Ny1sfsOm51bIEXyvzj6rXdF9Phy2ekth/6rJ9NPHI2n4Xf+y1WvE3EuT9D7w56bOP5ZjznPDCPUSHFlbNzXjy3W+xzZZ1Hz5cq3WGyn+gLfTb57n//2CNgXVu270VD2lhHb8dJoJAsuXmbiENqzaaTl7Ws1Vye2tceq6e07kEdIGerdu/XkctexjXf91hUS4F67Ct1rzzk/anoc5rE5CbnAYw+Jv/8XOZ0qIt9MeTM5BXfYVNtWS+rkh9aNerSi1vOhYp58BKVnOMRfaHPJnZztl+cjmB2TTqf3tvFSOAXgRKOPqdJTEnL+e5ft3gu+B3NVRwzO1a5S374WLXMqW+UxW090tzYKPOqZxTYFyAuyUitdMWMJFvOYb2zbRH7CTys9jxQoZzLM75yLoWfjBw+sUGa7VpZZ5fUzg4ejYphok9KaqUt5vKLvtD3l/6atMOS06NVRQrlXJ7xlfP4KZMGTdDYL/avj4lh4pepMpNijl30hb6/4NEodPBCzRg15GzTb6cwJu/oc5rE+MqZYRimVKMv9EzpRZ/TJIZyZhimrKIv9EzpRZ/TJIZyZhimrKIv9EzpRZ/TJIZyZhimrKIv9EzpRZ/TJIZyZhimrKIv9EzpRZ/TJIZyZhimrKIv9EzpRZ/TJIZyZhimrIKL+7/9+1CmhPP5f/7X0opPOSw0FUIIISXM3/72N5O//vWv8umnn3pqYQwzkEEZRFl0ymW+UM6EkJLGEfNf/vIXuXXrludiyTADGZRBlEVH0PlCORNCSha7xoyL4o0bNzwXS4YZyKAMoizaNeh8oJwJISWLI+dPPvlEPv74Y/nwww89F0uGGcigDKIsokxSzoSQRIILn1Nr/uijj+TatWueiyXDDGRQBlEWndoz5UwISRR2k/bNmzdNjeW9997zXCwZZiCDMoiyiDJZSNM25UwIKUnsjmBoRrx+/bpcvXrVc7FkmIEMyiDKIspkIR3DKGdCSEniJ+crV654LpYMM5BBGaScCSGJRcv5gw8+oJyZQQ/KIMoi5UwISSSUMxPHUM6EkERDOTNxDOVMCEk0lDMTx1DOhJBEQzkzcQzlTAhJNJQzE8dQzoSQREM5h+d/5q6XX3a8Il+/a4RnHlO8UM6EkERTqJwhLcjLT2AQG6LXiSL3TVwsU7ZcMn/1PAT7nbD2Tfnm9x7wzCtWnM8Cx6WTz+cwtvFIXuuVQyhnQkiiiULOP289IRPWvOURSbHljH1i3/pLAYQMMQ+0nO3c8/BUeXTVawXtn3KmnAkhCSUqOUOWkBGk5MzTcsa8SRveMTVJR5yYZgvWSNeSKl5DUnq/mI71EHufzn7HNOwxtVhnO/a+dY3bnod1Hlq4NX3c+Gvv36mx2+9BH5uzTS1nv/eP6c6XCUzH/O/+otpVAw/bT7mGciaEJJqo5AzxQFx287YtZ8jFlrez7Le+94BLsD+e2elaDmL0a7p2pK3l7ezH2b4jNWzX3rcjPH1cjkD95Ky/OPxgakugNLWc9X7s94+/fu+RNWfKmRCSUKKUM17bQrHlrGugkJUjT2cdbAv/Rq3Xfu0nQEfKftJzpttytmPP08cVdtxBXxT8ouWs9+P3/vU2gqYnIZQzISTRRC1nW5ZacrqTFGqoTo0bIsK/IWb7r989ZcSuMTv7sY9Fyxl/naZju6nYPkYn+rixH/0++4ufnIPev92RzD4WyplyJoQklKjljDhNtvrebZBoHJGi6Rnr2q+D1rHlbC+vp+Gv/YVBz3Pka2/blqIt56DmZ7/4yTnovTjR+6CcKWdCSEIphpwRiMWuCWI+elfr5ext2AJFzVl3MLOj7zU7+3PEZgtYi9K+d6yPC3+D7jnj3/nec9b7CYotZMqZciaEJJRiyRlSgshsuUCKdrOuLVcsB5k6Tdi2QPU+nfn2+ti/3QRuy9nZvrNfTLfn2cflV+PXx2kv69fk7hyPLWe9H+f9203a+jNxviiEfQ7lGsqZEJJoCpVzOQaCzLb5milOKGdCSKKhnN3pr8bODEwoZ0JIokm6nJ2mY6dZ2elBrZdjBjaUMyEk0SRdzkw8QzkTQhIN5czEMZQzISTRUM5MHEM5E0ISDeXMxDGUMyEk0VDOTBxDORNCEg3lzMQxlDMhJNFQzkwcQzkTQhIN5czEMZQzISTRUM5MHEM5E0ISjZbz9evXKWdm0IMyiLJIORNCEomfnK9eveq5WDLMQAZlkHImhCQWR86ffvqp3Lx5Uz788EN577335NKlS/LOO+/IW2+9JW+88Yb8/ve/l3Pnzslrr73GMJEFZQplC2UMZQ1lDmUPZRBlEWUSZZNyJoSUJ2fOiFy7pqcacNHDBfDWrVvy0UcfybVr10yz4sWLF83F8o9//KO5cCJvvvkmw0QWp1yhjKGsocyh7KEMoiyiTKJs5iNmQDkTQuIDRNzVJTJpkshdd4lUVIiMGaOXSuPUnj/55BPTjIgay5///GdzkUQtBhfMCxcuyJ/+9CeT8+fPM0zBccoTyhbKGMoayhzKHsogyiLKZL61ZkA5E0IGBz8R64SIGdhN26ip3Lhxw1wcUXtB8yLu/+GiyTDFCsoYyhrKHMoeyqBTa6acCSHxZ/fucBHr9CNmB7tjGC6KqLWgWREXSnTMQfBoC8NEHad8oayhzKHsoQwW0hHMgXImhAwMzz3nFXBQshQzwAXQrkGjOREXSHTIwcWSYYodlDWUOZQ9u8ZMOffDhXevyOlzb8mxl1+VF176P6YIwWeLzxifNSGBfO1rXhHr5CBmB1vQjqQR1GAYpthxyptT/goVMyhrOd+4ecsIQ4uEKW7wmeOzJ8TFu++KjBzplXGBYrZxLoq2qBlmIGKXvSgoazlTzIMXfPaEGPAY1Jw5Ip/5jFfGEYpZY18sGabYiZqylTOaV7UwmIENm7gTzscfiyxd2r+UiyBmQkqdspUza82DH9aeE0xrq8jnPueVMO45Hz7sbt6mmAnxULZyZuevwQ/OAUkY69aJfPGLXinfdluqt7YDnnGmmAkJpGzlrEXBDE5IQoB4/Xpio/aMgUb8gMgJIb5QzkxRQ8ocNFH7DSoCKeN+M+47E0JyhnIOydFTv5PDvzkjh06eNsG/j5w661mOCQ4pU9Asfe+9Ximj8xd6Zgf8UAUhJDso55AcOP6ybNhxQLo3bjNZvWWn7Dh03LMcExxSZrz9tsj993ul/Pd/nxqak1ImJBIo55BsO/CiLHi6XSZMn2vyRHWddD37vGc5JjikTMAAIuPGeaWMoFMX5hNCIoNyDgnlXHhIiYOaMGrEqBlrKeNxKNSkCSGRQzmHhHIuPKRECRvVC/eacc+ZEFI0KOeQRCXnI789K/uPvSQ7D5+QHQePy56jvzEdzNDhTC9rB/MPnnglvd7eF0+ZbWG600nNdFT7rX8ntdR+X855v1GGlBjOqF5+A4jceWeqdzYhpOhQziEpVM6Q4PaDx6R3805p7X5W6p7plNrGFbK0vUdWrt0i67ftM/LV6yHoGb7++b3SvmazLH6mUxY2rpCmlWvNtp7f/6J0rN1i0rl+q2zadci1LqSMjms9m3ZI66oN6fWXtfeadTZs3y/7XnzJs89ihJQQeB7ZT8p4ftkeQIQQUnQo55AUImeIefOuQ7KwqUMmz1qQ3oadJ56qk/bVm0yt2l4Xcu3esF1+PWehZ51JM+e7jgnbfnrF6vS6kPqW3YfNF4HKGTWe9ZEZNQ3S3rtJdh856TnuqENKAIjXb1QvTAsaQIQQUlQo55AUImfUbmsa2tKCnGjEWmNkOvHJeeltYv6KNVuMVJ11N+086BE6lsM0LVxbzvhCsG3/i7Jg2fL0/IlPpoQ+edZ8qZyR2e/UpxbJ8p6Nni8GUYfEGDRRB43qhaZtQsigQTmHJF85Hzp5RhpXrpEpVbXpdasXPyONHavlma710tC2Sh6fnakVT32qTp7f94KRKzKvodUl4NkLG02Tdkv3s7K0vVemzV3sK2c8l728d1N6HkTurIv9onl7WnVm3aqFT5umdX38UYbEkJMn/Uf1cgYQ4ahehAw6lHNI8pUzas2QsS3ftVv3pGvHuM+8qKnD1KSdZdp6Npr5aGpGTdeZjn/bAsW6kLufnLcfOCZP1TWn502fVy/dG7al10WHMNx3dmrukDfuSePLhH4PUYXECPSwtn8Nygkek5o+nQOIEBIjKOeQ5CtndNp6sqYhvd6CZe2y89AJ1zKrNuKe8qL0MjVL20xP6jXP7XY1XaN2a/euxjLLezK1Y0fOWGbTLndzeE1Dq+e+MjqJ2fey61u6ZNfh4t17JjEAzyJjoBAtZQTPMHMAEUJiB+UcknzljB7R6OzlrIfa6t4XfutaZvPuQ/KE1cSMTlqoFWNd+570kpYu13pBckYnsnVb96SnI6idY7q9PmrhMxcsTS+D+9NoUtfvIaqQQQTShXy1kBEMwckBRAiJLZRzSPKVM3pgT7VqxY0da8wzyvYyW/cddd3/nVZdb+S8vHejS85Pr+h1rRckZzzrvHrLLpec65pXeo5tw479pjbuLIMa+3N7j3iWiypkEEDzNJqpg0b14gAihMQeyjkk+cp55brnXLXipct7ZI+qOePZZGzPWQa1WcgZ69pyRicue70gOZua8/N7XXLGs812L3AEz07PmJ+pOdc+3S7P72fNuSxAR67aWv9RvdABjAOIEFIyUM4hyVfOuG880xLgvCUtZoQuexkMHmL32MbgJBDv+m17XfecIVK7aTpIzpiH55sfn53pIT4X+7V+RQv3pdFBzO5F3tDWbTqK6fcQVcgAETSqFwcQIaQkoZxDouWMXtd4JvnA8VcCA5FiuMx5SzKPQ0HCkLozGhg6ac1fmnkGGlm5fqtZd+8Lp1zSxjL2F4J9L54ytV0/OUPEeLbamZca5GRzuva8/eBxWdS80rUumuBxPOig1tS5Vpav3hTpz2KSIoNBQoIGEFm3Ti9NCCkRKOeQaDnjsaY5i5pkcUuXb5a0dpvaKyTbtmqDqzf2rAXLzCNQeP4Zo4ZNqcr0qkaT9o5DJ9K9she3dKbnIXgk6umO1ebeNXpX2+vacj544rSpkTuPYqF5fMb8BjNcKNaF1G3xz61vMaOYQcxP1iwxy6PmjcerohrekxQJ1IaDBhBpbdVLE0JKDMo5JFrO/QW1XDxGhXXx6FR9S6fr0SbID8vY95TxWBPWsZuusV/03ra37bcuYssZ2XXkpGmqtpfzWxfb7352m6ntN3eudW0TtWvdDJ9vSMTgvjF+gEJLGfeZcb+ZA4gQUhZQziEpRM5HX8JQmi9IS9d6V69sO7gnjOeOcR9Z7/vZbftMzdZeHnJFLXr+0szwnFrO5kcvDh6X5s51rk5p9jFiu6s37zS1Y9TWUXOePm+JmY+BUdp6Nphfs9LHlE9IRKCHtd+oXuiRjVG9OIAIIWUF5RwSDIe5cccBWbVhW3bZuF12Hc4MNgJB4x4xRItaKp5hXrFms+mRvWrjDvM4le5NnV731O/MfGzXWQ/3ntEjG8OAOrJF5y7UfPW6zn67rP12rnvOfBnYuveo6wsBlsXzz9h+76Yd5j1E9bOSpEBefz14VC8OIEJI2UI59xPURHOJn9QwDRI+ePK06RQGMdrN2H7Bo1erNmw3y2F5rIdtYLr9nDKep8Z9Zr1+rvs90rds0Px8Q/IE0g0a1QvTOYAIIWUN5RzDQKro+DV9br3pRNa7aafpuNW9cbt5dtnu5Y1HtqK6P1yMkBxxRvXiACKEJBrKOYZB07XTkQw9ryFp9PaeNrfeJWb0vEZzddS13ShDsgT3jHHvOGgAEfySFCEkMVDOMQwGBVli/fKUX/DMNe4hF/v3mAsN6Qf0rsYAIn5SxqNSHNWLkERCOcc0+KEMDLWJZ47x+854Fnr2oiape6bT3GPesudwelCTOIeEgOeR/Ub1wgAiHNWLkERDOcc4aK5Gj3GM4LXz0HEz8hikjY5dfh3P4hjiA0bu8hvVC6LGiF+EkMRDOTNFDbEIG9ULTdscQIQQ0gflzBQ1pG9UL78BRHCfmQOIEEJ8KFs5H3v5VY8omIENzkGiwWNPHECEEJIHZSvn0+fe8siCGdjgHCQSDBBy//1eKSMYQIRSJoT0Q9nK+cK7VzyyYAY2OAeJAtIdN84rZAQ1aAzFSQghWVC2cgasPQ9eElVrxj3joFG9cK+Zo3oRQnKkrOV84+YtCnoQgs8cn30i2L3bfwAR/KwjBxAhhORJWcvZ4eLlq3Lm9T/IiTPn5NgrrzFFCD5bfMb4rBOF7oV9220cQIQQUjCJkDMhRQOPQkHKGFSEA4gQQiKCciaEEEJiBuVMCCGExAzKmRBCCIkZlDMhhBASMyhnQgghJGZQzoQQQkjMoJwJIYSQmEE5E0IIITGDciaEEEJiBuVMCCGExAzKmRBCCIkZlDMhhBASMyhnQgghJGZQzoQQQkjMoJwJIYSQmEE5E0IIITGDciaEEEJiBuVMCCGExAzKmRBCCIkZlDMhhBASMyhnQgghJGZQzoQQQkjM+H8UMmORjp9rhwAAAABJRU5ErkJggg=='>";
+
       }
 
       echo "<style>.code { font-family: monospace; white-space: pre; }.abst-magic-summary{display:flex;flex-direction:column;gap:16px;}.abst-magic-summary-row{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:#f8fafc;border:1px solid #dcdcde;border-radius:8px;}.abst-magic-summary-label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#646970;}.abst-magic-summary-actions{margin-top:4px;}.abst-magic-advanced{margin-top:6px;}.abst-magic-advanced summary{cursor:pointer;font-weight:500;color:#2271b1;}.abst-magic-advanced[open] summary{margin-bottom:12px;}</style>";
@@ -5327,19 +5573,19 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // css test vars
 
-      $css_test_variations  = get_post_meta($pid, 'css_test_variations', true);
+      $css_test_variations  = get_post_meta($pid,'css_test_variations',true);
 
-      if (empty($css_test_variations))
+      if(empty($css_test_variations))
 
         $css_test_variations = '2';      //not a test w 1
 
-      echo '<label class="css_test_variations" for="css_test_variations">Number of variations you want to test.</label><input class="css_test_variations" type="number" id="css_test_variations" min="1" max = "999" name="css_test_variations" placeholder="2" value="' . esc_attr($css_test_variations) . '"  /><span class="css_test_variations" > variations</span>';
+      echo '<label class="css_test_variations" for="css_test_variations">Number of variations you want to test.</label><input class="css_test_variations" type="number" id="css_test_variations" min="1" max = "999" name="css_test_variations" placeholder="2" value="' . esc_attr( $css_test_variations ) . '"  /><span class="css_test_variations" > variations</span>';
 
 
 
       echo "<p class='css_test_variations'>The body will have one of the the following classes added. </p>";
 
-      if (abst_user_level() == 'free')
+      if( abst_user_level()== 'free' )
 
         echo "<p class='show'>NOTE: AB Split Test Free is limited to 2 CSS variations.</p>";
 
@@ -5353,7 +5599,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "<p  class='show'>You can go straight to the block editor or your favourite page builder.<BR>Click the element you want to test, then create your test in the AB Split Test Section of your settings.</p>";
 
-
+      
 
       //if bricks, add bricks helper
 
@@ -5376,11 +5622,12 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo "<li>Create your alternate version in Bricks, then tag it with the same test name and a new variation name.</li>";
 
         echo "</ol>";
+
       }
 
       //elementor
 
-      if (did_action('elementor/loaded')) {
+      if (did_action( 'elementor/loaded')) {
 
         echo "<h4>Elementor Instructions.</h4>";
 
@@ -5399,6 +5646,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo "<li>Create your alternate version in Elementor, and tag it with the same test name and a new variation name.</li>";
 
         echo "</ol>";
+
       }
 
       // beaver
@@ -5419,9 +5667,10 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         echo "<li>Give your test variation a name.</li>";
 
-        echo "<li>Create your alternate version in Beaver Builder, and tag it with the same test name and a new variation name.</li>";
+        echo "<li>Create your alternate version in Beaver Builder, and tag it with the same test name and a new variation name.</li>";  
 
         echo "</ol>";
+
       }
 
       //Breakdance
@@ -5445,11 +5694,12 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo "<li>Create your alternate version in Breakdance, and tag it with the same test name and a new variation name.</li>";
 
         echo "</ol>";
-      }
+
+      }      
 
       global $oxygen_vsb_components;
 
-      if (!empty($oxygen_vsb_components)) {
+      if( !empty($oxygen_vsb_components)){
 
         echo "<h4>Oxygen</h4>";
 
@@ -5468,6 +5718,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo "<li>Create your alternate version in Oxygen, and tag it with the same test name and a new variation name.</li>";
 
         echo "</ol>";
+
       }
 
       //Blocks
@@ -5480,7 +5731,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "<li>Click any block you want to test.</li>";
 
-      echo "<li>Click the Advanced Tab, then " . esc_html(BT_AB_TEST_WL_ABTEST) . ".</li>";
+      echo "<li>Click the Advanced Tab, then " . esc_html( BT_AB_TEST_WL_ABTEST ) . ".</li>";
 
       echo "<li>Choose your test from the dropdown.</li>";
 
@@ -5500,7 +5751,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "<li>Load and edit the page you want to test. You can do this on any page in anything that lets you apply CSS classes or edit HTML.</li>";
 
-      echo "<li>Choose an element wrapping your test variation.</li><li>Add the CSS classes you copied from the test like 'ab-" . esc_html($post->ID) . " ab-var-{name}' to that element.</li>";
+      echo "<li>Choose an element wrapping your test variation.</li><li>Add the CSS classes you copied from the test like 'ab-". esc_html( $post->ID ) ." ab-var-{name}' to that element.</li>"; 
 
       echo "<li>Give your test variation a name.</li>";
 
@@ -5514,7 +5765,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "<label>HTML Classes</label>";
 
-      echo "<input type='text' value='ab-" . esc_attr(get_the_ID()) . " ab-var-{name}'/>";
+      echo "<input type='text' value='ab-". esc_attr( get_the_ID() ) ." ab-var-{name}'/>";
 
       echo "<p><small>Replace {name} with your variation name</small></p>";
 
@@ -5522,81 +5773,85 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo "<label>Shortcode</label>";
 
-      echo "<input type='text' value=\"[ab_split_test eid='" . esc_attr($post->ID) . "' var='{name}']Text One![/ab_split_test]\"/>";
+      echo "<input type='text' value=\"[ab_split_test eid='". esc_attr( $post->ID ) ."' var='{name}']Text One![/ab_split_test]\"/>";
 
       echo "</div></div><div class='bt_experiments_inner_custom_box'><h3>Goals</h3><div class='goal'><div class='conversion-goal'>";
 
-      $this->bt_experiments_inner_custom_box($post); // conversions / goals Primary conversion goal
+      $this->bt_experiments_inner_custom_box($post);// conversions / goals Primary conversion goal
 
       echo "</div></div>";
 
 
 
+      
 
-
-      if (abst_user_level()  == 'agency') {
+      if( abst_user_level()  == 'agency'){
 
         $max_goals = 10;
 
-        $goals = get_post_meta($post->ID, 'goals', true);
+        $goals = get_post_meta($post->ID,'goals',true);
 
         echo "<div class='show_goals'>";
 
-        $subgoals = range(1, $max_goals);
+        $subgoals = range(1,$max_goals);
 
+        
 
-
-        foreach ($subgoals as $i) {
+        foreach($subgoals as $i){
 
           $goal_key = false;
 
-          if (isset($goals[$i])) {
+          if(isset($goals[$i]))
+
+          {
 
             $goal = $goals[$i];
 
             //if goal is array
 
-            if (is_array($goal)) {
+            if(is_array($goal)){            
 
               $goal_key = array_keys($goal)[0];
 
               $goal = $goal[$goal_key];
+
             }
+
           }
 
 
 
-          if (!empty($goal_key)) {
+          if(!empty($goal_key)){
 
-            echo "<div class='subgoal test-goal-" . esc_attr($i) . "'>";
+            echo "<div class='subgoal test-goal-" . esc_attr( $i ) . "'>";
 
             echo "<span class='close-goal'>x</span>";
 
-            echo "<h4>Sub Goal " . esc_html($i) . "</h4> ";
+            echo "<h4>Sub Goal " . esc_html( $i ) . "</h4> ";
 
             echo "<label>Trigger Type</label>";
 
-            echo "<select class='goal-type' name='goal[" . esc_attr($i) . "]'>";
+            echo "<select class='goal-type' name='goal[" . esc_attr( $i ) . "]'>";
 
             echo "<option value=''>Select Goal Trigger...</option>";
 
-            echo "<option value='page' " . ($goal_key == 'page' ? "selected='selected'" : "") . ">Page or Post Visit</option>";
+            echo "<option value='page' ".($goal_key == 'page' ? "selected='selected'" : "") .">Page or Post Visit</option>";
 
-            echo "<option value='url' " . ($goal_key == 'url' ?  "selected='selected'" : "") . ">URL Visited</option>";
+            echo "<option value='url' ".($goal_key == 'url' ?  "selected='selected'" : "").">URL Visited</option>";
 
-            echo "<option value='text' " . ($goal_key == 'text' ? "selected='selected'" : "") . ">Text Visible on Page</option>";
+            echo "<option value='text' ".($goal_key == 'text' ? "selected='selected'" : "").">Text Visible on Page</option>";
 
-            echo "<option value='selector' " . ($goal_key == 'selector' ?  "selected='selected'" : "") . ">Element Clicked</option>";
+            echo "<option value='selector' ".($goal_key == 'selector' ?  "selected='selected'" : "").">Element Clicked</option>";
 
-            echo "<option value='link' " . ($goal_key == 'link' ? "selected='selected'" : "") . ">Link Clicked</option>";
+            echo "<option value='link' ".($goal_key == 'link' ? "selected='selected'" : "").">Link Clicked</option>";
 
-            echo "<option value='time' " . ($goal_key == 'time' ? "selected='selected'" : "") . ">Time Active</option>";
+            echo "<option value='time' ".($goal_key == 'time' ? "selected='selected'" : "").">Time Active</option>";
 
-            echo "<option value='scroll' " . ($goal_key == 'scroll' ? "selected='selected'" : "") . ">Scroll Depth</option>";
+            echo "<option value='scroll' ".($goal_key == 'scroll' ? "selected='selected'" : "").">Scroll Depth</option>";
 
-            echo "<option value='block' " . ($goal_key == 'block' ? "selected='selected'" : "") . ">Conversion Element Visible</option>";
+            echo "<option value='block' ".($goal_key == 'block' ? "selected='selected'" : "") .">Conversion Element Visible</option>";
 
-            echo "<option value='javascript' " . ($goal_key == 'javascript' ?  "selected='selected'" : "") . ">JavaScript Event</option>";
+            echo "<option value='javascript' ".($goal_key == 'javascript' ?  "selected='selected'" : "").">JavaScript Event</option>";
 
             if (defined('WC_VERSION')) {
 
@@ -5604,22 +5859,25 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               $woo_pages = $this->get_woo_pages();
 
-              foreach ($woo_pages as $name => $page) {
+              foreach($woo_pages as $name => $page) {
 
-                if (!empty($page)) {
+                if(!empty($page)) {
 
-                  echo "<option value=\"" . esc_attr($page) . "\">" . esc_html($name) . "</option>";
+                  echo "<option value=\"" . esc_attr( $page ) . "\">" . esc_html( $name ) . "</option>";
+
                 }
+
               }
 
-              echo "<option value=\"woo-order-pay\" " . ($goal_key == 'woo-order-pay' ? "selected='selected'" : "") . ">Checkout Payment Page</option>";
+              echo "<option value=\"woo-order-pay\" ".($goal_key == 'woo-order-pay' ? "selected='selected'" : "").">Checkout Payment Page</option>";
 
-              echo "<option value=\"woo-order-received\" " . ($goal_key == 'woo-order-received' ? "selected='selected'" : "") . ">Checkout Order Received (Thank You Page)</option>";
+              echo "<option value=\"woo-order-received\" ".($goal_key == 'woo-order-received' ? "selected='selected'" : "").">Checkout Order Received (Thank You Page)</option>";
 
               echo "</optgroup>";
+
             }
 
-
+            
 
             // SureCart options
 
@@ -5627,9 +5885,10 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               echo "<optgroup label='SureCart'>";
 
-              echo "<option value=\"surecart-order-paid\" " . ($goal_key == 'surecart-order-paid' ? "selected='selected'" : "") . ">Order Paid</option>";
+              echo "<option value=\"surecart-order-paid\" ".($goal_key == 'surecart-order-paid' ? "selected='selected'" : "").">Order Paid</option>";
 
               echo "</optgroup>";
+
             }
 
 
@@ -5638,23 +5897,25 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               echo "<optgroup label='FluentCart'>";
 
-              echo "<option value=\"fluentcart-order-paid\" " . ($goal_key == 'fluentcart-order-paid' ? "selected='selected'" : "") . ">Order Paid</option>";
+              echo "<option value=\"fluentcart-order-paid\" ".($goal_key == 'fluentcart-order-paid' ? "selected='selected'" : "").">Order Paid</option>";
 
               echo "</optgroup>";
+
             }
 
             // Easy Digital Downloads options
 
-            if (class_exists('Easy_Digital_Downloads')) {
+            if(class_exists('Easy_Digital_Downloads')) {
 
               echo "<optgroup label='Easy Digital Downloads'>";
 
-              echo "<option value=\"edd-purchase\" " . ($goal_key == 'edd-purchase' ? "selected='selected'" : "") . ">Purchase</option>";
+              echo "<option value=\"edd-purchase\" ".($goal_key == 'edd-purchase' ? "selected='selected'" : "").">Purchase</option>";
 
               echo "</optgroup>";
+
             }
 
-
+            
 
             // WP Pizza options
 
@@ -5662,11 +5923,12 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               echo "<optgroup label='WP Pizza'>";
 
-              echo "<option value=\"wp-pizza-is-checkout\" " . ($goal_key == 'wp-pizza-is-checkout' ? "selected='selected'" : "") . ">Checkout Page</option>";
+              echo "<option value=\"wp-pizza-is-checkout\" ".($goal_key == 'wp-pizza-is-checkout' ? "selected='selected'" : "").">Checkout Page</option>";
 
-              echo "<option value=\"wp-pizza-is-order-history\" " . ($goal_key == 'wp-pizza-is-order-history' ? "selected='selected'" : "") . ">Order History Page</option>";
+              echo "<option value=\"wp-pizza-is-order-history\" ".($goal_key == 'wp-pizza-is-order-history' ? "selected='selected'" : "").">Order History Page</option>";
 
               echo "</optgroup>";
+
             }
 
 
@@ -5675,35 +5937,41 @@ if (! class_exists('Bt_Ab_Tests')) {
 
             if (function_exists('abst_get_form_optgroups')) {
 
-              echo wp_kses_post(abst_get_form_optgroups($goal_key));
+              echo wp_kses_post( abst_get_form_optgroups($goal_key) );
+
             }
 
 
 
             echo "</select>";
 
-            echo "<label class='goal-value-label' for='goal_value[" . esc_attr($i) . "]'>Goal Value</label>";
+            echo "<label class='goal-value-label' for='goal_value[" . esc_attr( $i ) . "]'>Goal Value</label>";
 
-            echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr($i) . "]' value='" . esc_attr($goal) . "' placeholder='' />";
+            echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr( $i ) . "]' value='" . esc_attr($goal) . "' placeholder='' />";
 
-            echo "<select class='goal-page' name='goal_page[" . esc_attr($i) . "]'>";
+            echo "<select class='goal-page' name='goal_page[" . esc_attr( $i ) . "]'>";
 
             $page_title = get_the_title($goal);
 
-            if (!empty($page_title))
+            if(!empty($page_title))
 
-              echo "<option value='" . esc_attr($goal) . "'>" . esc_html($page_title) . "</option>";
+              echo "<option value='" . esc_attr( $goal ) . "'>" . esc_html( $page_title ) . "</option>";
 
             echo "</select></div>";
-          } else {
 
-            echo "<div class='subgoal hidden test-goal-" . esc_attr($i) . "'>";
+          }
+
+          else
+
+          {
+
+            echo "<div class='subgoal hidden test-goal-" . esc_attr( $i ) . "'>";
 
             echo "<span class='close-goal'>x</span>";
 
-            echo "<h4>Sub Goal " . esc_html($i) . "</h4>";
+            echo "<h4>Sub Goal " . esc_html( $i ) . "</h4>";
 
-            echo "<select class='goal-type' name='goal[" . esc_attr($i) . "]'>";
+            echo "<select class='goal-type' name='goal[" . esc_attr( $i ) . "]'>";
 
             echo "<option value=''>Select Goal Trigger...</option>";
 
@@ -5731,12 +5999,14 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               $woo_pages = $this->get_woo_pages();
 
-              foreach ($woo_pages as $name => $page) {
+              foreach($woo_pages as $name => $page) {
 
-                if (!empty($page)) {
+                if(!empty($page)) {
 
-                  echo "<option value=\"" . esc_attr($page) . "\">" . esc_html($name) . "</option>";
+                  echo "<option value=\"" . esc_attr( $page ) . "\">" . esc_html( $name ) . "</option>";
+
                 }
+
               }
 
               echo "<option value=\"woo-order-pay\">Checkout Payment Page</option>";
@@ -5744,9 +6014,10 @@ if (! class_exists('Bt_Ab_Tests')) {
               echo "<option value=\"woo-order-received\">Checkout Order Received (Thank You Page)</option>";
 
               echo "</optgroup>";
+
             }
 
-
+            
 
             // SureCart options
 
@@ -5757,33 +6028,36 @@ if (! class_exists('Bt_Ab_Tests')) {
               echo "<option value=\"surecart-order-paid\">Order Paid</option>";
 
               echo "</optgroup>";
+
             }
 
 
 
-            if (function_exists('fluent_cart_scheduler_register')) {
+ if (function_exists('fluent_cart_scheduler_register')) {
 
               echo "<optgroup label='FluentCart'>";
 
               echo "<option value=\"fluentcart-order-paid\">Order Paid</option>";
 
               echo "</optgroup>";
+
             }
 
-
+            
 
             // Easy Digital Downloads options
 
-            if (class_exists('Easy_Digital_Downloads')) {
+            if(class_exists('Easy_Digital_Downloads')) {
 
               echo "<optgroup label='Easy Digital Downloads'>";
 
               echo "<option value=\"edd-purchase\">Purchase</option>";
 
               echo "</optgroup>";
+
             }
 
-
+            
 
             // WP Pizza options
 
@@ -5796,54 +6070,65 @@ if (! class_exists('Bt_Ab_Tests')) {
               echo "<option value=\"wp-pizza-is-order-history\">Order History Page</option>";
 
               echo "</optgroup>";
+
             }
 
-
+            
 
             // Form submission conversions
 
             if (function_exists('abst_get_form_optgroups')) {
 
-              echo wp_kses_post(abst_get_form_optgroups());
+              echo wp_kses_post( abst_get_form_optgroups() );
+
             }
 
-
+            
 
             echo "</select>";
 
-            echo "<label class='goal-value-label' for='goal_value[" . esc_attr($i) . "]'>Goal Value</label>";
+            echo "<label class='goal-value-label' for='goal_value[" . esc_attr( $i ) . "]'>Goal Value</label>";
 
-            echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr($i) . "]' placeholder='' />";
+            echo "<input class='goal-value' type='text' name='goal_value[" . esc_attr( $i ) . "]' placeholder='' />";
 
-            echo "<select class='goal-page' name='goal_page[" . esc_attr($i) . "]'>";
+            echo "<select class='goal-page' name='goal_page[" . esc_attr( $i ) . "]'>";
 
             echo "</select></div>";
-          }
+
+          } 
+
         }
 
         echo "<button class='button button-small add-goal'>+ Add Goal</button>";
 
         echo "</div>";
-      } else {
+
+      }
+
+      else
+
+      {
 
         echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so m uch more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Try pro free for 7 days</a></p></div>";
+
+
       }
 
       echo "</div>";
 
-
+      
 
       //coming soon
 
 
 
-      // Check if Thompson Sampling is enabled globally
+// Check if Thompson Sampling is enabled globally
 
       $thompson_sampling_enabled = abst_get_admin_setting('abst_thompson_sampling_enabled');
 
+      
 
-
-      if (abst_user_level() == 'agency' && $thompson_sampling_enabled) {
+      if(abst_user_level() == 'agency' && $thompson_sampling_enabled){
 
         echo "<div class='test_conversion_styles'><h3>Winning Mode</h3>";
 
@@ -5851,24 +6136,28 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         echo "<div class='conversion_style'>Optimization Style: <select id='conversion_style' name='conversion_style'>";
 
-        $conversion_style = get_post_meta($pid, 'conversion_style', true);
+        $conversion_style = get_post_meta($pid,'conversion_style',true);
 
-        if ($conversion_style == 'thompson') {
+        if($conversion_style == 'thompson'){
 
           echo "<option value='bayesian'>Standard - Bayesian</option>";
 
           echo "<option value='thompson' selected>Dynamic - Multi Armed Bandit</option>";
-        } else {
+
+        }else{
 
           echo "<option value='bayesian' selected>Standard - Bayesian</option>";
 
           echo "<option value='thompson'>Dynamic - Multi Armed Bandit</option>";
+
         }
 
         echo "</select><p>Standard - Bayesian evenly splits traffic between variations and observes traffic until statistical winner is found.<BR> Dynamic - Multi Armed Bandit mode is a continual optimization mode, where traffic is shifted to the best performing variation over time. No 'winner found' or autocomplete as traffic is shifted to the best performing variation over time.</p></div></div>";
-      } else {
+
+      }else{
 
         echo "<input type='hidden' name='conversion_style' value='bayesian'/>";
+
       }
 
 
@@ -5883,9 +6172,9 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $agency = abst_user_level() == 'agency';
 
-      if ($agency) {
+      if($agency){
 
-        echo "<div class='webhooks_settings collapsed'><h3>Webhooks</h3><p>Send a POST of test result data when a test is complete.</p><p><input type='text' id='bt_webhook_url' name='bt_webhook_url' style='width:100%;' placeholder='Enter a complete URL e.g. https://you.com/thing' value='" . esc_attr($webhook_url) . "'></p><p>Sample JSON</p>";
+        echo "<div class='webhooks_settings collapsed'><h3>Webhooks</h3><p>Send a POST of test result data when a test is complete.</p><p><input type='text' id='bt_webhook_url' name='bt_webhook_url' style='width:100%;' placeholder='Enter a complete URL e.g. https://you.com/thing' value='" . esc_attr( $webhook_url ) . "'></p><p>Sample JSON</p>";
 
         $webhook_sample = array(
 
@@ -6016,9 +6305,10 @@ if (! class_exists('Bt_Ab_Tests')) {
         );
 
         echo '<code><pre>' . esc_html(wp_json_encode($webhook_sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre></code></div>';
+
       }
 
-
+      
 
       echo "<div class='restart_test collapsed'><h3>Restart Test</h3><p>Made some changes and want to restart the test?</p>";
 
@@ -6026,19 +6316,20 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo '<input type="text" id="restart-confirm"/>';
 
-      echo "<p><strong>Caution</strong>, this is not reversible</p><button class='button' id='bt_clear_experiment_results' eid='" . esc_attr($pid) . "'>Clear Results & Restart Test</button>";
+      echo "<p><strong>Caution</strong>, this is not reversible</p><button class='button' id='bt_clear_experiment_results' eid='" . esc_attr( $pid ) . "'>Clear Results & Restart Test</button>";
 
-
+      
 
       echo "</div></div>";
 
-      if ($show_idea_tab) {
+      if($show_idea_tab) {
 
         $idea_total = null;
 
         if ($idea_impact !== '' && $idea_reach !== '' && $idea_confidence !== '' && $idea_effort !== '') {
 
           $idea_total = intval($idea_impact) + intval($idea_reach) + intval($idea_confidence) + (6 - intval($idea_effort));
+
         }
 
         echo "<div id='idea_settings' class='ab-tab-content' style='display:none;'>";
@@ -6070,9 +6361,10 @@ if (! class_exists('Bt_Ab_Tests')) {
         echo "</div>";
 
         echo "</div></div></div>";
+
       }
 
-
+      
 
       echo "<div class='abst_show_experiment_results ab-tab-content'>";
 
@@ -6080,11 +6372,11 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      $test_winner = get_post_meta($pid, "test_winner", true);
+      $test_winner = get_post_meta($pid,"test_winner",true);
 
-      if (!empty($test_winner))
+          if(!empty($test_winner))
 
-        echo '<script>
+            echo '<script>
 
         var end = Date.now() + 1500;
 
@@ -6129,34 +6421,39 @@ if (! class_exists('Bt_Ab_Tests')) {
         </script>';
 
       echo "</div>";
+
+      
+
     }
 
 
 
 
 
-    function show_full_page_test($post)
-    {
+    function show_full_page_test($post){
 
 
 
       global $wp_post_types;
 
-      $selected_page = get_post_meta($post->ID, 'bt_experiments_full_page_default_page', true);
+      $selected_page = get_post_meta($post->ID,'bt_experiments_full_page_default_page',true);
 
-      $page_variations = get_post_meta($post->ID, 'page_variations', true);
+      $page_variations = get_post_meta($post->ID,'page_variations',true);
 
-      $variation_meta = get_post_meta($post->ID, 'variation_meta', true);
+      $variation_meta = get_post_meta($post->ID,'variation_meta',true);
 
       $posts = abst_get_all_posts();
 
       $archives_taxonomies = $this->abst_get_archives();
 
-      if (count($posts) < 2) {
+      if(count($posts) < 2)
+
+      { 
 
         echo "<p><strong>You need to have more than 1 page published to create a page split test.</strong></p><p><a href='/wp-admin/post-new.php?post_type=page' class='button'>Create A Page</a></p>";
 
         return;
+
       }
 
       echo "<div class='ab-test-full-page-start-page'><p>Choose the page where your test begins.</p>";
@@ -6167,28 +6464,38 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo '<option value="" disabled ' . (empty($selected_page) ? 'selected' : '') . '>Select a page…</option>';
 
-      if (!empty($selected_page)) {
+      if(!empty($selected_page))
 
-        echo '<option value="', esc_attr($selected_page), '" selected="selected">', esc_html(get_the_title($selected_page)), '</option>';
+      {
+
+        echo '<option value="', esc_attr( $selected_page ), '" selected="selected">', esc_html( get_the_title($selected_page) ), '</option>';
+
       }
 
-
+      
 
       foreach ($posts as $k => $post) {
 
+                
 
+        echo '<option value="', esc_attr( $post->ID ), '"', $selected_page == $post->ID ? ' selected="selected"' : '', '>', esc_html( $post->post_title ), '</option>';
 
-        echo '<option value="', esc_attr($post->ID), '"', $selected_page == $post->ID ? ' selected="selected"' : '', '>', esc_html($post->post_title), '</option>';
+        
+
       }
 
       //archives taxonomies
 
-      if (!empty($archives_taxonomies)) {
+      if(!empty($archives_taxonomies))
+
+      {
 
         foreach ($archives_taxonomies as $k => $tax) {
 
-          echo '<option value="', esc_attr($k), '"', $selected_page == $k ? ' selected="selected"' : '', '>', esc_html($tax), '</option>';
+          echo '<option value="', esc_attr( $k ), '"', $selected_page == $k ? ' selected="selected"' : '', '>', esc_html( $tax ), '</option>';
+
         }
+
       }
 
 
@@ -6202,26 +6509,36 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
       echo "</div><div class='page-variations-wrapper'><p>Traffic will be split evenly across this page and any variations you add.</><h4>Page Variations</h4>";
-      echo "<p>We'll split your traffic evenly between the page you choose above, and the variation page you add below. Go pro to test multiple pages.</p>";
 
+      echo "<p>We'll split your traffic evenly between the page you choose above, and any variations you add below.</p>";
+
+      if($this->isf())
+
+        echo "<p><strong>NOTE: this free version is limited to one test variation. <a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade for unlimited tests with unlimited variations, AI assistance and more.</a></strong></p>";
 
       $mypages = $posts;
 
-      if (!empty($mypages) || !empty($page_variations)) {
+      if(!empty($mypages) || !empty($page_variations))
+
+      {
 
         echo "<div id='page-test-variations' class='choices-container'><select id='page_variations' name='page_variations[]' placeholder='Choose a Variation...' multiple data-placeholder='Choose a Variation...'>";
 
-
+        
 
         //add in existing variations
 
-        if (!empty($page_variations)) {
+        if(!empty($page_variations))
 
+        {
 
+          
 
           // add preselected options (page_variations)
 
-          foreach ($page_variations as $k => $page_variation) {
+          foreach($page_variations as $k => $page_variation)
+
+          {
 
 
 
@@ -6231,55 +6548,86 @@ if (! class_exists('Bt_Ab_Tests')) {
 
             // if is not number 
 
-            if (is_numeric($k)) {
+            if(is_numeric($k))
+
+            {
 
               $variation = get_post($k);
 
-              if (!empty($variation)) {
-
-                $page_title = $variation->post_title . ' | ' . $variation->post_type . ' | ' . $page_slug;
-
-                $page_slug = $k;
-              }
-            } else {
-
-              $variation = get_page_by_path($k, OBJECT, abst_post_types_to_test());
-
-              if (!empty($variation)) {
-
-                $page_title = $variation->post_title . ' | ' . $variation->post_type . ' | ' . $page_slug;
-
-                $page_slug = $variation->ID;
-              } else // didnt get from slug. wp query post_name
+              if(!empty($variation))
 
               {
 
-                $qpo = get_posts(array(
+                $page_title = $variation->post_title . ' | ' .$variation->post_type . ' | ' . $page_slug;
 
-                  'name'   => $page_slug,
+                $page_slug = $k;
 
-                  'post_type'   => 'any',
+              }
 
-                  'post_per_page' => 1
+            }
+
+            else
+
+            {
+
+              $variation = get_page_by_path($k, OBJECT, abst_post_types_to_test());
+
+              if(!empty($variation))
+
+              {
+
+                $page_title = $variation->post_title . ' | ' .$variation->post_type . ' | ' . $page_slug;
+
+                $page_slug = $variation->ID;
+
+              }
+
+              else // didnt get from slug. wp query post_name
+
+              {
+
+                $qpo = get_posts(array
+
+                (
+
+                    'name'   => $page_slug,
+
+                    'post_type'   => 'any',
+
+                    'post_per_page' => 1
 
                 ));
 
-                if (!empty($qpo)) {
+                if(!empty($qpo))
+
+                {
 
                   $page_slug = $qpo[0]->ID;
 
-                  $page_title = $qpo[0]->post_title . ' | ' . $qpo[0]->post_type . ' | ' . $k;
-                } else {
+                  $page_title = $qpo[0]->post_title . ' | ' .$qpo[0]->post_type . ' | ' . $k;
+
+
+
+                }
+
+                else
+
+                {
 
                   $page_slug = $k;
 
                   $page_title = $k;
+
                 }
+
               }
+
             }
 
-            echo '<option value="', esc_attr($page_slug), '" selected="selected">', esc_html($page_title), '</option>';
+            echo '<option value="', esc_attr( $page_slug ), '" selected="selected">', esc_html( $page_title ), '</option>';
+
           }
+
         }
 
 
@@ -6290,1273 +6638,1677 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-        foreach ($mypages as $page) {
+          foreach( $mypages as $page )
 
-          $title = $page->post_title;
+        {
 
-          $slug = basename(get_permalink($page->ID));
+            $title = $page->post_title;
 
-          $type = $page->post_type;
+            $slug = basename(get_permalink($page->ID));
 
-          $post_name = $page->post_name;
+            $type = $page->post_type;
 
-          $selected = false;
+            $post_name = $page->post_name;
 
-
-
-
-
-          $selected = (isset($page_variations[$slug]) && $page_variations[$slug] == get_permalink($page->ID)) ? 'selected' : '';
+            $selected = false;
 
 
 
-          if (empty($title))
-
-            $title = '#' . $page->ID . ' (no title)';
 
 
+            $selected = (isset($page_variations[$slug]) && $page_variations[$slug] == get_permalink( $page->ID )) ? 'selected' : '';
 
-          if (empty($selected))
 
-            echo "<option value='", esc_attr($slug), "' ", esc_attr($selected), ">", esc_html($title), " | ", esc_html($page->post_type), " | ", esc_html($post_name), " </option>";
-        }
 
-        echo "</select></div>";
+            if(empty($title))
 
-        if (!empty($page_variations)) {
+              $title = '#' . $page->ID . ' (no title)';
 
-          //echo "<div id='variation-meta-wrapper'>";
 
-          foreach ($page_variations as $k => $page_variation) {
-            $label = $variation_meta[$k]['label'] ?? '';
-            $image = $variation_meta[$k]['image'] ?? '';
+
+            if(empty($selected))
+
+              echo "<option value='", esc_attr( $slug ), "' ", esc_attr( $selected ), ">", esc_html( $title ), " | ", esc_html( $page->post_type ), " | ", esc_html( $post_name ), " </option>";
+
           }
-        }
-        echo "<p>Add unlimited variation pages, unlimited goals, automatic optimization and more with <a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>AB Split Test Pro.</a></p>";
-      } else
+
+          echo "</select></div>";
+
+          if(!empty($page_variations)){
+
+            //echo "<div id='variation-meta-wrapper'>";
+
+            foreach($page_variations as $k => $page_variation){
+
+              $label = $variation_meta[$k]['label'] ?? '';
+
+              $image = $variation_meta[$k]['image'] ?? '';
+
+              //echo "<div class='variation-meta-item'>";
+
+              //echo "<label>Label for variation $k</label>";
+
+              ////echo "<input type='text' name='variation_label[$k]' value='".esc_attr($label)."' />";
+
+              //echo "<label>Screenshot URL</label>";
+
+              //echo "<input type='text' name='variation_image[$k]' value='".esc_attr($image)."' placeholder='https://...' />";
+
+              //echo "</div>";
+
+            }
+
+           // echo "</div>";
+
+          }
+
+      }
+
+      else
+
         echo "<h5>Please add some pages then reload this page.</h5>";
+
+      
+
+      
+
     }
 
-    function abst_get_archives()
-    {
+
+
+    function abst_get_archives(){
+
       $out = [];
-      $post_types = get_post_types(array('public' => true), 'objects');
 
-      foreach ($post_types as $type) {
-        $out['post-type-archive-' . $type->name] = $type->label;
-      }
+    $post_types = get_post_types( array( 'public' => true ), 'objects' );
 
-      $post_types = get_post_types(array('public' => true), 'names');
-      $all_tags = array();
 
-      foreach ($post_types as $post_type) {
-        $taxonomies = get_object_taxonomies($post_type, 'objects');
 
-        foreach ($taxonomies as $taxonomy) {
-          $terms = get_terms(array(
-            'taxonomy' => $taxonomy->name,
-            'hide_empty' => false,
-          ));
+    foreach ( $post_types as $type ) {
 
-          if (! empty($terms) && ! is_wp_error($terms)) {
-            foreach ($terms as $term) {
-              if ($taxonomy->publicly_queryable == true)
-                if ($taxonomy->name == 'category')
-                  $out['category-' . $term->slug] = $taxonomy->name . ': ' . $term->name;
-                else
-                  $out['term-' . $term->slug] = $taxonomy->name . ': ' . $term->name;
+      $out['post-type-archive-'.$type->name]=$type->label;
+
+    }       
+
+
+
+    $post_types = get_post_types( array( 'public' => true ), 'names' );
+
+    $all_tags = array();
+
+
+
+    foreach ( $post_types as $post_type ) {
+
+        $taxonomies = get_object_taxonomies( $post_type, 'objects' );
+
+
+
+        foreach( $taxonomies as $taxonomy ) {
+
+            $terms = get_terms( array(
+
+                'taxonomy' => $taxonomy->name,
+
+                'hide_empty' => false,
+
+            ) );
+
+
+
+            if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+
+                foreach ( $terms as $term ) {
+
+                  if($taxonomy->publicly_queryable == true)
+
+                    if($taxonomy->name == 'category')
+
+                      $out['category-'.$term->slug] = $taxonomy->name . ': ' .$term->name;
+
+                    else
+
+                      $out['term-'.$term->slug] = $taxonomy->name . ': '.$term->name;
+
+                }
+
             }
-          }
+
         }
-      }
+
+    }
 
       return $out;
-    }
+
+      }
 
 
 
 
 
-    function show_test_type($post)
-    {
+    function show_test_type($post){
 
-      $test_type = get_post_meta($post->ID, 'test_type', true);
+      
+
+      $test_type = get_post_meta($post->ID,'test_type',true);
+
+
 
       // output the radio boxes
+
       $full_page_test_selected = '';
+
       $ab_test_selected = '';
+
       $css_test_selected = '';
+
       $magic_selected = '';
 
-      if ($test_type == 'ab_test')
-        $ab_test_selected = 'checked';
-      if ($test_type == 'full_page')
+
+
+      if($test_type == 'ab_test')
+
+      $ab_test_selected = 'checked';
+
+      if($test_type == 'full_page')
+
         $full_page_test_selected = 'checked';
-      if ($test_type == 'css_test')
+
+      if($test_type == 'css_test')
+
         $css_test_selected = 'checked';
-      if ($test_type == 'magic')
+
+      if($test_type == 'magic')
+
         $magic_selected = 'checked';
 
+
+
       echo '<div>
-    <input type="radio" id="magic" name="test_type" value="magic" ' . esc_attr($magic_selected) . '>
+
+    <input type="radio" id="magic" name="test_type" value="magic" '. esc_attr( $magic_selected ).'>
+
     <label for="magic">
+
       <h5>Magic - Point & Click</h5>
+
       <p>Click anything on your site to test it, and let the magic AI guide you. ✨</p>
+
     </label>  
+
   </div>
+
   <div>
-    <input type="radio" id="full_page" name="test_type" value="full_page" ' . esc_attr($full_page_test_selected) . '>
+
+    <input type="radio" id="full_page" name="test_type" value="full_page" '. esc_attr( $full_page_test_selected ).'>
+
     <label for="full_page"><h5>Full Page</h5><p>Swap between unlimited pages or posts to see the best performer.</p></label>
+
   </div>
+
   <div>
-    <input type="radio" id="ab_test" name="test_type" value="ab_test" ' . esc_attr($ab_test_selected) . '>
+
+    <input type="radio" id="ab_test" name="test_type" value="ab_test" '. esc_attr( $ab_test_selected ).'>
+
     <label for="ab_test"><h5>On Page Elements</h5><p>Compare different on-page elements to discover the best layout.</p></label>
+
   </div>
+
   <div>
-    <input type="radio" id="css_test" name="test_type" value="css_test" ' . esc_attr($css_test_selected) . '>
+
+    <input type="radio" id="css_test" name="test_type" value="css_test" '. esc_attr( $css_test_selected ).'>
+
     <label for="css_test">
+
       <h5>Test Code</h5>
+
       <p>Test CSS styles or JavaScript.</p>
+
     </label>
+
   </div>
+
   ';
-    }
 
-    function show_targeting_options($post)
-    {
+          }
 
-      echo wp_kses_post($this->show_login_targeting_options($post));
 
-      $target_option_device_size = get_post_meta($post->ID, 'target_option_device_size', true);
-      $url_query = get_post_meta($post->ID, 'url_query', true);
-      $target_percentage = get_post_meta($post->ID, 'target_percentage', true);
-      $log_on_visible = get_post_meta($post->ID, 'log_on_visible', true);
+
+    function show_targeting_options($post){
+
+
+
+      echo wp_kses_post( $this->show_login_targeting_options($post) );
+
+
+
+      $target_option_device_size = get_post_meta($post->ID,'target_option_device_size',true);
+
+      $url_query = get_post_meta($post->ID,'url_query',true);
+
+      $target_percentage = get_post_meta($post->ID,'target_percentage',true);
+
+      $log_on_visible = get_post_meta($post->ID,'log_on_visible',true);
+
+      
 
       echo '<h4><label for="bt_experiments_target_option_device_size">Device Size</strong></h4><select name="bt_experiments_target_option_device_size" id="bt_experiments_target_option_device_size">';
+
       echo '<option value="all">All Sizes</option>';
-      echo '<option value="desktop" ' . ((isset($target_option_device_size) && $target_option_device_size == 'desktop') ? 'selected' : '') . '>Desktop (1024px and above)</option>';
-      echo '<option value="desktop_tablet" ' . ((isset($target_option_device_size) && $target_option_device_size == 'desktop_tablet') ? 'selected' : '') . '>Desktop + Tablet</option>';
-      echo '<option value="tablet" ' . ((isset($target_option_device_size) && $target_option_device_size == 'tablet') ? 'selected' : '') . '>Tablet (768px - 1023px)</option>';
-      echo '<option value="tablet_mobile" ' . ((isset($target_option_device_size) && $target_option_device_size == 'tablet_mobile') ? 'selected' : '') . '>Tablet + Mobile</option>';
-      echo '<option value="mobile" ' . ((isset($target_option_device_size) && $target_option_device_size == 'mobile') ? 'selected' : '') . '>Mobile (under 768px)</option>';
+
+      echo '<option value="desktop" '. ((isset($target_option_device_size) && $target_option_device_size == 'desktop') ? 'selected' : '').'>Desktop (1024px and above)</option>';
+
+      echo '<option value="desktop_tablet" '. ((isset($target_option_device_size) && $target_option_device_size == 'desktop_tablet') ? 'selected' : '').'>Desktop + Tablet</option>';
+
+      echo '<option value="tablet" '. ((isset($target_option_device_size) && $target_option_device_size == 'tablet') ? 'selected' : '').'>Tablet (768px - 1023px)</option>';
+
+      echo '<option value="tablet_mobile" '. ((isset($target_option_device_size) && $target_option_device_size == 'tablet_mobile') ? 'selected' : '').'>Tablet + Mobile</option>';
+
+      echo '<option value="mobile" '. ((isset($target_option_device_size) && $target_option_device_size == 'mobile') ? 'selected' : '').'>Mobile (under 768px)</option>';
+
       echo '</select>';
+
       echo '<h4>URL filtering</h4><label for="bt_experiments_url_query">Query:</label>';
-      echo '<BR><textarea id="bt_experiments_url_query" name="bt_experiments_url_query" style="width:100%;min-height:72px;" placeholder="utm_source=Google&#10;utm_source=Facebook">' . esc_textarea($url_query) . '</textarea>';
+
+      echo '<BR><textarea id="bt_experiments_url_query" name="bt_experiments_url_query" style="width:100%;min-height:72px;" placeholder="utm_source=Google&#10;utm_source=Facebook">' . esc_textarea( $url_query ) . '</textarea>';
+
       echo '<p>Test on traffic with matching URL query strings. Use one rule per line (recommended), or separate OR rules with <code>|</code> or commas. Use <code>*</code> for URL contains, and start a rule with <code>NOT </code> to exclude.</p><p class="small urlqueryexamples">EXAMPLES +</p><div class="target-example">*thanks will match any URL containing "thanks". Example matching values: */pl match any complete URL with the string /pl </div><div class="target-example">"utm_source" will match any URL query with the key "utm_source". Example matching values: ?utm_source ?utm_source=anything ?utm_source=somethingelse </div><div class="target-example">"utm_source=fb" will match only when the key and value is a match. Example matching values: ?utm_source=fb  </div><div class="target-example">"NOT ?licenceKey" will exclude any URL containing the string "?licenceKey" </div><div class="target-example">Multiple OR rules: <code>utm_source=fb | utm_source=google | *pricing*</code></div><BR>';
-      echo '<div class="ab-target-percentage"><h4><label for="bt_experiments_target_percentage">Traffic allocation percentage</label></h4><p>Limit the number of site visitors that get tested by a percentage.</p><input type="number" min="1" max="100" id="bt_experiments_target_percentage" name="bt_experiments_target_percentage" style="width:100%;" placeholder="100" value="' . esc_attr($target_percentage) . '"  /><p id="percentage_description"></p></div>';
-      echo '<div class="ab-log-on-visible"><h4>Visit Tracking</h4><label for="bt_experiments_log_on_visible"><input type="checkbox" class="ab-toggle" id="bt_experiments_log_on_visible" name="bt_experiments_log_on_visible" value="1" ' . checked($log_on_visible, '1', false) . '> Wait until element is visible to start tracking visits</label><p>When enabled, visits are only counted when the test element becomes visible on screen. Useful for dynamic content or elements below the fold. When disabled (default), visits are logged immediately on page load.</p></div>';
+
+      echo '<div class="ab-target-percentage"><h4><label for="bt_experiments_target_percentage">Traffic allocation percentage</label></h4><p>Limit the number of site visitors that get tested by a percentage.</p><input type="number" min="1" max="100" id="bt_experiments_target_percentage" name="bt_experiments_target_percentage" style="width:100%;" placeholder="100" value="' . esc_attr( $target_percentage ) . '"  /><p id="percentage_description"></p></div>';
+
+      echo '<div class="ab-log-on-visible"><h4>Visit Tracking</h4><label for="bt_experiments_log_on_visible"><input type="checkbox" class="ab-toggle" id="bt_experiments_log_on_visible" name="bt_experiments_log_on_visible" value="1" ' . checked( $log_on_visible, '1', false ) . '> Wait until element is visible to start tracking visits</label><p>When enabled, visits are only counted when the test element becomes visible on screen. Useful for dynamic content or elements below the fold. When disabled (default), visits are logged immediately on page load.</p></div>';
+
       echo '</div>';
+
+
+
     }
 
 
 
-    function show_login_targeting_options($post)
+    function show_login_targeting_options( $post )
+
     {
+
       global $wp_roles;
 
-      $allowed_roles = get_post_meta($post->ID, 'bt_allowed_roles', true);
-      $defaults = ['logout', 'subscriber', 'customer'];
 
-      if (!is_array($allowed_roles)) {
+
+      $allowed_roles = get_post_meta( $post->ID, 'bt_allowed_roles', true );
+
+      $defaults = ['logout', 'subscriber','customer'];
+
+
+
+      if( !is_array($allowed_roles) ) { 
+
         $allowed_roles = $defaults;
+
       }
 
-      echo '<div class="ab-targeting-roles"><h4>' . esc_html__('User roles', 'ab-split-test-lite') . '</h4>';
+
+
+      echo '<div class="ab-targeting-roles"><h4>'. esc_html__('User roles', 'ab-split-test-lite') .'</h4>';      
+
       echo "<p>Choose the user roles you want to test on. Usually best to just test on logged out (visitors)</p>";
 
+
+
       foreach ($wp_roles->roles as $role => $value) {
-        echo '<label><input type="checkbox" ', ((in_array($role, $allowed_roles)) ? 'checked' : ''), ' name="bt_allowed_roles[]" value="', esc_attr($role), '">', esc_html($value['name']), '</label>';
+
+        echo '<label><input type="checkbox" ', ((in_array($role, $allowed_roles))? 'checked' : ''), ' name="bt_allowed_roles[]" value="', esc_attr( $role ), '">', esc_html( $value['name'] ), '</label>';
+
       }
 
-      echo '<label><input type="checkbox" ' . ((in_array('logout', $allowed_roles)) ? 'checked' : '') . ' name="bt_allowed_roles[]" value="logout">Logged out users</label></div><BR><BR>';
+
+
+      echo '<label><input type="checkbox" '. ((in_array('logout', $allowed_roles))? 'checked' : '') .' name="bt_allowed_roles[]" value="logout">Logged out users</label></div><BR><BR>';
+
+
+
     }
 
+    
 
-    function abst_delete_variation()
-    {
+    
+
+    function abst_delete_variation(){
+
       // if user has ability to edit bt_Experiments post type
+
       if (!current_user_can('edit_posts')) {
+
         wp_die('You do not have the correct permissions to delete this variation.');
+
       }
+
       //get data
-      $eid = isset($_POST['pid']) ? intval(wp_unslash($_POST['pid'])) : 0;
-      $variation = isset($_POST['variation']) ? sanitize_text_field(wp_unslash($_POST['variation'])) : '';
+
+      $eid = isset( $_POST['pid'] ) ? intval( wp_unslash( $_POST['pid'] ) ) : 0;
+
+      $variation = isset( $_POST['variation'] ) ? sanitize_text_field( wp_unslash( $_POST['variation'] ) ) : '';
+
       //get observations
+
       $obs = maybe_unserialize(get_post_meta($eid, 'observations', true));
-      if (!empty($obs)  && !empty($obs[$variation])) {
+
+      if(!empty($obs)  && !empty($obs[$variation]))
+
+      {
+
         unset($obs[$variation]);
+
         update_post_meta($eid, 'observations', $obs);
+
         echo "variation deleted";
+
         die();
-      } else if (!empty($obs)) {
+
+      }
+
+      else if (!empty($obs))
+
+      {
+
         foreach ($obs as $key => $value) {
-          if (is_int($key)) {
+
+          if(is_int($key))
+
+          {
+
             //get post title from id
+
             $title = get_the_title($key);
-            if ($title == $variation) {
+
+            if($title == $variation)
+
+            {
+
               unset($obs[$key]);
+
               update_post_meta($eid, 'observations', $obs);
+
               echo "Variation deleted";
+
               //end ajax response
+
               die();
+
             }
+
           }
+
         }
-      } else {
+
+      }
+
+      else
+
+      {
+
         abst_log("Error deleting variation. Could not find variation.");
+
         abst_log(json_encode($obs));
+
         echo "Error deleting variation. Could not find variation."; //print_r($obs, true);
+
       }
+
     }
 
-    function count_active_experiments()
-    {
-      $count_posts = wp_count_posts('bt_experiments');
+
+
+    function count_active_experiments() {
+
+      $count_posts = wp_count_posts('bt_experiments');    
+
       return $count_posts->publish;
+
     }
 
-    function get_ac_data($id)
+    
+
+    function get_ac_data( $id )
+
     {
-      if (class_exists('Ab_Tests_Autocomplete')) {
-        $ac_data = Ab_Tests_Autocomplete::get_data($id);
+
+      if( class_exists('Ab_Tests_Autocomplete') )  {
+
+        $ac_data = Ab_Tests_Autocomplete::get_data($id);  
+
       } else {
+
         $ac_data = [
+
           'autocomplete_on' => false,
+
           'min_days'  => 1,
+
           'min_views' => 10
+
         ];
+
       }
+
+      
 
       return $ac_data;
+
     }
 
-    function convert_ab_split_test_shortcode($atts, $content = null)
-    {
+    
+
+    
+
+    
+
+    function convert_ab_split_test_shortcode($atts, $content = null) {
+
       // Extract attributes from the shortcode
+
       $attributes = shortcode_atts(array(
+
         'eid' => '',
+
         'var' => '',
+
         'wrap' => 'span'
+
       ), $atts);
+
+      
 
       // Create the class attributes
+
       $class_eid = 'ab-' . esc_attr($attributes['eid']);
+
       $class_var = 'ab-var-' . esc_attr($attributes['var']);
 
+      
+
       // Construct and return the HTML string
+
       return '<' . esc_attr($attributes['wrap']) . ' class="' . $class_eid . ' ' . $class_var . '">' . do_shortcode($content) . '</' . esc_attr($attributes['wrap']) . '>';
+
     }
 
+    
+
+    
+
+    
 
     //shortcode report function
-    function ab_split_test_report($atts)
-    {
+
+    function ab_split_test_report($atts){
+
       $atts = shortcode_atts(array(
+
         'emailreport' => false
+
       ), $atts);
+
+      
 
       //check if disabled
       $shortcode_enabled = apply_filters('abst_shortcode', true);
       // Backward compatibility: also allow old hook name (new hook takes precedence)
       $shortcode_enabled = apply_filters("abst_shortcode", $shortcode_enabled);
-      if (!$shortcode_enabled)
+      if(!$shortcode_enabled)
+
         return "AB Split Test Lite: Shortcode Disabled.";
 
+    
+
       //agency only soz
+
       $agency = abst_user_level() == 'agency';
-      if (!$agency)
+
+      if(!$agency)
+
         return "AB Split Test Lite: Upgrade to use reports.";
 
-      return $this->abst_all_experiments_shortcode($atts['emailreport']);
+  
+
+      return $this->abst_all_experiments_shortcode( $atts['emailreport'] );
+
     }
 
+
+
     /**
+
      * AJAX handler for sending test emails
-     */
-    function abst_send_test_email()
-    {
-      if (!current_user_can('manage_options')) {
-        wp_send_json_error('You do not have permission to send test emails');
-        return;
-      }
-      //get email from POST
-      $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
-      if (empty($email)) {
-        wp_send_json_error('Email address is required');
-        return;
-      }
-      //send email to email
-      abst_send_report_email($email);
-      wp_send_json_success('Test email sent successfully!');
-    }
-
-    function abst_all_experiments_shortcode($emailreport = false)
-    {
-
-      // get all active and complete experiments
-
-      if (!$emailreport)
-        $posts = get_posts([
-          'post_type' => 'bt_experiments',
-          'post_status' => 'any',
-          'numberposts' => -1
-        ]);
-      else
-        $posts = get_posts([
-          'post_type' => 'bt_experiments',
-          'post_status' => ['publish', 'complete'],
-          'numberposts' => -1,
-        ]);
-
-      $out = '';
-      foreach ($posts as $post) {
-        $out = $out . "<h1><small>Test:</small> " . $post->post_title . "</h1>";
-        $out = $out . $this->abst_get_experiment_results($post);
-      }
-
-      return $out;
-    }
-
-
-    function abst_get_experiment_results($post)
-    {
-      ob_start();
-      $this->abst_show_experiment_results($post, true);
-      $list = ob_get_contents();
-      ob_end_clean();
-      return $list;
-    }
-
-    /**
-
-     * Identify the control/original variation key based on test type and naming rules.
-
-     * - For magic tests: 'magic-0'
-
-     * - For CSS/on-page tests: match defaultNames
-
-     * - For full page tests: 'bt_experiments_full_page_default_page' if present
-
-     * @param array $variations
-
-     * @return string|null
 
      */
 
-    /**
+function abst_all_experiments_shortcode($emailreport = false){
 
-     * Identify the control/original variation key based on test type and naming rules.
+  
 
-     * - For magic tests: 'magic-0'
+  // get all active and complete experiments
 
-     * - For CSS/on-page tests: match defaultNames
+  
 
-     * - For full page tests: get control key from post meta 'bt_experiments_full_page_default_page'
+  if(!$emailreport)
 
-     * @param array $variations
+    $posts = get_posts([
 
-     * @param WP_Post|null $test (optional) - the experiment post object
+      'post_type' => 'bt_experiments',
 
-     * @return string|null
+      'post_status' => 'any',
 
-     */
+      'numberposts' => -1
 
-    public function identify_control_variation($variations, $test = null)
-    {
+    ]);
 
-      // Magic test: magic-0 always control
+  else
 
-      if (isset($variations['magic-0'])) return 'magic-0';
+    $posts = get_posts([
+
+      'post_type' => 'bt_experiments',
+
+      'post_status' => ['publish', 'complete'],
+
+      'numberposts' => -1,
+
+      ]);
+
+  
+
+  $out = '';
+
+  foreach ($posts as $post){
+
+    $out = $out . "<h1><small>Test:</small> ".$post->post_title."</h1>";
+
+    $out = $out . $this->abst_get_experiment_results( $post );
+
+  }
+
+  
+
+  return $out;
+
+}
 
 
 
-      if ($test && isset($variations['test-css-' . $test->ID . '-1'])) return 'test-css-' . $test->ID . '-1';
+
+
+function abst_get_experiment_results( $post){
+
+  ob_start(); 
+
+  $this->abst_show_experiment_results($post, true);
+
+  $list = ob_get_contents(); 
+
+  ob_end_clean(); 
+
+  return $list; 
+
+  
+
+}
 
 
 
-      // Full page test: get control key from post meta
+/**
 
-      if ($test && get_post_meta($test->ID, 'test_type', true) === 'full_page') {
+ * Identify the control/original variation key based on test type and naming rules.
+
+ * - For magic tests: 'magic-0'
+
+ * - For CSS/on-page tests: match defaultNames
+
+ * - For full page tests: 'bt_experiments_full_page_default_page' if present
+
+ * @param array $variations
+
+ * @return string|null
+
+ */
+
+/**
+
+ * Identify the control/original variation key based on test type and naming rules.
+
+ * - For magic tests: 'magic-0'
+
+ * - For CSS/on-page tests: match defaultNames
+
+ * - For full page tests: get control key from post meta 'bt_experiments_full_page_default_page'
+
+ * @param array $variations
+
+ * @param WP_Post|null $test (optional) - the experiment post object
+
+ * @return string|null
+
+ */
+
+public function identify_control_variation($variations, $test = null) {
+
+    // Magic test: magic-0 always control
+
+    if (isset($variations['magic-0'])) return 'magic-0';
+
+    
+
+    if ($test && isset($variations['test-css-' . $test->ID . '-1'])) return 'test-css-' . $test->ID . '-1';
+
+
+
+    // Full page test: get control key from post meta
+
+    if ($test && get_post_meta($test->ID, 'test_type', true) === 'full_page') {
 
         $default_page_key = get_post_meta($test->ID, 'bt_experiments_full_page_default_page', true);
 
         if ($default_page_key) {
 
-          return $default_page_key; // Always return default page as control, even if no observations yet
+            return $default_page_key; // Always return default page as control, even if no observations yet
 
         }
-      }
+
+    }
 
 
 
-      // CSS/on-page: match defaultNames
+    // CSS/on-page: match defaultNames
 
-      $defaultNames = ['original', 'one', '1', 'default', 'standard', 'a', 'control'];
+    $defaultNames = ['original','one','1','default','standard','a','control'];
 
-      foreach ($variations as $key => $data) {
+    foreach ($variations as $key => $data) {
 
         $variationName = strtolower($key);
 
         foreach ($defaultNames as $d) {
 
-          if ($variationName === $d) return $key;
+            if ($variationName === $d) return $key;
+
         }
+
+    }
+
+    // Fallback: return nothing so it doesnt display uplift downlift stuff
+
+    return false;
+
+}
+
+
+
+public function get_experiment_stats_array( $test ){
+
+  $pid = $test->ID;
+
+  $observations = get_post_meta($pid,'observations',true);
+
+  //abst_log($observations);
+
+
+
+  if(empty($observations) || !is_array($observations))
+
+    return null;
+
+
+
+  $percentage_target         = apply_filters('abst_complete_confidence', 95);
+  // Backward compatibility: also allow old hook name (new hook takes precedence)
+  $percentage_target         = apply_filters("abst_complete_confidence", $percentage_target);
+
+  $min_visits_for_winner     = apply_filters('abst_min_visits_for_winner', 50);
+  // Backward compatibility: also allow old hook name (new hook takes precedence)
+  $min_visits_for_winner     = apply_filters("abst_min_visits_for_winner", $min_visits_for_winner);
+
+  $conversion_use_order_value= get_post_meta($test->ID,'conversion_use_order_value',true);
+
+  $conversion_style          = get_post_meta($test->ID,'conversion_style',true);
+
+  $test_type                 = get_post_meta($test->ID,'test_type',true);
+
+
+
+  $test_age = intval((time() - get_post_time('U',true,$test))/60/60/24);
+
+
+
+  // Keep a copy of raw observations before statistical analysis
+
+  $raw_observations = $observations;
+
+  
+
+  //wp_send_json_success($observations);
+
+
+
+  if($conversion_style != 'thompson'){
+
+    require_once 'includes/statistics.php';
+
+    if($conversion_use_order_value == '1' && is_array($observations)){
+
+      // Use Welch's T-Test for revenue/order value data (continuous values)
+
+      $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+
+      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
+
+    } else {
+
+      // Use Bayesian analyzer for binary conversion data
+
+      $observations = bt_bb_ab_split_test_analyzer($observations,$test_age);
+
+      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+
+    }
+
+  }
+
+
+
+  // Get stats block if available, or use defaults
+
+  $has_stats = is_array($observations) && !empty($observations['bt_bb_ab_stats']);
+
+  $stats_block    = $has_stats ? $observations['bt_bb_ab_stats'] : [];
+
+  $likelyDuration = isset($stats_block['likelyDuration']) ? intval($stats_block['likelyDuration']) : 0;
+
+  $winner_key     = isset($stats_block['best']) ? $stats_block['best'] : '';
+
+  $winner_conf    = isset($stats_block['probability']) ? floatval($stats_block['probability']) : 0.0;
+
+
+
+  $duration_so_far_days = max($test_age, 0);
+
+  $time_remaining_days  = max($likelyDuration - $test_age, 0);
+
+
+
+  $duration_so_far  = $duration_so_far_days . ' days';
+
+  
+
+  // Adjust time remaining based on test status
+
+  $test_status = get_post_status($pid);
+
+  if ($test_status === 'complete') {
+
+    $time_remaining = 'Complete';
+
+  } elseif ($test_status === 'draft') {
+
+    $time_remaining = 'Not started';
+
+  } elseif ($test_status === 'publish') {
+
+    $time_remaining = $time_remaining_days . ' days';
+
+  } else {
+
+    // Paused or other status
+
+    $time_remaining = 'Paused';
+
+  }
+
+
+
+  $variations = [];
+
+  
+
+  // First, get all configured variations based on test type
+
+  $all_variation_keys = [];
+
+  
+
+  if ($test_type === 'full_page') {
+
+    // For full page tests, get from page_variations meta
+
+    $page_variations = get_post_meta($pid, 'page_variations', true);
+
+    if (is_array($page_variations)) {
+
+      $all_variation_keys = array_keys($page_variations);
+
+    }
+
+  } elseif ($test_type === 'magic') {
+
+    // For magic tests, parse magic_definition to get variation count
+
+    $magic_definition = get_post_meta($pid, 'magic_definition', true);
+
+    if (!empty($magic_definition)) {
+
+      $decoded = json_decode($magic_definition, true);
+
+      if (is_array($decoded)) {
+
+        // Count variations in magic definition
+
+        $variation_count = 0;
+
+        foreach ($decoded as $element) {
+
+          if (isset($element['variations']) && is_array($element['variations'])) {
+
+            $variation_count = max($variation_count, count($element['variations'])); // variations array includes original
+
+          }
+
+        }
+
+        // Generate magic-0, magic-1, etc.
+
+        for ($i = 0; $i < $variation_count; $i++) {
+
+          $all_variation_keys[] = 'magic-' . $i;
+
+        }
+
       }
 
-      // Fallback: return nothing so it doesnt display uplift downlift stuff
+    }
 
-      return false;
+  }
+
+  
+
+  // Add variations from observations (these have data)
+
+  // Use analyzed observations if available, otherwise use raw observations
+
+  $obs_to_use = $has_stats ? $observations : $raw_observations;
+
+  
+
+  foreach($obs_to_use as $key => $data) {
+
+    if($key === 'bt_bb_ab_stats' || !is_array($data))
+
+      continue;
+
+
+
+    $visits      = isset($data['visit']) ? intval($data['visit']) : 0;
+
+    $conversions = isset($data['conversion']) ? floatval($data['conversion']) : 0.0;
+
+
+
+    $conversion_rate = 0.0;
+
+    if($visits > 0) {
+
+      if($conversion_use_order_value) {
+
+        $conversion_rate = isset($data['rate']) ? floatval($data['rate'])/100.0 : 0.0;
+
+      } else {
+
+        $conversion_rate = ($conversions / max($visits,1));
+
+      }
+
     }
 
 
 
-    public function get_experiment_stats_array($test)
+    $likelihood = isset($data['probability']) ? floatval($data['probability'])/100.0 : 0.0;
+
+
+
+    // Derive page_id from location data (same as admin results)
+
+    $page_id = 0;
+
+    if (isset($data['location']['visit'][0])) {
+
+      $visit_location = $data['location']['visit'][0];
+
+      if (is_numeric($visit_location)) {
+
+        $page_id = (int) $visit_location;
+
+      }
+
+    }
+
+
+
+    // Flatten device_size into a REST-friendly shape so API/MCP/CLI consumers can filter.
+
+    $device_size_payload = null;
+
+    if (isset($data['device_size']) && is_array($data['device_size'])) {
+
+      $device_size_payload = [];
+
+      foreach ($data['device_size'] as $sk => $sb) {
+
+        if (!is_array($sb)) continue;
+
+        $sv = isset($sb['visit']) ? intval($sb['visit']) : 0;
+
+        $sc = isset($sb['conversion']) ? floatval($sb['conversion']) : 0.0;
+
+        $srate = 0.0;
+
+        if ($sv > 0) {
+
+          $srate = $conversion_use_order_value
+
+            ? (isset($sb['rate']) ? floatval($sb['rate'])/100.0 : 0.0)
+
+            : ($sc / max($sv, 1));
+
+        }
+
+        $device_size_payload[$sk] = [
+
+          'visits'                => $sv,
+
+          'conversions'           => $sc,
+
+          'conversion_rate'       => $srate,
+
+          'likelihood_of_winning' => isset($sb['probability']) ? floatval($sb['probability'])/100.0 : 0.0,
+
+        ];
+
+      }
+
+    }
+
+
+
+    $variations[$key] = [
+
+      'label'                 => (string)$key,
+
+      'visits'                => $visits,
+
+      'conversions'           => $conversions,
+
+      'conversion_rate'       => $conversion_rate,
+
+      'likelihood_of_winning' => $likelihood,
+
+      'page_id'               => $page_id,
+
+      'device_size'           => $device_size_payload,
+
+    ];
+
+  }
+
+
+
+  // Add configured variations that don't have data yet
+
+  foreach ($all_variation_keys as $var_key) {
+
+    if (!isset($variations[$var_key])) {
+
+      $variations[$var_key] = [
+
+        'label'                 => (string)$var_key,
+
+        'visits'                => 0,
+
+        'conversions'           => 0.0,
+
+        'conversion_rate'       => 0.0,
+
+        'likelihood_of_winning' => 0.0,
+
+        'page_id'               => 0,
+
+        'device_size'           => null,
+
+      ];
+
+    }
+
+  }
+
+
+
+  global $btab;
+
+  $control_key = null;
+
+  if( is_object($btab) && method_exists($btab, 'identify_control_variation') ){
+
+    $control_key = $btab->identify_control_variation($variations, $test);
+
+  }
+
+  
+
+  if( $control_key && isset($variations[$control_key]) ){
+
+    $control_rate = $variations[$control_key]['conversion_rate'];
+
+    if($control_rate > 0){
+
+      foreach($variations as $vk => &$vd){
+
+        $vd['uplift_vs_control'] = ($vd['conversion_rate'] - $control_rate) / $control_rate;
+
+      }
+
+    } else {
+
+      foreach($variations as $vk => &$vd){
+
+        $vd['uplift_vs_control'] = 0.0;
+
+      }
+
+    }
+
+    unset($vd);
+
+  }
+
+
+
+  // ISO8601 start date for Agency Hub UI (parsed in JS)
+
+  $start_date_iso = get_post_time('c', true, $pid);
+
+
+
+  // Per-size winner map so consumers can show per-device winners without re-running analyzers
+
+  $device_size_winners = null;
+
+  if (is_array($observations) && isset($observations['bt_bb_ab_stats']['device_size']) && is_array($observations['bt_bb_ab_stats']['device_size'])) {
+
+    $device_size_winners = [];
+
+    foreach ($observations['bt_bb_ab_stats']['device_size'] as $sk => $sb) {
+
+      // Per-size underpowered: any variation below the visit floor on this size,
+
+      // or best probability is below the confidence target.
+
+      $size_min_visits_ok = true;
+
+      $size_max_visits = 0;
+
+      if (is_array($observations)) {
+
+        foreach ($observations as $vk => $vd) {
+
+          if ($vk === 'bt_bb_ab_stats' || !is_array($vd)) continue;
+
+          $sv = isset($vd['device_size'][$sk]['visit']) ? intval($vd['device_size'][$sk]['visit']) : 0;
+
+          if ($sv < $min_visits_for_winner) $size_min_visits_ok = false;
+
+          if ($sv > $size_max_visits) $size_max_visits = $sv;
+
+        }
+
+      }
+
+      $size_prob = isset($sb['probability']) ? intval($sb['probability']) : 0;
+
+      $size_is_underpowered = (!$size_min_visits_ok || $size_prob < $percentage_target);
+
+      $device_size_winners[$sk] = [
+
+        'winner_key'      => (!$size_is_underpowered && isset($sb['best']) && $sb['best'] !== false) ? $sb['best'] : null,
+
+        'winner_conf'     => $size_prob,
+
+        'is_underpowered' => $size_is_underpowered,
+
+      ];
+
+    }
+
+  }
+
+
+
+  // Sample-size signals for programmatic consumers (REST/MCP/CLI).
+
+  // Matches the UI's Underpowered gate so clients can make the same decisions.
+
+  $has_sufficient_data = true;
+
+  foreach ($variations as $vd) {
+
+    if (intval($vd['visits']) < $min_visits_for_winner) {
+
+      $has_sufficient_data = false;
+
+      break;
+
+    }
+
+  }
+
+  $is_underpowered = (!$has_sufficient_data || $winner_conf < $percentage_target);
+
+
+
+  return [
+
+    'id'                      => $pid,
+
+    'name'                    => get_the_title($pid),
+
+    'status'                  => get_post_status($pid),
+
+    'test_age_days'           => $duration_so_far_days,
+
+    'likely_duration'         => $likelyDuration,
+
+    'time_remaining'          => $time_remaining,
+
+    'duration_so_far'         => $duration_so_far,
+
+    'conversion_style'        => $conversion_style,
+
+    'test_type'               => $test_type,
+
+    'winner_key'              => $winner_key,
+
+    'winner_conf'             => $winner_conf,
+
+    'confidence_target'       => $percentage_target,
+
+    'min_visits_for_winner'   => $min_visits_for_winner,
+
+    'has_sufficient_data'     => $has_sufficient_data,
+
+    'is_underpowered'         => $is_underpowered,
+
+    'start_date'              => $start_date_iso,
+
+    'variations'              => $variations,
+
+    'device_size_winners'     => $device_size_winners,
+
+  ];
+
+}
+
+
+
+
+
+
+
+function abst_show_experiment_results($test,$asTable = false){
+
+
+
+  $ac_data = $this->get_ac_data($test->ID);
+
+  $pid = $test->ID;
+
+  
+
+  $observations = get_post_meta($pid,'observations',true);
+
+  
+
+  // For magic tests, ensure all configured variations exist in observations (even with zero data)
+
+  $test_type = get_post_meta($pid, 'test_type', true);
+
+  if($test_type === 'magic') {
+
+    $magic_definition = get_post_meta($pid, 'magic_definition', true);
+
+    if(!empty($magic_definition)) {
+
+      $magic_def = json_decode($magic_definition, true);
+
+      if(is_array($magic_def) && isset($magic_def[0]['variations']) && is_array($magic_def[0]['variations'])) {
+
+        // Ensure observations array exists
+
+        if(!is_array($observations)) {
+
+          $observations = [];
+
+        }
+
+        
+
+        // Ensure all variations have observation entries (variations[0] = original, [1..N] = test)
+
+        for($i = 0; $i < count($magic_def[0]['variations']); $i++) {
+
+          $var_key = 'magic-' . $i;
+
+          if(!isset($observations[$var_key])) {
+
+            $observations[$var_key] = ['visit' => 0, 'conversion' => 0, 'rate' => 0];
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+
+  if(!empty($observations) ) // not empty
+
+  {
+
+    //filter observations, remove unsanitized
+
+    $dirtyInputs = false;
+
+    $cleanInputs = intval($_GET['abstCleanInputs'] ?? 0);
+
+    foreach($observations as $key => $value){
+
+      if(abst_sanitize($key) != $key){
+
+        if($cleanInputs == 1)
+
+          unset($observations[$key]);
+
+        $dirtyInputs = true;
+
+      }
+
+    }
+
+    if($dirtyInputs){
+
+      if($cleanInputs == 1)
+
+      {
+
+        update_post_meta($pid,'observations', $observations);
+
+        echo('<h4>Unsanitized key removal finished, please refresh the page.</h4>');
+
+      }
+
+      else
+
+      {
+
+        //construct clean inputs href
+
+        $cleanHref = esc_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) . "&abstCleanInputs=1" );
+
+        echo '<h4 class="error">Unsanitized keys found (disallowed characters are: @ # $ % ^ &amp; *). <BR/><a href="' . esc_attr( $cleanHref ) . '">Click here to remove them</a></h4>';
+
+      }
+
+    }
+
+  }
+
+  
+
+  // Check for invalid variation keys in full page tests
+
+  $invalid_variations_check = $this->detect_invalid_fullpage_variations($pid);
+
+  if ($invalid_variations_check['has_invalid']) {
+
+    $cleanupConfirm = intval($_GET['abstCleanupVariations'] ?? 0);
+
+    if ($cleanupConfirm == 1) {
+
+      $cleanup_result = $this->cleanup_single_fullpage_test($pid);
+
+      if ($cleanup_result['success'] && !empty($cleanup_result['removed'])) {
+
+        echo '<div class="notice notice-success" style="padding: 12px; margin: 10px 0; border-left: 4px solid #46b450;">';
+
+        echo '<strong>✅ Cleanup Complete!</strong> Removed ' . count($cleanup_result['removed']) . ' invalid variation keys: <code>' . esc_html(implode(', ', $cleanup_result['removed'])) . '</code>';
+
+        echo '<br><em>Please refresh the page to see updated results.</em>';
+
+        echo '</div>';
+
+      }
+
+    } else {
+
+      // Show warning with cleanup button
+
+      $invalid_count = count($invalid_variations_check['invalid_keys']);
+
+      $valid_ids = implode(', ', $invalid_variations_check['valid_variations']);
+
+      $invalid_ids = implode(', ', $invalid_variations_check['invalid_keys']);
+
+      $cleanupHref = esc_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) . "&abstCleanupVariations=1" );
+
+      
+
+      echo '<div class="notice notice-warning" style="padding: 12px; margin: 10px 0; border-left: 4px solid #ffb900;">';
+
+      echo '<strong>⚠️ Invalid Variation Data Detected</strong><br>';
+
+      echo 'Found <strong>' . esc_html( $invalid_count ) . '</strong> observation key(s) that don\'t match any configured page in this test.<br>';
+
+      echo '<small style="color: #666;">Valid page IDs: <code>' . esc_html($valid_ids) . '</code> | Invalid keys: <code>' . esc_html($invalid_ids) . '</code></small><br><br>';
+
+      echo '<a href="' . esc_attr( $cleanupHref ) . '" class="button button-secondary" onclick="return confirm(\'This will remove data for variation keys: ' . esc_attr($invalid_ids) . '. This cannot be undone. Continue?\');">🧹 Remove Invalid Data</a>';
+
+      echo '</div>';
+
+    }
+
+  }
+
+  
+
+  $titles = [];
+
+  $percentage_target = apply_filters('abst_complete_confidence', 95);
+  // Backward compatibility: also allow old hook name (new hook takes precedence)
+  $percentage_target = apply_filters("abst_complete_confidence", $percentage_target);
+
+  $test_type = get_post_meta($test->ID,'test_type',true);
+
+  $goals = get_post_meta($test->ID,'goals',true);
+
+  $test_winner = get_post_meta($test->ID,'test_winner',true);
+
+  $webhook_url = get_post_meta($test->ID,'webhook_url',true);
+
+  $conversion_use_order_value = get_post_meta($test->ID,'conversion_use_order_value',true);
+
+  $autocomplete_on = get_post_meta($test->ID,'autocomplete_on',true);
+
+  $conversion_style = get_post_meta($test->ID,'conversion_style',true);
+
+  if($conversion_style == 'thompson') $autocomplete_on = 0;
+
+  $test_age = intval((time() - get_post_time('U',true,$test))/60/60/24); 
+
+  if($conversion_style != 'thompson'){
+
+    require_once 'includes/statistics.php';
+
+    if($conversion_use_order_value == '1' && is_array($observations)){
+
+      // Use Welch's T-Test for revenue/order value data (continuous values)
+
+      $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+
+      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
+
+    } else {
+
+      // Use Bayesian analyzer for binary conversion data
+
+      $observations = bt_bb_ab_split_test_analyzer($observations,$test_age);
+
+      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+
+    }
+
+  }
+
+
+
+ if($conversion_use_order_value){
+
+    $conversion_text = 'Revenue / visit';
+
+    $conversion_t = 'Test Revenue';
+
+  }
+
+  else
+
+  {
+
+    $conversion_text = 'Conversion Rate';
+
+    $conversion_t = 'Conversions';
+
+  }
+
+  $foundGoals = [];
+
+  //check if goals is an array
+
+  if(!empty($goals))
+
+    foreach ($goals as $key => $value) {    //get first item in array
+
+      if(is_array($value) && !empty($value)) {
+
+        if(key($value) == 'page')
+
+          $val = get_the_title(reset($value));
+
+        elseif(is_int(key($value)))
+
+          $val = get_the_title(key($value));
+
+        else
+
+          $val = reset($value);
+
+
+
+        if(is_array($value))
+
+          $foundGoals[$key] = ucfirst(key($value)) . " " . $val;
+
+        }
+
+    }
+
+  $test_type_label = get_post_meta($test->ID,'test_type',true);
+
+  if($test_type_label == 'full_page') $test_type_label = 'Full Page Test';
+
+  else if($test_type_label == 'magic') $test_type_label = 'Magic Test';
+
+  else if($test_type_label == 'ab_test') $test_type_label = 'On-Page Test';
+
+  else if($test_type_label == 'css_test') $test_type_label = 'Code Test';
+
+  else
+
+    $test_type_label = 'Start your test to collect results.';
+
+  
+
+  // Start Status Panel
+
+  echo "<div class='abst-results-panel abst-status-panel'>";
+
+  
+
+  echo "<div class='abst-results-header'>";
+
+  echo "<h2>" . esc_html( $test_type_label ) . ": <span class='status'>";
+
+  if($test->post_status == 'publish')
+
+  {
+
+    if($conversion_style == 'thompson')
+
     {
 
-      $pid = $test->ID;
+      echo "Monitoring & Allocating Traffic";
 
-      $observations = get_post_meta($pid, 'observations', true);
+    }
 
-      //abst_log($observations);
+    else  
 
+    {
 
+      echo "Collecting data";
 
-      if (empty($observations) || !is_array($observations))
+    }
 
-        return null;
+  }
 
+  else if($test->post_status == 'complete')
 
+    echo "Complete";
 
-      $percentage_target         = apply_filters('abst_complete_confidence', 95);
-      // Backward compatibility: also allow old hook name (new hook takes precedence)
-      $percentage_target         = apply_filters("abst_complete_confidence", $percentage_target);
+  else
 
-      $min_visits_for_winner     = apply_filters('abst_min_visits_for_winner', 50);
-      // Backward compatibility: also allow old hook name (new hook takes precedence)
-      $min_visits_for_winner     = apply_filters("abst_min_visits_for_winner", $min_visits_for_winner);
+    echo "Paused";
 
-      $conversion_use_order_value = get_post_meta($test->ID, 'conversion_use_order_value', true);
+  echo "</span></h2>";
 
-      $conversion_style          = get_post_meta($test->ID, 'conversion_style', true);
-
-      $test_type                 = get_post_meta($test->ID, 'test_type', true);
+  echo "</div>"; // close abst-results-header
 
 
 
-      $test_age = intval((time() - get_post_time('U', true, $test)) / 60 / 60 / 24);
+  // Output experiment status and the rest of the block-level content outside the heading
+
+  if($conversion_style == 'thompson')
+
+  {
+
+    $experiment_status = "<p class='experiment-status'>Your test is running and allocating traffic to variations.</p>";
+
+  }
+
+  else
+
+  {
+
+    $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_WL_ABTEST . " to find the winner. ";
+
+  }
+
+  $remaining = '';
+
+  if($conversion_use_order_value && !empty($aovobs['bt_bb_ab_stats']['likelyDuration'])){
+
+    $remaining = "</p><p>About " . ($aovobs['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
+
+  } elseif( !empty($observations['bt_bb_ab_stats']['likelyDuration'])){
+
+    $remaining = "</p><p>About " . ($observations['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
+
+  }
 
 
 
-      // Keep a copy of raw observations before statistical analysis
+  // Friendlier message for very new tests
 
-      $raw_observations = $observations;
+  if ($test_age < 2) {
+
+    $experiment_status = "<p class='experiment-status'>🧪 Your test is just getting started. Give it a day or so to collect more data and check back soon for insights!</p>";
+
+  } else {
+
+    if($conversion_style == 'thompson')
+
+    {
+
+      $experiment_status = "<p class='experiment-status'>Your test is running and will dynamically allocate traffic to variations after its collected enough inital data.<BR>Traffic is split evenly until you have recorded " . apply_filters('abst_min_conversions_for_mab', 40) . " conversions, then traffic will be weighted based on the relative uplift of each variation.</p>";
+
+    }
+
+    else
+
+    {
+
+      $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_WL_ABTEST . " to find the winner. " . $remaining . "</p>";
+
+    }
+
+  }
+
+  $goodStats = true;
 
 
 
-      //wp_send_json_success($observations);
+  if( empty($observations) ) // empty
 
+  {
 
+    $goodStats = false;
 
-      if ($conversion_style != 'thompson') {
+  }
 
-        require_once 'includes/statistics.php';
+  else
 
-        if ($conversion_use_order_value == '1' && is_array($observations)) {
+  {
 
-          // Use Welch's T-Test for revenue/order value data (continuous values)
+    //check results are decent
 
-          $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+    foreach($observations as $m => $a)
 
-          $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
-        } else {
+    {
 
-          // Use Bayesian analyzer for binary conversion data
+      if(!empty($a['visit']))
 
-          $observations = bt_bb_ab_split_test_analyzer($observations, $test_age);
+        if($a['visit'] < 1 || $a['conversion'] < 0)
 
-          $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+        {
+
+          $goodStats = false;
+
+          break;
+
         }
-      }
+
+    }
+
+  }
 
 
 
-      // Get stats block if available, or use defaults
+  if($goodStats)
 
-      $has_stats = is_array($observations) && !empty($observations['bt_bb_ab_stats']);
+  {        
 
-      $stats_block    = $has_stats ? $observations['bt_bb_ab_stats'] : [];
+    //if its a full page test then loop through all observationbs
 
-      $likelyDuration = isset($stats_block['likelyDuration']) ? intval($stats_block['likelyDuration']) : 0;
+    if($test_type  == 'full_page')
 
-      $winner_key     = isset($stats_block['best']) ? $stats_block['best'] : '';
+    {
 
-      $winner_conf    = isset($stats_block['probability']) ? floatval($stats_block['probability']) : 0.0;
+      foreach($observations as $key => $value)
 
+      {
 
-
-      $duration_so_far_days = max($test_age, 0);
-
-      $time_remaining_days  = max($likelyDuration - $test_age, 0);
-
-
-
-      $duration_so_far  = $duration_so_far_days . ' days';
-
-
-
-      // Adjust time remaining based on test status
-
-      $test_status = get_post_status($pid);
-
-      if ($test_status === 'complete') {
-
-        $time_remaining = 'Complete';
-      } elseif ($test_status === 'draft') {
-
-        $time_remaining = 'Not started';
-      } elseif ($test_status === 'publish') {
-
-        $time_remaining = $time_remaining_days . ' days';
-      } else {
-
-        // Paused or other status
-
-        $time_remaining = 'Paused';
-      }
-
-
-
-      $variations = [];
-
-
-
-      // First, get all configured variations based on test type
-
-      $all_variation_keys = [];
-
-
-
-      if ($test_type === 'full_page') {
-
-        // For full page tests, get from page_variations meta
-
-        $page_variations = get_post_meta($pid, 'page_variations', true);
-
-        if (is_array($page_variations)) {
-
-          $all_variation_keys = array_keys($page_variations);
-        }
-      } elseif ($test_type === 'magic') {
-
-        // For magic tests, parse magic_definition to get variation count
-
-        $magic_definition = get_post_meta($pid, 'magic_definition', true);
-
-        if (!empty($magic_definition)) {
-
-          $decoded = json_decode($magic_definition, true);
-
-          if (is_array($decoded)) {
-
-            // Count variations in magic definition
-
-            $variation_count = 0;
-
-            foreach ($decoded as $element) {
-
-              if (isset($element['variations']) && is_array($element['variations'])) {
-
-                $variation_count = max($variation_count, count($element['variations'])); // variations array includes original
-
-              }
-            }
-
-            // Generate magic-0, magic-1, etc.
-
-            for ($i = 0; $i < $variation_count; $i++) {
-
-              $all_variation_keys[] = 'magic-' . $i;
-            }
-          }
-        }
-      }
-
-
-
-      // Add variations from observations (these have data)
-
-      // Use analyzed observations if available, otherwise use raw observations
-
-      $obs_to_use = $has_stats ? $observations : $raw_observations;
-
-
-
-      foreach ($obs_to_use as $key => $data) {
-
-        if ($key === 'bt_bb_ab_stats' || !is_array($data))
+        if(is_numeric($key))
 
           continue;
 
+        // its a text slug, get the post 
 
+        $qpo = get_posts(array
 
-        $visits      = isset($data['visit']) ? intval($data['visit']) : 0;
-
-        $conversions = isset($data['conversion']) ? floatval($data['conversion']) : 0.0;
-
-
-
-        $conversion_rate = 0.0;
-
-        if ($visits > 0) {
-
-          if ($conversion_use_order_value) {
-
-            $conversion_rate = isset($data['rate']) ? floatval($data['rate']) / 100.0 : 0.0;
-          } else {
-
-            $conversion_rate = ($conversions / max($visits, 1));
-          }
-        }
-
-
-
-        $likelihood = isset($data['probability']) ? floatval($data['probability']) / 100.0 : 0.0;
-
-
-
-        // Derive page_id from location data (same as admin results)
-
-        $page_id = 0;
-
-        if (isset($data['location']['visit'][0])) {
-
-          $visit_location = $data['location']['visit'][0];
-
-          if (is_numeric($visit_location)) {
-
-            $page_id = (int) $visit_location;
-          }
-        }
-
-
-
-        // Flatten device_size into a REST-friendly shape so API/MCP/CLI consumers can filter.
-
-        $device_size_payload = null;
-
-        if (isset($data['device_size']) && is_array($data['device_size'])) {
-
-          $device_size_payload = [];
-
-          foreach ($data['device_size'] as $sk => $sb) {
-
-            if (!is_array($sb)) continue;
-
-            $sv = isset($sb['visit']) ? intval($sb['visit']) : 0;
-
-            $sc = isset($sb['conversion']) ? floatval($sb['conversion']) : 0.0;
-
-            $srate = 0.0;
-
-            if ($sv > 0) {
-
-              $srate = $conversion_use_order_value
-
-                ? (isset($sb['rate']) ? floatval($sb['rate']) / 100.0 : 0.0)
-
-                : ($sc / max($sv, 1));
-            }
-
-            $device_size_payload[$sk] = [
-
-              'visits'                => $sv,
-
-              'conversions'           => $sc,
-
-              'conversion_rate'       => $srate,
-
-              'likelihood_of_winning' => isset($sb['probability']) ? floatval($sb['probability']) / 100.0 : 0.0,
-
-            ];
-          }
-        }
-
-
-
-        $variations[$key] = [
-
-          'label'                 => (string)$key,
-
-          'visits'                => $visits,
-
-          'conversions'           => $conversions,
-
-          'conversion_rate'       => $conversion_rate,
-
-          'likelihood_of_winning' => $likelihood,
-
-          'page_id'               => $page_id,
-
-          'device_size'           => $device_size_payload,
-
-        ];
-      }
-
-
-
-      // Add configured variations that don't have data yet
-
-      foreach ($all_variation_keys as $var_key) {
-
-        if (!isset($variations[$var_key])) {
-
-          $variations[$var_key] = [
-
-            'label'                 => (string)$var_key,
-
-            'visits'                => 0,
-
-            'conversions'           => 0.0,
-
-            'conversion_rate'       => 0.0,
-
-            'likelihood_of_winning' => 0.0,
-
-            'page_id'               => 0,
-
-            'device_size'           => null,
-
-          ];
-        }
-      }
-
-
-
-      global $btab;
-
-      $control_key = null;
-
-      if (is_object($btab) && method_exists($btab, 'identify_control_variation')) {
-
-        $control_key = $btab->identify_control_variation($variations, $test);
-      }
-
-
-
-      if ($control_key && isset($variations[$control_key])) {
-
-        $control_rate = $variations[$control_key]['conversion_rate'];
-
-        if ($control_rate > 0) {
-
-          foreach ($variations as $vk => &$vd) {
-
-            $vd['uplift_vs_control'] = ($vd['conversion_rate'] - $control_rate) / $control_rate;
-          }
-        } else {
-
-          foreach ($variations as $vk => &$vd) {
-
-            $vd['uplift_vs_control'] = 0.0;
-          }
-        }
-
-        unset($vd);
-      }
-
-
-
-      // ISO8601 start date for Agency Hub UI (parsed in JS)
-
-      $start_date_iso = get_post_time('c', true, $pid);
-
-
-
-      // Per-size winner map so consumers can show per-device winners without re-running analyzers
-
-      $device_size_winners = null;
-
-      if (is_array($observations) && isset($observations['bt_bb_ab_stats']['device_size']) && is_array($observations['bt_bb_ab_stats']['device_size'])) {
-
-        $device_size_winners = [];
-
-        foreach ($observations['bt_bb_ab_stats']['device_size'] as $sk => $sb) {
-
-          // Per-size underpowered: any variation below the visit floor on this size,
-
-          // or best probability is below the confidence target.
-
-          $size_min_visits_ok = true;
-
-          $size_max_visits = 0;
-
-          if (is_array($observations)) {
-
-            foreach ($observations as $vk => $vd) {
-
-              if ($vk === 'bt_bb_ab_stats' || !is_array($vd)) continue;
-
-              $sv = isset($vd['device_size'][$sk]['visit']) ? intval($vd['device_size'][$sk]['visit']) : 0;
-
-              if ($sv < $min_visits_for_winner) $size_min_visits_ok = false;
-
-              if ($sv > $size_max_visits) $size_max_visits = $sv;
-            }
-          }
-
-          $size_prob = isset($sb['probability']) ? intval($sb['probability']) : 0;
-
-          $size_is_underpowered = (!$size_min_visits_ok || $size_prob < $percentage_target);
-
-          $device_size_winners[$sk] = [
-
-            'winner_key'      => (!$size_is_underpowered && isset($sb['best']) && $sb['best'] !== false) ? $sb['best'] : null,
-
-            'winner_conf'     => $size_prob,
-
-            'is_underpowered' => $size_is_underpowered,
-
-          ];
-        }
-      }
-
-
-
-      // Sample-size signals for programmatic consumers (REST/MCP/CLI).
-
-      // Matches the UI's Underpowered gate so clients can make the same decisions.
-
-      $has_sufficient_data = true;
-
-      foreach ($variations as $vd) {
-
-        if (intval($vd['visits']) < $min_visits_for_winner) {
-
-          $has_sufficient_data = false;
-
-          break;
-        }
-      }
-
-      $is_underpowered = (!$has_sufficient_data || $winner_conf < $percentage_target);
-
-
-
-      return [
-
-        'id'                      => $pid,
-
-        'name'                    => get_the_title($pid),
-
-        'status'                  => get_post_status($pid),
-
-        'test_age_days'           => $duration_so_far_days,
-
-        'likely_duration'         => $likelyDuration,
-
-        'time_remaining'          => $time_remaining,
-
-        'duration_so_far'         => $duration_so_far,
-
-        'conversion_style'        => $conversion_style,
-
-        'test_type'               => $test_type,
-
-        'winner_key'              => $winner_key,
-
-        'winner_conf'             => $winner_conf,
-
-        'confidence_target'       => $percentage_target,
-
-        'min_visits_for_winner'   => $min_visits_for_winner,
-
-        'has_sufficient_data'     => $has_sufficient_data,
-
-        'is_underpowered'         => $is_underpowered,
-
-        'start_date'              => $start_date_iso,
-
-        'variations'              => $variations,
-
-        'device_size_winners'     => $device_size_winners,
-
-      ];
-    }
-
-
-
-
-
-
-
-    function abst_show_experiment_results($test, $asTable = false)
-    {
-
-
-
-      $ac_data = $this->get_ac_data($test->ID);
-
-      $pid = $test->ID;
-
-
-
-      $observations = get_post_meta($pid, 'observations', true);
-
-
-
-      // For magic tests, ensure all configured variations exist in observations (even with zero data)
-
-      $test_type = get_post_meta($pid, 'test_type', true);
-
-      if ($test_type === 'magic') {
-
-        $magic_definition = get_post_meta($pid, 'magic_definition', true);
-
-        if (!empty($magic_definition)) {
-
-          $magic_def = json_decode($magic_definition, true);
-
-          if (is_array($magic_def) && isset($magic_def[0]['variations']) && is_array($magic_def[0]['variations'])) {
-
-            // Ensure observations array exists
-
-            if (!is_array($observations)) {
-
-              $observations = [];
-            }
-
-
-
-            // Ensure all variations have observation entries (variations[0] = original, [1..N] = test)
-
-            for ($i = 0; $i < count($magic_def[0]['variations']); $i++) {
-
-              $var_key = 'magic-' . $i;
-
-              if (!isset($observations[$var_key])) {
-
-                $observations[$var_key] = ['visit' => 0, 'conversion' => 0, 'rate' => 0];
-              }
-            }
-          }
-        }
-      }
-
-
-
-      if (!empty($observations)) // not empty
-
-      {
-
-        //filter observations, remove unsanitized
-
-        $dirtyInputs = false;
-
-        $cleanInputs = intval($_GET['abstCleanInputs'] ?? 0);
-
-        foreach ($observations as $key => $value) {
-
-          if (abst_sanitize($key) != $key) {
-
-            if ($cleanInputs == 1)
-
-              unset($observations[$key]);
-
-            $dirtyInputs = true;
-          }
-        }
-
-        if ($dirtyInputs) {
-
-          if ($cleanInputs == 1) {
-
-            update_post_meta($pid, 'observations', $observations);
-
-            echo ('<h4>Unsanitized key removal finished, please refresh the page.</h4>');
-          } else {
-
-            //construct clean inputs href
-
-            $cleanHref = esc_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) . "&abstCleanInputs=1");
-
-            echo '<h4 class="error">Unsanitized keys found (disallowed characters are: @ # $ % ^ &amp; *). <BR/><a href="' . esc_attr($cleanHref) . '">Click here to remove them</a></h4>';
-          }
-        }
-      }
-
-
-
-      // Check for invalid variation keys in full page tests
-
-      $invalid_variations_check = $this->detect_invalid_fullpage_variations($pid);
-
-      if ($invalid_variations_check['has_invalid']) {
-
-        $cleanupConfirm = intval($_GET['abstCleanupVariations'] ?? 0);
-
-        if ($cleanupConfirm == 1) {
-
-          $cleanup_result = $this->cleanup_single_fullpage_test($pid);
-
-          if ($cleanup_result['success'] && !empty($cleanup_result['removed'])) {
-
-            echo '<div class="notice notice-success" style="padding: 12px; margin: 10px 0; border-left: 4px solid #46b450;">';
-
-            echo '<strong>✅ Cleanup Complete!</strong> Removed ' . count($cleanup_result['removed']) . ' invalid variation keys: <code>' . esc_html(implode(', ', $cleanup_result['removed'])) . '</code>';
-
-            echo '<br><em>Please refresh the page to see updated results.</em>';
-
-            echo '</div>';
-          }
-        } else {
-
-          // Show warning with cleanup button
-
-          $invalid_count = count($invalid_variations_check['invalid_keys']);
-
-          $valid_ids = implode(', ', $invalid_variations_check['valid_variations']);
-
-          $invalid_ids = implode(', ', $invalid_variations_check['invalid_keys']);
-
-          $cleanupHref = esc_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) . "&abstCleanupVariations=1");
-
-
-
-          echo '<div class="notice notice-warning" style="padding: 12px; margin: 10px 0; border-left: 4px solid #ffb900;">';
-
-          echo '<strong>⚠️ Invalid Variation Data Detected</strong><br>';
-
-          echo 'Found <strong>' . esc_html($invalid_count) . '</strong> observation key(s) that don\'t match any configured page in this test.<br>';
-
-          echo '<small style="color: #666;">Valid page IDs: <code>' . esc_html($valid_ids) . '</code> | Invalid keys: <code>' . esc_html($invalid_ids) . '</code></small><br><br>';
-
-          echo '<a href="' . esc_attr($cleanupHref) . '" class="button button-secondary" onclick="return confirm(\'This will remove data for variation keys: ' . esc_attr($invalid_ids) . '. This cannot be undone. Continue?\');">🧹 Remove Invalid Data</a>';
-
-          echo '</div>';
-        }
-      }
-
-
-
-      $titles = [];
-
-      $percentage_target = apply_filters('abst_complete_confidence', 95);
-      // Backward compatibility: also allow old hook name (new hook takes precedence)
-      $percentage_target = apply_filters("abst_complete_confidence", $percentage_target);
-
-      $test_type = get_post_meta($test->ID, 'test_type', true);
-
-      $goals = get_post_meta($test->ID, 'goals', true);
-
-      $test_winner = get_post_meta($test->ID, 'test_winner', true);
-
-      $webhook_url = get_post_meta($test->ID, 'webhook_url', true);
-
-      $conversion_use_order_value = get_post_meta($test->ID, 'conversion_use_order_value', true);
-
-      $autocomplete_on = get_post_meta($test->ID, 'autocomplete_on', true);
-
-      $conversion_style = get_post_meta($test->ID, 'conversion_style', true);
-
-      if ($conversion_style == 'thompson') $autocomplete_on = 0;
-
-      $test_age = intval((time() - get_post_time('U', true, $test)) / 60 / 60 / 24);
-
-      if ($conversion_style != 'thompson') {
-
-        require_once 'includes/statistics.php';
-
-        if ($conversion_use_order_value == '1' && is_array($observations)) {
-
-          // Use Welch's T-Test for revenue/order value data (continuous values)
-
-          $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
-
-          $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
-        } else {
-
-          // Use Bayesian analyzer for binary conversion data
-
-          $observations = bt_bb_ab_split_test_analyzer($observations, $test_age);
-
-          $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
-        }
-      }
-
-
-
-      if ($conversion_use_order_value) {
-
-        $conversion_text = 'Revenue / visit';
-
-        $conversion_t = 'Test Revenue';
-      } else {
-
-        $conversion_text = 'Conversion Rate';
-
-        $conversion_t = 'Conversions';
-      }
-
-      $foundGoals = [];
-
-      //check if goals is an array
-
-      if (!empty($goals))
-
-        foreach ($goals as $key => $value) {    //get first item in array
-
-          if (is_array($value) && !empty($value)) {
-
-            if (key($value) == 'page')
-
-              $val = get_the_title(reset($value));
-
-            elseif (is_int(key($value)))
-
-              $val = get_the_title(key($value));
-
-            else
-
-              $val = reset($value);
-
-
-
-            if (is_array($value))
-
-              $foundGoals[$key] = ucfirst(key($value)) . " " . $val;
-          }
-        }
-
-      $test_type_label = get_post_meta($test->ID, 'test_type', true);
-
-      if ($test_type_label == 'full_page') $test_type_label = 'Full Page Test';
-
-      else if ($test_type_label == 'magic') $test_type_label = 'Magic Test';
-
-      else if ($test_type_label == 'ab_test') $test_type_label = 'On-Page Test';
-
-      else if ($test_type_label == 'css_test') $test_type_label = 'Code Test';
-
-      else
-
-        $test_type_label = 'Start your test to collect results.';
-
-
-
-      // Start Status Panel
-
-      echo "<div class='abst-results-panel abst-status-panel'>";
-
-
-
-      echo "<div class='abst-results-header'>";
-
-      echo "<h2>" . esc_html($test_type_label) . ": <span class='status'>";
-
-      if ($test->post_status == 'publish') {
-
-        if ($conversion_style == 'thompson') {
-
-          echo "Monitoring & Allocating Traffic";
-        } else {
-
-          echo "Collecting data";
-        }
-      } else if ($test->post_status == 'complete')
-
-        echo "Complete";
-
-      else
-
-        echo "Paused";
-
-      echo "</span></h2>";
-
-      echo "</div>"; // close abst-results-header
-
-
-
-      // Output experiment status and the rest of the block-level content outside the heading
-
-      if ($conversion_style == 'thompson') {
-
-        $experiment_status = "<p class='experiment-status'>Your test is running and allocating traffic to variations.</p>";
-      } else {
-
-        $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_WL_ABTEST . " to find the winner. ";
-      }
-
-      $remaining = '';
-
-      if ($conversion_use_order_value && !empty($aovobs['bt_bb_ab_stats']['likelyDuration'])) {
-
-        $remaining = "</p><p>About " . ($aovobs['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
-      } elseif (!empty($observations['bt_bb_ab_stats']['likelyDuration'])) {
-
-        $remaining = "</p><p>About " . ($observations['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
-      }
-
-
-
-      // Friendlier message for very new tests
-
-      if ($test_age < 2) {
-
-        $experiment_status = "<p class='experiment-status'>🧪 Your test is just getting started. Give it a day or so to collect more data and check back soon for insights!</p>";
-      } else {
-
-        if ($conversion_style == 'thompson') {
-
-          $experiment_status = "<p class='experiment-status'>Your test is running and will dynamically allocate traffic to variations after its collected enough inital data.<BR>Traffic is split evenly until you have recorded " . apply_filters('abst_min_conversions_for_mab', 40) . " conversions, then traffic will be weighted based on the relative uplift of each variation.</p>";
-        } else {
-
-          $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_WL_ABTEST . " to find the winner. " . $remaining . "</p>";
-        }
-      }
-
-      $goodStats = true;
-
-
-
-      if (empty($observations)) // empty
-
-      {
-
-        $goodStats = false;
-      } else {
-
-        //check results are decent
-
-        foreach ($observations as $m => $a) {
-
-          if (!empty($a['visit']))
-
-            if ($a['visit'] < 1 || $a['conversion'] < 0) {
-
-              $goodStats = false;
-
-              break;
-            }
-        }
-      }
-
-
-
-      if ($goodStats) {
-
-        //if its a full page test then loop through all observationbs
-
-        if ($test_type  == 'full_page') {
-
-          foreach ($observations as $key => $value) {
-
-            if (is_numeric($key))
-
-              continue;
-
-            // its a text slug, get the post 
-
-            $qpo = get_posts(array(
+          (
 
               'name'   => $key,
 
@@ -7564,1972 +8316,2256 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               'post_per_page' => 1
 
-            ));
+          ));
 
-            if (!empty($qpo)) // we found it, does it already exist?
+        if(!empty($qpo)) // we found it, does it already exist?
 
-            {
+        {
 
-              $page_id = $qpo[0]->ID;
+          $page_id = $qpo[0]->ID;
 
-              if (!empty($observations[$page_id])) {
+          if(!empty($observations[$page_id]))
 
-                (int)$observations[$page_id]['visit'] += (int)$observations[$key]['visit'];
+          {
 
-                (float)$observations[$page_id]['conversion'] += (float)$observations[$key]['conversion'];
-              } else {
+            (int)$observations[$page_id]['visit'] += (int)$observations[$key]['visit'];
 
-                $observations[$page_id] = $value;
-              }
+            (float)$observations[$page_id]['conversion'] += (float)$observations[$key]['conversion'];
 
-              unset($observations[$key]);
-            }
           }
+
+          else
+
+          {
+
+            $observations[$page_id] = $value;
+
+          }
+
+          unset($observations[$key]);
+
         }
 
-
-
-        if ($conversion_style != 'thompson') {
-
-          require_once 'includes/statistics.php';
-
-          if ($conversion_use_order_value == '1' && is_array($observations)) {
-
-            // Use Welch's T-Test for revenue/order value data (continuous values)
-
-            $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
-
-            $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
-          } else {
-
-            // Use Bayesian analyzer for binary conversion data
-
-            $observations = bt_bb_ab_split_test_analyzer($observations, $test_age);
-
-            $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
-          }
-        }
       }
 
-
-
-      // if we have results
-
-      if (is_array($observations)) {
-
-        if (isset($observations['bt_bb_ab_stats'])) {
-
-          //enough visits?
-
-          $notenoughvisits = '';
-
-          foreach ($observations as $key => $var) {
-
-            if ($key == "bt_bb_ab_stats" || $key == "likelyDuration")
-
-              continue;
+    }
 
 
 
-            $post_id_data = get_post($key);
+    if($conversion_style != 'thompson'){
 
-            if (!is_null($post_id_data))
+      require_once 'includes/statistics.php';
 
-              $key = $post_id_data->post_title;
+      if($conversion_use_order_value == '1' && is_array($observations)){
+
+        // Use Welch's T-Test for revenue/order value data (continuous values)
+
+        $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+
+        $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
+
+      } else {
+
+        // Use Bayesian analyzer for binary conversion data
+
+        $observations = bt_bb_ab_split_test_analyzer($observations,$test_age);
+
+        $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+
+      }
+
+    }
+
+  }
 
 
 
-            //if variation_meta has alabel for it
+  // if we have results
 
-            $variation_meta = get_post_meta($test->ID, 'variation_meta', true);
+  if(is_array($observations))
 
-            if (isset($variation_meta[$key]['label'])) {
+  {
 
-              $key = $variation_meta[$key]['label'];
-            }
+    if(isset($observations['bt_bb_ab_stats']))
 
-            // IF ITS MAGIC with no label
+    {
 
-            if ($test_type == 'magic' && strpos($key, 'magic-') === 0) {
+      //enough visits?
 
-              $variation_number = intval(str_replace('magic-', '', $key));
+      $notenoughvisits = '';
 
-              $key = 'Variation ' . chr(65 + $variation_number);
-            }
+      foreach($observations as $key => $var){
+
+        if($key == "bt_bb_ab_stats" || $key == "likelyDuration")
+
+          continue;
 
 
 
-            if ($var['visit'] < $ac_data['min_views'])
+        $post_id_data = get_post($key);
 
-              $notenoughvisits .= "<h4>Variation <code>$key</code> needs more views</h4>";
+        if( !is_null($post_id_data))
+
+          $key = $post_id_data->post_title; 
+
+
+
+        //if variation_meta has alabel for it
+
+        $variation_meta = get_post_meta($test->ID,'variation_meta',true);
+
+        if(isset($variation_meta[$key]['label'])){
+
+          $key = $variation_meta[$key]['label'];
+
+        }
+
+        // IF ITS MAGIC with no label
+
+        if($test_type == 'magic' && strpos($key, 'magic-') === 0){
+
+          $variation_number = intval(str_replace('magic-', '', $key));
+
+          $key = 'Variation ' . chr(65 + $variation_number);
+
+        }
+
+
+
+        if($var['visit'] < $ac_data['min_views'])
+
+          $notenoughvisits .= "<h4>Variation <code>$key</code> needs more views</h4>";
+
+      }
+
+      if($conversion_use_order_value){
+
+        $likeylwinner = $aovobs['bt_bb_ab_stats']['best'] ?? '';
+
+        $likelyDuration = $aovobs['bt_bb_ab_stats']['likelyDuration'] ?? '0';
+
+        $likelywinnerpercentage = $aovobs['bt_bb_ab_stats']['probability'];
+
+      }else{
+
+        $likeylwinner = $observations['bt_bb_ab_stats']['best'] ?? '';
+
+        $likelyDuration = $observations['bt_bb_ab_stats']['likelyDuration'] ?? '0';
+
+        $likelywinnerpercentage = $observations['bt_bb_ab_stats']['probability'];
+
+      }
+
+      
+
+      // Ensure likelyDuration is always a valid number, default to 0
+
+      $likelyDuration = intval($likelyDuration) ?: 0;
+
+      $timediff = human_time_diff( get_post_time('U',true,$test), time());
+
+      
+
+      // Output chart data as JavaScript variable
+
+      echo '<script>var testAge = ' . intval( $test_age ) . '; var likelyDuration = ' . intval( $likelyDuration ) . ';</script>';
+
+                
+
+      if($test_age < $ac_data['min_days'] )
+
+        $experiment_status .= "<h4> This test has run for ". $timediff . " - it requires at least ". $ac_data['min_days'] ." days.</h4>";
+
+      if($notenoughvisits !== '')
+
+        $experiment_status .= $notenoughvisits;
+
+      
+
+      if( ($likelywinnerpercentage >= $percentage_target) && ($test_age >= $ac_data['min_days']) && ($notenoughvisits == '') )
+
+      {
+
+        // Calculate uplift and improvement metrics
+
+        $winner_data = null;
+
+        $control_data = null;
+
+        $uplift_message = '';
+
+        $avoided_loss_message = '';
+
+        
+
+        // Find winner and collect all variations
+
+        $all_variations = [];
+
+        foreach($observations as $key => $data) {
+
+          if($key === 'bt_bb_ab_stats') continue;
+
+          if($key === $likeylwinner) {
+
+            $winner_data = $data;
+
           }
 
-          if ($conversion_use_order_value) {
+          $all_variations[$key] = $data;
 
-            $likeylwinner = $aovobs['bt_bb_ab_stats']['best'] ?? '';
+        }
 
-            $likelyDuration = $aovobs['bt_bb_ab_stats']['likelyDuration'] ?? '0';
+        // Identify the control variation using proper naming rules
 
-            $likelywinnerpercentage = $aovobs['bt_bb_ab_stats']['probability'];
-          } else {
+        $control_variation_key = $this->identify_control_variation($all_variations, $test);
 
-            $likeylwinner = $observations['bt_bb_ab_stats']['best'] ?? '';
+        $control_data = $all_variations[$control_variation_key] ?? null;
 
-            $likelyDuration = $observations['bt_bb_ab_stats']['likelyDuration'] ?? '0';
+        $variation_meta = get_post_meta($test->ID,'variation_meta',true);
 
-            $likelywinnerpercentage = $observations['bt_bb_ab_stats']['probability'];
+
+
+        // Skip uplift calculations if we can't identify control variation
+
+        // But still show the winner announcement
+
+        if($control_variation_key === false) {
+
+          $uplift_message = '';
+
+          $annual_impact_message = '';
+
+          $avoided_loss_message = '';
+
+          
+
+          // Format winner label
+
+
+
+          if(is_int($likeylwinner)) 
+
+          {
+
+            $winner_label = get_the_title($likeylwinner);
+
+            if(!$winner_label) {
+
+              $winner_label = $likeylwinner;
+
+            }
+
+          
+
+         } 
+
+         else if (strpos($likeylwinner, 'magic-') === 0) 
+
+         {
+
+            $winner_display = str_replace('magic-', '', $likeylwinner);
+
+            $winner_label = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$winner_display];
+
+          } 
+
+          else 
+
+          {
+
+            $winner_label = $likeylwinner;
+
           }
 
 
 
-          // Ensure likelyDuration is always a valid number, default to 0
+          if(isset($variation_meta[$likeylwinner]['label']))
 
-          $likelyDuration = intval($likelyDuration) ?: 0;
+          {
 
-          $timediff = human_time_diff(get_post_time('U', true, $test), time());
+            $winner_label = $variation_meta[$likeylwinner]['label'];
 
-
-
-          // Output chart data as JavaScript variable
-
-          echo '<script>var testAge = ' . intval($test_age) . '; var likelyDuration = ' . intval($likelyDuration) . ';</script>';
+          }
 
 
 
-          if ($test_age < $ac_data['min_days'])
+          $experiment_status = "<div class='bt_ab_success'>"
 
-            $experiment_status .= "<h4> This test has run for " . $timediff . " - it requires at least " . $ac_data['min_days'] . " days.</h4>";
+            . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
 
-          if ($notenoughvisits !== '')
+            . "</div>";
 
-            $experiment_status .= $notenoughvisits;
+        }
 
+        // Calculate uplift if we have winner and control data
 
+        elseif($winner_data && $control_data) {
 
-          if (($likelywinnerpercentage >= $percentage_target) && ($test_age >= $ac_data['min_days']) && ($notenoughvisits == '')) {
+          $winner_rate = $conversion_use_order_value ? ($winner_data['rate']/100) : $winner_data['rate'];
 
-            // Calculate uplift and improvement metrics
+          $control_rate = $conversion_use_order_value ? ($control_data['rate']/100) : $control_data['rate'];
 
-            $winner_data = null;
+          
 
-            $control_data = null;
+          if($control_rate > 0) {
 
-            $uplift_message = '';
+            $uplift_percent = (($winner_rate - $control_rate) / $control_rate) * 100;
 
-            $avoided_loss_message = '';
+            $relative_improvement = $winner_rate / $control_rate;
 
+            
 
+            // Calculate annual projections based on current traffic
 
-            // Find winner and collect all variations
+            $daily_visits = max($winner_data['visit'], $control_data['visit']) / max($test_age, 1);
 
-            $all_variations = [];
+            $annual_visits = $daily_visits * 365;
 
-            foreach ($observations as $key => $data) {
+            $improvement_per_visit = $winner_rate - $control_rate;
 
-              if ($key === 'bt_bb_ab_stats') continue;
+            $annual_improvement = $improvement_per_visit * $annual_visits;
 
-              if ($key === $likeylwinner) {
+            
 
-                $winner_data = $data;
+            if($conversion_use_order_value) {
+
+              // Revenue projection
+
+              $currency_symbol = $this->value_currency_symbol();
+
+              $annual_extra_revenue = $annual_improvement;
+
+              $formatted_annual = number_format($annual_extra_revenue, 0);
+
+              
+
+              // Only show uplift/annual impact if winner is NOT control or if control is winner but no avoided loss impact
+
+              // Suppress $0 uplift and $0 annual impact if control is winner and uplift is zero or negative
+
+              if ($likeylwinner === $control_variation_key && $uplift_percent <= 0.1) {
+
+                $uplift_message = '';
+
+                $annual_impact_message = '';
+
+              } else if ($likeylwinner !== $control_variation_key || (empty($annual_impact_message) && empty($avoided_loss_message))) {
+
+                $uplift_message = sprintf(
+
+                  '<br/>📈 <strong>%.1f%% increase</strong> in revenue per visit <em>(%.1fx better performance)</em><br/>'
+
+                  . '💰 <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
+
+                  $uplift_percent,
+
+                  $relative_improvement,
+
+                  $currency_symbol,
+
+                  $formatted_annual
+
+                );
+
               }
-
-              $all_variations[$key] = $data;
-            }
-
-            // Identify the control variation using proper naming rules
-
-            $control_variation_key = $this->identify_control_variation($all_variations, $test);
-
-            $control_data = $all_variations[$control_variation_key] ?? null;
-
-            $variation_meta = get_post_meta($test->ID, 'variation_meta', true);
-
-
-
-            // Skip uplift calculations if we can't identify control variation
-
-            // But still show the winner announcement
-
-            if ($control_variation_key === false) {
-
-              $uplift_message = '';
 
               $annual_impact_message = '';
 
-              $avoided_loss_message = '';
+            } else {
+
+              // Conversion projection
+
+              $annual_extra_conversions = round($annual_improvement);
+
+              $formatted_conversions = number_format($annual_extra_conversions);
 
 
 
-              // Format winner label
+              // Suppress $0 uplift and $0 annual impact if control is winner and uplift is zero or negative
+
+              if ($likeylwinner === $control_variation_key && (!isset($uplift_percent) || $uplift_percent <= 0.1)) {
+
+                $uplift_message = '';
+
+                $annual_impact_message = '';
+
+              } else if (isset($uplift_percent) && $uplift_percent > 0.1) {
+
+                $uplift_message = sprintf(
+
+                  '<br/>📈 <strong>%.1f%% increase in %s</strong> <em>(%.1fx better performance)</em>',
+
+                  $uplift_percent,
+
+                  $conversion_use_order_value ? 'revenue per visit' : 'conversion rate',
+
+                  $relative_improvement
+
+                );
+
+              }
 
 
 
-              if (is_int($likeylwinner)) {
+              $annual_impact_message = sprintf(
 
-                $winner_label = get_the_title($likeylwinner);
+                '<br/>🎯 <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
 
-                if (!$winner_label) {
+                $formatted_conversions
 
-                  $winner_label = $likeylwinner;
+              );
+
+            }
+
+
+
+            if ($likeylwinner === $control_variation_key && count($all_variations) > 1) {
+
+              $best_alt = null;
+
+              foreach ($all_variations as $k => $obs) {
+
+                if ($k === $control_variation_key || !isset($obs['rate'])) continue;
+
+                $alt = $conversion_use_order_value
+
+                  ? ((float)str_replace(['%', '$', ' ', ','], '', $obs['rate'])/100)
+
+                  : (float)str_replace(['%', '$', ' ', ','], '', $obs['rate']);
+
+                if ($best_alt === null || $alt > $best_alt) $best_alt = $alt;
+
+              }
+
+              if ($best_alt !== null) {
+
+                $loss = ($control_rate > 0) ? (($control_rate - $best_alt) / $control_rate) * 100 : 0;
+
+                $loss = max(0, $loss); // Never negative
+
+                if ($loss > 0.1) {
+
+                  $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
+
+                  $icon = $conversion_use_order_value ? '🛡️' : '🛡️';
+
+                  $avoided_loss_message = "<br/>$icon <span class='variation-loss' style='color:#0073aa;font-weight:bold;'>You avoided losing " . round($loss, 1) . "% $context_label</span>";
+
+
+
+                  // Calculate avoided loss for annual impact
+
+                  if ($conversion_use_order_value) {
+
+                    $annual_avoided_loss = ($control_rate - $best_alt) * $annual_visits;
+
+                    $currency_symbol = $this->value_currency_symbol();
+
+                    $formatted_avoided_loss = number_format($annual_avoided_loss, 0);
+
+                    $annual_impact_message = sprintf(
+
+                      '<br/>💰 <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
+
+                      $currency_symbol,
+
+                      $formatted_avoided_loss
+
+                    );
+
+                  } else {
+
+                    $annual_avoided_loss = ($control_rate - $best_alt) * $annual_visits / 100;
+
+                    $formatted_avoided_loss = number_format(round($annual_avoided_loss));
+
+                    $annual_impact_message = sprintf(
+
+                      '<br/>🎯 <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
+
+                      $formatted_avoided_loss
+
+                    );
+
+                  }
+
                 }
-              } else if (strpos($likeylwinner, 'magic-') === 0) {
 
-                $winner_display = str_replace('magic-', '', $likeylwinner);
+              }
 
-                $winner_label = "Variation " . ['A (original)', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'][$winner_display];
-              } else {
+            }
+
+
+
+            // Winner label and confidence
+
+            if(is_int($likeylwinner)) {
+
+              $winner_label = get_the_title($likeylwinner);
+
+              if(!$winner_label) {
 
                 $winner_label = $likeylwinner;
+
               }
 
+            } else if (strpos($likeylwinner, 'magic-') === 0) {
+
+              $winner_display = str_replace('magic-', '', $likeylwinner);
+
+              $winner_label = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$winner_display];
+
+            } else {
+
+              $winner_label = $likeylwinner;
+
+            }
 
 
-              if (isset($variation_meta[$likeylwinner]['label'])) {
 
-                $winner_label = $variation_meta[$likeylwinner]['label'];
+            //if variation meta <label>
+
+            if (isset($variation_meta) && isset($variation_meta[$likeylwinner]) && isset($variation_meta[$likeylwinner]['label'])) {
+
+              $winner_label = $variation_meta[$likeylwinner]['label'];
+
+            }
+
+            
+
+            // Custom combined message for control winner with no uplift
+
+            if ($likeylwinner === $control_variation_key && (empty($uplift_message) || $uplift_percent <= 0.1)) {
+
+              $avoided_loss_combined = '';
+
+              // Try to extract percent and annual avoided loss for summary
+
+              if (isset($loss) && $loss > 0.1) {
+
+                $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
+
+                $icon = '✔️';
+
+                $annual_loss_str = '';
+
+                if (isset($annual_avoided_loss) && $annual_avoided_loss > 0) {
+
+                  if ($conversion_use_order_value) {
+
+                    $currency_symbol = $this->value_currency_symbol();
+
+                    $formatted_avoided_loss = number_format($annual_avoided_loss, 0);
+
+                    $annual_loss_str = " ({$currency_symbol}{$formatted_avoided_loss} per year)";
+
+                  } else {
+
+                    $formatted_avoided_loss = number_format(round($annual_avoided_loss));
+
+                    $annual_loss_str = " ({$formatted_avoided_loss} conversions per year)";
+
+                  }
+
+                }
+
+                $avoided_loss_combined = "$icon You avoided losing " . round($loss, 1) . "% $context_label" . $annual_loss_str;
+
               }
 
+              $experiment_status = "<div class='bt_ab_success'>"
 
+                . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong><br>"
+
+                . "❌ No improvement from this test<br>"
+
+                . ($avoided_loss_combined ? $avoided_loss_combined : '')
+
+                . "</div>";
+
+            } else {
+
+              // Default winner summary
 
               $experiment_status = "<div class='bt_ab_success'>"
 
                 . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
 
+                . "$uplift_message"
+
+                . "$annual_impact_message" // will be empty if avoided loss annual impact is set
+
+                . "$avoided_loss_message"
+
                 . "</div>";
+
             }
 
-            // Calculate uplift if we have winner and control data
+          }
 
-            elseif ($winner_data && $control_data) {
+        }
 
-              $winner_rate = $conversion_use_order_value ? ($winner_data['rate'] / 100) : $winner_data['rate'];
+        
 
-              $control_rate = $conversion_use_order_value ? ($control_data['rate'] / 100) : $control_data['rate'];
+        //save winner test_winner if autocomplete is on
 
+        //is this the first time its been observed?
 
+        if(empty($test_winner) && $autocomplete_on)
 
-              if ($control_rate > 0) {
+        {
 
-                $uplift_percent = (($winner_rate - $control_rate) / $control_rate) * 100;
+          wp_update_post(array('ID' => $test->ID, 'post_status' => 'complete')); // upd status
 
-                $relative_improvement = $winner_rate / $control_rate;
+          update_post_meta($test->ID,'test_winner',$likeylwinner); // save it!
 
+          abst_send_webhook($test->ID, $likeylwinner, $likelywinnerpercentage); // send it!
 
+        }
 
-                // Calculate annual projections based on current traffic
+      }
 
-                $daily_visits = max($winner_data['visit'], $control_data['visit']) / max($test_age, 1);
+      else
 
-                $annual_visits = $daily_visits * 365;
+      {
 
-                $improvement_per_visit = $winner_rate - $control_rate;
+        // Enhanced messaging for non-winning variations (test still running)
 
-                $annual_improvement = $improvement_per_visit * $annual_visits;
+        $leading_variation = '';
 
+        $leading_rate = 0;
 
+        $leading_confidence = 0;
 
-                if ($conversion_use_order_value) {
+        $total_visits = 0;
 
-                  // Revenue projection
+        $total_conversions = 0;
 
-                  $currency_symbol = $this->value_currency_symbol();
+        $control_data = null;
 
-                  $annual_extra_revenue = $annual_improvement;
+        
 
-                  $formatted_annual = number_format($annual_extra_revenue, 0);
+        // Find current leading variation and collect all variations
 
+        $all_variations_nonwinner = [];
 
+        foreach($observations as $key => $data) {
 
-                  // Only show uplift/annual impact if winner is NOT control or if control is winner but no avoided loss impact
+          if($key === 'bt_bb_ab_stats') continue;
 
-                  // Suppress $0 uplift and $0 annual impact if control is winner and uplift is zero or negative
+          $total_visits += $data['visit'];
 
-                  if ($likeylwinner === $control_variation_key && $uplift_percent <= 0.1) {
+          $total_conversions += $data['conversion'];
 
-                    $uplift_message = '';
+          $current_rate = $conversion_use_order_value ? ($data['rate']/100) : $data['rate'];
 
-                    $annual_impact_message = '';
-                  } else if ($likeylwinner !== $control_variation_key || (empty($annual_impact_message) && empty($avoided_loss_message))) {
+          if($current_rate > $leading_rate) {
 
-                    $uplift_message = sprintf(
+            $leading_rate = $current_rate;
 
-                      '<br/>📈 <strong>%.1f%% increase</strong> in revenue per visit <em>(%.1fx better performance)</em><br/>'
+            $leading_variation = $key;
 
-                        . '💰 <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
+            $leading_confidence = $data['probability'] ?? 0;
 
-                      $uplift_percent,
+          }
 
-                      $relative_improvement,
+          $all_variations_nonwinner[$key] = $data;
 
-                      $currency_symbol,
+        }
 
-                      $formatted_annual
+        // Identify the control variation using proper naming rules
 
-                    );
-                  }
+        $control_variation_key = $this->identify_control_variation($all_variations_nonwinner, $test);
 
-                  $annual_impact_message = '';
-                } else {
+        $control_data = $all_variations_nonwinner[$control_variation_key] ?? null;
 
-                  // Conversion projection
+        
 
-                  $annual_extra_conversions = round($annual_improvement);
+        // Format leading variation name
 
-                  $formatted_conversions = number_format($annual_extra_conversions);
+        //if it copntains magic- then do the thiong else just use its nameSZ
 
+        if($leading_variation && strpos($leading_variation, 'magic-') !== false) {
 
+          $leading_display = str_replace('magic-', '', $leading_variation);
 
-                  // Suppress $0 uplift and $0 annual impact if control is winner and uplift is zero or negative
+          $leading_label = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$leading_display];
 
-                  if ($likeylwinner === $control_variation_key && (!isset($uplift_percent) || $uplift_percent <= 0.1)) {
+        } else {
 
-                    $uplift_message = '';
+          $leading_display = $leading_variation;
 
-                    $annual_impact_message = '';
-                  } else if (isset($uplift_percent) && $uplift_percent > 0.1) {
+          if(is_int($leading_display)) {
 
-                    $uplift_message = sprintf(
+            //get post name by id
 
-                      '<br/>📈 <strong>%.1f%% increase in %s</strong> <em>(%.1fx better performance)</em>',
+            $leading_label = get_the_title($leading_display);
 
-                      $uplift_percent,
-
-                      $conversion_use_order_value ? 'revenue per visit' : 'conversion rate',
-
-                      $relative_improvement
-
-                    );
-                  }
-
-
-
-                  $annual_impact_message = sprintf(
-
-                    '<br/>🎯 <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
-
-                    $formatted_conversions
-
-                  );
-                }
-
-
-
-                if ($likeylwinner === $control_variation_key && count($all_variations) > 1) {
-
-                  $best_alt = null;
-
-                  foreach ($all_variations as $k => $obs) {
-
-                    if ($k === $control_variation_key || !isset($obs['rate'])) continue;
-
-                    $alt = $conversion_use_order_value
-
-                      ? ((float)str_replace(['%', '$', ' ', ','], '', $obs['rate']) / 100)
-
-                      : (float)str_replace(['%', '$', ' ', ','], '', $obs['rate']);
-
-                    if ($best_alt === null || $alt > $best_alt) $best_alt = $alt;
-                  }
-
-                  if ($best_alt !== null) {
-
-                    $loss = ($control_rate > 0) ? (($control_rate - $best_alt) / $control_rate) * 100 : 0;
-
-                    $loss = max(0, $loss); // Never negative
-
-                    if ($loss > 0.1) {
-
-                      $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
-
-                      $icon = $conversion_use_order_value ? '🛡️' : '🛡️';
-
-                      $avoided_loss_message = "<br/>$icon <span class='variation-loss' style='color:#0073aa;font-weight:bold;'>You avoided losing " . round($loss, 1) . "% $context_label</span>";
-
-
-
-                      // Calculate avoided loss for annual impact
-
-                      if ($conversion_use_order_value) {
-
-                        $annual_avoided_loss = ($control_rate - $best_alt) * $annual_visits;
-
-                        $currency_symbol = $this->value_currency_symbol();
-
-                        $formatted_avoided_loss = number_format($annual_avoided_loss, 0);
-
-                        $annual_impact_message = sprintf(
-
-                          '<br/>💰 <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
-
-                          $currency_symbol,
-
-                          $formatted_avoided_loss
-
-                        );
-                      } else {
-
-                        $annual_avoided_loss = ($control_rate - $best_alt) * $annual_visits / 100;
-
-                        $formatted_avoided_loss = number_format(round($annual_avoided_loss));
-
-                        $annual_impact_message = sprintf(
-
-                          '<br/>🎯 <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
-
-                          $formatted_avoided_loss
-
-                        );
-                      }
-                    }
-                  }
-                }
-
-
-
-                // Winner label and confidence
-
-                if (is_int($likeylwinner)) {
-
-                  $winner_label = get_the_title($likeylwinner);
-
-                  if (!$winner_label) {
-
-                    $winner_label = $likeylwinner;
-                  }
-                } else if (strpos($likeylwinner, 'magic-') === 0) {
-
-                  $winner_display = str_replace('magic-', '', $likeylwinner);
-
-                  $winner_label = "Variation " . ['A (original)', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'][$winner_display];
-                } else {
-
-                  $winner_label = $likeylwinner;
-                }
-
-
-
-                //if variation meta <label>
-
-                if (isset($variation_meta) && isset($variation_meta[$likeylwinner]) && isset($variation_meta[$likeylwinner]['label'])) {
-
-                  $winner_label = $variation_meta[$likeylwinner]['label'];
-                }
-
-
-
-                // Custom combined message for control winner with no uplift
-
-                if ($likeylwinner === $control_variation_key && (empty($uplift_message) || $uplift_percent <= 0.1)) {
-
-                  $avoided_loss_combined = '';
-
-                  // Try to extract percent and annual avoided loss for summary
-
-                  if (isset($loss) && $loss > 0.1) {
-
-                    $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
-
-                    $icon = '✔️';
-
-                    $annual_loss_str = '';
-
-                    if (isset($annual_avoided_loss) && $annual_avoided_loss > 0) {
-
-                      if ($conversion_use_order_value) {
-
-                        $currency_symbol = $this->value_currency_symbol();
-
-                        $formatted_avoided_loss = number_format($annual_avoided_loss, 0);
-
-                        $annual_loss_str = " ({$currency_symbol}{$formatted_avoided_loss} per year)";
-                      } else {
-
-                        $formatted_avoided_loss = number_format(round($annual_avoided_loss));
-
-                        $annual_loss_str = " ({$formatted_avoided_loss} conversions per year)";
-                      }
-                    }
-
-                    $avoided_loss_combined = "$icon You avoided losing " . round($loss, 1) . "% $context_label" . $annual_loss_str;
-                  }
-
-                  $experiment_status = "<div class='bt_ab_success'>"
-
-                    . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong><br>"
-
-                    . "❌ No improvement from this test<br>"
-
-                    . ($avoided_loss_combined ? $avoided_loss_combined : '')
-
-                    . "</div>";
-                } else {
-
-                  // Default winner summary
-
-                  $experiment_status = "<div class='bt_ab_success'>"
-
-                    . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
-
-                    . "$uplift_message"
-
-                    . "$annual_impact_message" // will be empty if avoided loss annual impact is set
-
-                    . "$avoided_loss_message"
-
-                    . "</div>";
-                }
-              }
-            }
-
-
-
-            //save winner test_winner if autocomplete is on
-
-            //is this the first time its been observed?
-
-            if (empty($test_winner) && $autocomplete_on) {
-
-              wp_update_post(array('ID' => $test->ID, 'post_status' => 'complete')); // upd status
-
-              update_post_meta($test->ID, 'test_winner', $likeylwinner); // save it!
-
-              abst_send_webhook($test->ID, $likeylwinner, $likelywinnerpercentage); // send it!
-
-            }
           } else {
 
-            // Enhanced messaging for non-winning variations (test still running)
+            $leading_label = $leading_variation;
 
-            $leading_variation = '';
+          }
 
-            $leading_rate = 0;
+        }
 
-            $leading_confidence = 0;
+        //if its set in variation meta then use that
 
-            $total_visits = 0;
+        if($variation_meta)
 
-            $total_conversions = 0;
+        {
 
-            $control_data = null;
+          foreach($variation_meta as $key => $value)
 
+          {
 
+            if($key == $leading_variation)
 
-            // Find current leading variation and collect all variations
+            {
 
-            $all_variations_nonwinner = [];
+              if(!empty($value['label']))
 
-            foreach ($observations as $key => $data) {
+                $leading_label = $value['label'];
 
-              if ($key === 'bt_bb_ab_stats') continue;
-
-              $total_visits += $data['visit'];
-
-              $total_conversions += $data['conversion'];
-
-              $current_rate = $conversion_use_order_value ? ($data['rate'] / 100) : $data['rate'];
-
-              if ($current_rate > $leading_rate) {
-
-                $leading_rate = $current_rate;
-
-                $leading_variation = $key;
-
-                $leading_confidence = $data['probability'] ?? 0;
-              }
-
-              $all_variations_nonwinner[$key] = $data;
             }
 
-            // Identify the control variation using proper naming rules
+          }
 
-            $control_variation_key = $this->identify_control_variation($all_variations_nonwinner, $test);
+        }
 
-            $control_data = $all_variations_nonwinner[$control_variation_key] ?? null;
+        
 
+        // Calculate uplift for leading variation vs control
 
+        $uplift_message = '';
 
-            // Format leading variation name
+        if($control_data && $leading_rate > 0) {
 
-            //if it copntains magic- then do the thiong else just use its nameSZ
+          $control_rate = $conversion_use_order_value ? ($control_data['rate']/100) : $control_data['rate'];
 
-            if ($leading_variation && strpos($leading_variation, 'magic-') !== false) {
+          
 
-              $leading_display = str_replace('magic-', '', $leading_variation);
+          if($control_rate > 0) {
 
-              $leading_label = "Variation " . ['A (original)', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'][$leading_display];
-            } else {
+            $uplift_percent = (($leading_rate - $control_rate) / $control_rate) * 100;
 
-              $leading_display = $leading_variation;
+            if($uplift_percent > 0) {
 
-              if (is_int($leading_display)) {
+              if($conversion_use_order_value) {
 
-                //get post name by id
+                $uplift_message = sprintf(' with an uplift of %.1f%% in revenue per visit.', $uplift_percent);
 
-                $leading_label = get_the_title($leading_display);
               } else {
 
-                $leading_label = $leading_variation;
+                $uplift_message = sprintf(' with an uplift of %.1f%% in conversion rate.', $uplift_percent);
+
               }
-            }
-
-            //if its set in variation meta then use that
-
-            if ($variation_meta) {
-
-              foreach ($variation_meta as $key => $value) {
-
-                if ($key == $leading_variation) {
-
-                  if (!empty($value['label']))
-
-                    $leading_label = $value['label'];
-                }
-              }
-            }
-
-
-
-            // Calculate uplift for leading variation vs control
-
-            $uplift_message = '';
-
-            if ($control_data && $leading_rate > 0) {
-
-              $control_rate = $conversion_use_order_value ? ($control_data['rate'] / 100) : $control_data['rate'];
-
-
-
-              if ($control_rate > 0) {
-
-                $uplift_percent = (($leading_rate - $control_rate) / $control_rate) * 100;
-
-                if ($uplift_percent > 0) {
-
-                  if ($conversion_use_order_value) {
-
-                    $uplift_message = sprintf(' with an uplift of %.1f%% in revenue per visit.', $uplift_percent);
-                  } else {
-
-                    $uplift_message = sprintf(' with an uplift of %.1f%% in conversion rate.', $uplift_percent);
-                  }
-                }
-              }
-            }
-
-
-
-            // Combine confidence and estimated time remaining into a single line
-
-            $remaining_message = '';
-
-            if ($likelyDuration && $likelyDuration > $test_age) {
-
-              $conf_target = round($percentage_target, 1);
-
-              if ($likelyDuration >= 999 && $test_age >= 1) {
-
-                // 999 = very long time - difference too small to detect (only show after 1+ days of data)
-
-                $remaining_message = "<br/>â±ï¸ The variations are very close. This test may take a long time to reach {$conf_target}% confidence, or consider increasing traffic.";
-              } elseif ($likelyDuration < 999) {
-
-                $days_remaining = $likelyDuration - $test_age;
-
-                if ($days_remaining > 1) {
-
-                  $remaining_message = "<br/>â±ï¸ Time remaining: About {$days_remaining} days to reach {$conf_target}% confidence.";
-                } else {
-
-                  $remaining_message = "<br/>â±ï¸ Nearly complete! Results expected soon ({$conf_target}% confidence).";
-                }
-              }
-            }
-
-
-
-            // Calculate projected impact potential (uplift vs control)
-
-            $projection_message = '';
-
-            if ($total_visits > 0 && $test_age > 0 && $control_data) {
-
-              $daily_visits = $total_visits / $test_age;
-
-              $annual_visits = $daily_visits * 365;
-
-              $currency_symbol = $this->value_currency_symbol();
-
-
-
-              // DEBUG: Add debug info to see what's happening
-
-              //$debug_info = "<br/><small style='color:#666;'>DEBUG: Leading='{$leading_variation}', Control='{$control_variation_key}', LeadingRate={$leading_rate}</small>";
-
-
-
-              // Find second-best performing variation for "amount saved" calculation
-
-              $all_rates = [];
-
-              foreach ($all_variations_nonwinner as $key => $data) {
-
-                $current_rate = $conversion_use_order_value ? ($data['rate'] / 100) : $data['rate'];
-
-                $all_rates[$key] = $current_rate;
-              }
-
-              // Sort by rate descending to get best performers first
-
-              arsort($all_rates);
-
-              $sorted_variations = array_keys($all_rates);
-
-
-
-              // Get second-best rate (index 1, since index 0 is the leading/best)
-
-              $second_best_rate = 0;
-
-              $second_best_variation = '';
-
-              if (count($sorted_variations) >= 2) {
-
-                $second_best_variation = $sorted_variations[1];
-
-                $second_best_rate = $all_rates[$second_best_variation];
-              }
-
-
-
-              if ($conversion_use_order_value && $leading_rate > 0) {
-
-                // Revenue uplift
-
-                $control_rate = $control_data['rate'] / 100;
-
-                $annual_leading_revenue = $leading_rate * $annual_visits;
-
-                $annual_control_revenue = $control_rate * $annual_visits;
-
-                $annual_uplift = $annual_leading_revenue - $annual_control_revenue;
-
-
-
-                // Calculate amount saved vs second-best performer
-
-                $annual_second_best_revenue = $second_best_rate * $annual_visits;
-
-                $annual_saved = $annual_leading_revenue - $annual_second_best_revenue;
-
-
-
-                //$debug_info .= "<br/><small style='color:#666;'>DEBUG: AnnualUplift={$annual_uplift}, ControlRate={$control_rate}, SecondBestRate={$second_best_rate}, Saved={$annual_saved}</small>";
-
-
-
-                if ($annual_uplift > 0) {
-
-                  $formatted_uplift = number_format($annual_uplift, 0);
-
-                  $projection_message = "<br/>💡 <strong>Potential uplift:</strong> {$currency_symbol}{$formatted_uplift} additional revenue per year vs original.";
-                } elseif ($annual_saved > 0 && $leading_variation === $control_variation_key && $second_best_rate > 0) {
-
-                  // Amount saved by not switching (when control is leading and performing better than second-best)
-
-                  $formatted_avoided_loss = number_format($annual_saved, 0);
-
-                  $projection_message = "<br/>💰 <strong>Amount saved by not switching:</strong> {$currency_symbol}{$formatted_avoided_loss} per year vs alternatives.";
-                }
-              } elseif ($leading_rate > 0) {
-
-                // Conversion uplift
-
-                $control_rate = $control_data['rate'];
-
-                $annual_leading_conversions = ($leading_rate / 100) * $annual_visits;
-
-                $annual_control_conversions = ($control_rate / 100) * $annual_visits;
-
-                $annual_uplift = $annual_leading_conversions - $annual_control_conversions;
-
-
-
-                // Calculate amount saved vs second-best performer
-
-                $annual_second_best_conversions = ($second_best_rate / 100) * $annual_visits;
-
-                $annual_saved = $annual_leading_conversions - $annual_second_best_conversions;
-
-
-
-                //$debug_info .= "<br/><small style='color:#666;'>DEBUG: AnnualUplift={$annual_uplift}, ControlRate={$control_rate}, SecondBestRate={$second_best_rate}, Saved={$annual_saved}</small>";
-
-
-
-                if ($annual_uplift > 0) {
-
-                  $formatted_uplift = number_format(round($annual_uplift));
-
-                  $projection_message = "<br/>💡 <strong>Potential uplift:</strong> {$formatted_uplift} extra conversions per year vs original.";
-                } elseif ($annual_saved > 0 && $leading_variation === $control_variation_key && $second_best_rate > 0) {
-
-                  // Amount saved by not switching (when control is leading and performing better than second-best)
-
-                  $formatted_avoided_loss = number_format(round($annual_saved));
-
-                  $projection_message = "<br/>💰 <strong>Amount saved by not switching:</strong> {$formatted_avoided_loss} conversions per year vs alternatives.";
-                }
-              }
-
-              // Add debug info to projection message
-
-              //$projection_message .= $debug_info;
 
             }
 
-
-
-            // Enhanced status message for ongoing tests
-
-            if (!empty($leading_label)) {
-
-              $experiment_status = sprintf(
-
-                '<h4 class="bt_ab_warning">🧪 %s is leading%s%s%s</h4>',
-
-                $leading_label,
-
-                $uplift_message,
-
-                $projection_message,
-
-                $remaining_message
-
-              );
-            }
           }
 
-          unset($observations['bt_bb_ab_stats']);
+        }
+
+        
+
+        // Combine confidence and estimated time remaining into a single line
+
+        $remaining_message = '';
+
+        if($likelyDuration && $likelyDuration > $test_age) {
+
+          $conf_target = round($percentage_target, 1);
+
+          if($likelyDuration >= 999 && $test_age >= 1) {
+
+            // 999 = very long time - difference too small to detect (only show after 1+ days of data)
+
+            $remaining_message = "<br/>â±ï¸ The variations are very close. This test may take a long time to reach {$conf_target}% confidence, or consider increasing traffic.";
+
+          } elseif($likelyDuration < 999) {
+
+            $days_remaining = $likelyDuration - $test_age;
+
+            if($days_remaining > 1) {
+
+              $remaining_message = "<br/>â±ï¸ Time remaining: About {$days_remaining} days to reach {$conf_target}% confidence.";
+
+            } else {
+
+              $remaining_message = "<br/>â±ï¸ Nearly complete! Results expected soon ({$conf_target}% confidence).";
+
+            }
+
+          }
+
+        }
+
+        
+
+        // Calculate projected impact potential (uplift vs control)
+
+        $projection_message = '';
+
+        if($total_visits > 0 && $test_age > 0 && $control_data) {
+
+          $daily_visits = $total_visits / $test_age;
+
+          $annual_visits = $daily_visits * 365;
+
+          $currency_symbol = $this->value_currency_symbol();
+
+
+
+          // DEBUG: Add debug info to see what's happening
+
+          //$debug_info = "<br/><small style='color:#666;'>DEBUG: Leading='{$leading_variation}', Control='{$control_variation_key}', LeadingRate={$leading_rate}</small>";
+
+
+
+          // Find second-best performing variation for "amount saved" calculation
+
+          $all_rates = [];
+
+          foreach($all_variations_nonwinner as $key => $data) {
+
+            $current_rate = $conversion_use_order_value ? ($data['rate']/100) : $data['rate'];
+
+            $all_rates[$key] = $current_rate;
+
+          }
+
+          // Sort by rate descending to get best performers first
+
+          arsort($all_rates);
+
+          $sorted_variations = array_keys($all_rates);
+
+          
+
+          // Get second-best rate (index 1, since index 0 is the leading/best)
+
+          $second_best_rate = 0;
+
+          $second_best_variation = '';
+
+          if(count($sorted_variations) >= 2) {
+
+            $second_best_variation = $sorted_variations[1];
+
+            $second_best_rate = $all_rates[$second_best_variation];
+
+          }
+
+
+
+          if($conversion_use_order_value && $leading_rate > 0) {
+
+            // Revenue uplift
+
+            $control_rate = $control_data['rate'] / 100;
+
+            $annual_leading_revenue = $leading_rate * $annual_visits;
+
+            $annual_control_revenue = $control_rate * $annual_visits;
+
+            $annual_uplift = $annual_leading_revenue - $annual_control_revenue;
+
+            
+
+            // Calculate amount saved vs second-best performer
+
+            $annual_second_best_revenue = $second_best_rate * $annual_visits;
+
+            $annual_saved = $annual_leading_revenue - $annual_second_best_revenue;
+
+            
+
+            //$debug_info .= "<br/><small style='color:#666;'>DEBUG: AnnualUplift={$annual_uplift}, ControlRate={$control_rate}, SecondBestRate={$second_best_rate}, Saved={$annual_saved}</small>";
+
+            
+
+            if ($annual_uplift > 0) {
+
+              $formatted_uplift = number_format($annual_uplift, 0);
+
+              $projection_message = "<br/>💡 <strong>Potential uplift:</strong> {$currency_symbol}{$formatted_uplift} additional revenue per year vs original.";
+
+            } elseif ($annual_saved > 0 && $leading_variation === $control_variation_key && $second_best_rate > 0) {
+
+              // Amount saved by not switching (when control is leading and performing better than second-best)
+
+              $formatted_avoided_loss = number_format($annual_saved, 0);
+
+              $projection_message = "<br/>💰 <strong>Amount saved by not switching:</strong> {$currency_symbol}{$formatted_avoided_loss} per year vs alternatives.";
+
+            }
+
+          } elseif($leading_rate > 0) {
+
+            // Conversion uplift
+
+            $control_rate = $control_data['rate'];
+
+            $annual_leading_conversions = ($leading_rate / 100) * $annual_visits;
+
+            $annual_control_conversions = ($control_rate / 100) * $annual_visits;
+
+            $annual_uplift = $annual_leading_conversions - $annual_control_conversions;
+
+            
+
+            // Calculate amount saved vs second-best performer
+
+            $annual_second_best_conversions = ($second_best_rate / 100) * $annual_visits;
+
+            $annual_saved = $annual_leading_conversions - $annual_second_best_conversions;
+
+            
+
+            //$debug_info .= "<br/><small style='color:#666;'>DEBUG: AnnualUplift={$annual_uplift}, ControlRate={$control_rate}, SecondBestRate={$second_best_rate}, Saved={$annual_saved}</small>";
+
+            
+
+            if ($annual_uplift > 0) {
+
+              $formatted_uplift = number_format(round($annual_uplift));
+
+              $projection_message = "<br/>💡 <strong>Potential uplift:</strong> {$formatted_uplift} extra conversions per year vs original.";
+
+            } elseif ($annual_saved > 0 && $leading_variation === $control_variation_key && $second_best_rate > 0) {
+
+              // Amount saved by not switching (when control is leading and performing better than second-best)
+
+              $formatted_avoided_loss = number_format(round($annual_saved));
+
+              $projection_message = "<br/>💰 <strong>Amount saved by not switching:</strong> {$formatted_avoided_loss} conversions per year vs alternatives.";
+
+            }
+
+          }
+
+          // Add debug info to projection message
+
+          //$projection_message .= $debug_info;
+
+        }
+
+        
+
+        // Enhanced status message for ongoing tests
+
+        if(!empty($leading_label)){
+
+          $experiment_status = sprintf(
+
+            '<h4 class="bt_ab_warning">🧪 %s is leading%s%s%s</h4>',
+
+            $leading_label,
+
+            $uplift_message,
+
+            $projection_message,
+
+            $remaining_message
+
+          );
+
+        }
+
+      }
+
+      unset($observations['bt_bb_ab_stats']);
+
+    }
+
+      
+
+    echo wp_kses_post( $experiment_status );
+
+    
+
+    // Share Report URL - displayed as standalone row below status
+
+    do_action('abst_after_experiment_status', $pid);
+
+    
+
+    echo "</div>"; // Close Status Panel
+
+
+
+    // IF ANY GOALS ARE SET THEN add column/div for goals with a dropdown to choose between available goals
+
+    $goalsHtml = '';
+
+    $goalsTableHead = '';
+
+    $emptyGoals = true;
+
+    if(!empty($foundGoals))
+
+    {
+
+      foreach($foundGoals as $key => $value) {
+
+        if(!empty(trim($value))){
+
+          $emptyGoals = false;
+
+          break;
+
+        }
+
+      }
+
+    }
+
+
+
+    if(!$emptyGoals)
+
+    {
+
+      $goalSelect = '<div>Subgoals</div><select class="goal-select">';
+
+      foreach($foundGoals as $key => $goal)
+
+      {
+
+        if(!empty(trim($goal)))
+
+          $goalSelect .= '<option value="'.$key.'">'.$goal.'</option>';
+
+      }
+
+      $goalSelect .= '</select>';
+
+      $goalsHtml = '<div class="results-goals">'.$goalSelect.'</div>';
+
+      $goalsTableHead = '<th>Sub-goals</th>';
+
+    }
+
+
+
+
+
+    // Determine column header based on conversion style
+
+    $chance_column_header = ($conversion_style == 'thompson') ? 'Weight' : 'Confidence';
+
+    
+
+    if($asTable)
+
+      echo '<table style="width:100%; max-width:800px;" border="0" cellspacing="5px" cellpadding="5px"> <thead><tr>  <th style="text-align: center;">Version Title</th>  <th style="text-align: center;">', esc_html( $conversion_text ), '</th>  <th style="text-align: center;">', esc_html( $chance_column_header ), '</th> <th style="text-align: center;">Visits</th> <th style="text-align: center;">Conversions</th> </tr></thead><tbody>';
+
+    else
+
+      echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>', wp_kses_post( $goalsHtml ), '<div class="results-conversions">Conversions</div><div class="results-conversion-rate">', esc_html( $conversion_text ), '</div><div class="results-likely">', esc_html( $chance_column_header ), '</div></div>';
+
+    //hide old results remove soon
+
+    echo '<style>.results_variation { display: none; }</style>';
+
+
+
+$titles = array();
+
+    $variation_meta = get_post_meta($pid,'variation_meta',true);
+
+
+
+      if(is_array($observations))
+
+      {
+
+      //remove observations with key ''
+
+        $saveFix = false;
+
+
+
+        if( array_key_exists('', $observations))
+
+        {
+
+          abst_log('Removing observation with EMPTY key ""');
+
+          unset($observations['']);
+
+          $saveFix = true;
+
         }
 
 
 
-        echo wp_kses_post($experiment_status);
+        // if array key 0 exists and 0['visits' = 0 ten unset 
 
+        if(array_key_exists(0, $observations) && $observations[0]['visit'] == 0)
 
+        {
 
-        // Share Report URL - displayed as standalone row below status
+          abst_log('Removing observation with key "0" and no visits');
 
-        do_action('abst_after_experiment_status', $pid);
+          unset($observations[0]);
 
+          $saveFix = true;
 
-
-        echo "</div>"; // Close Status Panel
-
-
-
-        // IF ANY GOALS ARE SET THEN add column/div for goals with a dropdown to choose between available goals
-
-        $goalsHtml = '';
-
-        $goalsTableHead = '';
-
-        $emptyGoals = true;
-
-        if (!empty($foundGoals)) {
-
-          foreach ($foundGoals as $key => $value) {
-
-            if (!empty(trim($value))) {
-
-              $emptyGoals = false;
-
-              break;
-            }
-          }
         }
 
 
 
-        if (!$emptyGoals) {
+        // REMOVE CONVERSIONS WITH NO VISITS
 
-          $goalSelect = '<div>Subgoals</div><select class="goal-select">';
+        foreach($observations as $mk => $mv)
 
-          foreach ($foundGoals as $key => $goal) {
+        {
 
-            if (!empty(trim($goal)))
+          if($mv['conversion'] >= 0 && $mv['visit'] == 0)
 
-              $goalSelect .= '<option value="' . $key . '">' . $goal . '</option>';
+          {
+
+            abst_log('Removing observation with key "' . $mk . '" and no visits');
+
+            unset($observations[$mk]);
+
+            $saveFix = true;
+
           }
 
-          $goalSelect .= '</select>';
-
-          $goalsHtml = '<div class="results-goals">' . $goalSelect . '</div>';
-
-          $goalsTableHead = '<th>Sub-goals</th>';
         }
 
 
 
+        if($saveFix)
+
+        {
+
+          abst_log('Saving fixed observations - this should only fire 1 time per old test');
+
+          update_post_meta($test->ID, 'observations', $observations);
+
+        }
+
+      }
+
+    // END CLEAN DATA FROM WEIRD API CALLS ETCEND CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END 
 
 
-        // Determine column header based on conversion style
-
-        $chance_column_header = ($conversion_style == 'thompson') ? 'Weight' : 'Confidence';
 
 
 
-        if ($asTable)
+    //sort results by conversion rate
 
-          echo '<table style="width:100%; max-width:800px;" border="0" cellspacing="5px" cellpadding="5px"> <thead><tr>  <th style="text-align: center;">Version Title</th>  <th style="text-align: center;">', esc_html($conversion_text), '</th>  <th style="text-align: center;">', esc_html($chance_column_header), '</th> <th style="text-align: center;">Visits</th> <th style="text-align: center;">Conversions</th> </tr></thead><tbody>';
+    uasort($observations, array($this,"abst_cmp_by_conversion_rate"));
+
+    foreach($observations as $mk => $mv)
+
+    {
+
+      $okey = $mk;
+
+      if( empty($mv['probability']) ) {
+
+        $mv['probability'] = 0;
+
+      }
+
+
+
+      //skip if its the stats
+
+      if($mk === 'bt_bb_ab_stats')
+
+        continue;
+
+
+
+      //if its an id
+
+      if(is_numeric($mk))
+
+      {
+
+        $post_id_data = get_post($mk);
+
+
+
+        if( !is_null($post_id_data))
+
+        {
+
+          $mk = $post_id_data->post_title;
+
+          if(in_array($mk,$titles))
+
+            $mk = $post_id_data->post_name;
+
+          $titles[] = $mk;
+
+        }
+
+
+
+      }
+
+
+
+      //if is magic if mk starts with magic-
+
+      if(stripos($mk, 'magic-') === 0)
+
+      {
+
+        $mk = substr($mk, 6);
+
+        //0= variation a 1= variation b etc
+
+        $mk = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$mk];
+
+      }
+
+
+
+      if(isset($variation_meta[$okey]['label']) && !empty($variation_meta[$okey]['label'])){
+
+        $mk = $variation_meta[$okey]['label'];
+
+      }
+
+      
+
+
+
+      if(intval($mv['visit']) < $ac_data['min_views'])
+
+      {
+
+        $class = "na";
+
+      }
+
+      else if($mv['probability'] > apply_filters('abst_complete_confidence', 95) || $mv['probability'] > apply_filters("abst_complete_confidence", 95) )
+
+        $class = "testwinner";
+
+      else
+
+        $class = "no";
+
+
+
+
+
+      if($conversion_use_order_value)
+
+      {
+
+        $mv['rate'] = round($mv['rate']/100,2);
+
+        $mv['conversion'] = $this->value_currency_symbol() . round($mv['conversion'],0);
+
+
+
+        if($mv['rate'] <= 0)
+
+          $mv['rate'] = $this->value_currency_symbol()."0";
 
         else
 
-          echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>', wp_kses_post($goalsHtml), '<div class="results-conversions">Conversions</div><div class="results-conversion-rate">', esc_html($conversion_text), '</div><div class="results-likely">', esc_html($chance_column_header), '</div></div>';
+          $mv['rate'] = $this->value_currency_symbol() . round($mv['rate'],2);
 
-        //hide old results remove soon
+      }
 
-        echo '<style>.results_variation { display: none; }</style>';
+      else
 
+      {
 
+        if($mv['rate'] <= 0)
 
-        $titles = array();
+          $mv['rate'] = "0%";
 
-        $variation_meta = get_post_meta($pid, 'variation_meta', true);
+        else
 
+          $mv['rate'] = round($mv['rate'],1) . "%";
 
-
-        if (is_array($observations)) {
-
-          //remove observations with key ''
-
-          $saveFix = false;
+      }
 
 
 
-          if (array_key_exists('', $observations)) {
+      if(!$asTable)
 
-            abst_log('Removing observation with EMPTY key ""');
+      {
 
-            unset($observations['']);
+        // Calculate uplift for this variation vs control
 
-            $saveFix = true;
-          }
+        $uplift_html = '';
 
+        if($class === 'testwinner' && isset($observations['magic-0'])) {
 
+          // Ensure numeric conversion for rate values
 
-          // if array key 0 exists and 0['visits' = 0 ten unset 
+          $control_rate_raw = $observations['magic-0']['rate'];
 
-          if (array_key_exists(0, $observations) && $observations[0]['visit'] == 0) {
+          $this_rate_raw = $mv['rate'];
 
-            abst_log('Removing observation with key "0" and no visits');
+          $control_rate_clean = (float)str_replace(['%', '$', ','], '', $control_rate_raw);
 
-            unset($observations[0]);
+          $this_rate_clean = (float)str_replace(['%', '$', ','], '', $this_rate_raw);
 
-            $saveFix = true;
-          }
+          $control_rate = $conversion_use_order_value ? ($control_rate_clean/100) : $control_rate_clean;
 
+          $this_rate = $conversion_use_order_value ? ($this_rate_clean/100) : $this_rate_clean;
 
+          // If winner is not control, show uplift
 
-          // REMOVE CONVERSIONS WITH NO VISITS
+          if($okey !== 'magic-0' && $control_rate > 0 && $this_rate > 0) {
 
-          foreach ($observations as $mk => $mv) {
+            $uplift = (($this_rate - $control_rate) / $control_rate) * 100;
 
-            if ($mv['conversion'] >= 0 && $mv['visit'] == 0) {
+            if($uplift > 0) {
 
-              abst_log('Removing observation with key "' . $mk . '" and no visits');
+              $uplift_html = "<div class='variation-uplift'>+" . round($uplift, 1) . "% uplift</div>";
 
-              unset($observations[$mk]);
-
-              $saveFix = true;
             }
+
           }
 
+          // If control is winner, show avoided loss vs next best
 
+          if ($okey === 'magic-0' && $control_rate > 0) {
 
-          if ($saveFix) {
+            $best_alt = null;
 
-            abst_log('Saving fixed observations - this should only fire 1 time per old test');
+            foreach ($observations as $k => $obs) {
 
-            update_post_meta($test->ID, 'observations', $observations);
-          }
-        }
+              if ($k === 'magic-0' || !isset($obs['rate'])) continue;
 
-        // END CLEAN DATA FROM WEIRD API CALLS ETCEND CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END CLEAN DATA END 
+              $alt = (float)str_replace(['%', '$', ' ', ','], '', $obs['rate']);
 
+              if ($best_alt === null || $alt > $best_alt) $best_alt = $alt;
 
-
-
-
-        //sort results by conversion rate
-
-        uasort($observations, array($this, "abst_cmp_by_conversion_rate"));
-
-        foreach ($observations as $mk => $mv) {
-
-          $okey = $mk;
-
-          if (empty($mv['probability'])) {
-
-            $mv['probability'] = 0;
-          }
-
-
-
-          //skip if its the stats
-
-          if ($mk === 'bt_bb_ab_stats')
-
-            continue;
-
-
-
-          //if its an id
-
-          if (is_numeric($mk)) {
-
-            $post_id_data = get_post($mk);
-
-
-
-            if (!is_null($post_id_data)) {
-
-              $mk = $post_id_data->post_title;
-
-              if (in_array($mk, $titles))
-
-                $mk = $post_id_data->post_name;
-
-              $titles[] = $mk;
             }
-          }
 
+            if ($best_alt !== null) {
 
+              $loss = ($control_rate > 0) ? (($control_rate - $best_alt) / $control_rate) * 100 : 0;
 
-          //if is magic if mk starts with magic-
+              $loss = max(0, $loss); // Never negative
 
-          if (stripos($mk, 'magic-') === 0) {
+              $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
 
-            $mk = substr($mk, 6);
+              $annual_avoided_loss = 0;
 
-            //0= variation a 1= variation b etc
+              if ($total_visits > 0 && $test_age > 0) {
 
-            $mk = "Variation " . ['A (original)', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'][$mk];
-          }
+                $daily_visits = $total_visits / $test_age;
 
+                $annual_visits = $daily_visits * 365;
 
+                if ($conversion_use_order_value) {
 
-          if (isset($variation_meta[$okey]['label']) && !empty($variation_meta[$okey]['label'])) {
+                  $annual_control_revenue = $control_rate * $annual_visits;
 
-            $mk = $variation_meta[$okey]['label'];
-          }
+                  $annual_bestalt_revenue = ($best_alt / 100) * $annual_visits;
 
+                  $annual_avoided_loss = $annual_control_revenue - $annual_bestalt_revenue;
 
+                  if ($annual_avoided_loss > 0) {
 
+                    $currency_symbol = $this->value_currency_symbol();
 
+                    $avoided_loss_str = "<br><span class='avoided-loss-annual'>({$currency_symbol}" . number_format($annual_avoided_loss, 0) . " annual revenue protected)</span>";
 
-          if (intval($mv['visit']) < $ac_data['min_views']) {
-
-            $class = "na";
-          } else if ($mv['probability'] > apply_filters('abst_complete_confidence', 95) || $mv['probability'] > apply_filters("abst_complete_confidence", 95))
-
-            $class = "testwinner";
-
-          else
-
-            $class = "no";
-
-
-
-
-
-          if ($conversion_use_order_value) {
-
-            $mv['rate'] = round($mv['rate'] / 100, 2);
-
-            $mv['conversion'] = $this->value_currency_symbol() . round($mv['conversion'], 0);
-
-
-
-            if ($mv['rate'] <= 0)
-
-              $mv['rate'] = $this->value_currency_symbol() . "0";
-
-            else
-
-              $mv['rate'] = $this->value_currency_symbol() . round($mv['rate'], 2);
-          } else {
-
-            if ($mv['rate'] <= 0)
-
-              $mv['rate'] = "0%";
-
-            else
-
-              $mv['rate'] = round($mv['rate'], 1) . "%";
-          }
-
-
-
-          if (!$asTable) {
-
-            // Calculate uplift for this variation vs control
-
-            $uplift_html = '';
-
-            if ($class === 'testwinner' && isset($observations['magic-0'])) {
-
-              // Ensure numeric conversion for rate values
-
-              $control_rate_raw = $observations['magic-0']['rate'];
-
-              $this_rate_raw = $mv['rate'];
-
-              $control_rate_clean = (float)str_replace(['%', '$', ','], '', $control_rate_raw);
-
-              $this_rate_clean = (float)str_replace(['%', '$', ','], '', $this_rate_raw);
-
-              $control_rate = $conversion_use_order_value ? ($control_rate_clean / 100) : $control_rate_clean;
-
-              $this_rate = $conversion_use_order_value ? ($this_rate_clean / 100) : $this_rate_clean;
-
-              // If winner is not control, show uplift
-
-              if ($okey !== 'magic-0' && $control_rate > 0 && $this_rate > 0) {
-
-                $uplift = (($this_rate - $control_rate) / $control_rate) * 100;
-
-                if ($uplift > 0) {
-
-                  $uplift_html = "<div class='variation-uplift'>+" . round($uplift, 1) . "% uplift</div>";
-                }
-              }
-
-              // If control is winner, show avoided loss vs next best
-
-              if ($okey === 'magic-0' && $control_rate > 0) {
-
-                $best_alt = null;
-
-                foreach ($observations as $k => $obs) {
-
-                  if ($k === 'magic-0' || !isset($obs['rate'])) continue;
-
-                  $alt = (float)str_replace(['%', '$', ' ', ','], '', $obs['rate']);
-
-                  if ($best_alt === null || $alt > $best_alt) $best_alt = $alt;
-                }
-
-                if ($best_alt !== null) {
-
-                  $loss = ($control_rate > 0) ? (($control_rate - $best_alt) / $control_rate) * 100 : 0;
-
-                  $loss = max(0, $loss); // Never negative
-
-                  $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
-
-                  $annual_avoided_loss = 0;
-
-                  if ($total_visits > 0 && $test_age > 0) {
-
-                    $daily_visits = $total_visits / $test_age;
-
-                    $annual_visits = $daily_visits * 365;
-
-                    if ($conversion_use_order_value) {
-
-                      $annual_control_revenue = $control_rate * $annual_visits;
-
-                      $annual_bestalt_revenue = ($best_alt / 100) * $annual_visits;
-
-                      $annual_avoided_loss = $annual_control_revenue - $annual_bestalt_revenue;
-
-                      if ($annual_avoided_loss > 0) {
-
-                        $currency_symbol = $this->value_currency_symbol();
-
-                        $avoided_loss_str = "<br><span class='avoided-loss-annual'>({$currency_symbol}" . number_format($annual_avoided_loss, 0) . " annual revenue protected)</span>";
-                      } else {
-
-                        $avoided_loss_str = '';
-                      }
-                    } else {
-
-                      $annual_control_conv = ($control_rate / 100) * $annual_visits;
-
-                      $annual_bestalt_conv = ($best_alt / 100) * $annual_visits;
-
-                      $annual_avoided_loss = $annual_control_conv - $annual_bestalt_conv;
-
-                      if ($annual_avoided_loss > 0) {
-
-                        $avoided_loss_str = "<br><span class='avoided-loss-annual'>(" . number_format(round($annual_avoided_loss)) . " annual conversions protected)</span>";
-                      } else {
-
-                        $avoided_loss_str = '';
-                      }
-                    }
                   } else {
 
                     $avoided_loss_str = '';
+
                   }
 
-                  $uplift_html = "<div class='variation-loss'>You avoided losing " . round($loss, 1) . "% $context_label{$avoided_loss_str}</div>";
-                }
-              }
-            }
+                } else {
 
+                  $annual_control_conv = ($control_rate / 100) * $annual_visits;
 
+                  $annual_bestalt_conv = ($best_alt / 100) * $annual_visits;
 
-            //   $image_html = '';
+                  $annual_avoided_loss = $annual_control_conv - $annual_bestalt_conv;
 
-            //  if(isset($variation_meta[$okey]['image']) && !empty($variation_meta[$okey]['image'])){
+                  if ($annual_avoided_loss > 0) {
 
-            //    $image_html = "<div class='results-image'><img src='".esc_url($variation_meta[$okey]['image'])."' alt='".esc_attr($mk)."'></div>";
+                    $avoided_loss_str = "<br><span class='avoided-loss-annual'>(" . number_format(round($annual_avoided_loss)) . " annual conversions protected)</span>";
 
-            //  } else {
+                  } else {
 
-            //    $image_html = "<div class='results-image'></div>";
+                    $avoided_loss_str = '';
 
-            //  }
-
-            echo "<div class='results_variation " . esc_attr($class) . "'><div class='title'>" . esc_html($mk) . "" . wp_kses_post($uplift_html) . "</div>";
-
-            echo "<div class='results-visits'>" . esc_html($mv['visit']) . "<span> ▾</span></div>";
-
-            if (!empty($mv['goals'])) {
-
-              echo "<div class='results-goals'>";
-
-              foreach ($foundGoals as $goal_key => $goal_name) {
-
-                if (!empty(trim($goal_name))) {
-
-                  $goal_value = isset($mv['goals'][$goal_key]) ? $mv['goals'][$goal_key] : 0;
-
-                  echo "<div class='results-goal' data-goal='", esc_attr($goal_key), "' > ", esc_html($goal_value), "</div>";
-                }
-              }
-
-              echo "</div>";
-            } else {
-
-              // If this variation has no goals but others do, show zeros for all defined goals
-
-              if (!$emptyGoals) {
-
-                echo "<div class='results-goals'>";
-
-                foreach ($foundGoals as $goal_key => $goal_name) {
-
-                  if (!empty(trim($goal_name))) {
-
-                    echo "<div class='results-goal' data-goal='", esc_attr($goal_key), "' > 0 </div>";
                   }
+
                 }
 
-                echo "</div>";
               } else {
 
-                //echo "<div class='results-goal'>No goals</div>";
+                $avoided_loss_str = '';
 
               }
+
+              $uplift_html = "<div class='variation-loss'>You avoided losing " . round($loss, 1) . "% $context_label{$avoided_loss_str}</div>";
+
             }
 
-            echo "<div class='results-conversions'>", esc_html($mv['conversion']), "<span> ▾</span></div>";
+          }
 
+        }
 
+         
 
-            echo "<div class='results-conversion-rate'>", esc_html($mv['rate']), "</div>";
+      //   $image_html = '';
 
+      //  if(isset($variation_meta[$okey]['image']) && !empty($variation_meta[$okey]['image'])){
 
+      //    $image_html = "<div class='results-image'><img src='".esc_url($variation_meta[$okey]['image'])."' alt='".esc_attr($mk)."'></div>";
 
-            $mv['probability'] = $mv['probability'] . "%";
+      //  } else {
 
+      //    $image_html = "<div class='results-image'></div>";
 
+      //  }
 
-            if ($conversion_use_order_value && isset($aovobs[$okey]['probability'])) {
+        echo "<div class='results_variation " . esc_attr( $class ) . "'><div class='title'>" . esc_html( $mk ) . "" . wp_kses_post( $uplift_html ) . "</div>";
 
-              echo "<div class='results-likely'>", esc_html($aovobs[$okey]['probability']), "%</div>";
-            } else if (isset($mv['probability'])) {
+        echo "<div class='results-visits'>" . esc_html( $mv['visit'] ) . "<span> ▾</span></div>";
 
-              if ($conversion_style == 'thompson' && isset($variation_meta[$okey]['weight'])) {
+        if(!empty($mv['goals'])){
 
-                echo "<div class='results-likely'>", esc_html(round(floatval($variation_meta[$okey]['weight']) * 100, 1)), "%</div>";
-              } else {
+          echo "<div class='results-goals'>";
 
-                echo "<div class='results-likely'>", esc_html($mv['probability']), "</div>";
+          foreach($foundGoals as $goal_key => $goal_name) {
+
+            if(!empty(trim($goal_name))){
+
+              $goal_value = isset($mv['goals'][$goal_key]) ? $mv['goals'][$goal_key] : 0;
+
+              echo "<div class='results-goal' data-goal='", esc_attr( $goal_key ), "' > ", esc_html( $goal_value ), "</div>";
+
+            }
+
+          }
+
+          echo "</div>";
+
+        } else {
+
+          // If this variation has no goals but others do, show zeros for all defined goals
+
+          if(!$emptyGoals) {
+
+            echo "<div class='results-goals'>";
+
+            foreach($foundGoals as $goal_key => $goal_name) {
+
+              if(!empty(trim($goal_name))){
+
+                echo "<div class='results-goal' data-goal='", esc_attr( $goal_key ), "' > 0 </div>";
+
               }
+
             }
 
             echo "</div>";
 
-
-
-            echo "<div class='seen-on'><div><p>Visits</p>";
-
-            if (@!empty($mv['location']['visit'])) {
-
-              foreach ($mv['location']['visit'] as $visit) {
-
-                if (is_numeric($visit))
-
-                  echo "<a target='_blank' href='", esc_url(get_permalink($visit) . '?abtv=' . $mk . '&abtid=' . $pid), "'>", esc_html(get_the_title($visit)), "</a>";
-
-                else
-
-                  echo "<span ><small>", esc_html($visit), "</small></span>";
-              }
-            }
-
-            echo "</div><div><p>Conversions</p>";
-
-            if (@!empty($mv['location']['conversion'])) {
-
-              foreach ($mv['location']['conversion'] as $visit) {
-
-                if (is_numeric($visit))
-
-                  echo "<a target='_blank' href='", esc_url(get_permalink($visit) . '?abtv=' . $mk . '&abtid=' . $pid), "'>", esc_html(get_the_title($visit)), "</a>";
-
-                else
-
-                  echo "<span ><small>", esc_html($visit), "</small></span>";
-              }
-            }
-
-
-
-            echo "</div></div>";
           } else {
 
-            // Determine what to display in the "confidence" column
+            //echo "<div class='results-goal'>No goals</div>";
 
-            if ($conversion_style == 'thompson') {
-
-              if (isset($variation_meta[$okey]['weight'])) {
-
-                $chance_of_winning = round(floatval($variation_meta[$okey]['weight']) * 100, 1);
-              } else {
-
-                $chance_of_winning = "0%";
-              }
-            } else {
-
-              if (!intval($mv['visit'])) {
-
-                $chance_of_winning = "✕";
-              } else if ($conversion_use_order_value && isset($aovobs[$okey]['probability'])) {
-
-                $chance_of_winning = $aovobs[$okey]['probability'];
-              } else if (isset($mv['probability'])) {
-
-                $chance_of_winning = $mv['probability'] . "%";
-              } else {
-
-                $chance_of_winning = "0%";
-              }
-            }
-
-            echo "<tr><td style='text-align: center;'>" . esc_html($mk) . "</td>";
-
-            echo "<td style='text-align: center;'>" . esc_html($mv['rate']) . "</td>";
-
-            echo "<td style='text-align: center;'>" . esc_html($chance_of_winning) . "</td>";
-
-            echo "<td style='text-align: center;'>" . esc_html($mv['visit']) . "</td>";
-
-            echo "<td style='text-align: center;'>" . esc_html($mv['conversion']) . "</td></tr>";
           }
-        } // end foreach meta
 
-
-
-
-
-        //new table
-
-        //echo dropdowns to filter the results table
-
-        echo '<div class="abst-results-panel abst-result-filters-panel abst-data-panel">';
-
-        echo '<h3>Results</h3>';
-
-        echo '<div class="abst-result-filter-grid">';
-
-        echo '<div class="abst-result-filter-field">';
-
-        echo '<label for="abst-goal-select">Goal</label>';
-
-        echo '<select id="abst-goal-select">';
-
-        $conversion_page = get_post_meta($pid, 'conversion_page', true);
-
-        echo '<option value="">Primary: ' . esc_html($this->get_experiment_conversion_summary($pid)) . '</option>';
-
-        foreach ($foundGoals as $key => $goal) {
-
-          if (!empty(trim($goal)))
-
-            echo '<option value="subgoal' . esc_attr($key) . '">Subgoal ' . esc_html($key) . ': ' . esc_html($goal) . '</option>';
         }
 
-        echo '</select>';
-
-        echo '</div>';
-
-        echo '<div class="abst-result-filter-field abst-result-filter-field-device">';
-
-        echo '<label for="abst-device-size-select">Device</label>';
-
-        echo '<select id="abst-device-size-select">';
-
-        echo '<option value="">All devices</option>';
-
-        echo '<option value="desktop">Desktop</option>';
-
-        echo '<option value="mobile">Mobile</option>';
-
-        echo '<option value="tablet">Tablet</option>';
-
-        echo '</select>';
-
-        echo '</div>';
-
-        echo '</div>';
-
-        echo '</div>'; // Close Result Filters Panel
+        echo "<div class='results-conversions'>", esc_html( $mv['conversion'] ), "<span> ▾</span></div>";
 
 
 
-        // Results Table Panel
+        echo "<div class='results-conversion-rate'>", esc_html( $mv['rate'] ), "</div>";
 
-        echo '<div class="abst-results-panel abst-data-panel table-panel">';
+        
 
-        echo '<div id="abst-results-table"></div>';
+        $mv['probability'] = $mv['probability'] . "%";
 
-        echo '<div id="abst-sample-size-warning" class="abst-sample-size-warning" style="display:none;"></div>';
+        
 
-        echo '</div>';
-
-        //close table
-
-        if ($asTable)
-
-          echo '</tbody></table>';
-
-        // current date plus days remaining in dd month yyy
-
-        // chart
-
-        if (!empty($observations)) // include chart of data exists
+        if($conversion_use_order_value && isset($aovobs[$okey]['probability']) )
 
         {
 
-          echo '<div class="abst-results-panel abst-data-panel chart-panel"><canvas id="abtestChart" width="500px" height="400px"></canvas>';
+          echo "<div class='results-likely'>", esc_html( $aovobs[$okey]['probability'] ), "%</div>";  
 
-
-
-          if (!empty($likelyDuration)) {
-
-            if ($likelyDuration >= 999 && $test_age >= 1) {
-
-              $expectedEnd = 'Variations are very close - test may take a long time';
-
-              echo '<div id="expectedEnd">', esc_html($expectedEnd), '</div>';
-            } elseif ($likelyDuration < 999) {
-
-              $expectedEnd = wp_date('F jS Y', strtotime('+' . $likelyDuration . ' days'));
-
-              $expectedEnd = 'Projected end date: ' . $expectedEnd;
-
-              echo '<div id="expectedEnd">', esc_html($expectedEnd), '</div>';
-            }
-          } else
-
-            $likelyDuration = 0;
-
-
-
-          if (abst_get_admin_setting('ab_use_uuid') == 1 || abst_get_admin_setting('ab_use_fingerprint') == 1) {
-
-            echo '<button id="abst-export-data" class="button abst-export-data" test_id="' . esc_attr($pid) . '">Export Visitor Data</button>';
-          }
-
-
-
-
-
-
-
-          //chart data as json - for tables and charts
-
-          $obs = $observations;
-
-          $observations = [];
-
-          $observations['observations'] = $obs;
-
-          foreach ($observations['observations'] as $key => $value) {
-
-
-
-            if (!isset($observations['observations'][$key]['variation_meta'])) {
-
-              $observations['observations'][$key]['variation_meta'] = [];
-            }
-
-            if (is_int($key)) {
-
-              //if no label then set it to the post title
-
-              $observations['observations'][$key]['variation_meta']['label'] = get_the_title($key);
-
-              $observations['observations'][$key]['variation_meta']['slug'] = get_post_field('post_name', $key);
-            }
-
-
-
-            // if 0 visits (legacy bug) then remove
-
-            if ($value['visit'] == 0)
-
-              unset($observations['observations'][$key]);
-
-
-
-
-
-
-
-            // Add statistical data
-
-            if (isset($value['probability'])) {
-
-              $observations['observations'][$key]['chance_of_winning'] = $value['probability'];
-            }
-
-
-
-            //add weight
-
-            $meta = get_post_meta($pid, 'variation_meta', true);
-
-            if (isset($meta[$key]['weight']))
-
-              $observations['observations'][$key]['variation_meta']['weight'] = $meta[$key]['weight'];
-          }
-
-
-
-
-
-          //include variation_meta 
-
-          $variation_meta = get_post_meta($pid, 'variation_meta', true);
-
-          if (!empty($variation_meta)) {
-
-            foreach ($variation_meta as $key => $value) {
-
-
-
-              if (!empty($value['label']))
-
-                $observations['observations'][$key]['variation_meta']['label'] = $value['label'];
-
-              if (!empty($value['slug']))
-
-                $observations['observations'][$key]['variation_meta']['slug'] = $value['slug'];
-
-              if (!empty($value['weight']))
-
-                $observations['observations'][$key]['variation_meta']['weight'] = $value['weight'];
-            }
-          }
-
-
-
-          // Add test winner information
-
-          $test_winner = get_post_meta($pid, 'test_winner', true);
-
-          if (!empty($test_winner)) {
-
-            $observations['test_winner'] = $test_winner;
-          }
-
-
-
-          // Per-size winners (from bt_bb_ab_analyze_device_sizes) for row highlight when filtering
-
-          if (isset($obs['bt_bb_ab_stats']['device_size']) && is_array($obs['bt_bb_ab_stats']['device_size'])) {
-
-            $observations['device_size_winners'] = [];
-
-            $min_visits_for_winner = apply_filters('abst_min_visits_for_winner', 50);
-            // Backward compatibility: also allow old hook name (new hook takes precedence)
-            $min_visits_for_winner = apply_filters("abst_min_visits_for_winner", $min_visits_for_winner);
-
-            foreach ($obs['bt_bb_ab_stats']['device_size'] as $sk => $sb) {
-
-              $size_min_visits_ok = true;
-
-              foreach ($obs as $vk => $vd) {
-
-                if ($vk === 'bt_bb_ab_stats' || !is_array($vd)) continue;
-
-                $sv = isset($vd['device_size'][$sk]['visit']) ? intval($vd['device_size'][$sk]['visit']) : 0;
-
-                if ($sv < $min_visits_for_winner) {
-
-                  $size_min_visits_ok = false;
-
-                  break;
-                }
-              }
-
-
-
-              $size_prob = isset($sb['probability']) ? intval($sb['probability']) : 0;
-
-              if ($size_min_visits_ok && $size_prob >= $percentage_target && isset($sb['best']) && $sb['best'] !== false) {
-
-                $observations['device_size_winners'][$sk] = $sb['best'];
-              }
-            }
-          }
-
-
-
-          // Add test type information
-
-          $test_type = get_post_meta($pid, 'test_type', true);
-
-          if (!empty($test_type)) {
-
-            $observations['test_type'] = $test_type;
-          }
-
-
-
-          // Add conversion style information
-
-          $conversion_style = get_post_meta($pid, 'conversion_style', true);
-
-          if (!empty($conversion_style)) {
-
-            $observations['conversion_style'] = $conversion_style;
-          }
-
-
-
-          // Add conversion use order value information
-
-          if (!empty($conversion_use_order_value)) {
-
-            $observations['conversion_use_order_value'] = $conversion_use_order_value;
-          }
-
-
-
-          // Add additional relevant test configuration data
-
-          $target_percentage = get_post_meta($pid, 'target_percentage', true);
-
-          if (!empty($target_percentage)) {
-
-            $observations['target_percentage'] = $target_percentage;
-          }
-
-          $control_variation = $this->identify_control_variation($observations['observations'], get_post($pid));
-
-          $observations['control_variation'] = $control_variation;
-
-
-
-          $conversion_text = get_post_meta($pid, 'conversion_text', true);
-
-          if (!empty($conversion_text)) {
-
-            $observations['conversion_text'] = $conversion_text;
-          }
-
-
-
-          $full_page_default_page = get_post_meta($pid, 'bt_experiments_full_page_default_page', true);
-
-          if (!empty($full_page_default_page)) {
-
-            $observations['full_page_default_page'] = $full_page_default_page;
-          }
-
-
-
-          $page_variations = get_post_meta($pid, 'page_variations', true);
-
-          if (!empty($page_variations)) {
-
-            $observations['page_variations'] = $page_variations;
-          }
-
-
-
-
-
-          $goals = get_post_meta($pid, 'goals', true);
-
-          if (!empty($goals)) {
-
-            $observations['goals'] = $goals;
-          }
-
-
-
-          $webhook_url = get_post_meta($pid, 'webhook_url', true);
-
-          if (!empty($webhook_url)) {
-
-            $observations['webhook_url'] = $webhook_url;
-          }
-
-
-
-          $magic_definition = get_post_meta($pid, 'magic_definition', true);
-
-          if (!empty($magic_definition)) {
-
-            $observations['magic_definition'] = $magic_definition;
-          }
-
-
-
-          $css_test_variations = get_post_meta($pid, 'css_test_variations', true);
-
-          if (!empty($css_test_variations)) {
-
-            $observations['css_test_variations'] = $css_test_variations;
-          }
-
-
-
-          // Add comprehensive statistical data from bt_bb_ab_stats
-
-          if (isset($observations['bt_bb_ab_stats'])) {
-
-            $observations['statistical_data'] = $observations['bt_bb_ab_stats'];
-          }
-
-
-
-          // Add control variation information
-
-          if (!empty($test_type)) {
-
-
-
-            //create new observations array without bt_bb_ab_stats
-
-            $all_variations = [];
-
-            foreach ($observations as $key => $data) {
-
-              if ($key === 'bt_bb_ab_stats') continue;
-
-              $all_variations[$key] = $data;
-            }
-
-
-
-
-
-            $control_variation_key = $this->identify_control_variation($all_variations, $test);
-
-            if (!empty($control_variation_key)) {
-
-              $observations['control_variation'] = $control_variation_key;
-            }
-
-
-
-            // Add variation titles, links and slugs for all variations
-
-            foreach ($observations['observations'] as $var_key => $var_data) {
-
-              $post_data = get_post($var_key);
-
-
-
-              // Add experiment ID and variation key for heatmap links (for all variations)
-
-              $observations['observations'][$var_key]['variation_meta']['eid'] = $pid;
-
-              $observations['observations'][$var_key]['variation_meta']['variation'] = $var_key;
-
-
-
-              $visit = $var_data['location']['visit'][0] ?? false;
-
-              if ($visit) {
-
-                $link_url = '';
-
-
-
-                if (is_numeric($visit)) {
-
-                  // It's a post ID
-
-                  $link_url = get_permalink($visit);
-
-                  // Store page ID for heatmap links
-
-                  $observations['observations'][$var_key]['variation_meta']['page_id'] = $visit;
-                } else {
-
-                  // It's a string (like 'homepage', 'product-page', etc.)
-
-                  $link_url = home_url('/' . $visit);
-                }
-
-
-
-                if ($link_url) {
-
-                  $observations['observations'][$var_key]['variation_meta']['link'] = '<a target="_blank" title="View this variation in a a new tab" href="' . $link_url . "?abtv=" . $var_key . "&abtid=" . $pid . '">🔗</a>';
-                }
-              }
-
-
-
-              if ($post_data) {
-
-                if (empty($observations['observations'][$var_key]['variation_meta']['label']))
-
-                  $observations['observations'][$var_key]['variation_meta']['label'] = $post_data->post_title;
-
-                $observations['observations'][$var_key]['variation_meta']['slug'] = $post_data->post_name;
-              }
-            }
-          }
-
-
-
-          // Add test age and likely duration to main data object
-
-          $observations['test_age'] = $test_age;
-
-          $observations['likely_duration'] = $likelyDuration;
-
-
-
-          // Add minimum requirements data
-
-          $observations['min_views'] = $ac_data['min_views'];
-
-          $observations['min_days'] = $ac_data['min_days'];
-
-
-
-          // Add confidence target percentage
-
-          $observations['confidence_target'] = $percentage_target;
-
-
-
-          // Add currency symbol for revenue-based tests
-
-          if ($conversion_use_order_value) {
-
-            $observations['currency_symbol'] = $this->value_currency_symbol();
-          }
         }
 
-        echo "</div>"; // Close Data Panel
+        else if(isset($mv['probability']) )  
 
+        {
 
+          if($conversion_style == 'thompson' && isset($variation_meta[$okey]['weight'])) {
 
-        // Public reports are PRO only — disabled in lite version
+            echo "<div class='results-likely'>", esc_html( round( floatval($variation_meta[$okey]['weight'])*100,1) ), "%</div>";
 
-      } else { // give em a guide for getting going
+          } else {
 
-        $empty_state_heading = '🟢 Waiting for visitors...';
+            echo "<div class='results-likely'>", esc_html( $mv['probability'] ), "</div>";
 
-        $empty_state_message = 'Your test is live! Data will appear here within 15 seconds of your first visitor. Refresh this page to check for updates.';
+          }
 
-
-
-        if ($test->post_status !== 'publish') {
-
-          $empty_state_heading = '⏸️ This test is paused';
-
-          $empty_state_message = 'Publish the test to start collecting visitors and showing results here.';
         }
-
-
-
-        echo "<div class='abst-results-panel abst-empty-panel'>";
-
-        echo "<h3>" . esc_html($empty_state_heading) . "</h3>";
-
-        echo "<p>" . esc_html($empty_state_message) . "</p>";
-
-        echo "<h4>Still no data after a few minutes?</h4>";
-
-        echo "<p>Your website's cache may be serving an old version of the page. Try these steps:</p>";
-
-        echo "<ul style='margin-left: 20px;'>";
-
-        echo "<li>Clear your caching plugin (we have detected and auto-cleared: " . esc_html(implode(', ', abst_get_detected_caches())) . ")</li>";
-
-        echo "<li>Purge your CDN cache (Cloudflare, Sucuri, etc.)</li>";
-
-        echo "<li>Check your hosting provider's cache settings</li>";
-
-        echo "<li>Visit your test page in an incognito/private browser window</li>";
-
-        echo "</ul>";
 
         echo "</div>";
-      }
 
 
 
-      // Output chart data as JavaScript variable
+        echo "<div class='seen-on'><div><p>Visits</p>";
 
-      if (!empty($observations)) {
+        if(@!empty($mv['location']['visit'])){
 
-        echo "<script>var abtestChartData = " . json_encode($observations) . ";</script>";
+          foreach($mv['location']['visit'] as $visit){
 
+              if(is_numeric($visit))
 
+                echo "<a target='_blank' href='", esc_url( get_permalink($visit) . '?abtv=' . $mk . '&abtid=' . $pid ), "'>", esc_html( get_the_title($visit) ), "</a>";
 
-        //if heatmaps enabled add heatmaps data
+              else
 
-        if (abst_get_admin_setting('abst_enable_user_journeys') == '1') {
+                echo "<span ><small>", esc_html( $visit ), "</small></span>";
 
-          echo "<script>window.abTestShowheatmapLinks = true;</script>";
+              
+
+          }
+
         }
+
+        echo "</div><div><p>Conversions</p>";
+
+        if(@!empty($mv['location']['conversion'])){
+
+          foreach($mv['location']['conversion'] as $visit){
+
+              if(is_numeric($visit))
+
+                echo "<a target='_blank' href='", esc_url( get_permalink($visit) . '?abtv=' . $mk . '&abtid=' . $pid ), "'>", esc_html( get_the_title($visit) ), "</a>";
+
+              else
+
+                echo "<span ><small>", esc_html( $visit ), "</small></span>";
+
+          }  
+
+        }
+
+          
+
+        echo "</div></div>";
+
       }
-    }
+
+      else
+
+      {
+
+        // Determine what to display in the "confidence" column
+
+        if($conversion_style == 'thompson') {
+
+          if(isset($variation_meta[$okey]['weight'])) {
+
+            $chance_of_winning = round(floatval($variation_meta[$okey]['weight'])*100,1);
+
+          } else {
+
+            $chance_of_winning = "0%";
+
+          }
+
+        } else {
+
+          if(!intval($mv['visit'])) {
+
+            $chance_of_winning = "✕";
+
+          } else if($conversion_use_order_value && isset($aovobs[$okey]['probability'])) {
+
+            $chance_of_winning = $aovobs[$okey]['probability'];
+
+           } else if(isset($mv['probability'])) {
+
+            $chance_of_winning = $mv['probability'] . "%";
+
+          } else {
+
+            $chance_of_winning = "0%";
+
+          }
+
+        }
+
+        echo "<tr><td style='text-align: center;'>" . esc_html( $mk ) . "</td>";
+
+        echo "<td style='text-align: center;'>" . esc_html( $mv['rate'] ) . "</td>";
+
+        echo "<td style='text-align: center;'>" . esc_html( $chance_of_winning ) . "</td>";
+
+        echo "<td style='text-align: center;'>" . esc_html( $mv['visit'] ) . "</td>";
+
+        echo "<td style='text-align: center;'>" . esc_html( $mv['conversion'] ) . "</td></tr>";
+
+        
+
+      }
+
+    } // end foreach meta
+
+      
 
 
 
+    //new table
 
+    //echo dropdowns to filter the results table
 
-    function abst_cmp_by_conversion_rate($a, $b)
+    echo '<div class="abst-results-panel abst-result-filters-panel abst-data-panel">';
+
+    echo '<h3>Results</h3>';
+
+    echo '<div class="abst-result-filter-grid">';
+
+    echo '<div class="abst-result-filter-field">';
+
+    echo '<label for="abst-goal-select">Goal</label>';
+
+    echo '<select id="abst-goal-select">';
+
+    $conversion_page = get_post_meta($pid, 'conversion_page', true);
+
+    echo '<option value="">Primary: '.esc_html($this->get_experiment_conversion_summary($pid)).'</option>';
+
+    foreach($foundGoals as $key => $goal)
+
     {
 
-      $rateA = isset($a["rate"]) ? $a["rate"] : 0;
+      if(!empty(trim($goal)))
 
-      $rateB = isset($b["rate"]) ? $b["rate"] : 0;
+        echo '<option value="subgoal'.esc_attr($key).'">Subgoal '.esc_html($key).': '.esc_html($goal).'</option>';
 
-      return $rateB - $rateA;
     }
 
+    echo '</select>';
 
+    echo '</div>';
 
-    function bt_experiments_inner_custom_box($post)
+    echo '<div class="abst-result-filter-field abst-result-filter-field-device">';
+
+    echo '<label for="abst-device-size-select">Device</label>';
+
+    echo '<select id="abst-device-size-select">';
+
+    echo '<option value="">All devices</option>';
+
+    echo '<option value="desktop">Desktop</option>';
+
+    echo '<option value="mobile">Mobile</option>';
+
+    echo '<option value="tablet">Tablet</option>';
+
+    echo '</select>';
+
+    echo '</div>';
+
+    echo '</div>';
+
+    echo '</div>'; // Close Result Filters Panel
+
+    
+
+    // Results Table Panel
+
+    echo '<div class="abst-results-panel abst-data-panel table-panel">';
+
+    echo '<div id="abst-results-table"></div>';
+
+    echo '<div id="abst-sample-size-warning" class="abst-sample-size-warning" style="display:none;"></div>';
+
+    echo '</div>';
+
+    //close table
+
+    if($asTable)
+
+      echo '</tbody></table>';
+
+    // current date plus days remaining in dd month yyy
+
+    // chart
+
+    if(!empty($observations)  )// include chart of data exists
+
     {
+
+      echo '<div class="abst-results-panel abst-data-panel chart-panel"><canvas id="abtestChart" width="500px" height="400px"></canvas>';
+
+      
+
+      if(!empty($likelyDuration) )
+
+      {
+
+        if($likelyDuration >= 999 && $test_age >= 1) {
+
+          $expectedEnd = 'Variations are very close - test may take a long time';
+
+          echo '<div id="expectedEnd">', esc_html( $expectedEnd ), '</div>';
+
+        } elseif($likelyDuration < 999) {
+
+          $expectedEnd = wp_date('F jS Y', strtotime('+'. $likelyDuration . ' days'));
+
+          $expectedEnd = 'Projected end date: ' . $expectedEnd;
+
+          echo '<div id="expectedEnd">', esc_html( $expectedEnd ), '</div>';
+
+        }
+
+      }
+
+      else
+
+        $likelyDuration = 0;
+
+
+
+
+
+
+
+
+
+
+      //chart data as json - for tables and charts
+
+      $obs = $observations;
+
+      $observations = [];
+
+      $observations['observations'] = $obs;
+
+      foreach($observations['observations'] as $key => $value) {
+
+
+
+        if(!isset($observations['observations'][$key]['variation_meta'])) {
+
+          $observations['observations'][$key]['variation_meta'] = [];
+
+        }
+
+        if(is_int($key)){
+
+          //if no label then set it to the post title
+
+          $observations['observations'][$key]['variation_meta']['label'] = get_the_title($key);
+
+          $observations['observations'][$key]['variation_meta']['slug'] = get_post_field('post_name', $key);
+
+        }
+
+
+
+        // if 0 visits (legacy bug) then remove
+
+        if($value['visit'] == 0)
+
+          unset($observations['observations'][$key]);
+
+        
+
+        
+
+        
+
+        // Add statistical data
+
+        if(isset($value['probability'])) {
+
+          $observations['observations'][$key]['chance_of_winning'] = $value['probability'];
+
+        }
+
+
+
+        //add weight
+
+        $meta = get_post_meta($pid, 'variation_meta', true);
+
+        if(isset($meta[$key]['weight']))
+
+          $observations['observations'][$key]['variation_meta']['weight'] = $meta[$key]['weight'];
+
+
+
+      }
+
+
+
+      
+
+      //include variation_meta 
+
+      $variation_meta = get_post_meta($pid, 'variation_meta', true);
+
+      if(!empty($variation_meta)) {
+
+        foreach($variation_meta as $key => $value) {
+
+          
+
+          if(!empty($value['label']))
+
+            $observations['observations'][$key]['variation_meta']['label'] = $value['label'];
+
+          if(!empty($value['slug']))
+
+            $observations['observations'][$key]['variation_meta']['slug'] = $value['slug'];
+
+          if(!empty($value['weight']))
+
+            $observations['observations'][$key]['variation_meta']['weight'] = $value['weight'];
+
+        }
+
+      }
+
+      
+
+      // Add test winner information
+
+      $test_winner = get_post_meta($pid, 'test_winner', true);
+
+      if(!empty($test_winner)) {
+
+        $observations['test_winner'] = $test_winner;
+
+      }
+
+
+
+      // Per-size winners (from bt_bb_ab_analyze_device_sizes) for row highlight when filtering
+
+      if (isset($obs['bt_bb_ab_stats']['device_size']) && is_array($obs['bt_bb_ab_stats']['device_size'])) {
+
+        $observations['device_size_winners'] = [];
+
+        $min_visits_for_winner = apply_filters('abst_min_visits_for_winner', 50);
+        // Backward compatibility: also allow old hook name (new hook takes precedence)
+        $min_visits_for_winner = apply_filters("abst_min_visits_for_winner", $min_visits_for_winner);
+
+        foreach ($obs['bt_bb_ab_stats']['device_size'] as $sk => $sb) {
+
+          $size_min_visits_ok = true;
+
+          foreach ($obs as $vk => $vd) {
+
+            if ($vk === 'bt_bb_ab_stats' || !is_array($vd)) continue;
+
+            $sv = isset($vd['device_size'][$sk]['visit']) ? intval($vd['device_size'][$sk]['visit']) : 0;
+
+            if ($sv < $min_visits_for_winner) {
+
+              $size_min_visits_ok = false;
+
+              break;
+
+            }
+
+          }
+
+
+
+          $size_prob = isset($sb['probability']) ? intval($sb['probability']) : 0;
+
+          if ($size_min_visits_ok && $size_prob >= $percentage_target && isset($sb['best']) && $sb['best'] !== false) {
+
+            $observations['device_size_winners'][$sk] = $sb['best'];
+
+          }
+
+        }
+
+      }
+
+      
+
+      // Add test type information
+
+      $test_type = get_post_meta($pid, 'test_type', true);
+
+      if(!empty($test_type)) {
+
+        $observations['test_type'] = $test_type;
+
+      }
+
+      
+
+      // Add conversion style information
+
+      $conversion_style = get_post_meta($pid, 'conversion_style', true);
+
+      if(!empty($conversion_style)) {
+
+        $observations['conversion_style'] = $conversion_style;
+
+      }
+
+      
+
+      // Add conversion use order value information
+
+      if(!empty($conversion_use_order_value)) {
+
+        $observations['conversion_use_order_value'] = $conversion_use_order_value;
+
+      }
+
+      
+
+      // Add additional relevant test configuration data
+
+      $target_percentage = get_post_meta($pid, 'target_percentage', true);
+
+      if(!empty($target_percentage)) {
+
+        $observations['target_percentage'] = $target_percentage;
+
+      }
+
+      $control_variation = $this->identify_control_variation($observations['observations'], get_post($pid));
+
+      $observations['control_variation'] = $control_variation;
+
+      
+
+      $conversion_text = get_post_meta($pid, 'conversion_text', true);
+
+      if(!empty($conversion_text)) {
+
+        $observations['conversion_text'] = $conversion_text;
+
+      }
+
+      
+
+      $full_page_default_page = get_post_meta($pid, 'bt_experiments_full_page_default_page', true);
+
+      if(!empty($full_page_default_page)) {
+
+        $observations['full_page_default_page'] = $full_page_default_page;
+
+      }
+
+      
+
+      $page_variations = get_post_meta($pid, 'page_variations', true);
+
+      if(!empty($page_variations)) {
+
+        $observations['page_variations'] = $page_variations;
+
+      }
+
+
+
+      
+
+      $goals = get_post_meta($pid, 'goals', true);
+
+      if(!empty($goals)) {
+
+        $observations['goals'] = $goals;
+
+      }
+
+      
+
+      $webhook_url = get_post_meta($pid, 'webhook_url', true);
+
+      if(!empty($webhook_url)) {
+
+        $observations['webhook_url'] = $webhook_url;
+
+      }
+
+      
+
+      $magic_definition = get_post_meta($pid, 'magic_definition', true);
+
+      if(!empty($magic_definition)) {
+
+        $observations['magic_definition'] = $magic_definition;
+
+      }
+
+      
+
+      $css_test_variations = get_post_meta($pid, 'css_test_variations', true);
+
+      if(!empty($css_test_variations)) {
+
+        $observations['css_test_variations'] = $css_test_variations;
+
+      }
+
+      
+
+      // Add comprehensive statistical data from bt_bb_ab_stats
+
+      if(isset($observations['bt_bb_ab_stats'])) {
+
+        $observations['statistical_data'] = $observations['bt_bb_ab_stats'];
+
+      }
+
+      
+
+      // Add control variation information
+
+      if(!empty($test_type)) {
+
+        
+
+        //create new observations array without bt_bb_ab_stats
+
+        $all_variations = [];
+
+        foreach($observations as $key => $data) {
+
+          if($key === 'bt_bb_ab_stats') continue;
+
+          $all_variations[$key] = $data;
+
+        }
+
+
+
+
+
+        $control_variation_key = $this->identify_control_variation($all_variations, $test);
+
+        if(!empty($control_variation_key)) {
+
+          $observations['control_variation'] = $control_variation_key;
+
+        }
+
+
+
+        // Add variation titles, links and slugs for all variations
+
+        foreach($observations['observations'] as $var_key => $var_data) {
+
+          $post_data = get_post($var_key);
+
+          
+
+          // Add experiment ID and variation key for heatmap links (for all variations)
+
+          $observations['observations'][$var_key]['variation_meta']['eid'] = $pid;
+
+          $observations['observations'][$var_key]['variation_meta']['variation'] = $var_key;
+
+          
+
+          $visit = $var_data['location']['visit'][0] ?? false;
+
+          if($visit) {
+
+            $link_url = '';
+
+
+
+            if(is_numeric($visit)) {
+
+              // It's a post ID
+
+              $link_url = get_permalink($visit);
+
+              // Store page ID for heatmap links
+
+              $observations['observations'][$var_key]['variation_meta']['page_id'] = $visit;
+
+            } else {
+
+              // It's a string (like 'homepage', 'product-page', etc.)
+
+              $link_url = home_url('/' . $visit);
+
+            }
+
+            
+
+            if($link_url) {
+
+              $observations['observations'][$var_key]['variation_meta']['link'] = '<a target="_blank" title="View this variation in a a new tab" href="'.$link_url."?abtv=".$var_key."&abtid=".$pid.'">🔗</a>';
+
+            }
+
+          }
+
+
+
+          if($post_data) {
+
+            if(empty($observations['observations'][$var_key]['variation_meta']['label']))
+
+              $observations['observations'][$var_key]['variation_meta']['label'] = $post_data->post_title;
+
+            $observations['observations'][$var_key]['variation_meta']['slug'] = $post_data->post_name;
+
+          }
+
+          
+
+        }
+
+      }
+
+      
+
+      // Add test age and likely duration to main data object
+
+      $observations['test_age'] = $test_age;
+
+      $observations['likely_duration'] = $likelyDuration;
+
+      
+
+      // Add minimum requirements data
+
+      $observations['min_views'] = $ac_data['min_views'];
+
+      $observations['min_days'] = $ac_data['min_days'];
+
+      
+
+      // Add confidence target percentage
+
+      $observations['confidence_target'] = $percentage_target;
+
+      
+
+      // Add currency symbol for revenue-based tests
+
+      if($conversion_use_order_value) {
+
+        $observations['currency_symbol'] = $this->value_currency_symbol();
+
+      }
+
+    }
+
+    echo "</div>"; // Close Data Panel
+
+
+
+    // Public reports are PRO only — disabled in lite version
+
+    }
+
+    else
+
+    { // give em a guide for getting going
+
+      $empty_state_heading = '🟢 Waiting for visitors...';
+
+      $empty_state_message = 'Your test is live! Data will appear here within 15 seconds of your first visitor. Refresh this page to check for updates.';
+
+
+
+      if($test->post_status !== 'publish') {
+
+        $empty_state_heading = '⏸️ This test is paused';
+
+        $empty_state_message = 'Publish the test to start collecting visitors and showing results here.';
+
+      }
+
+
+
+      echo "<div class='abst-results-panel abst-empty-panel'>";
+
+      echo "<h3>" . esc_html($empty_state_heading) . "</h3>";
+
+      echo "<p>" . esc_html($empty_state_message) . "</p>";
+
+      echo "<h4>Still no data after a few minutes?</h4>";
+
+      echo "<p>Your website's cache may be serving an old version of the page. Try these steps:</p>";
+
+      echo "<ul style='margin-left: 20px;'>";
+
+      echo "<li>Clear your caching plugin (we have detected and auto-cleared: " . esc_html( implode(', ', abst_get_detected_caches()) ) . ")</li>";
+
+      echo "<li>Purge your CDN cache (Cloudflare, Sucuri, etc.)</li>";
+
+      echo "<li>Check your hosting provider's cache settings</li>";
+
+      echo "<li>Visit your test page in an incognito/private browser window</li>";
+
+      echo "</ul>";
+
+      echo "</div>";
+
+    }
+
+    
+
+    // Output chart data as JavaScript variable
+
+    if(!empty($observations)) {
+
+      echo "<script>var abtestChartData = " . json_encode($observations) . ";</script>";
+
+
+
+      //if heatmaps enabled add heatmaps data
+
+      if(abst_get_admin_setting('abst_enable_user_journeys') == '1') {
+
+        echo "<script>window.abTestShowheatmapLinks = true;</script>";
+
+      }
+
+
+
+    }
+
+  }
+
+
+
+    
+
+function abst_cmp_by_conversion_rate($a, $b) {
+
+  $rateA = isset($a["rate"]) ? $a["rate"] : 0;
+
+  $rateB = isset($b["rate"]) ? $b["rate"] : 0;
+
+  return $rateB - $rateA;
+
+}
+
+    
+
+    function bt_experiments_inner_custom_box( $post ) {
 
 
 
@@ -9537,21 +10573,21 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $eid = $post->ID;
 
-      $plugins_folder_url = plugin_dir_url(__FILE__);
+      $plugins_folder_url = plugin_dir_url( __FILE__ );
 
-      $pixel_url = esc_url($plugins_folder_url . 'pixel.php?eid=' . esc_attr(get_the_ID()));
+      $pixel_url = esc_url($plugins_folder_url . 'pixel.php?eid=' . esc_attr(get_the_ID())); 
 
 
 
-      // generate pixel html
+          // generate pixel html
 
       $pixel_html = '<img src="' . esc_url($pixel_url) . '" width="1" height="1" alt=""/>';
 
       echo "<script>
 
-      window.abstpid = " . intval($eid) . ";
+      window.abstpid = " . intval( $eid ) . ";
 
-      window.abembedimg = '" . esc_js($pixel_html) . "';
+      window.abembedimg = '" . esc_js( $pixel_html ) . "';
 
       </script>";
 
@@ -9561,7 +10597,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // Add an nonce field so we can check for it later.
 
-      wp_nonce_field('myplugin_inner_custom_box', 'bt_experiments_inner_custom_box_nonce');
+      wp_nonce_field( 'myplugin_inner_custom_box', 'bt_experiments_inner_custom_box_nonce' );
 
       /*
 
@@ -9571,21 +10607,21 @@ if (! class_exists('Bt_Ab_Tests')) {
 
        */
 
-      $conversion_page = get_post_meta($post->ID, 'conversion_page', true); // conversioion page id or special name for custom val
+      $conversion_page = get_post_meta($post->ID,'conversion_page',true); // conversioion page id or special name for custom val
 
-      $conversion_url = get_post_meta($post->ID, 'conversion_url', true);
+      $conversion_url = get_post_meta( $post->ID, 'conversion_url', true );
 
-      $conversion_time = get_post_meta($post->ID, 'conversion_time', true);
+      $conversion_time = get_post_meta($post->ID,'conversion_time',true);
 
-      $conversion_scroll = get_post_meta($post->ID, 'conversion_scroll', true);
+      $conversion_scroll = get_post_meta($post->ID,'conversion_scroll',true);
 
-      $conversion_selector = get_post_meta($post->ID, 'conversion_selector', true);
+      $conversion_selector = get_post_meta($post->ID,'conversion_selector',true);
 
-      $conversion_link_pattern = get_post_meta($post->ID, 'conversion_link_pattern', true);
+      $conversion_link_pattern = get_post_meta($post->ID,'conversion_link_pattern',true);
 
-      $conversion_use_order_value = get_post_meta($post->ID, 'conversion_use_order_value', true);
+      $conversion_use_order_value = get_post_meta($post->ID,'conversion_use_order_value',true);
 
-      $conversion_text = get_post_meta($post->ID, 'conversion_text', true);
+      $conversion_text = get_post_meta($post->ID,'conversion_text',true);
 
       $currency = $this->value_currency_symbol();
 
@@ -9608,14 +10644,6 @@ if (! class_exists('Bt_Ab_Tests')) {
         'javascript' => 'JavaScript',
       );
 
-      if (abst_get_admin_setting('ab_use_fingerprint') == 1) {
-        $conversion_type_options['fingerprint'] = 'Fingerprint Pixel';
-      }
-
-      if (abst_get_admin_setting('ab_use_uuid') == 1) {
-        $conversion_type_options['advanced'] = 'Advanced Mode (PHP/AJAX)';
-      }
-
       $select = "<select id='bt_experiments_conversion_page' name='bt_experiments_conversion_page' class=''>";
 
       foreach ($conversion_type_options as $option_value => $option_label) {
@@ -9637,7 +10665,8 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       if (function_exists('abst_get_form_optgroups')) {
 
-        $woo_opts .= abst_get_form_optgroups($conversion_page);
+          $woo_opts .= abst_get_form_optgroups($conversion_page);
+
       }
 
 
@@ -9650,7 +10679,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo '<p><label for="bt_experiments_conversion_url">';
 
-      esc_html_e("Define a successful conversion. Something like a thank-you page, or a checkout complete page.", 'ab-split-test-lite');
+      esc_html_e( "Define a successful conversion. Something like a thank-you page, or a checkout complete page.", 'ab-split-test-lite' );
 
       echo '</label></p>';
 
@@ -9684,15 +10713,15 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      echo " <div class='test-conversion-tags-mode'><h4>Conversion Blocks, Classes, Modules</h4><ol><li>Edit the page you would like to create your test conversion goal.</li><li>Add the conversion classes below to your page, or use a Block/module to trigger a conversion on page load.</li></ol>";
+    echo " <div class='test-conversion-tags-mode'><h4>Conversion Blocks, Classes, Modules</h4><ol><li>Edit the page you would like to create your test conversion goal.</li><li>Add the conversion classes below to your page, or use a Block/module to trigger a conversion on page load.</li></ol>";
 
-      echo "<div class='test-class-info test-conversion-info'><input type='text' value='ab-" . esc_attr($post->ID) . " ab-convert'/></div></div>";
+      echo "<div class='test-class-info test-conversion-info'><input type='text' value='ab-" . esc_attr( $post->ID ) . " ab-convert'/></div></div>";
 
-
+      
 
       // ------------------- conversion page  mode --------------------------_______
 
-
+      
 
       echo '<label class="conversion_page_selector" for="bt_experiments_conversion_page_selector"><strong>Conversion Page</strong><BR>Choose the page that will trigger your test conversion on page load.<BR>';
 
@@ -9702,31 +10731,39 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $foundConversion = false;
 
-      foreach ($allPublicPosts as $post) {
+      foreach($allPublicPosts as $post)
+
+      {
 
         $selected = '';
 
-        if ($post->ID == $conversion_page) {
+        if($post->ID == $conversion_page){
 
           $selected = 'selected';
 
           $foundConversion = true;
+
         }
 
-        $select .= "<option value='" . esc_attr($post->ID) . "' " . $selected . ">" . esc_html($post->post_title) . ": " . esc_html($post->post_type) . ' ' . esc_html($post->post_name) . "</option>";
+        $select .="<option value='" . esc_attr($post->ID) . "' " . $selected . ">" . esc_html($post->post_title) . ": " . esc_html($post->post_type) . ' ' . esc_html($post->post_name) . "</option>";
+
       }
 
-      if (!$foundConversion) {
+      if(!$foundConversion)
+
+      {
 
         $cPage = get_post($conversion_page);
 
-        if (!empty($cPage)) {
+        if(!empty($cPage)){
 
-          $select .= "<option value='" . esc_attr($conversion_page) . "' selected >" . esc_html($cPage->post_title) . ": " . esc_html($cPage->post_type) . ' ' . esc_html($cPage->post_name) . "</option>";
+          $select .="<option value='" . esc_attr($conversion_page) . "' selected >" . esc_html($cPage->post_title) . ": " . esc_html($cPage->post_type) . ' ' . esc_html($cPage->post_name) . "</option>";
+
         }
+
       }
 
-      echo wp_kses_post($select);
+      echo wp_kses_post( $select );
 
       echo '</select></label>';
 
@@ -9738,56 +10775,56 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      echo '<label class="conversion_url_input" for="bt_experiments_conversion_url">Conversion URL contains. Does not require the complete URL<BR><small class="conversion_url_input">e.g. <code>thank-you</code> would convert on any URL containing it, such as <code>https://yourwebsite.com/thank-you/email</code></small></label><input class="conversion_url_input" type="text" id="bt_experiments_conversion_url" name="bt_experiments_conversion_url" placeholder="your-conversion-page?maybe=this#orthat" value="' . esc_attr($conversion_url) . '"  />';
+      echo '<label class="conversion_url_input" for="bt_experiments_conversion_url">Conversion URL contains. Does not require the complete URL<BR><small class="conversion_url_input">e.g. <code>thank-you</code> would convert on any URL containing it, such as <code>https://yourwebsite.com/thank-you/email</code></small></label><input class="conversion_url_input" type="text" id="bt_experiments_conversion_url" name="bt_experiments_conversion_url" placeholder="your-conversion-page?maybe=this#orthat" value="' . esc_attr( $conversion_url ) . '"  />';
 
-
+     
 
       // ------------------- conversion click selector --------------------------_______
 
-      // since in 1.3.2
+        // since in 1.3.2
 
-      echo '<label class="conversion_selector_input" for="bt_experiments_conversion_selector">CSS Selector that when clicked will trigger the conversion. <br/>Add our class <code>ab-click-convert-', esc_attr($eid), '</code> or define your own below.</label><input class="conversion_selector_input" type="text" id="bt_experiments_conversion_selector" name="bt_experiments_conversion_selector" placeholder="#yourthing" value="' . esc_attr($conversion_selector) . '"  />';
+      echo '<label class="conversion_selector_input" for="bt_experiments_conversion_selector">CSS Selector that when clicked will trigger the conversion. <br/>Add our class <code>ab-click-convert-', esc_attr( $eid ), '</code> or define your own below.</label><input class="conversion_selector_input" type="text" id="bt_experiments_conversion_selector" name="bt_experiments_conversion_selector" placeholder="#yourthing" value="' . esc_attr( $conversion_selector ) . '"  />';
 
-
+    
 
       // ------------------- conversion link click pattern --------------------------_______
 
-      echo '<label class="conversion_link_pattern_input" for="bt_experiments_conversion_link_pattern">Link: When a link (<code>&lt;a&gt;</code>) with an href containing this pattern is clicked, a conversion is triggered.<br/>Example: <code>thank-you</code> or <code>https://youtube.com/</code></label><input class="conversion_link_pattern_input" type="text" id="bt_experiments_conversion_link_pattern" name="bt_experiments_conversion_link_pattern" placeholder="thank-you" value="' . esc_attr($conversion_link_pattern) . '"  style="display:none;" />';
+      echo '<label class="conversion_link_pattern_input" for="bt_experiments_conversion_link_pattern">Link: When a link (<code>&lt;a&gt;</code>) with an href containing this pattern is clicked, a conversion is triggered.<br/>Example: <code>thank-you</code> or <code>https://youtube.com/</code></label><input class="conversion_link_pattern_input" type="text" id="bt_experiments_conversion_link_pattern" name="bt_experiments_conversion_link_pattern" placeholder="thank-you" value="' . esc_attr( $conversion_link_pattern ) . '"  style="display:none;" />';
 
 
 
-      // ------------------- conversion scroll depth --------------------------_______
+       // ------------------- conversion scroll depth --------------------------_______
 
-      echo '<label class="conversion_scroll_input" for="bt_experiments_conversion_scroll">Scroll depth percentage before a conversion is triggered.</label><input class="conversion_scroll_input" type="number" id="bt_experiments_conversion_scroll" name="bt_experiments_conversion_scroll" placeholder="50" min="0" max="100" value="' . esc_attr($conversion_scroll) . '"  /><span class="conversion_scroll_input" > %</span>';
-
-
-
-      // ------------------- conversion time on site --------------------------_______
-
-      // since in 1.3.2
-
-      echo '<label class="conversion_time_input" for="bt_experiments_conversion_time">Number of seconds user will be active on site before a conversion is triggered.</label><input class="conversion_time_input" type="number" id="bt_experiments_conversion_time" name="bt_experiments_conversion_time" placeholder="30" value="' . esc_attr($conversion_time) . '"  /><span class="conversion_time_input" > seconds</span>';
+        echo '<label class="conversion_scroll_input" for="bt_experiments_conversion_scroll">Scroll depth percentage before a conversion is triggered.</label><input class="conversion_scroll_input" type="number" id="bt_experiments_conversion_scroll" name="bt_experiments_conversion_scroll" placeholder="50" min="0" max="100" value="' . esc_attr( $conversion_scroll ) . '"  /><span class="conversion_scroll_input" > %</span>';
 
 
 
-      // ------------------- conversion time on site --------------------------_______
+       // ------------------- conversion time on site --------------------------_______
 
-      // since in 1.6.2
+        // since in 1.3.2
 
-      echo '<label class="conversion_text_input" for="bt_experiments_conversion_text">Will convert when this text is visible on the page. Case sensitive.</label><input class="conversion_text_input" type="text" id="bt_experiments_conversion_text" name="bt_experiments_conversion_text" placeholder="" value="' . esc_attr($conversion_text) . '"  />';
+        echo '<label class="conversion_time_input" for="bt_experiments_conversion_time">Number of seconds user will be active on site before a conversion is triggered.</label><input class="conversion_time_input" type="number" id="bt_experiments_conversion_time" name="bt_experiments_conversion_time" placeholder="30" value="' . esc_attr( $conversion_time ) . '"  /><span class="conversion_time_input" > seconds</span>';
 
 
+
+       // ------------------- conversion time on site --------------------------_______
+
+        // since in 1.6.2
+
+        echo '<label class="conversion_text_input" for="bt_experiments_conversion_text">Will convert when this text is visible on the page. Case sensitive.</label><input class="conversion_text_input" type="text" id="bt_experiments_conversion_text" name="bt_experiments_conversion_text" placeholder="" value="' . esc_attr( $conversion_text ) . '"  />';
+
+     
 
 
       // ------------------- conversion javascript snippet --------------------------_______
 
-      // since in 1.3.2
+        // since in 1.3.2
 
-      //add document.body.addEventListener('ab-test-setup-complete', function() {
+        //add document.body.addEventListener('ab-test-setup-complete', function() {
 
-      //abstConvert(1234); // replace with your ID
+//abstConvert(1234); // replace with your ID
 
-      //});
+//});
 
 
 
@@ -9795,13 +10832,13 @@ if (! class_exists('Bt_Ab_Tests')) {
 
   window.abst.abConversionValue = 1; // optional, change if you are using \'use order value\'
 
-  (window.abConvert = window.abConvert || []).push(' . esc_js($eid) . ');
+  (window.abConvert = window.abConvert || []).push('.esc_js($eid).');
 
   processAbstConvert?.();
 
 </script>';
 
-      echo '<div id="conversion_javascript"><textarea id="conversion_javascript_area" rows="5">', esc_textarea($conversionScript), '</textarea><div id="conversion_order_value_javascript_slot"></div><BR>
+      echo '<div id="conversion_javascript"><textarea id="conversion_javascript_area" rows="5">',esc_textarea($conversionScript),'</textarea><div id="conversion_order_value_javascript_slot"></div><BR>
 
       <button class="bt_js_copy button">copy</button><span class="bt_js_copied"> Copied!</span><p>Place this code anywhere, at any time when you want to trigger a conversion. You may not need the script tags depending on where you place it.</p></div>';
 
@@ -9809,17 +10846,17 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       // --------------------- generate conversion module -----------------------
 
-      //     $pixel_url = esc_url(admin_url('admin-ajax.php') . "?action=abst_pixel&eid={$eid}"); 
+ //     $pixel_url = esc_url(admin_url('admin-ajax.php') . "?action=abst_pixel&eid={$eid}"); 
 
       //wp content url wp-content/plugins/bt-bb-ab/pixel.php?eid=20895
 
-      $plugins_folder_url = plugin_dir_url(__FILE__);
+      $plugins_folder_url = plugin_dir_url( __FILE__ );
 
-      $pixel_url = esc_url($plugins_folder_url . 'pixel.php?eid=' . $eid);
-
-
+      $pixel_url = esc_url($plugins_folder_url . 'pixel.php?eid=' . $eid); 
 
 
+
+    
 
       echo '<div class="embed-code-area">';
 
@@ -9835,7 +10872,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       echo '<div id="conversion_order_value_embed_slot"></div>';
 
-
+      
 
       echo '<p>Paste this image HTML snippet into any website that you want to trigger a conversion when the image is loaded. <small>It is an invisible 1px image, so it will not be visible on the converting website.</small></p><p><small>Add <code>&value=129.99</code> to pass a conversion amount. This is only used when <strong>Use order value</strong> is enabled for the test.</small></p></div>';
 
@@ -9847,13 +10884,13 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      $plugin_url = esc_url(get_admin_url() . 'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
+      $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
 
       $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></script>';
 
       echo "<input type='text' readonly='readonly' onclick='this.select()' value='" . esc_attr($fingerprint_script_html) . "'>";
 
-
+     
 
       echo '<p>Paste this script into any website that you want to trigger a conversion when the script is loaded. </p><p><small>Uses fingerprinting to detect the unique user. It is an invisible piece of JavaScript, it will not be visible on the converting website.</small></p></div>';
 
@@ -9863,7 +10900,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //      echo '<textarea style=" width: 100%; height: 100px; " id="bt-embed-code" readonly="true" onclick="this.select()"></textarea>';
 
-      //    echo '<button type="button" class="button bt-generate-code">Show Conversion Pixel</button><em class="bt-copied">Copied!</em></div>';
+  //    echo '<button type="button" class="button bt-generate-code">Show Conversion Pixel</button><em class="bt-copied">Copied!</em></div>';
 
 
 
@@ -9875,7 +10912,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //if conversion page is an integer
 
-      echo "<script " . wp_kses_post(ABST_CACHE_EXCLUDES) . ">
+      echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . ">
 
       jQuery(document).ready(function() {  
 
@@ -9909,19 +10946,19 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-        var selectval = '" . esc_js($conversion_page) . "';
+        var selectval = '". esc_js($conversion_page) ."';
 
-        jQuery('#bt_experiments_conversion_page option[value=\'" . esc_js($conversion_page) . "\']').first().attr('selected', 'selected');";
+        jQuery('#bt_experiments_conversion_page option[value=\'". esc_js($conversion_page) ."\']').first().attr('selected', 'selected');";
 
-      if (is_numeric($conversion_page))
+        if(is_numeric($conversion_page))
 
-        echo "jQuery('.conversion_page_selector').show();
+          echo "jQuery('.conversion_page_selector').show();
 
           jQuery('#bt_experiments_conversion_page option[value=\'page\']').first().attr('selected', 'selected');";
 
 
 
-      echo "    if( selectval !== 'url' ) 
+echo "    if( selectval !== 'url' ) 
 
           {
 
@@ -10100,234 +11137,8 @@ if (! class_exists('Bt_Ab_Tests')) {
       </script>
 
       ";
-    }
 
-
-
-
-
-    function get_user_ip_hash()
-    {
-
-      $ipaddress = '';
-
-      if (isset($_SERVER['HTTP_CLIENT_IP']))
-
-        $ipaddress = sanitize_text_field(wp_unslash($_SERVER['HTTP_CLIENT_IP']));
-
-      else if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))
-
-        $ipaddress = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']));
-
-      else if (isset($_SERVER['HTTP_X_FORWARDED']))
-
-        $ipaddress = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED']));
-
-      else if (isset($_SERVER['HTTP_FORWARDED_FOR']))
-
-        $ipaddress = sanitize_text_field(wp_unslash($_SERVER['HTTP_FORWARDED_FOR']));
-
-      else if (isset($_SERVER['HTTP_FORWARDED']))
-
-        $ipaddress = sanitize_text_field(wp_unslash($_SERVER['HTTP_FORWARDED']));
-
-      else if (isset($_SERVER['REMOTE_ADDR']))
-
-        $ipaddress = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
-
-      else
-
-        $ipaddress = 'UNKNOWN';
-
-
-
-      $ipaddress = hash('sha256', $ipaddress);
-
-      return $ipaddress;
-    }
-
-
-
-    // onn woo thank you page, add woo order value js variable to be used as conversion value
-
-    function enqueue_order_total_script($order_id)
-    {
-
-      // Check if the filter to disable this function has been set.
-
-      if (apply_filters('abst_disable_woo_order_value', false))
-
-        return;
-
-
-
-      if (abst_get_admin_setting('abst_server_convert_woo') == '1')
-
-        return;
-
-
-
-      $order = wc_get_order($order_id);
-
-
-
-      $to_status = $order->get_status();
-
-      //if they have been modified by filter, then filter, otherwise use the default thankyou page statuses ( completed, processing, on-hold, other custom)
-
-      if (apply_filters('abst_convert_statuses', false)) {
-
-        $valid_statuses = apply_filters('abst_convert_statuses', array('processing', 'completed'));
-
-        if (!in_array($to_status, $valid_statuses))
-
-          return;
-      }
-
-
-
-      $total = $order->get_total();
-
-
-
-      echo "<script " . wp_kses_post(ABST_CACHE_EXCLUDES) . " id='abst_conv_value'>
-
-            window.abst = window.abst || {};
-
-            window.abst.abConversionValue = '", esc_js($total), "';
-
-        </script>";
-    }
-
-
-
-    /**
-
-     * FluentCart Split Test Integration
-
-     * Hook into order completion to track conversions
-
-     * Ultra error-proof with comprehensive checks
-
-     */
-
-
-
-    function abst_fluent_cart_order_paid($eventData)
-    {
-
-      // Check if eventData is valid
-
-      abst_log('fluent cart order, event data: ' . json_encode($eventData));
-
-      if (empty($eventData) || !is_array($eventData)) {
-
-        abst_log('fluent cart order, invalid event data');
-
-        return;
-      }
-
-
-
-      // Check if order exists and is an object
-
-      if (empty($eventData['order'])) {
-
-        abst_log('fluent cart order, invalid order data');
-
-        return;
-      }
-
-
-
-      $order = $eventData['order'];
-
-
-
-      // Ensure total_amount is numeric and valid
-
-      $orderAmount = isset($order['total']) ? ($order['total'] / 100) : 1;
-
-
-
-      if (isset($order['payment_status']) && $order['payment_status'] !== 'paid') {
-
-        abst_log('fluent cart order, order not paid');
-
-        return;
-      }
-
-
-
-      $tests = get_posts(array(
-
-        'numberposts' => -1,
-
-        'post_type' => 'bt_experiments',
-
-        'meta_key' => 'bt_experiments_conversion_page',
-
-        'meta_value' => 'fluentcart-order-paid',
-
-        'post_status' => 'publish',
-
-        'fields' => 'ids',
-
-      ));
-
-
-
-      foreach ($tests as $eid) { // look through results 
-
-        //update cookie
-
-        if (!empty($eid)) {
-
-          abst_log('Fluent cart order paid and found for  test ID: ' . $eid);
-
-          $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field(wp_unslash($_COOKIE['ab-advanced-id'])) : false;
-
-          $advancedId = $uuid;
-
-          if (isset($_COOKIE['btab_' . $eid])) {
-
-            $cookie = json_decode(wp_unslash($_COOKIE['btab_' . $eid]), true);
-
-            if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
-
-              $cookie['conversion'] = 1;
-
-              $variation = $cookie['variation'] ?? '';
-
-              $device_size = $cookie['size'] ?? abst_detect_device_size_from_user_agent();
-
-              // update cookie with fallback strategy
-
-              abst_set_cookie_with_fallback('btab_' . $eid, json_encode($cookie, JSON_UNESCAPED_SLASHES), 1000);
-
-              // set server event cookie
-
-              $this->set_server_event_cookie($eid, $variation, 'conversion');
-
-              abst_log('Fluent cart order paid and found for  test ID: ' . $eid . ' and conversion page: ' . $variation . ' and conversion value: ' . $orderAmount);
-
-              //    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false){ 
-
-              $this->abst_log_experiment_activity($eid, $variation, 'conversion', true, 'fluent-cart-order-complete', $orderAmount, $uuid, $device_size, $advancedId);
-            } else {
-
-              abst_log('Fluent cart order paid and cookie found for test ID: ' . $eid . ' but conversion already set, so no conversion.');
-            }
-          } else {
-
-            abst_log('Fluent cart order paid and found for test ID: ' . $eid . ' but no visit , so no conversion.');
-          }
-        }
-      } // end foreach tests
-
-
-
-
+    
 
     }
 
@@ -10335,343 +11146,147 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-    function edd_trigger_conversion($payment_id)
-    {
+    function get_user_ip_hash() {
 
-      // Basic payment meta
+        $ipaddress = '';
 
-      $payment_meta = edd_get_order($payment_id);
+        if (isset($_SERVER['HTTP_CLIENT_IP']))
 
-      $total = $payment_meta->total;
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
 
+        else if(isset($_SERVER['HTTP_X_FORWARDED_FOR']))
 
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
 
-      $tests = get_posts(array(
+        else if(isset($_SERVER['HTTP_X_FORWARDED']))
 
-        'numberposts' => -1,
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED'] ) );
 
-        'post_type' => 'bt_experiments',
+        else if(isset($_SERVER['HTTP_FORWARDED_FOR']))
 
-        'meta_key' => 'conversion_page',
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_FORWARDED_FOR'] ) );
 
-        'meta_value' => 'edd-purchase',
+        else if(isset($_SERVER['HTTP_FORWARDED']))
 
-        'post_status' => 'publish',
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['HTTP_FORWARDED'] ) );
 
-        'fields' => 'ids',
+        else if(isset($_SERVER['REMOTE_ADDR']))
 
-      ));
+            $ipaddress = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
 
-      foreach ($tests as $eid) { // look through results 
+        else
 
-        //update cookie
+            $ipaddress = 'UNKNOWN';
 
-        if (!empty($eid)) {
+        
 
-          if (isset($_COOKIE['btab_' . $eid])) {
+        $ipaddress = hash('sha256', $ipaddress);
 
-            $cookie = json_decode(wp_unslash($_COOKIE['btab_' . $eid]), true);
+        return $ipaddress;
 
-            if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
-
-              $cookie['conversion'] = 1;
-
-              $variation = $cookie['variation'] ?? '';
-
-              $size = $cookie['size'] ?? abst_detect_device_size_from_user_agent();
-
-              $advancedId = $cookie['ab-advanced-id'] ?? false;
-
-              $fingerprint = $cookie['ab-uuid'] ?? false;
-
-              // update cookie with fallback strategy
-
-              abst_set_cookie_with_fallback('btab_' . $eid, json_encode($cookie, JSON_UNESCAPED_SLASHES), 1000);
-
-              // set server event cookie
-
-              $this->set_server_event_cookie($eid, $variation, 'conversion');
+    }
 
 
 
-              //    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false){ 
-
-              $this->abst_log_experiment_activity($eid, $variation, 'conversion', true, 'edd-order-complete', $total, $fingerprint, $size, $advancedId);
-            }
-          }
-        }
-      } // end foreach tests
-
-    } // end function
+    // Pro-only payment integrations (FluentCart, EDD, WooCommerce) removed in lite version.
 
 
 
 
 
+    
 
 
 
+    function set_server_event_cookie($eid, $variation, $type){
 
-    //wooconvert on woocommerce_checkout_order_processed
+      if(empty($eid) || empty($variation) || empty($type))
 
-    function woo_convert_on_checkout($order_id, $from, $to)
-    {
+        return;
 
-      if (abst_get_admin_setting('abst_server_convert_woo') !== '1') // only if enables in settings
+
+
+      if(isset($_COOKIE['abst_server_events']))
 
       {
 
-        abst_log('Woo order: Server convert on checkout not enabled, Will convert on woo thankyou page if enabled instead');
+        $events = json_decode( wp_unslash( $_COOKIE['abst_server_events'] ), true );
 
-        return;
       }
-
-      abst_log('woo server convert on checkout running on ' . $order_id . ' from: ' . $from . ' to: ' . $to);
-
-
-
-      $convert_status = abst_get_admin_setting('abst_server_convert_woo_status');
-
-      if (empty($convert_status))
-
-        $wooCompleteStatuses = array('processing', 'completed', 'on-hold'); // add woofunnels primary order complete
-
-      else if (is_array($convert_status))
-
-        $wooCompleteStatuses = $convert_status;
 
       else
 
-        $wooCompleteStatuses = array($convert_status);
-
-
-
-      if (!in_array($to, $wooCompleteStatuses)) {
-
-        abst_log('convert on checkout not in complete statuses, not converting');
-
-        abst_log($wooCompleteStatuses);
-
-        return;
-      } else {
-
-        abst_log('convert on checkout continuing with status match: ' . $to);
-      }
-
-
-
-      $fingerprint = false;
-
-      $advancedId = false;
-
-      $device_size = false;
-
-      //create filter for customer to enable this feature
-
-
-
-      $order = wc_get_order($order_id);
-
-      //order total
-
-      $total = $order->get_total();
-
-      //get tests whose meta is 'conversion_page' = 'woo-order-received' and is running
-
-      $tests = get_posts(array(
-
-        'numberposts' => -1,
-
-        'post_type' => 'bt_experiments',
-
-        'meta_key' => 'conversion_page',
-
-        'meta_value' => 'woo-order-received',
-
-        'post_status' => 'publish',
-
-        'fields' => 'ids',
-
-      ));
-
-
-
-      foreach ($tests as $eid) { // look through results 
-
-        //update cookie
-
-        $shouldConvert = true;
-
-        if (!empty($eid) && $order && $order->get_meta('_abuuid') && (abst_get_admin_setting('ab_use_fingerprint') == 1 || abst_get_admin_setting('ab_use_uuid') == 1)) { // if no cookie check for UUID and fingerprint
-
-          abst_log('Convert on checkout with Advanced ID found on order ' . $eid);
-
-          //check if uuid is set on woo order meta
-
-          if ($order->get_meta('_abuuid')) {
-
-            $advancedId = $order->get_meta('_abuuid');
-
-            $device_size = abst_detect_device_size_from_user_agent();
-
-            abst_log('convert on checkout found the order _abuuid ' . $advancedId);
-
-            $variation = false; //doesnt matter its a conversion will get from db
-
-          } else {
-
-            $shouldConvert = false;
-          }
-        } else if (isset($_COOKIE['btab_' . $eid])) {
-
-          $cookie = json_decode(stripslashes($_COOKIE['btab_' . $eid]), true);
-
-          abst_log('Convert on checkout cookie found');
-
-          abst_log($cookie);
-
-          if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
-
-            abst_log('convert on checkout cookie found and is a conversion');
-
-            $variation = $cookie['variation'] ?? false;
-
-            $advancedId = $cookie['ab-advanced-id'] ?? false;
-
-            $fingerprint = $cookie['ab-uuid'] ?? false;
-
-            $device_size = $cookie['size'] ?? abst_detect_device_size_from_user_agent();
-          }  // end if conversion
-
-          else {
-
-            $shouldConvert = false;
-          }
-        }  // end if cookie
-
-
-
-
-
-        if (!$shouldConvert) {
-
-          abst_log('should not convert from woo order.');
-
-          continue;
-        }
-
-
-
-        $cookie['conversion'] = 1;
-
-        // update cookie with fallback strategy
-
-        abst_set_cookie_with_fallback('btab_' . $eid, json_encode($cookie, JSON_UNESCAPED_SLASHES), 1000);
-
-        // set server event cookie
-
-        $this->set_server_event_cookie($eid, $variation, 'conversion');
-
-        //    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false){ 
-
-        $this->abst_log_experiment_activity($eid, $variation, 'conversion', true, 'woo-order-received', $total, $fingerprint, $device_size, $advancedId);
-
-        //     function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false,$uuid = false,$size = false, $advancedId = false){
-
-
-
-        // end if eid
-
-      } // end foreach
-
-    }
-
-
-
-
-
-
-
-    function set_server_event_cookie($eid, $variation, $type)
-    {
-
-      if (empty($eid) || empty($variation) || empty($type))
-
-        return;
-
-
-
-      if (isset($_COOKIE['abst_server_events'])) {
-
-        $events = json_decode(wp_unslash($_COOKIE['abst_server_events']), true);
-      } else {
+      {
 
         $events = [];
+
       }
 
       $events[] = ['eid' => $eid, 'variation' => $variation, 'type' => $type];
 
-
+      
 
       // Use fallback strategy for server events cookie (2 days expiry)
 
       abst_set_cookie_with_fallback('abst_server_events', json_encode($events), 2);
 
       abst_log('set server event cookie for ' . $eid . ' with variation ' . $variation . ' and type ' . $type);
+
     }
 
+    
 
+    function get_woo_pages(){
 
-    function get_woo_pages()
-    {
-
-      if (!class_exists('WooCommerce'))
+      if ( !class_exists( 'WooCommerce' ) )
 
         return false;
 
 
 
-      return [
+      return [ 
 
-        'Shop' => get_option('woocommerce_shop_page_id'),
+        'Shop' => get_option( 'woocommerce_shop_page_id' ),
 
-        'Cart' => get_option('woocommerce_cart_page_id'),
+        'Cart'=> get_option( 'woocommerce_cart_page_id' ),
 
-        'Checkout' => get_option('woocommerce_checkout_page_id'),
+        'Checkout'=> get_option( 'woocommerce_checkout_page_id' ),
 
-        'Pay' => get_option('woocommerce_pay_page_id'),
+        'Pay'=> get_option( 'woocommerce_pay_page_id' ),
 
-        'Pay - Thanks' => get_option('woocommerce_thanks_page_id'),
+        'Pay - Thanks'=> get_option( 'woocommerce_thanks_page_id' ),
 
-        'My Account' => get_option('woocommerce_myaccount_page_id'),
+        'My Account'=> get_option( 'woocommerce_myaccount_page_id' ),
 
-        'Edit Address' => get_option('woocommerce_edit_address_page_id'),
+        'Edit Address'=> get_option( 'woocommerce_edit_address_page_id' ),
 
-        'View Order' => get_option('woocommerce_view_order_page_id'),
+        'View Order'=> get_option( 'woocommerce_view_order_page_id' ),
 
-        'Terms' => get_option('woocommerce_terms_page_id'),
+        'Terms'=> get_option( 'woocommerce_terms_page_id' ),
 
       ];
+
     }
 
 
 
 
 
-    function manage_bt_experiments_posts_custom_column($column_name, $post_id)
-    {
+    function manage_bt_experiments_posts_custom_column($column_name, $post_id){
 
-      if ($column_name == 'visit' || $column_name == 'conversion' || $column_name == 'rate' || $column_name == 'screenshot') {
+      if( $column_name == 'visit' || $column_name == 'conversion' || $column_name == 'rate' || $column_name == 'screenshot' )
 
-        $observations = get_post_meta($post_id, 'observations', true);
+      {
 
-        $conversion_use_order_value = get_post_meta($post_id, 'conversion_use_order_value', true);
+        $observations = get_post_meta( $post_id, 'observations', true );
+
+        $conversion_use_order_value = get_post_meta($post_id,'conversion_use_order_value',true);
 
 
 
         $conversionPrefix = '';
 
-        if ($conversion_use_order_value)
+        if($conversion_use_order_value)
 
           $conversionPrefix = $this->value_currency_symbol();
 
@@ -10679,19 +11294,23 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         $out = "";
 
+        
+
+        if(is_array($observations))
+
+        {
+
+          uasort($observations, array($this,"abst_cmp_by_conversion_rate"));
 
 
-        if (is_array($observations)) {
 
-          uasort($observations, array($this, "abst_cmp_by_conversion_rate"));
+          foreach($observations as $variation => $v)
 
-
-
-          foreach ($observations as $variation => $v) {
+          { 
 
             //if the key is bt_bb_ab_stats then skip
 
-            if ($variation == 'bt_bb_ab_stats')
+            if($variation == 'bt_bb_ab_stats')
 
               continue;
 
@@ -10703,9 +11322,9 @@ if (! class_exists('Bt_Ab_Tests')) {
 
             $variation_label = abst_get_variation_label($variation, $variation_meta);
 
+            
 
-
-            if ($v['rate'] == -1)
+            if($v['rate'] == -1)
 
               $v['rate'] = '0%';
 
@@ -10713,184 +11332,209 @@ if (! class_exists('Bt_Ab_Tests')) {
 
               $v['rate'] = $v['rate'] . "%";
 
+            
 
+            if($column_name == 'visit')
 
-            if ($column_name == 'visit') {
+            {
 
-              $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> " . $v['visit'] . "</div>";
+              $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> ".$v['visit']."</div>";
+
             }
 
-            if ($column_name == 'conversion') {
+            if($column_name == 'conversion')
 
-              $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> " . $conversionPrefix . $v['conversion'] . "</div>";
+            {
+
+              $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> ".$conversionPrefix.$v['conversion']."</div>";
+
             }
 
-            if ($column_name == 'rate') {
+            if($column_name == 'rate')
 
-              if ($conversion_use_order_value && $v['conversion'] > 0 && $v['visit'] > 0)
+            {
 
-                $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> " . $conversionPrefix . round($v['conversion'] / $v['visit'], 2) . " / visit</div>";
+              if($conversion_use_order_value && $v['conversion'] > 0 && $v['visit'] > 0)
+
+                $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> ".$conversionPrefix.round($v['conversion']/$v['visit'],2)." / visit</div>";
 
               else
 
-                $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> " . $v['rate'] . "</div>";
+                $out .= "<div class='bt_variation_container'><span title='$variation_label' class='bt_variation'>$variation_label</span> ".$v['rate']."</div>";
+
             }
+
           }
-        } else {
+
+        }
+
+        else
+
+        {
 
           echo "No data yet";
+
         }
 
 
 
         //todo clean up scripts
 
-        echo wp_kses_post($out);
+        echo wp_kses_post( $out );
+
+
+
       }
+
     }
 
 
 
-    function add_experiment_row_attributes($attrs, $row)
-    {
+    function add_experiment_row_attributes ($attrs, $row) {
 
       //ditch if not set
 
-      if (!isset($row->settings->ab_test) || !isset($row->settings->bt_variation_name))
+      if(!isset($row->settings->ab_test) || !isset($row->settings->bt_variation_name))
 
         return $attrs;
 
-
+      
 
       //check the experiment still exists
 
       $test = get_post($row->settings->ab_test);
 
+      
 
+      if(isset($test) && $test->post_status == 'publish')
 
-      if (isset($test) && $test->post_status == 'publish') {
+      {
 
-        if (isset($row->settings->ab_test)) {
+        if ( isset($row->settings->ab_test)) 
 
-          $attrs['bt-variation'] = $row->settings->bt_variation_name;
+        {
 
-          $attrs['bt-eid'] = $row->settings->ab_test;
+            $attrs['bt-variation'] = $row->settings->bt_variation_name;
+
+            $attrs['bt-eid'] = $row->settings->ab_test;
+
         }
+
       }
 
       return $attrs;
+
     }
 
+    
 
-
-    function bt_experiments_post_register()
-    {
-
-
-
-      $labels = array(
-
-        'name'                  => __('AB Split Test Lite', 'ab-split-test-lite'),
-
-        'singular_name'         => __('AB Split Test', 'ab-split-test-lite'),
-
-        'menu_name'             => __('AB Split Test Lite', 'ab-split-test-lite'),
-
-        'name_admin_bar'        => __('AB Split Test Lite', 'ab-split-test-lite'),
-
-        'archives'              => __('AB Split Test  Archives', 'ab-split-test-lite'),
-
-        'attributes'            => __('AB Split Test  Attributes', 'ab-split-test-lite'),
-
-        'parent_item_colon'     => __('Parent  AB Split Test Lite', 'ab-split-test-lite'),
-
-        'all_items'             => __('All AB Split Tests ', 'ab-split-test-lite'),
-
-        'add_new_item'          => __('New Split Test', 'ab-split-test-lite'),
-
-        'add_new'               => __('New Split Test ', 'ab-split-test-lite'),
-
-        'new_item'              => __('New Split Test ', 'ab-split-test-lite'),
-
-        'edit_item'             => __('Edit  plit Test ', 'ab-split-test-lite'),
-
-        'update_item'           => __('Update AB Split Test ', 'ab-split-test-lite'),
-
-        'view_item'             => __('View', 'ab-split-test-lite'),
-
-        'view_items'            => __('View Tests', 'ab-split-test-lite'),
-
-        'search_items'          => __('Search Tests', 'ab-split-test-lite'),
-
-        'not_found'             => __('Not found', 'ab-split-test-lite'),
-
-        'not_found_in_trash'    => __('Not found in Trash', 'ab-split-test-lite'),
-
-        'featured_image'        => __('Featured Image', 'ab-split-test-lite'),
-
-        'set_featured_image'    => __('Set featured image', 'ab-split-test-lite'),
-
-        'remove_featured_image' => __('Remove featured image', 'ab-split-test-lite'),
-
-        'use_featured_image'    => __('Use as featured image', 'ab-split-test-lite'),
-
-        'insert_into_item'      => __('Insert into item', 'ab-split-test-lite'),
-
-        'uploaded_to_this_item' => __('Uploaded to this item', 'ab-split-test-lite'),
-
-        'items_list'            => __('Test list', 'ab-split-test-lite'),
-
-        'items_list_navigation' => __('Test list navigation', 'ab-split-test-lite'),
-
-        'filter_items_list'     => __('Filter Test list', 'ab-split-test-lite'),
-
-      );
-
-      $args = array(
-
-        'label'                 => __('AB Split Test Lite', 'ab-split-test-lite'),
-
-        'description'           => __('Page Builder AB Split Test Lite', 'ab-split-test-lite'),
-
-        'labels'                => $labels,
-
-        'supports'              => array('title'),
-
-        'taxonomies'            => array(),
-
-        'hierarchical'          => false,
-
-        'public'                => false,
-
-        'show_ui'               => true,
-
-        'show_in_menu'          => true,
-
-        'menu_position'         => 30,
-
-        'menu_icon'             => 'dashicons-star-half',
-
-        'show_in_admin_bar'     => true,
-
-        'show_in_nav_menus'     => true,
-
-        'can_export'            => false,
-
-        'has_archive'           => false,
-
-        'exclude_from_search'   => true,
-
-        'publicly_queryable'    => false,
-
-        'capability_type'       => 'page',
-
-      );
-
-      register_post_type('bt_experiments', $args);
+    function bt_experiments_post_register(){
 
 
 
-      register_post_status('idea', array(
+    $labels = array(
+
+      'name'                  => __( 'AB Split Test Lite', 'ab-split-test-lite' ),
+
+      'singular_name'         => __( 'AB Split Test', 'ab-split-test-lite' ),
+
+      'menu_name'             => __( 'AB Split Test Lite', 'ab-split-test-lite' ),
+
+      'name_admin_bar'        => __( 'AB Split Test Lite', 'ab-split-test-lite' ),
+
+      'archives'              => __( 'AB Split Test  Archives', 'ab-split-test-lite' ),
+
+      'attributes'            => __( 'AB Split Test  Attributes', 'ab-split-test-lite' ),
+
+      'parent_item_colon'     => __( 'Parent  AB Split Test Lite', 'ab-split-test-lite' ),
+
+      'all_items'             => __( 'All AB Split Tests ', 'ab-split-test-lite' ),
+
+      'add_new_item'          => __( 'New Split Test', 'ab-split-test-lite' ),
+
+      'add_new'               => __( 'New Split Test ', 'ab-split-test-lite' ),
+
+      'new_item'              => __( 'New Split Test ', 'ab-split-test-lite' ),
+
+      'edit_item'             => __( 'Edit  plit Test ', 'ab-split-test-lite' ),
+
+      'update_item'           => __( 'Update AB Split Test ', 'ab-split-test-lite' ),
+
+      'view_item'             => __( 'View', 'ab-split-test-lite' ),
+
+      'view_items'            => __( 'View Tests', 'ab-split-test-lite' ),
+
+      'search_items'          => __( 'Search Tests' , 'ab-split-test-lite' ),
+
+      'not_found'             => __( 'Not found', 'ab-split-test-lite' ),
+
+      'not_found_in_trash'    => __( 'Not found in Trash', 'ab-split-test-lite' ),
+
+      'featured_image'        => __( 'Featured Image', 'ab-split-test-lite' ),
+
+      'set_featured_image'    => __( 'Set featured image', 'ab-split-test-lite' ),
+
+      'remove_featured_image' => __( 'Remove featured image', 'ab-split-test-lite' ),
+
+      'use_featured_image'    => __( 'Use as featured image', 'ab-split-test-lite' ),
+
+      'insert_into_item'      => __( 'Insert into item', 'ab-split-test-lite' ),
+
+      'uploaded_to_this_item' => __( 'Uploaded to this item', 'ab-split-test-lite' ),
+
+      'items_list'            => __( 'Test list', 'ab-split-test-lite' ),
+
+      'items_list_navigation' => __( 'Test list navigation', 'ab-split-test-lite' ),
+
+      'filter_items_list'     => __( 'Filter Test list', 'ab-split-test-lite' ),
+
+    );
+
+    $args = array(
+
+      'label'                 => __( 'AB Split Test Lite', 'ab-split-test-lite' ),
+
+      'description'           => __( 'Page Builder AB Split Test Lite', 'ab-split-test-lite' ),
+
+      'labels'                => $labels,
+
+      'supports'              => array( 'title' ),
+
+      'taxonomies'            => array(),
+
+      'hierarchical'          => false,
+
+      'public'                => false,
+
+      'show_ui'               => true,
+
+      'show_in_menu'          => true,
+
+      'menu_position'         => 30,
+
+      'menu_icon'             => 'dashicons-star-half',
+
+      'show_in_admin_bar'     => true,
+
+      'show_in_nav_menus'     => true,
+
+      'can_export'            => false,
+
+      'has_archive'           => false,
+
+      'exclude_from_search'   => true,
+
+      'publicly_queryable'    => false,
+
+      'capability_type'       => 'page',
+
+    );
+
+    register_post_type( 'bt_experiments', $args );
+
+
+
+    register_post_status( 'idea', array(
 
         'label'                     => 'Idea (Pro)',
 
@@ -10906,13 +11550,13 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         'show_in_inline_dropdown'   => true,
 
-        'label_count'               => _n_noop('Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>', 'ab-split-test-lite'),
+        'label_count'               => _n_noop( 'Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
-      ));
+    ) );
 
+      
 
-
-      register_post_status('complete', array(
+    register_post_status( 'complete', array(
 
         'label'                     => 'Test Complete',
 
@@ -10928,9 +11572,12 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         'show_in_inline_dropdown'   => true,
 
-        'label_count'               => _n_noop('Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>', 'ab-split-test-lite'),
+        'label_count'               => _n_noop( 'Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
-      ));
+    ) );
+
+      
+
     }
 
 
@@ -10939,8 +11586,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-    function get_experiment_conversion_summary($experiment_id)
-    {
+    function get_experiment_conversion_summary($experiment_id) {
 
       $conversion_page = get_post_meta($experiment_id, 'conversion_page', true);
 
@@ -10956,7 +11602,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $conversion_scroll = get_post_meta($experiment_id, 'conversion_scroll', true);
 
-
+      
 
       // Handle different conversion types
 
@@ -10971,15 +11617,19 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($page) {
 
           return "Page visit: " . $page->post_title;
+
         } else {
 
           return "Page visit: Page ID " . $page_id;
+
         }
+
       } elseif ($conversion_page === 'url' && !empty($conversion_url)) {
 
         // URL conversion
 
         return "URL visit: " . $conversion_url;
+
       } elseif ($conversion_page === 'text' && !empty($conversion_text)) {
 
         // Text on page conversion
@@ -10987,56 +11637,64 @@ if (! class_exists('Bt_Ab_Tests')) {
         $text_preview = strlen($conversion_text) > 50 ? substr($conversion_text, 0, 50) . '...' : $conversion_text;
 
         return "Text on page: \"" . $text_preview . "\"";
+
       } elseif ($conversion_page === 'selector' && !empty($conversion_selector)) {
 
         // Element click conversion
 
         return "Element click: " . $conversion_selector;
+
       } elseif ($conversion_page === 'link' && !empty($conversion_link_pattern)) {
 
         // Link click conversion
 
         return "Link click: " . $conversion_link_pattern;
+
       } elseif ($conversion_page === 'time' && !empty($conversion_time)) {
 
         // Time on page conversion
 
         return "Time on page: " . $conversion_time . " seconds";
+
       } elseif ($conversion_page === 'scroll' && !empty($conversion_scroll)) {
 
         // Scroll depth conversion
 
         return "Scroll depth: " . $conversion_scroll . "%";
+
       } elseif ($conversion_page === 'click') {
 
         // Generic click conversion
 
         return "Click tracking";
+
       } elseif (empty($conversion_page) || $conversion_page === '0') {
 
         // No conversion set
 
         return "No conversion trigger set";
+
       } else {
 
         // Fallback for unknown types
 
         return "Conversion: " . $conversion_page;
+
       }
+
     }
 
 
 
-    function experiments_posts_columns($columns)
-    {
+    function experiments_posts_columns($columns){
 
       //if is not localhosted
 
-      //  $is_localhost = in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1']) || strpos($_SERVER['HTTP_HOST'], 'localhost:') === 0 || substr($_SERVER['HTTP_HOST'], -5) === '.test'; 
+    //  $is_localhost = in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1']) || strpos($_SERVER['HTTP_HOST'], 'localhost:') === 0 || substr($_SERVER['HTTP_HOST'], -5) === '.test'; 
 
       //if(!$is_localhost)
 
-      //     $columns['screenshot']  = 'Screenshot'; todo soon
+   //     $columns['screenshot']  = 'Screenshot'; todo soon
 
       $columns['visit']  = 'Visits';
 
@@ -11049,20 +11707,20 @@ if (! class_exists('Bt_Ab_Tests')) {
       $columns['date'] = " Test started on";
 
       return $columns;
+
     }
 
 
 
-    function add_ab_settings($form, $slug)
-    {
+    function add_ab_settings( $form, $slug ) {
 
 
 
       $excluded_modules = array(
 
-        'user_template',
+        'user_template', 
 
-        'node_template',
+        'node_template', 
 
         'uabb-global',
 
@@ -11084,9 +11742,10 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      if (!in_array($slug, $excluded_modules) && (substr($slug, -5) == "_form")) {
+      if( !in_array($slug,$excluded_modules) && (substr($slug, -5) == "_form")) {
 
         return $form;
+
       }
 
 
@@ -11107,7 +11766,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
           'limit'         => 1, // Limits the number of selections that can be made.
 
-          'description'   => '<a id="" class="new-on-page-test-button" href="' . admin_url('edit.php?post_type=bt_experiments') . '" target="_blank">Create a new test. </a>',
+          'description'   => '<a id="" class="new-on-page-test-button" href="' . admin_url( 'edit.php?post_type=bt_experiments' ) . '" target="_blank">Create a new test. </a>',
 
         ],
 
@@ -11125,180 +11784,197 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-      if ('row' === $slug) {
+      if( 'row' === $slug ) {
 
-        $form['tabs']['advanced']['sections']['ab_test_rows'] = [
+        $form[ 'tabs' ][ 'advanced' ][ 'sections' ]['ab_test_rows'] = [
 
-          'title'   => 'AB Split Test Lite',
-
-          'fields'  => $abtest_fields
-
-        ];
-      } elseif ('module_advanced' === $slug) {
-
-        $form['sections']['ab_test_rows'] = [
-
-          'title'   => 'AB Split Test Lite',
+          'title'   => 'AB Split Test Lite',        
 
           'fields'  => $abtest_fields
 
         ];
+
+      } elseif( 'module_advanced' === $slug ) {
+
+        $form[ 'sections' ]['ab_test_rows'] = [
+
+          'title'   => 'AB Split Test Lite',        
+
+          'fields'  => $abtest_fields
+
+        ];
+
       }
 
 
 
       return $form;
+
     }
 
 
 
-    function is_elementor_preview()
-    {
+    function is_elementor_preview(){
 
       //if its activated, check if its a preview
 
-      if (did_action('elementor/loaded')) {
+  		if ( did_action( 'elementor/loaded' ) ) {
 
         return \Elementor\Plugin::$instance->preview->is_preview_mode();
+
       }
 
 
 
-      return false;
+      return false; 
+
+
+
     }
 
 
 
-    function add_oxy_split_options()
-    {
+    function add_oxy_split_options () {
 
 
 
-      global $oxygen_vsb_components;
+    global $oxygen_vsb_components;
 
-      if (!empty($oxygen_vsb_components)) {
-
-
-
-        //preload the tests dropdown
-
-        $tests = get_posts([
-
-          'post_type' => 'bt_experiments',
-
-          'post_status' => 'any',
-
-          'numberposts' => -1
-
-        ]);
+    if(!empty($oxygen_vsb_components)){
 
 
 
-        $dropdown = [];
+      //preload the tests dropdown
 
-        $dropdown[] = '&nbsp';
+      $tests = get_posts([
 
-        if (!empty($tests)) {
+        'post_type' => 'bt_experiments',
 
-          foreach ($tests as $test) {
+        'post_status' => 'any',
 
-            $dropdown[$test->ID] = $test->post_title;
-          }
+        'numberposts' => -1
+
+      ]);
+
+
+
+      $dropdown = [];
+
+      $dropdown[] = '&nbsp';
+
+      if(!empty($tests))
+
+      {
+
+        foreach($tests as $test){
+
+          $dropdown[$test->ID] = $test->post_title;
+
         }
 
-        foreach ($oxygen_vsb_components as $in => $component) {
+      }
 
+      foreach($oxygen_vsb_components as $in => $component)
 
+      {
+
+          
 
           $oxygen_vsb_components[$in]->options['params'][] = [
 
-            "type" => 'dropdown', // types: textfield, dropdown, checkbox, buttons-list, measurebox, slider-measurebox, colorpicker, icon_finder, mediaurl
+              "type" => 'dropdown', // types: textfield, dropdown, checkbox, buttons-list, measurebox, slider-measurebox, colorpicker, icon_finder, mediaurl
 
-            "name" => 'Test Experiment',
+              "name" => 'Test Experiment',
 
-            "heading" =>  BT_AB_TEST_WL_ABTEST . ' Name',
+              "heading" =>  BT_AB_TEST_WL_ABTEST .' Name',
 
-            "param_name" => 'btExperiment',
+              "param_name" => 'btExperiment',				
 
-            "hidden"     => false,
+              "hidden" 		=> false,
 
-            "css"       => false,
+              "css" 			=> false,
 
-            "value"       => $dropdown,
+              "value" 			=> $dropdown,
 
           ];
 
           $oxygen_vsb_components[$in]->options['params'][] = [
 
-            "type" => 'textfield', // types: textfield, dropdown, checkbox, buttons-list, measurebox, slider-measurebox, colorpicker, icon_finder, mediaurl
+              "type" => 'textfield', // types: textfield, dropdown, checkbox, buttons-list, measurebox, slider-measurebox, colorpicker, icon_finder, mediaurl
 
-            "name" => 'Variation Name',
+              "name" => 'Variation Name',
 
-            "heading" => 'Variation Name',
+              "heading" => 'Variation Name',
 
-            "param_name" => 'btVar',
+              "param_name" => 'btVar',				
 
-            "hidden"     => false,
+              "hidden" 		=> false,
 
-            "css"       => false,
+              "css" 			=> false,
 
-            "value"       => '',
+              "value" 			=> '',
 
           ];
-        }
+
       }
+
     }
 
 
 
-    function add_oxy_attrs($options, $tag)
-    {
+}
 
 
 
-      if (!empty($options['btVar']) && !empty($options['btExperiment']))
+ function add_oxy_attrs($options, $tag){
 
-        echo " bt-variation='" . esc_attr(sanitize_text_field($options['btVar'])) . "' bt-eid='" . intval($options['btExperiment']) . "' ";
-    }
+  
+
+    if(!empty($options['btVar']) && !empty($options['btExperiment']) )
+
+      echo " bt-variation='" . esc_attr( sanitize_text_field( $options['btVar'] ) ) . "' bt-eid='" . intval( $options['btExperiment'] ) . "' ";
+
+   }
 
 
 
-    function include_highlighter_scripts()
-    {
+    function include_highlighter_scripts(){
 
+      
 
+      if (current_user_can('upload_files') && !isset($_GET['fb-edit'])) { 
 
-      if (current_user_can('upload_files') && !isset($_GET['fb-edit'])) {
+          wp_enqueue_media();
 
-        wp_enqueue_media();
       }
 
+      
 
-
-      wp_enqueue_style('ab_test_styles', plugins_url('/', __FILE__) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('ab_test_styles', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION); 
 
       global $wp_roles;
 
-      $roles_data = array();
+      $roles_data = array();      
 
       foreach ($wp_roles->roles as $role => $details) {
 
         $roles_data[$role] = $details['name'];
+
       }
 
-
+      
 
       $roles_data['logout'] = 'Logged out users';
 
-
+      
 
       // Default selected roles, get all roles that cant edit or author posts
 
-      $default_selected = array('subscriber', 'logout', 'customer', 'sc_customer');
+      $default_selected = array('subscriber', 'logout','customer','sc_customer');
 
+      
 
-
-      if (!current_user_can('edit_posts'))
+      if(!current_user_can('edit_posts'))
 
         return;
 
@@ -11306,13 +11982,13 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //only admins etc from here
 
-      wp_enqueue_script('select2', plugins_url('/', __FILE__) . 'js/select2.js', array('jquery'), BT_AB_TEST_VERSION, false); //  select2   
+      wp_enqueue_script( 'select2', plugins_url( '/', __FILE__ ) . 'js/select2.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //  select2   
 
-      wp_enqueue_style('select2', plugins_url('/', __FILE__) . 'css/select2.css', false, '4.1.0', 'all');
+      wp_enqueue_style( 'select2', plugins_url( '/', __FILE__ ) . 'css/select2.css', false, '4.1.0', 'all' );
 
-      wp_enqueue_script('creator', plugins_url('/', __FILE__) . 'js/creator.js', array('jquery'), BT_AB_TEST_VERSION, false); //modern screenshot
+      wp_enqueue_script( 'creator', plugins_url( '/', __FILE__ ) . 'js/creator.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //modern screenshot
 
-      wp_enqueue_style('creator', plugins_url('/', __FILE__) . 'css/creator.css', array(), BT_AB_TEST_VERSION); //awesomplete, modern screenshot
+      wp_enqueue_style('creator', plugins_url( '/', __FILE__ ) . 'css/creator.css', array(), BT_AB_TEST_VERSION); //awesomplete, modern screenshot
 
 
 
@@ -11329,7 +12005,9 @@ if (! class_exists('Bt_Ab_Tests')) {
         if ($screen && method_exists($screen, 'is_block_editor') && $screen->is_block_editor()) {
 
           $highlighter_deps = array_merge($highlighter_deps, array('wp-blocks', 'wp-element', 'wp-i18n', 'wp-components', 'wp-editor'));
+
         }
+
       }
 
       $agency = abst_user_level() == 'agency';
@@ -11350,35 +12028,35 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       ));
 
+  
 
+    //if has edit permissions
 
-      //if has edit permissions
+    if(current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
 
-      if (current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
+      wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
-        wp_enqueue_script('ab_test_builder_helper', plugins_url('/', __FILE__) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
     }
 
 
 
-    function allowInOptimizePress($value, $handle)
-    {
+    function allowInOptimizePress($value, $handle) {
 
       $ourScriptHandles = ['bt_experiment_scripts', 'ab-page-redirect', 'bt_conversion_scripts', 'ab_test_highlighter', 'ab_test_builder_helper'];
 
       if (in_array($handle, $ourScriptHandles)) {
 
-        return true; // giv er
+          return true; // giv er
 
       }
 
       return $value;
+
     }
 
 
 
-    function allowInComplianz($whitelisted_tags)
-    {
+    function allowInComplianz($whitelisted_tags) {
 
       $whitelisted_tags[] = 'bt-bb-ab';
 
@@ -11387,12 +12065,12 @@ if (! class_exists('Bt_Ab_Tests')) {
       $whitelisted_tags[] = 'ABST_CONFIG';
 
       return $whitelisted_tags;
+
     }
 
 
 
-    function get_ab_posts_cache()
-    {
+    function get_ab_posts_cache(){
 
       $posts = get_transient('ab_posts_cache');
 
@@ -11409,13 +12087,14 @@ if (! class_exists('Bt_Ab_Tests')) {
         ]);
 
         set_transient('ab_posts_cache', $posts, 60 * MINUTE_IN_SECONDS);
+
       }
 
       return $posts;
+
     }
 
-    function get_all_goals()
-    {
+    function get_all_goals(){
 
 
 
@@ -11449,12 +12128,14 @@ if (! class_exists('Bt_Ab_Tests')) {
 
         $woo_pages = $this->get_woo_pages();
 
-        foreach ($woo_pages as $name => $page) {
+        foreach($woo_pages as $name => $page) {
 
-          if (!empty($page)) {
+          if(!empty($page)) {
 
             $out .= "<option value=\"$page\">$name</option>";
+
           }
+
         }
 
         $out .= "<option value=\"woo-order-pay\">Checkout Payment Page</option>";
@@ -11462,9 +12143,10 @@ if (! class_exists('Bt_Ab_Tests')) {
         $out .= "<option value=\"woo-order-received\">Checkout Order Received (Thank You Page)</option>";
 
         $out .= "</optgroup>";
+
       }
 
-
+      
 
       // SureCart options
 
@@ -11475,6 +12157,7 @@ if (! class_exists('Bt_Ab_Tests')) {
         $out .= "<option value=\"surecart-order-paid\">Order Paid</option>";
 
         $out .= "</optgroup>";
+
       }
 
 
@@ -11488,22 +12171,24 @@ if (! class_exists('Bt_Ab_Tests')) {
         $out .= "<option value=\"fluentcart-order-paid\">Order Paid</option>";
 
         $out .= "</optgroup>";
+
       }
 
-
+      
 
       // Easy Digital Downloads options
 
-      if (class_exists('Easy_Digital_Downloads')) {
+      if(class_exists('Easy_Digital_Downloads')) {
 
         $out .= "<optgroup label='Easy Digital Downloads'>";
 
         $out .= "<option value=\"edd-purchase\">Purchase</option>";
 
         $out .= "</optgroup>";
+
       }
 
-
+      
 
       // WP Pizza options
 
@@ -11516,22 +12201,25 @@ if (! class_exists('Bt_Ab_Tests')) {
         $out .= "<option value=\"wp-pizza-is-order-history\">Order History Page</option>";
 
         $out .= "</optgroup>";
+
       }
 
-
+      
 
       // Form submission conversions
 
       if (function_exists('abst_get_form_optgroups')) {
 
         $out .= abst_get_form_optgroups();
+
       }
 
-
+      
 
       $out .= "</select>";
 
       return $out;
+
     }
 
 
@@ -11544,31 +12232,32 @@ if (! class_exists('Bt_Ab_Tests')) {
 
 
 
-    function isf()
-    {
+    function isf(){
 
       //get licence status
 
       return abst_user_level() == 'free';
+
     }
 
 
 
     function include_conversion_scripts()
 
-    {
+    {    
 
       // Bail on AJAX requests
 
-      if (wp_doing_ajax())
+      if(wp_doing_ajax())
 
         return;
 
+      
 
+      if(class_exists('FLBuilderModel') && FLBuilderModel::is_builder_active()){
 
-      if (class_exists('FLBuilderModel') && FLBuilderModel::is_builder_active()) {
+        wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
-        wp_enqueue_script('ab_test_builder_helper', plugins_url('/', __FILE__) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
       }
 
 
@@ -11576,9 +12265,11 @@ if (! class_exists('Bt_Ab_Tests')) {
       if (file_exists(plugin_dir_path(__FILE__) . 'js/bt_conversion-min.js')) {
 
         $bt_conversion_js = plugins_url('js/bt_conversion-min.js', __FILE__);
+
       } else {
 
         $bt_conversion_js = plugins_url('js/bt_conversion.js', __FILE__);
+
       }
 
 
@@ -11587,7 +12278,7 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       wp_enqueue_script('bt_conversion_scripts', $bt_conversion_js, [], BT_AB_TEST_VERSION, false);
 
-
+      
 
       // Build and localize all frontend config data
 
@@ -11596,14 +12287,14 @@ if (! class_exists('Bt_Ab_Tests')) {
       $config = $this->build_frontend_config();
 
       wp_localize_script('bt_conversion_scripts', 'ABST_CONFIG', $config);
+
     }
 
 
 
 
 
-    function enqueue_experiment_scripts()
-    {
+    function enqueue_experiment_scripts() {
 
       global $post_type, $post;
 
@@ -11617,23 +12308,23 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       wp_enqueue_script('shepherd-tour', plugins_url('js/plugin-tour.js', __FILE__), array('shepherd-js'), BT_AB_TEST_VERSION, true);
 
-      wp_localize_script('shepherd-tour', 'abstAgencyHubVars', [
+      wp_localize_script( 'shepherd-tour', 'abstAgencyHubVars', [
 
-        'regenerateNonce' => wp_create_nonce('abst_agency_regenerate_key'),
+        'regenerateNonce' => wp_create_nonce( 'abst_agency_regenerate_key' ),
 
-        'syncNonce'       => wp_create_nonce('abst_agency_sync_site'),
+        'syncNonce'       => wp_create_nonce( 'abst_agency_sync_site' ),
 
-      ]);
+      ] );
 
       //dropdowns      
 
-      wp_register_style('select2', plugins_url('css/select2.css', __FILE__), false, '4.1.0', 'all');
+      wp_register_style( 'select2', plugins_url('css/select2.css', __FILE__), false, '4.1.0', 'all' );
 
-      wp_register_script('select2', plugins_url('js/select2.js', __FILE__), array('jquery'), '4.1.0', true);
+      wp_register_script( 'select2', plugins_url('js/select2.js', __FILE__), array( 'jquery' ), '4.1.0', true );
 
-      wp_enqueue_style('select2');
+      wp_enqueue_style( 'select2' );
 
-      wp_enqueue_script('select2');
+      wp_enqueue_script( 'select2' );
 
 
 
@@ -11641,34 +12332,35 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       //if wpbakery is active and is edit/new post page
 
-      if (class_exists('Vc_Manager')) {
+      if(class_exists('Vc_Manager') ) {
 
-        wp_enqueue_script('ab_test_builder_helper', plugins_url('/', __FILE__) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
+        wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
-        wp_enqueue_style('ab_test_styles', plugins_url('/', __FILE__) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION);
+        wp_enqueue_style('ab_test_styles', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION);
+
       }
 
+          
 
-
-      if ($post_type !== 'bt_experiments')
+      if( $post_type !== 'bt_experiments' ) 
 
         return;
 
+      
 
 
 
+      $eid = (isset($post->ID))? $post->ID : null;
 
-      $eid = (isset($post->ID)) ? $post->ID : null;
+      wp_enqueue_script( 'bt_experiment_scripts', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION );
 
-      wp_enqueue_script('bt_experiment_scripts', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION);
+      wp_enqueue_script( 'bt_table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION );
 
-      wp_enqueue_script('bt_table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION);
+      wp_enqueue_style( 'bt_table', plugins_url('css/tabulator.css', __FILE__), array(), BT_AB_TEST_VERSION );
 
-      wp_enqueue_style('bt_table', plugins_url('css/tabulator.css', __FILE__), array(), BT_AB_TEST_VERSION);
+      wp_localize_script( 'bt_experiment_scripts', 'bt_exturl', [
 
-      wp_localize_script('bt_experiment_scripts', 'bt_exturl', [
-
-        'ajax_url'  => admin_url('admin-ajax.php'),
+        'ajax_url'  => admin_url( 'admin-ajax.php' ),
 
         'action'    => 'bt_generate_embed_code',
 
@@ -11680,982 +12372,500 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       ]);
 
-      wp_enqueue_script('bt_ab_chart', plugins_url('js/chart.js', __FILE__), ['bt_experiment_scripts'], BT_AB_TEST_VERSION);
+      wp_enqueue_script( 'bt_ab_chart', plugins_url('js/chart.js', __FILE__), ['bt_experiment_scripts'], BT_AB_TEST_VERSION );
 
-      wp_enqueue_style('bt_experiment_style', plugins_url('css/experiment.css', __FILE__), array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style( 'bt_experiment_style', plugins_url('css/experiment.css', __FILE__),array(),BT_AB_TEST_VERSION);
 
-      wp_enqueue_script('bt_confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION);
+      wp_enqueue_script( 'bt_confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION );    
+
+      
+
     }
 
 
 
+    
 
 
 
-
-    function get_posts_ajax_callback()
-    {
+    function get_posts_ajax_callback(){
 
 
 
-      if (!current_user_can('edit_posts')) {
+      if(!current_user_can('edit_posts'))
+
+      {
 
         wp_reset_postdata();
 
-        echo json_encode([]);
+        echo json_encode( [] );
 
         die;
+
       }
 
 
 
-      $searchQuery = sanitize_text_field(wp_unslash($_GET['q'] ?? ''));
+        $searchQuery = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) );
 
+        
 
+        // Use post ID as key to prevent duplicates
 
-      // Use post ID as key to prevent duplicates
+        $results = array();
 
-      $results = array();
+        
 
+        // Initialize arrays for different types of results
 
+        $taxonomy_results = array();
 
-      // Initialize arrays for different types of results
+        $archive_results = array();
 
-      $taxonomy_results = array();
+        $all_archive_taxonomies = array();
 
-      $archive_results = array();
+        
 
-      $all_archive_taxonomies = array();
+        // Get and process archive pages
 
+        foreach (get_post_types(['public' => true], 'objects') as $post_type) {
 
+            if ($post_type->has_archive || $post_type->name === 'post') {
 
-      // Get and process archive pages
+                $archive_item = [
 
-      foreach (get_post_types(['public' => true], 'objects') as $post_type) {
+                    'post-type-archive-' . $post_type->name, 
 
-        if ($post_type->has_archive || $post_type->name === 'post') {
+                    'Archive: ' . $post_type->labels->name
 
-          $archive_item = [
+                ];
 
-            'post-type-archive-' . $post_type->name,
+                $archive_results[] = $archive_item;
 
-            'Archive: ' . $post_type->labels->name
+                $all_archive_taxonomies[] = $archive_item;
 
-          ];
+            }
 
-          $archive_results[] = $archive_item;
-
-          $all_archive_taxonomies[] = $archive_item;
-        }
-      }
-
-
-
-      // Get and process taxonomies
-
-      $taxonomy_objects = get_taxonomies(['public' => true], 'objects');
-
-      foreach ($taxonomy_objects as $taxonomy) {
-
-        $tax_item = [
-
-          'taxonomy-' . $taxonomy->name,
-
-          'Taxonomy: ' . $taxonomy->labels->name
-
-        ];
-
-        $taxonomy_results[] = $tax_item;
-
-        $all_archive_taxonomies[] = $tax_item;
-      }
-
-      //get categories
-
-      $categories = get_categories();
-
-      foreach ($categories as $category) {
-
-        $category_item = [
-
-          'category-' . $category->term_id,
-
-          'Category: ' . $category->name
-
-        ];
-
-        $taxonomy_results[] = $category_item;
-
-        $all_archive_taxonomies[] = $category_item;
-      }
-
-
-
-
-
-
-
-      //if no query then return home page id and 9 most recenly edited pages/posts
-
-      if (empty($searchQuery)) {
-
-        $home_page_id = get_option('page_on_front');
-
-        $post = get_post($home_page_id);
-
-        if ($post && in_array($post->post_type, abst_post_types_to_test())) {
-
-          $results[$post->ID] = $this->format_search_result($post);
         }
 
-        $recent_posts = get_posts([
+        
 
-          'numberposts' => 9,
+        // Get and process taxonomies
 
-          'orderby' => 'modified',
+        $taxonomy_objects = get_taxonomies(['public' => true], 'objects');
+
+        foreach ($taxonomy_objects as $taxonomy) {
+
+            $tax_item = [
+
+                'taxonomy-' . $taxonomy->name,
+
+                'Taxonomy: ' . $taxonomy->labels->name
+
+            ];
+
+            $taxonomy_results[] = $tax_item;
+
+            $all_archive_taxonomies[] = $tax_item;
+
+        }
+
+        //get categories
+
+        $categories = get_categories();
+
+        foreach ($categories as $category) {
+
+            $category_item = [
+
+                'category-' . $category->term_id,
+
+                'Category: ' . $category->name
+
+            ];
+
+            $taxonomy_results[] = $category_item;
+
+            $all_archive_taxonomies[] = $category_item;
+
+        }
+
+
+
+
+
+
+
+        //if no query then return home page id and 9 most recenly edited pages/posts
+
+        if(empty($searchQuery)) {
+
+          $home_page_id = get_option('page_on_front');
+
+          $post = get_post($home_page_id);
+
+          if($post && in_array($post->post_type, abst_post_types_to_test())) {
+
+            $results[$post->ID] = $this->format_search_result($post);
+
+          }
+
+          $recent_posts = get_posts([
+
+            'numberposts' => 9,
+
+            'orderby' => 'modified',
+
+            'order' => 'DESC',
+
+            'post_type' => abst_post_types_to_test()
+
+          ]);
+
+          foreach($recent_posts as $post) {
+
+            $results[$post->ID] = $this->format_search_result($post);
+
+          }
+
+
+
+          // Add all archive/taxonomy items to results
+
+          foreach ($all_archive_taxonomies as $item) {
+
+              $results[] = $item;
+
+          }
+
+
+
+          wp_reset_postdata();
+
+          echo json_encode( array_values($results)  );
+
+          die;
+
+        }
+
+
+
+        // Return empty if search is too short (less than 2 characters)
+
+        if(strlen($searchQuery) < 2) {
+
+          wp_reset_postdata();
+
+          echo json_encode( [] );
+
+          die;
+
+        }
+
+        
+
+        // 1. Check if it's a numeric post ID
+
+        if(is_numeric($searchQuery) && $searchQuery > 0) {
+
+          $post = get_post($searchQuery);
+
+          if($post && in_array($post->post_type, abst_post_types_to_test())) {
+
+            $results[$post->ID] = $this->format_search_result($post);
+
+          }
+
+        }
+
+        
+
+        // 2. Check if it's a URL and try to get post ID
+
+        if(filter_var($searchQuery, FILTER_VALIDATE_URL)) {
+
+          $url_post_id = url_to_postid($searchQuery);
+
+          if($url_post_id > 0) {
+
+            $post = get_post($url_post_id);
+
+            if($post && in_array($post->post_type, abst_post_types_to_test())) {
+
+              $results[$post->ID] = $this->format_search_result($post);
+
+            }
+
+          }
+
+        }
+
+        
+
+        // 3. Try exact slug match (case-insensitive)
+
+        $slug_post = get_page_by_path(strtolower($searchQuery), 'OBJECT', abst_post_types_to_test());
+
+        if($slug_post) {
+
+          $results[$slug_post->ID] = $this->format_search_result($slug_post);
+
+        }
+
+        
+
+        // 4. Full text search with relevance ordering
+
+        $search_results = new WP_Query( array( 
+
+          's'=> $searchQuery,
+
+          'post_status' => 'publish',
+
+          'post_type' => abst_post_types_to_test(),
+
+          'orderby' => 'relevance', // Order by search relevance first
 
           'order' => 'DESC',
 
-          'post_type' => abst_post_types_to_test()
+          'posts_per_page' => 50
 
-        ]);
+        ) );
 
-        foreach ($recent_posts as $post) {
+        
 
-          $results[$post->ID] = $this->format_search_result($post);
+        if( $search_results->have_posts() ) {
+
+          while( $search_results->have_posts() ) {
+
+            $search_results->the_post();
+
+            $post_id = get_the_ID();
+
+            // Only add if not already in results (prevents duplicates)
+
+            if(!isset($results[$post_id])) {
+
+              $results[$post_id] = $this->format_search_result($search_results->post);
+
+            }
+
+          }
+
         }
 
 
 
-        // Add all archive/taxonomy items to results
+        // Search in archive/taxonomy names and labels
 
         foreach ($all_archive_taxonomies as $item) {
 
-          $results[] = $item;
+            if (stripos($item[1], $searchQuery) !== false || 
+
+                stripos($item[0], $searchQuery) !== false) {
+
+                $results[] = $item; // Add as array to maintain consistent structure
+
+            }
+
         }
 
 
+
+        //remove duplicates
+
+        $results = array_unique($results, SORT_REGULAR);
+
+        
 
         wp_reset_postdata();
 
-        echo json_encode(array_values($results));
+        
+
+        // Convert associative array to indexed array for JSON output
+
+        echo json_encode( array_values($results) );
 
         die;
+
       }
 
+      
 
+      /**
 
-      // Return empty if search is too short (less than 2 characters)
+       * Format a post object into search result array
 
-      if (strlen($searchQuery) < 2) {
+       * @param WP_Post $post
 
-        wp_reset_postdata();
+       * @return array [post_id, formatted_title]
 
-        echo json_encode([]);
+       */
 
-        die;
-      }
+      private function format_search_result($post) {
 
+        $title = $post->post_title;
 
+        
 
-      // 1. Check if it's a numeric post ID
+        // Shorten title if too long
 
-      if (is_numeric($searchQuery) && $searchQuery > 0) {
+        if(mb_strlen($title) > 50) {
 
-        $post = get_post($searchQuery);
-
-        if ($post && in_array($post->post_type, abst_post_types_to_test())) {
-
-          $results[$post->ID] = $this->format_search_result($post);
-        }
-      }
-
-
-
-      // 2. Check if it's a URL and try to get post ID
-
-      if (filter_var($searchQuery, FILTER_VALIDATE_URL)) {
-
-        $url_post_id = url_to_postid($searchQuery);
-
-        if ($url_post_id > 0) {
-
-          $post = get_post($url_post_id);
-
-          if ($post && in_array($post->post_type, abst_post_types_to_test())) {
-
-            $results[$post->ID] = $this->format_search_result($post);
-          }
-        }
-      }
-
-
-
-      // 3. Try exact slug match (case-insensitive)
-
-      $slug_post = get_page_by_path(strtolower($searchQuery), 'OBJECT', abst_post_types_to_test());
-
-      if ($slug_post) {
-
-        $results[$slug_post->ID] = $this->format_search_result($slug_post);
-      }
-
-
-
-      // 4. Full text search with relevance ordering
-
-      $search_results = new WP_Query(array(
-
-        's' => $searchQuery,
-
-        'post_status' => 'publish',
-
-        'post_type' => abst_post_types_to_test(),
-
-        'orderby' => 'relevance', // Order by search relevance first
-
-        'order' => 'DESC',
-
-        'posts_per_page' => 50
-
-      ));
-
-
-
-      if ($search_results->have_posts()) {
-
-        while ($search_results->have_posts()) {
-
-          $search_results->the_post();
-
-          $post_id = get_the_ID();
-
-          // Only add if not already in results (prevents duplicates)
-
-          if (!isset($results[$post_id])) {
-
-            $results[$post_id] = $this->format_search_result($search_results->post);
-          }
-        }
-      }
-
-
-
-      // Search in archive/taxonomy names and labels
-
-      foreach ($all_archive_taxonomies as $item) {
-
-        if (
-          stripos($item[1], $searchQuery) !== false ||
-
-          stripos($item[0], $searchQuery) !== false
-        ) {
-
-          $results[] = $item; // Add as array to maintain consistent structure
+          $title = mb_substr($title, 0, 49) . '...';
 
         }
+
+        
+
+        // Add post type and slug for clarity
+
+        $formatted_title = $title . ' [' . strtoupper($post->post_type) . '] ' . $post->post_name;
+
+        
+
+        return array($post->ID, $formatted_title);
+
       }
 
 
 
-      //remove duplicates
+      function blocks_experiment_list(){
 
-      $results = array_unique($results, SORT_REGULAR);
+        if (!current_user_can('edit_posts'))
 
+          wp_send_json_error(array('error' => 'You do not have the correct permissions to get test data.'));
 
 
-      wp_reset_postdata();
 
+        $search_query = isset($_POST['search']) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
 
+        $exact_id = isset($_POST['exact_id']) ? sanitize_text_field( wp_unslash( $_POST['exact_id'] ) ) : '';
 
-      // Convert associative array to indexed array for JSON output
+        if(!empty($exact_id))
 
-      echo json_encode(array_values($results));
+        {
 
-      die;
-    }
+          $args = array(
 
+              'p'              => $exact_id,
 
+              'post_status'    => 'publish',  
 
-    /**
+              'post_type'      => 'bt_experiments',
 
-     * Format a post object into search result array
-
-     * @param WP_Post $post
-
-     * @return array [post_id, formatted_title]
-
-     */
-
-    private function format_search_result($post)
-    {
-
-      $title = $post->post_title;
-
-
-
-      // Shorten title if too long
-
-      if (mb_strlen($title) > 50) {
-
-        $title = mb_substr($title, 0, 49) . '...';
-      }
-
-
-
-      // Add post type and slug for clarity
-
-      $formatted_title = $title . ' [' . strtoupper($post->post_type) . '] ' . $post->post_name;
-
-
-
-      return array($post->ID, $formatted_title);
-    }
-
-
-
-    function get_sitemap()
-    {
-
-
-
-      if (!current_user_can('edit_posts'))
-
-        wp_send_json_error(array('error' => 'You do not have the correct permissions to get sitemap.'));
-
-
-
-      $licence = trim(apply_filters('abst_licence_key', abst_get_admin_setting('bt_bb_ab_licence')));
-      // Backward compatibility: also allow old hook name (new hook takes precedence)
-      $licence = trim(apply_filters('abst_licence_key', $licence));
-
-      $url = 'https://absplittest.com/wp-json/bt-bb-ab/v1/sitemap';
-
-
-
-      $request_body = array(
-
-        'markdown' => sanitize_textarea_field(wp_unslash($_POST['markdown'] ?? '')),
-
-        'licence' => $licence,
-
-        'domain' => get_home_url(),
-
-      );
-
-
-
-      $response = wp_remote_post($url, array(
-
-        'method' => 'POST',
-
-        'timeout' => 30,
-
-        'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
-
-        'body' => json_encode($request_body)
-
-      ));
-
-
-
-
-
-      if (is_wp_error($response)) {
-
-        //get error
-
-        $error = $response->get_error_message();
-
-        wp_send_json_error(array('error' => 'Failed to get sitemap ' . $error));
-
-        wp_die();
-      }
-
-
-
-      $body = wp_remote_retrieve_body($response);
-
-
-
-      $data = json_decode($body, true);
-
-      wp_send_json_success($data);
-    }
-
-
-
-    /**
-
-     * Get aggregated heatmap summary data for a specific page
-
-     * Analyzes journey log files and returns click statistics for AI insights
-
-     */
-
-    function get_heatmap_summary()
-    {
-
-      if (!current_user_can('edit_posts')) {
-
-        wp_send_json_error(array('error' => 'You do not have the correct permissions to get heatmap data.'));
-      }
-
-
-
-      $page_id = isset($_POST['page_id']) ? sanitize_text_field(wp_unslash($_POST['page_id'])) : '';
-
-      if (empty($page_id)) {
-
-        wp_send_json_error(array('error' => 'No page ID provided'));
-      }
-
-
-
-      // Resolve URL/path to a numeric post ID when possible.
-
-      // Keep non-numeric identifiers (e.g. archive keys) for backward compatibility.
-
-      if (!is_numeric($page_id) && is_string($page_id)) {
-
-        $candidate_url = $page_id;
-
-
-
-        if (!filter_var($candidate_url, FILTER_VALIDATE_URL)) {
-
-          if (strpos($candidate_url, '/') !== 0) {
-
-            $candidate_url = '/' . $candidate_url;
-          }
-
-          $candidate_url = home_url($candidate_url);
-        }
-
-
-
-        $resolved_id = url_to_postid($candidate_url);
-
-        if (!empty($resolved_id)) {
-
-          $page_id = (int) $resolved_id;
-        } else {
-
-          $path = wp_parse_url($candidate_url, PHP_URL_PATH);
-
-          if ($path === '/' || $path === '') {
-
-            $front_page_id = (int) get_option('page_on_front');
-
-            if (!empty($front_page_id)) {
-
-              $page_id = $front_page_id;
-            }
-          }
-        }
-      }
-
-
-
-      // Convert numeric IDs, keep string identifiers for archives
-
-      if (is_numeric($page_id)) {
-
-        $page_id = intval($page_id);
-      }
-
-
-
-      $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
-
-      $days = min($days, 90); // Cap at 90 days to prevent performance issues
-
-
-
-      // Get all journey files
-
-      $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt');
-
-      $journey_files_gz = glob(ABST_JOURNEY_DIR . '/*.gz');
-
-      $all_files = array_merge($journey_files, $journey_files_gz);
-
-      rsort($all_files); // Newest first
-
-
-
-      $element_clicks = array();
-
-      $rage_clicks = array();
-
-      $total_clicks = 0;
-
-      $screen_sizes = array('s' => 0, 'm' => 0, 'l' => 0);
-
-      $unique_sessions = array();
-
-
-
-      $cutoff_time = time() - ($days * 24 * 60 * 60);
-
-
-
-      foreach ($all_files as $journey_file) {
-
-        // Extract date from filename
-
-        $filename = pathinfo($journey_file, PATHINFO_FILENAME);
-
-        $date_str = substr($filename, -8); // YYYYMMDD
-
-        $formatted_date = substr($date_str, 0, 4) . '-' . substr($date_str, 4, 2) . '-' . substr($date_str, 6, 2);
-
-        $file_date = strtotime($formatted_date);
-
-
-
-        if ($file_date === false || $file_date < $cutoff_time) {
-
-          continue;
-        }
-
-
-
-        // Read file (handle gzipped files)
-
-        if (strpos($journey_file, '.gz') !== false) {
-
-          $compressed = @file_get_contents($journey_file);
-
-          if ($compressed === false || !function_exists('gzdecode')) continue;
-
-          $content = @gzdecode($compressed);
-        } else {
-
-          $content = @file_get_contents($journey_file);
-        }
-
-
-
-        if (empty($content)) continue;
-
-
-
-        $lines = explode(PHP_EOL, trim($content));
-
-        $current_metadata = null;
-
-
-
-        foreach ($lines as $line) {
-
-          $parts = array_map('trim', explode('|', $line));
-
-
-
-          // Metadata line
-
-          if (!empty($parts[0]) && $parts[0] === 'meta') {
-
-            if (count($parts) >= 5) {
-
-              $current_metadata = array(
-
-                'uuid' => $parts[1],
-
-                'experiments' => $parts[2],
-
-                'screen_size' => $parts[3],
-
-                'user_id' => $parts[4]
-
-              );
-
-              $unique_sessions[$parts[1]] = true;
-            }
-
-            continue;
-          }
-
-
-
-          // Event line: timestamp|type|post_id|url|element|click_x|click_y|meta
-
-          if (count($parts) >= 8 && $current_metadata) {
-
-            $event_post_id = is_numeric($parts[2]) ? intval($parts[2]) : trim($parts[2]);
-
-
-
-            if ($event_post_id !== $page_id) {
-
-              continue;
-            }
-
-
-
-            $event_type = $parts[1];
-
-            $element = $parts[4];
-
-            $meta = isset($parts[7]) ? $parts[7] : '';
-
-
-
-            if ($event_type === 'c' || $event_type === 'rc') {
-
-              $total_clicks++;
-
-              $screen_bucket = isset($current_metadata['screen_size']) ? $current_metadata['screen_size'] : 'unknown';
-
-              if (!isset($screen_sizes[$screen_bucket])) {
-
-                $screen_sizes[$screen_bucket] = 0;
-              }
-
-              $screen_sizes[$screen_bucket]++;
-
-
-
-              // Track element clicks
-
-              if (!empty($element)) {
-
-                if (!isset($element_clicks[$element])) {
-
-                  $element_clicks[$element] = array(
-
-                    'clicks' => 0,
-
-                    'percentage' => 0
-
-                  );
-                }
-
-                $element_clicks[$element]['clicks']++;
-
-
-
-                // Track rage clicks separately
-
-                if ($event_type === 'rc' || $meta === 'rage_click') {
-
-                  if (!isset($rage_clicks[$element])) {
-
-                    $rage_clicks[$element] = 0;
-                  }
-
-                  $rage_clicks[$element]++;
-                }
-              }
-            }
-          }
-        }
-      }
-
-
-
-      // Calculate percentages
-
-      if ($total_clicks > 0) {
-
-        foreach ($element_clicks as $element => &$data) {
-
-          $data['percentage'] = round(($data['clicks'] / $total_clicks) * 100, 2);
-        }
-      }
-
-
-
-      // Sort by click count descending
-
-      uasort($element_clicks, function ($a, $b) {
-
-        return $b['clicks'] - $a['clicks'];
-      });
-
-
-
-      // Get top elements (hot) and bottom elements (cold)
-
-      $top_elements = array_slice($element_clicks, 0, 10, true);
-
-      $bottom_elements = array_slice($element_clicks, -5, 5, true);
-
-
-
-      // Identify suspicious patterns (high clicks on non-interactive elements)
-
-      $suspicious_patterns = array();
-
-      foreach ($top_elements as $selector => $data) {
-
-        // Check for clicks on text elements that aren't buttons/links
-
-        if (preg_match('/^h[1-6]|^p|^span|^div$/', $selector) && $data['percentage'] > 5) {
-
-          $suspicious_patterns[$selector] = $data;
-        }
-      }
-
-
-
-      $summary = array(
-
-        'page_id' => $page_id,
-
-        'total_clicks' => $total_clicks,
-
-        'unique_sessions' => count($unique_sessions),
-
-        'screen_distribution' => $screen_sizes,
-
-        'hot_elements' => $top_elements,
-
-        'cold_elements' => $bottom_elements,
-
-        'rage_clicks' => $rage_clicks,
-
-        'suspicious_patterns' => $suspicious_patterns,
-
-        'days_analyzed' => $days
-
-      );
-
-
-
-      wp_send_json_success($summary);
-    }
-
-
-
-
-
-    function get_insights()
-    {
-
-
-
-      if (!current_user_can('edit_posts'))
-
-        wp_send_json_error(array('error' => 'You do not have the correct permissions to get insights.'));
-
-
-
-      $licence = trim(apply_filters('abst_licence_key', abst_get_admin_setting('bt_bb_ab_licence')));
-      // Backward compatibility: also allow old hook name (new hook takes precedence)
-      $licence = trim(apply_filters('abst_licence_key', $licence));
-
-      $url = 'https://absplittest.com/wp-json/bt-bb-ab/v1/insights';
-
-
-
-      $request_body = array(
-
-        'markdown' => sanitize_textarea_field(wp_unslash($_POST['markdown'] ?? '')),
-
-        'heatmap_data' => isset($_POST['heatmapData']) ? sanitize_textarea_field(wp_unslash($_POST['heatmapData'])) : '',
-
-        'licence' => $licence,
-
-        'domain' => get_home_url(),
-
-      );
-
-
-
-      $response = wp_remote_post($url, array(
-
-        'method' => 'POST',
-
-        'timeout' => 60,
-
-        'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
-
-        'body' => json_encode($request_body)
-
-      ));
-
-
-
-
-
-      if (is_wp_error($response)) {
-
-        //get error
-
-        $error = $response->get_error_message();
-
-        wp_send_json_error(array('error' => 'Failed to get insights ' . $error));
-
-        wp_die();
-      }
-
-
-
-      $body = wp_remote_retrieve_body($response);
-
-
-
-      $data = json_decode($body, true);
-
-
-
-      //save to options abst_insights
-
-      if (!empty($data['choices'][0]['message']['content'])) {
-
-        abst_log('Saving insights to options');
-
-        abst_update_admin_setting('abst_insights', $data['choices'][0]['message']['content']);
-      }
-
-      if ($data['abst_remaining_calls'])
-
-        abst_update_admin_setting('abst_remaining_calls', $data['abst_remaining_calls']);
-
-
-
-      wp_send_json_success($data);
-
-
-
-      wp_die();
-    }
-
-
-
-    function blocks_experiment_list()
-    {
-
-      if (!current_user_can('edit_posts'))
-
-        wp_send_json_error(array('error' => 'You do not have the correct permissions to get test data.'));
-
-
-
-      $search_query = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
-
-      $exact_id = isset($_POST['exact_id']) ? sanitize_text_field(wp_unslash($_POST['exact_id'])) : '';
-
-      if (!empty($exact_id)) {
-
-        $args = array(
-
-          'p'              => $exact_id,
-
-          'post_status'    => 'publish',
-
-          'post_type'      => 'bt_experiments',
-
-          'orderby'        => 'modified'
-
-        );
-      } else {
-
-        $args = array(
-
-          's'              => $search_query,
-
-          'post_status'    => 'publish',
-
-          'post_type'      => 'bt_experiments',
-
-          'orderby'        => 'modified',
-
-          'order'          => 'DESC',
-
-          'posts_per_page' => 50,
-
-          'meta_query'     => array(
-
-            array(
-
-              'key'     => 'test_type',
-
-              'value'   => 'ab_test',
-
-              'compare' => '=',
-
-            ),
-
-          ),
-
-        );
-      }
-
-
-
-      $search_results = new WP_Query($args);
-
-      $return = array();
-
-
-
-      if ($search_results->have_posts()) :
-
-        while ($search_results->have_posts()) : $search_results->the_post();
-
-          // Shorten the title
-
-          $title = (mb_strlen(get_the_title()) > 50)
-
-            ? mb_substr(get_the_title(), 0, 49) . '...'
-
-            : get_the_title();
-
-
-
-          // Return in label/value format for ComboboxControl
-
-          $return[] = array(
-
-            'value' => (string) get_the_ID(),
-
-            'label' => $title
+              'orderby'        => 'modified'
 
           );
 
-        endwhile;
+        }
 
-      endif;
+        else
 
+        {
 
+          $args = array(
 
-      // Return JSON in the correct format
+            's'              => $search_query,
 
-      wp_send_json($return);
+            'post_status'    => 'publish',  
 
-      // No need for die; wp_send_json() ends execution.
+            'post_type'      => 'bt_experiments',
 
+            'orderby'        => 'modified',
 
+            'order'          => 'DESC',
 
-    }
+            'posts_per_page' => 50,
 
+            'meta_query'     => array(
 
+                array(
 
+                    'key'     => 'test_type',
 
+                    'value'   => 'ab_test',
 
-    function bt_generate_embed_code()
-    { // iframe embed code. make sure your server has x frame options to allow remote domain, or 'all' if you are feeling frisky
+                    'compare' => '=',
 
-      if (! wp_verify_nonce($_POST['nonce'], 'btexperimentexturlnonce')) {
-        wp_die('sorry...');
+                ),
+
+            ),
+
+          );
+
+        }
+
+    
+
+        $search_results = new WP_Query($args);
+
+        $return = array();
+
+    
+
+        if ( $search_results->have_posts() ) :
+
+            while ( $search_results->have_posts() ) : $search_results->the_post();	
+
+                // Shorten the title
+
+                $title = ( mb_strlen( get_the_title() ) > 50 ) 
+
+                    ? mb_substr( get_the_title(), 0, 49 ) . '...' 
+
+                    : get_the_title();
+
+                    
+
+                // Return in label/value format for ComboboxControl
+
+                $return[] = array(
+
+                    'value' => (string) get_the_ID(),
+
+                    'label' => $title
+
+                );
+
+            endwhile;
+
+        endif;
+
+            
+
+        // Return JSON in the correct format
+
+        wp_send_json($return);
+
+        // No need for die; wp_send_json() ends execution.
+
+    
+
       }
 
 
 
-      $plugin_url = get_admin_url() . 'admin-ajax.php?action=abtrk&eid=' . intval($_POST['eid']);
+
+
+    function bt_generate_embed_code(){ // iframe embed code. make sure your server has x frame options to allow remote domain, or 'all' if you are feeling frisky
+
+    if( ! wp_verify_nonce( $_POST['nonce'], 'btexperimentexturlnonce' ) ) { wp_die('sorry...'); }
+
+    
+
+      $plugin_url = get_admin_url().'admin-ajax.php?action=abtrk&eid='.intval($_POST['eid']);
 
 
 
-      $embed_code = '<iframe src="' . $plugin_url . '" style="position: absolute;width:0;height:0;border:0;"></iframe>';
+      $embed_code = '<iframe src="'.$plugin_url.'" style="position: absolute;width:0;height:0;border:0;"></iframe>';
 
 
 
-      echo wp_kses_post($embed_code);
+      echo wp_kses_post( $embed_code );
 
       wp_die();
+
     }
 
 
@@ -12668,28 +12878,29 @@ if (! class_exists('Bt_Ab_Tests')) {
 
       $btab_reset = intval($_GET['btab_reset'] ?? 0);
 
-      if ($btab_reset > 0) {
+      if( $btab_reset > 0 ) {
 
-        echo '<script ' . wp_kses_post(ABST_CACHE_EXCLUDES) . '>
+        echo '<script ' . wp_kses_post( ABST_CACHE_EXCLUDES ) . '>
 
           (function(){
 
-            document.cookie = "btab_' . intval($btab_reset) . '=; path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+            document.cookie = "btab_'. intval($btab_reset) .'=; path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 
-            console.log("ABST: Reset cookie btab_' . intval($btab_reset) . '");
+            console.log("ABST: Reset cookie btab_'. intval($btab_reset) .'");
 
           })();
 
         </script>';
+
       }
 
-
+      
 
       // Dynamic hide CSS is now generated in build_frontend_config() and output via wp_localize_script
 
       // This avoids duplicate database queries
 
-
+      
 
       echo "<style id='absthide'>
 
@@ -12762,66 +12973,71 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
       </style>";
+
     }
 
 
 
-    function get_canonical_url($original_url, $post)
-    {
+    function get_canonical_url($original_url, $post){
 
       $add_canonical = abst_get_admin_setting('ab_change_canonicals');
 
-      if ($add_canonical == 1) {
+      if($add_canonical == 1){
 
         $canonicals = get_option('ab_test_canonical');
 
-        if (isset($canonicals) && is_array($canonicals) && !empty($canonicals[$post->ID])) {
+        if(isset($canonicals) && is_array($canonicals) && !empty($canonicals[$post->ID])){
 
           return $canonicals[$post->ID];
+
         }
+
       }
 
       return $original_url;
+
     }
 
 
 
-    function is_tracking_allowed($eid)
-    {
+    function is_tracking_allowed( $eid ) {
 
 
 
-      $allowed = (array) get_post_meta($eid, 'bt_allowed_roles', true);
+      $allowed = (array) get_post_meta( $eid, 'bt_allowed_roles', true );
 
       $user    = wp_get_current_user();
 
+      
 
+      $roles = ( array ) $user->roles;
 
-      $roles = (array) $user->roles;
+  
 
-
-
-      if (! is_user_logged_in() && in_array('logout', $allowed)) {
+      if ( ! is_user_logged_in() && in_array( 'logout', $allowed ) ) {
 
         $roles[] = 'logout';
+
       }
 
+      
 
+      if ( current_user_can( 'administrator' ) ) {
 
-      if (current_user_can('administrator')) {
+        $roles[] = 'administrator'; 
 
-        $roles[] = 'administrator';
       }
 
+    
 
+      $is_allowed = ! empty( array_intersect( $allowed, $roles ) );
 
-      $is_allowed = ! empty(array_intersect($allowed, $roles));
+      $is_allowed = apply_filters( 'abst_is_tracking_allowed', $is_allowed, $eid );
 
-      $is_allowed = apply_filters('abst_is_tracking_allowed', $is_allowed, $eid);
-
-
+    
 
       return $is_allowed;
+
     }
 
 
@@ -12830,109 +13046,109 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-    function test_post_states($states, $post)
-    {
+      function test_post_states( $states, $post ) {
 
 
 
-      if ('bt_experiments' == get_post_type($post->ID)) {
+          if ( 'bt_experiments' == get_post_type( $post->ID ) ) {
 
-        $newstate = '';
+            $newstate = '';
 
-        if ($post->post_status == 'idea')
+            if($post->post_status == 'idea')
 
-          $newstate = '<span>⬆️ Upgrade Required</span>';
+              $newstate = '<span>⬆️ Upgrade Required</span>';
 
-        else if ($post->post_status == 'draft')
+            else if($post->post_status == 'draft')
 
-          $newstate = '<span>🔴 Not Started </span>';
+              $newstate = '<span>🔴 Not Started </span>';
 
-        else if ($post->post_status == 'publish')
+            else if($post->post_status == 'publish')
 
-          $newstate = '<span>🟢 Running</span>';
+              $newstate = '<span>🟢 Running</span>';
 
-        else if ($post->post_status == 'complete')
+            else if($post->post_status == 'complete')
 
-          $newstate = '<span>✅ Complete</span>';
+              $newstate = '<span>✅ Complete</span>';
 
-        else if ($post->post_status == 'pending')
+            else if($post->post_status == 'pending')
 
-          $newstate = '<span>⏸️ Paused</span>';
-
-
-
-        if (empty($newstate))
-
-          $newstate = implode(' ', $states);
+              $newstate = '<span>⏸️ Paused</span>';
 
 
 
-        $test_type = get_post_meta($post->ID, 'test_type', true);
+            if(empty($newstate))
 
-        if ($post->post_status == 'idea' || empty($test_type))
-
-          $test_type = 'Pro Feature';
-
-        else if ($test_type == 'full_page')
-
-          $test_type = 'Full Page Test';
-
-        else if ($test_type == 'magic')
-
-          $test_type = 'Magic Test';
-
-        else if ($test_type == 'ab_test')
-
-          $test_type = 'On Page Test';
-
-        else
-
-          $test_type = 'Code Test';
+              $newstate = implode(' ', $states);
 
 
 
-        $newstate = "<span class='test-type'>" . $test_type . "</span>" . $newstate;
+            $test_type = get_post_meta( $post->ID, 'test_type', true );
+
+            if($post->post_status == 'idea' || empty($test_type))
+
+              $test_type = 'Pro Feature';
+
+            else if($test_type == 'full_page')
+
+              $test_type = 'Full Page Test';
+
+            else if($test_type == 'magic')
+
+              $test_type = 'Magic Test';
+
+            else if($test_type == 'ab_test')
+
+                $test_type = 'On Page Test';
+
+            else
+
+              $test_type = 'Code Test';
 
 
 
-        $conversion_style = get_post_meta($post->ID, 'conversion_style', true);
-
-        if ($conversion_style == 'thompson') {
-
-          $newstate .= ' <span class="thompson">Dynamic Traffic</span>';
-        }
+            $newstate = "<span class='test-type'>".$test_type."</span>" . $newstate;
 
 
 
+            $conversion_style = get_post_meta($post->ID, 'conversion_style', true);
 
+            if($conversion_style == 'thompson') {
 
-        $states = array();
+              $newstate .= ' <span class="thompson">Dynamic Traffic</span>';
 
-        $states[] = $newstate;
-
-
-
-        //if its a thompson test add a new state 
+            }
 
 
 
 
+
+            $states = array();
+
+            $states[] = $newstate;
+
+
+
+            //if its a thompson test add a new state 
+
+
+
+
+
+          }
+
+          return $states;
 
       }
 
-      return $states;
-    }
 
 
 
 
-
-    function updated_body_class($classes)
-    {
+    function updated_body_class( $classes ) {
 
       $user = wp_get_current_user();
 
-
+      
 
       $capabilities = apply_filters('abst_bt_can_user_view_variations', [
 
@@ -12946,14 +13162,16 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      if (!$capabilities) {
+      if( !$capabilities ) {
 
         $classes[] = 'bt-hidevars';
+
       }
 
 
 
       return $classes;
+
     }
 
 
@@ -12972,14 +13190,14 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function can_user_view_variations($capabilities)
-    {
+    function can_user_view_variations( $capabilities ) {
 
 
 
-      if (!is_array($capabilities) || empty($capabilities)) {
+      if( !is_array($capabilities) || empty($capabilities) ) {
 
         return true;
+
       }
 
 
@@ -12990,72 +13208,73 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       foreach ($capabilities as $capability) {
 
-        if (current_user_can($capability)) {
+        if( current_user_can( $capability ) ) {
 
           $allowed += 1;
+
         }
+
       }
 
 
 
-      if ($allowed > 0) {
+      if( $allowed > 0 ) {
 
         return true;
+
       }
 
 
 
       return false;
+
     }
 
+    
 
-
-    function render_js($js, $nodes, $global_settings)
-    {
+    function render_js( $js, $nodes, $global_settings ) {
 
 
 
       $experiments = [];
 
+      
+
+      foreach($nodes as $modules){
 
 
-      foreach ($nodes as $modules) {
 
+        foreach($modules as $module)
 
+        {
 
-        foreach ($modules as $module) {
+          if(isset($module->settings->ab_test) && $module->settings->ab_test !== "")
 
-          if (isset($module->settings->ab_test) && $module->settings->ab_test !== "") {
+          {
 
-            $conversion_url = get_post_meta($module->settings->ab_test, "conversion_url", true);
+            $conversion_url = get_post_meta($module->settings->ab_test,"conversion_url",true);
 
-            $target_percentage = get_post_meta($module->settings->ab_test, "target_percentage", true);
+            $target_percentage = get_post_meta($module->settings->ab_test,"target_percentage",true);
 
-            $url_query = get_post_meta($module->settings->ab_test, "url_query", true);
+            $url_query = get_post_meta($module->settings->ab_test,"url_query",true);
 
-            $css_test_variations = get_post_meta($module->settings->css_test_variations, "url_query", true);
+            $css_test_variations = get_post_meta($module->settings->css_test_variations,"url_query",true);
 
             $target_option_device_size = get_post_meta($module->settings->ab_test, "target_option_device_size", true);
-
-            $ab_use_fingerprint = get_post_meta($module->settings->ab_test, "ab_use_fingerprint", true);
 
             if ($target_option_device_size === '') {
 
               $target_option_device_size = 'all';
-            }
 
-            if ($ab_use_fingerprint === false) {
-
-              $ab_use_fingerprint = '';
             }
 
             // create if doesnt exist
 
-            if (!isset($experiments[$module->settings->ab_test]))
+            if(!isset($experiments[$module->settings->ab_test]))
 
-              $experiments[$module->settings->ab_test] = [];
+               $experiments[$module->settings->ab_test] = [];
 
-            if (!isset($experiments[$module->settings->ab_test]['variations']))
+            if(!isset($experiments[$module->settings->ab_test]['variations']))
 
               $experiments[$module->settings->ab_test]['variations'] = [];
 
@@ -13071,28 +13290,33 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             $experiments[$module->settings->ab_test]['target_option_device_size'] = $target_option_device_size;
 
-            $experiments[$module->settings->ab_test]['ab_use_fingerprint'] = $ab_use_fingerprint;
-
             $experiments[$module->settings->ab_test]['log_on_visible'] = get_post_meta($module->settings->ab_test, 'log_on_visible', true) === '1';
 
             $experiments[$module->settings->ab_test]['meta'] = [];
 
             $experiments[$module->settings->ab_test]['meta']['weight'] = 0;
 
-            $experiments[$module->settings->ab_test]['conversion_style'] = get_post_meta($module->settings->ab_test, "conversion_style", true);
+            $experiments[$module->settings->ab_test]['conversion_style'] = get_post_meta($module->settings->ab_test,"conversion_style",true);
 
-            if (get_post_meta($module->settings->ab_test, "meta", true))
+            if(get_post_meta($module->settings->ab_test,"meta",true))
 
-              $experiments[$module->settings->ab_test]['meta'] = get_post_meta($module->settings->ab_test, "meta", true);
+              $experiments[$module->settings->ab_test]['meta'] = get_post_meta($module->settings->ab_test,"meta",true);
+
+
+
           }
+
         }
+
       }
 
+      
 
+      if(!empty($experiments))
 
-      if (!empty($experiments)) {
+      {
 
-        $js .= "
+        $js.= "
 
         if(typeof bt_experiments == 'undefined')
 
@@ -13100,19 +13324,26 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         ";
 
-        foreach ($experiments as $k => $v) {
+        foreach($experiments as $k => $v)
 
-          $js .= '
+        {
 
-            bt_experiments["' . $k . '"] = ' . json_encode($v) . ';
+          $js.='
+
+            bt_experiments["'.$k.'"] = '.json_encode($v).';
 
           ';
+
         }
+
+        
+
       }
 
-
+      
 
       return $js;
+
     }
 
 
@@ -13125,15 +13356,15 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function maybe_unserialize_for_js($data)
-    {
+    private function maybe_unserialize_for_js($data) {
 
       if (empty($data)) {
 
         return '';
+
       }
 
-
+      
 
       // Try to unserialize if it looks like serialized PHP data
 
@@ -13146,14 +13377,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           // Return unserialized array/object - wp_localize_script will handle JSON encoding
 
           return $unserialized;
+
         }
+
       }
 
-
+      
 
       // If unserialization fails or doesn't look like serialized data, return as-is
 
       return $data;
+
     }
 
 
@@ -13168,20 +13402,19 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function build_frontend_config()
-    {
+    function build_frontend_config() {
 
       $user_level = abst_user_level();
 
       global $post;
 
-
+      
 
       // Build btab_vars
 
-      $is_preview = (is_preview() || (isset($_GET['fl_builder']) && is_user_logged_in()) ||  $this->is_elementor_preview())  ? true : false;
+      $is_preview = (is_preview() || (isset($_GET['fl_builder']) && is_user_logged_in()) ||  $this->is_elementor_preview() )  ? true : false;
 
-
+      
 
       $post_id = abst_get_current_post_id();
 
@@ -13193,19 +13426,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'is_preview' => $is_preview,
         'is_agency' => ($user_level  == 'agency'),
         'is_free' => '1',
-        'tagging' => apply_filters('bt_ab_tagging', true) ? '1' : '0',
-        'do_fingerprint' => abst_get_admin_setting('ab_use_fingerprint') ? '1' : '0',
-        'advanced_tracking' => abst_get_admin_setting('ab_use_uuid') ? '1' : '0',
-        'abst_server_convert_woo' => abst_get_admin_setting('abst_server_convert_woo') ? '1' : '0',
-        'abst_enable_user_journeys' => abst_get_admin_setting('abst_enable_user_journeys') ? '1' : '0',
-        'abst_disable_ai' => abst_get_admin_setting('abst_disable_ai') ? '1' : '0',
+        'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
+        'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
+        'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
+        'abst_disable_ai' => '1',
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
         'domain' => get_home_url(),
         'v' => BT_AB_TEST_VERSION,
-        'wait_for_approval' => abst_get_admin_setting('abst_wait_for_approval') ? '1' : '0',
-        'heatmap_pages' => abst_get_admin_setting('abst_heatmap_pages'),
-        'heatmap_all_pages' => abst_get_admin_setting('abst_heatmap_all_pages'),
-        'geo' => abst_get_admin_setting('abst_geo_targeting') ? '1' : '0',
+        'wait_for_approval' => abst_get_admin_setting( 'abst_wait_for_approval' ) ? '1' : '0',
+        'heatmap_pages' => abst_get_admin_setting( 'abst_heatmap_pages' ),
+        'heatmap_all_pages' => abst_get_admin_setting( 'abst_heatmap_all_pages' ),
+        'geo' => abst_get_admin_setting( 'abst_geo_targeting' ) ? '1' : '0',
       ];
 
       // Build experiments array
@@ -13220,7 +13451,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           'post_type' => 'bt_experiments',
 
-          'post_status' => ['draft', 'publish', 'complete'],
+          'post_status' => ['draft','publish', 'complete'],
 
           'numberposts' => -1
 
@@ -13229,9 +13460,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         set_transient('ab_posts_frontend_cache', $posts, 60 * MINUTE_IN_SECONDS);
 
         wp_reset_postdata();
+
       }
 
-
+      
 
       // Build dynamic hide CSS while iterating experiments (avoids duplicate queries)
 
@@ -13239,9 +13471,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $noscript_css = '';
 
+      
 
-
-      foreach ($posts as $val) {
+      foreach($posts as $val) {
 
         $meta = get_post_meta($val->ID);
 
@@ -13251,7 +13483,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $test_winner = $meta['test_winner'][0] ?? '';
 
-
+        
 
         $experiments[$val->ID] = [
 
@@ -13283,7 +13515,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           'test_type' => $test_type,
 
-          'is_current_user_track' => $this->is_tracking_allowed($val->ID),
+          'is_current_user_track' => $this->is_tracking_allowed( $val->ID ),
 
           'full_page_default_page' => $full_page_default_page,
 
@@ -13307,7 +13539,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         ];
 
-
+        
 
         // Generate hide CSS for published tests, and for completed full-page tests that have a
 
@@ -13317,64 +13549,71 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $is_complete_with_winner = ($val->post_status === 'complete' && $test_type === 'full_page' && !empty($test_winner));
 
-        if ($val->post_status !== 'publish' && !$is_complete_with_winner) continue;
+        if($val->post_status !== 'publish' && !$is_complete_with_winner) continue;
 
-
+        
 
         // Hide full-page test pages before JS redirect (but allow body.abst-show-page to override)
 
-        if ($test_type == 'full_page' && $full_page_default_page) {
+        if($test_type == 'full_page' && $full_page_default_page) {
 
-          if (is_numeric($full_page_default_page)) {
+          if(is_numeric($full_page_default_page)) {
 
-            $hide_css .= 'body:not(.abst-show-page).page-id-' . $full_page_default_page . ',body:not(.abst-show-page).postid-' . $full_page_default_page . '{opacity:0;pointer-events:none;}';
+            $hide_css .= 'body:not(.abst-show-page).page-id-'.$full_page_default_page.',body:not(.abst-show-page).postid-'.$full_page_default_page.'{opacity:0;pointer-events:none;}';
 
-            $noscript_css .= 'body:not(.abst-show-page).page-id-' . $full_page_default_page . ',body:not(.abst-show-page).postid-' . $full_page_default_page . '{opacity:1;pointer-events:auto;}';
+            $noscript_css .= 'body:not(.abst-show-page).page-id-'.$full_page_default_page.',body:not(.abst-show-page).postid-'.$full_page_default_page.'{opacity:1;pointer-events:auto;}';
+
           } else {
 
-            $hide_css .= 'body:not(.abst-show-page).' . sanitize_html_class($full_page_default_page) . ' {opacity:0;pointer-events:none;}';
+            $hide_css .= 'body:not(.abst-show-page).'.sanitize_html_class($full_page_default_page).' {opacity:0;pointer-events:none;}';
 
-            $noscript_css .= 'body:not(.abst-show-page).' . sanitize_html_class($full_page_default_page) . ' {opacity:1;pointer-events:auto;}';
+            $noscript_css .= 'body:not(.abst-show-page).'.sanitize_html_class($full_page_default_page).' {opacity:1;pointer-events:auto;}';
+
           }
+
         }
 
-
+        
 
         // Show winner variation for on-page tests via CSS (autocomplete)
 
         // revert = browser default for element type (block for div, inline for span, etc.)
 
-        if ($test_winner && $test_type == 'ab_test') {
+        if($test_winner && $test_type == 'ab_test') {
 
-          $hide_css .= '[bt-variation="' . $test_winner . '"][bt-eid="' . $val->ID . '"]{display:revert !important;}';
+          $hide_css .= '[bt-variation="'.$test_winner.'"][bt-eid="'.$val->ID.'"]{display:revert !important;}';
+
         }
+
       }
 
-
+      
 
       // Output the dynamic hide CSS inline (runs before JS)
 
-      if (!empty($hide_css)) {
+      if(!empty($hide_css)) {
 
         // Backwards compat display:revert removed Feb 2026 - was breaking themes using display:flex/grid on body
 
-        echo '<style id="abst-dynamic-hide">' . wp_kses_post($hide_css) . '</style>';
+        echo '<style id="abst-dynamic-hide">' . wp_kses_post( $hide_css ) . '</style>';
 
         // noscript: if JS disabled, override the hide CSS so page is visible
 
-        if (!empty($noscript_css)) {
+        if(!empty($noscript_css)) {
 
-          echo '<noscript><style>' . wp_kses_post($noscript_css) . '</style></noscript>';
+          echo '<noscript><style>' . wp_kses_post( $noscript_css ) . '</style></noscript>';
+
         }
+
       }
 
-
+      
 
       // Build conversion_details (from conversion_targeting function)
 
-      $conversion_pages = get_option('bt_conversion_pages', false);
+      $conversion_pages = get_option('bt_conversion_pages',false);
 
-
+      
 
       // Build current_page array (from conversion_targeting function)
 
@@ -13382,9 +13621,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $target_post_id = [];
 
+      
 
-
-      if (!empty($queried_object)) {
+      if(!empty($queried_object)) {
 
         if (is_archive()) {
 
@@ -13396,7 +13635,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             $target_post_id[] = 'archive-' . $post_type; // Backwards compat for tests created before 2.4.2
 
-          } elseif (is_tax() || is_category() || is_tag()) {
+          } 
+
+          elseif (is_tax() || is_category() || is_tag()) {
 
             $taxonomy = $queried_object->taxonomy;
 
@@ -13405,36 +13646,51 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             $target_post_id[] = 'taxonomy-' . $taxonomy . '-' . $term_id;
 
             $target_post_id[] = 'taxonomy-' . $taxonomy;
-          } elseif (is_author()) {
+
+          }
+
+          elseif (is_author()) {
 
             $target_post_id[] = 'author-' . get_queried_object_id();
-          } elseif (is_date()) {
+
+          }
+
+          elseif (is_date()) {
 
             $date_parts = [get_query_var('year')];
 
             if (get_query_var('monthnum')) {
 
               $date_parts[] = get_query_var('monthnum');
+
             }
 
             if (get_query_var('day')) {
 
               $date_parts[] = get_query_var('day');
+
             }
 
             $target_post_id[] = 'date-' . implode('-', $date_parts);
+
           }
-        } elseif (isset($queried_object->ID)) {
+
+        }
+
+        elseif (isset($queried_object->ID)) {
 
           $target_post_id[] = $queried_object->ID;
+
         }
+
       }
 
-
+      
 
       if (is_front_page()) {
 
         $target_post_id[] = get_option('page_on_front');
+
       }
 
       if (is_home()) {
@@ -13458,51 +13714,60 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $target_post_id[] = 'archive-post'; // Backwards compat
 
         }
+
       }
 
+      
 
+      if ( class_exists( 'WooCommerce' ) ) {
 
-      if (class_exists('WooCommerce')) {
-
-        if (is_shop()) {
+        if(is_shop()){
 
           $target_post_id[] = wc_get_page_id('shop');
+
         }
 
-        if (is_wc_endpoint_url('order-pay')) {
+        if(is_wc_endpoint_url( 'order-pay' )){
 
           $target_post_id[] = 'woo-order-pay';
+
         }
 
-        if (is_wc_endpoint_url('order-received') && (abst_get_admin_setting('abst_server_convert_woo') !== '1')) {
+        if(is_wc_endpoint_url( 'order-received' ) && (abst_get_admin_setting( 'abst_server_convert_woo' ) !== '1')){
 
           $target_post_id[] = 'woo-order-received';
+
         }
+
       }
 
+      
 
+      if ( class_exists( 'WPPIZZA' ) ) {
 
-      if (class_exists('WPPIZZA')) {
-
-        if (wppizza_is_checkout()) {
+        if(wppizza_is_checkout()){
 
           $target_post_id[] = 'wp-pizza-is-checkout';
+
         }
 
-        if (wppizza_is_orderhistory()) {
+        if(wppizza_is_orderhistory()){
 
           $target_post_id[] = 'wp-pizza-is-order-history';
+
         }
+
       }
 
+      
 
-
-      if (is_404()) {
+      if(is_404()) {
 
         $target_post_id[] = '404-not-found';
+
       }
 
-
+      
 
       // Return consolidated config
 
@@ -13525,14 +13790,14 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'current_page' => $target_post_id,
 
       ];
+
     }
 
 
 
     //called in wp_head 
 
-    function render_experiment_config()
-    {
+    function render_experiment_config() {
 
 
 
@@ -13540,7 +13805,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-
+      
 
 
 
@@ -13550,9 +13815,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       //legacy remove in 2026
 
-      return;
+      return; 
 
-
+      
 
       $user_level = abst_user_level();
 
@@ -13562,13 +13827,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $free = true;
 
+      
 
+      $is_preview = (is_preview() || (isset($_GET['fl_builder']) && is_user_logged_in()) ||  $this->is_elementor_preview() )  ? true : false;
 
-      $is_preview = (is_preview() || (isset($_GET['fl_builder']) && is_user_logged_in()) ||  $this->is_elementor_preview())  ? true : false;
+      
 
-
-
-      if (!empty($post))
+      if(!empty($post))
 
         $post_id = $post->ID;
 
@@ -13584,45 +13849,46 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if ($gqo instanceof WP_Post_Type) {
 
-        $post_id =  'post-type-archive-' . $gqo->name;
+        $post_id =  'post-type-archive-'.$gqo->name;
+
       }
 
-      if (is_category()) {
+      if(is_category())
 
-        $post_id =  'category-' . $gqo->slug;
+      {
+
+        $post_id =  'category-'.$gqo->slug;
+
       }
 
-      if (is_tag()  || is_tax()) {
+      if(is_tag()  || is_tax())
 
-        $post_id =  'tax-' . $gqo->taxonomy . ' term-' . $gqo->slug;
+      {
+
+        $post_id =  'tax-'.$gqo->taxonomy.' term-'.$gqo->slug;
+
       }
 
-      if (is_author()) {
+      if(is_author())
 
-        $post_id =  'author-' . $gqo->user_login;
-      }
+      {
 
-      $do_fingerprint = abst_get_admin_setting('ab_use_fingerprint');
+        $post_id =  'author-'.$gqo->user_login;
 
-      $do_fingerprint = apply_filters('bt_ab_fingerprint', $do_fingerprint);
+      } 
 
-      $advanced_tracking = abst_get_admin_setting('ab_use_uuid');
+      $abst_server_convert_woo = abst_get_admin_setting( 'abst_server_convert_woo' );
 
-      $advanced_tracking = apply_filters('bt_ab_use_uuid', $advanced_tracking);
 
-      $abst_server_convert_woo = abst_get_admin_setting('abst_server_convert_woo');
+      $abst_enable_user_journeys = abst_get_admin_setting( 'abst_enable_user_journeys' );
 
-      $abst_disable_ai = abst_get_admin_setting('abst_disable_ai');
+      $wait_for_approval = abst_get_admin_setting( 'abst_wait_for_approval' );
 
-      $abst_enable_user_journeys = abst_get_admin_setting('abst_enable_user_journeys');
+      $wait_for_approval = apply_filters( 'abst_wait_for_approval', $wait_for_approval );
 
-      $wait_for_approval = abst_get_admin_setting('abst_wait_for_approval');
+      $heatmap_pages = abst_get_admin_setting( 'abst_heatmap_pages' );
 
-      $wait_for_approval = apply_filters('abst_wait_for_approval', $wait_for_approval);
-
-      $heatmap_pages = abst_get_admin_setting('abst_heatmap_pages');
-
-      $heatmap_all_pages = abst_get_admin_setting('abst_heatmap_all_pages');
+      $heatmap_all_pages = abst_get_admin_setting( 'abst_heatmap_all_pages' );
 
 
 
@@ -13638,17 +13904,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'is_free' => true,
 
-        'tagging' => apply_filters('bt_ab_tagging', true) ? '1' : '0',
-
-        'do_fingerprint' => $do_fingerprint ? '1' : '0',
-
-        'advanced_tracking' => $advanced_tracking ? '1' : '0',
+        'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
 
         'abst_server_convert_woo' => $abst_server_convert_woo ? '1' : '0',
 
         'abst_enable_user_journeys' => $abst_enable_user_journeys ? '1' : '0',
 
-        'abst_disable_ai' => $abst_disable_ai ? '1' : '0',
+        'abst_disable_ai' => '1',
 
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
 
@@ -13664,11 +13926,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       ];
 
-
+      
 
       $experiments = [];
 
-
+      
 
       $posts = get_transient('ab_posts_cache');
 
@@ -13687,21 +13949,24 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         set_transient('ab_posts_cache', $posts, 60 * MINUTE_IN_SECONDS);
 
         wp_reset_postdata();
+
       }
 
-
+      
 
       $style = '<style>';
 
+    
 
+      foreach($posts as $key => $val)
 
-      foreach ($posts as $key => $val) {
+      {
 
         $meta = get_post_meta($val->ID);
 
         $conversion_page = $meta['conversion_page'][0];
 
-        if ($conversion_page == 'block')
+        if($conversion_page == 'block')
 
           $conversion_page = '';
 
@@ -13753,13 +14018,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-        if ($target_option_device_size == '')
+        if($target_option_device_size == '')
 
           $target_option_device_size = 'all';
 
         // create if doesnt exist
 
-        if (!isset($experiments[$val->ID]))
+        if(!isset($experiments[$val->ID]))
 
           $experiments[$val->ID] = [];
 
@@ -13789,7 +14054,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $experiments[$val->ID]['test_type'] = $test_type;
 
-        $experiments[$val->ID]['is_current_user_track'] = $this->is_tracking_allowed($val->ID);
+        $experiments[$val->ID]['is_current_user_track'] = $this->is_tracking_allowed( $val->ID );
 
         $experiments[$val->ID]['full_page_default_page'] = $full_page_default_page;
 
@@ -13813,32 +14078,40 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-        if ($test_type == 'full_page')
+        if($test_type == 'full_page')
 
-          $style .= ' .page-id-' . $full_page_default_page . ',.postid-' . $full_page_default_page . '{display:none;}'; //hide the page to avoid flicker
-
-
-
-        if ($test_type == 'full_page' && !is_int($full_page_default_page))
-
-          $style .= ' .' . $full_page_default_page . '{display:none;}'; //hide the page to avoid flicker
+          $style .= ' .page-id-'.$full_page_default_page.',.postid-'.$full_page_default_page.'{display:none;}'; //hide the page to avoid flicker
 
 
 
-        if ($test_type == 'magic' && is_int($full_page_default_page))
+        if($test_type == 'full_page' && !is_int($full_page_default_page))
 
-          $style .= ' .page-id-' . $full_page_default_page . ',.postid-' . $full_page_default_page . '{display:none;}'; //hide the page to avoid flicker
+          $style .= ' .'.$full_page_default_page.'{display:none;}'; //hide the page to avoid flicker
+
+
+
+        if($test_type == 'magic' && is_int($full_page_default_page))
+
+          $style .= ' .page-id-'.$full_page_default_page.',.postid-'.$full_page_default_page.'{display:none;}'; //hide the page to avoid flicker
 
 
 
         // if test winner and autocomplete is on and its an on page elements, then make it visible with css
 
-        if ($test_winner && $test_type == 'ab_test') {
+        if($test_winner && $test_type == 'ab_test')
+
+        {
 
           //css to select by attribute bt-variation and bt-eid
 
-          $style .= '[bt-variation="' . $test_winner . '"][bt-eid="' . $val->ID . '"]{display:revert !important;}';
+          $style .= '[bt-variation="'.$test_winner.'"][bt-eid="'.$val->ID.'"]{display:revert !important;}';
+
+
+
         }
+
+
+
       }
 
       $style .= '</style>';
@@ -13849,7 +14122,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $btab_reset = intval($_GET['btab_reset'] ?? 0);
 
-      if ($btab_reset > 0) {
+      if( $btab_reset > 0 ) {
 
         echo '<script>
 
@@ -13864,19 +14137,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           console.log("reset:","btab_". $btab_reset);
 
         </script>';
+
       }
 
 
 
-      echo "<script " . wp_kses_post(ABST_CACHE_EXCLUDES) . " id='abst_variables'>";
+      echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . " id='abst_variables'>";
 
-      echo "var bt_ajaxurl = '" . esc_url(admin_url('admin-ajax.php')) . "';";
+      echo "var bt_ajaxurl = '".esc_url(admin_url( 'admin-ajax.php' ))."';";
 
-      echo "var bt_adminurl = '" . esc_url(admin_url()) . "';";
+      echo "var bt_adminurl = '".esc_url(admin_url())."';";
 
-      echo "var bt_pluginurl = '" . esc_js(plugin_dir_url(__FILE__)) . "';";
+      echo "var bt_pluginurl = '" . esc_js( plugin_dir_url( __FILE__ ) ) . "';";
 
-      echo "var bt_homeurl = '" . esc_js(home_url()) . "';";
+      echo "var bt_homeurl = '" . esc_js( home_url() ) . "';";
 
       echo "window.btab_vars = Object.assign(window.btab_vars || {}, " . json_encode($btab_vars) . ");";
 
@@ -13884,56 +14158,63 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       var bt_conversion_vars = [];";
 
-      if (!empty($experiments)) {
+      if(!empty($experiments))
 
-        foreach ($experiments as $k => $v) {
+      {
 
-          $js .= 'bt_experiments["' . $k . '"] = ' . json_encode($v) . ';';
+        foreach($experiments as $k => $v)
+
+        {
+
+          $js.='bt_experiments["'.$k.'"] = '.json_encode($v).';';
+
         }
+
       }
 
-      echo wp_kses_post($js);
+      echo wp_kses_post( $js );
 
       echo "</script>";
 
-      echo wp_kses_post($style);
+      echo wp_kses_post( $style );
+
     }
 
 
 
-
+    
 
     function post_status_transition($new_status, $old_status, $post)
 
     {
 
-      // Check if the post is transitioning from 'auto-draft' to 'publish'
+        // Check if the post is transitioning from 'auto-draft' to 'publish'
 
-      if ($old_status === 'auto-draft' && $new_status === 'publish') {
+        if ($old_status === 'auto-draft' && $new_status === 'publish') {
 
-        delete_option('all_testable_posts'); // better refresh it
+          delete_option('all_testable_posts');// better refresh it
+
+        }
+
+
+
+        // Check if the post is transitioning from 'publish' to 'trash' or 'delete'
+
+        if (($old_status === 'publish' || $old_status === 'trash') && ($new_status === 'trash' || $new_status === 'delete')) {
+
+          delete_option('all_testable_posts'); // better refresh it
 
       }
 
-
-
-      // Check if the post is transitioning from 'publish' to 'trash' or 'delete'
-
-      if (($old_status === 'publish' || $old_status === 'trash') && ($new_status === 'trash' || $new_status === 'delete')) {
-
-        delete_option('all_testable_posts'); // better refresh it
-
-      }
     }
 
 
 
-    function render_admin_scripts_styles()
-    {
+    function render_admin_scripts_styles(){
 
       $screen = get_current_screen();
 
-
+      
 
       // Check if we're on any bt_experiments screen (list, edit, add new)
 
@@ -13941,23 +14222,25 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $is_experiments_screen = false;
 
+      
 
-
-      if ($screen && isset($screen->post_type) && $screen->post_type == 'bt_experiments') {
+      if( $screen && isset($screen->post_type) && $screen->post_type == 'bt_experiments' ){
 
         $is_experiments_screen = true;
+
       }
 
-
+      
 
       // Fallback: check URL parameters if screen check fails
 
-      if (!$is_experiments_screen && isset($_GET['post_type']) && $_GET['post_type'] === 'bt_experiments') {
+      if( !$is_experiments_screen && isset($_GET['post_type']) && $_GET['post_type'] === 'bt_experiments' ){
 
         $is_experiments_screen = true;
+
       }
 
-
+      
 
       // Enqueue admin styles for experiments screen and custom admin pages
 
@@ -13965,20 +14248,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $is_abst_page = isset($_GET['page']) && in_array($_GET['page'], $abst_admin_pages);
 
+      
 
+      if( $is_experiments_screen || $is_abst_page ){
 
-      if ($is_experiments_screen || $is_abst_page) {
+        wp_enqueue_style( 'bt_bb_ab_admin_styles', plugins_url('admin/bt-bb-ab-admin.css', __FILE__), array(), BT_AB_TEST_VERSION );    
 
-        wp_enqueue_style('bt_bb_ab_admin_styles', plugins_url('admin/bt-bb-ab-admin.css', __FILE__), array(), BT_AB_TEST_VERSION);
       }
 
-
+      
 
       if (isset($_GET['page']) && $_GET['page'] === 'bt_bb_ab_insights') {
 
         wp_enqueue_script('abst-insights', BT_AB_TEST_PLUGIN_URI . 'js/insights.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
-        wp_enqueue_script('abst-turndown', BT_AB_TEST_PLUGIN_URI . 'js/turndown.js', array('jquery'), BT_AB_TEST_VERSION, true);
       }
 
       // Enqueue modernScreenshot for heatmaps page
@@ -13986,61 +14269,65 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (isset($_GET['page']) && $_GET['page'] === 'abst-heatmaps') {
 
         wp_enqueue_script('creator', plugins_url('js/creator.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+
       }
+
+    }
+
+    
+
+
+
+
+
+ function process_batch_data() {
+
+    // CORS for subdomain multisite setups (only if headers not already sent)
+
+    $allowAny = apply_filters( 'abst_allow_cors', false);
+
+    if($allowAny && !headers_sent())
+
+      header("Access-Control-Allow-Origin: *");
+
+
+
+    // Read raw JSON body
+
+    $raw = file_get_contents('php://input');
+
+    if (!$raw) {
+
+        wp_send_json_error('Empty request body', 400);
+
     }
 
 
 
+    $events = json_decode($raw, true);
 
-
-
-
-    function process_batch_data()
-    {
-
-      // CORS for subdomain multisite setups (only if headers not already sent)
-
-      $allowAny = apply_filters('abst_allow_cors', false);
-
-      if ($allowAny && !headers_sent())
-
-        header("Access-Control-Allow-Origin: *");
-
-
-
-      // Read raw JSON body
-
-      $raw = file_get_contents('php://input');
-
-      if (!$raw) {
-
-        wp_send_json_error('Empty request body', 400);
-      }
-
-
-
-      $events = json_decode($raw, true);
-
-      if (!is_array($events)) {
+    if (!is_array($events)) {
 
         wp_send_json_error('Invalid JSON payload', 400);
-      }
+
+    }
 
 
 
-      $processed = 0;
+    $processed = 0;
 
-      $errors    = [];
+    $errors    = [];
 
 
 
-      foreach ($events as $idx => $event) {
+    foreach ($events as $idx => $event) {
 
         if (!is_array($event)) {
 
-          $errors[] = "Event {$idx} is not an object";
+            $errors[] = "Event {$idx} is not an object";
 
-          continue;
+            continue;
+
         }
 
 
@@ -14065,9 +14352,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if (!$eid || !$type) {
 
-          $errors[] = "Event {$idx} missing eid or type";
+            $errors[] = "Event {$idx} missing eid or type";
 
-          continue;
+            continue;
+
         }
 
 
@@ -14078,352 +14366,317 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $this->abst_log_experiment_activity(
 
-          $eid,
+            $eid,
 
-          $variation,
+            $variation,
 
-          $type,
+            $type,
 
-          true,          // from_api
+            true,          // from_api
 
-          $location,
+            $location,
 
-          $orderVal,
+            $orderVal,
 
-          $uuid,
+            $uuid,
 
-          $size,
+            $size,
 
-          $advId
+            $advId
 
         );
 
 
 
         $processed++;
-      }
+
+    }
 
 
 
-      wp_send_json_success([
+    wp_send_json_success([
 
         'processed' => $processed,
 
         'errors'    => $errors,
 
-      ]);
-    }
+    ]);
 
+}
 
 
-    /**
 
-     * Log experiment activity
+/**
 
-     *
+ * Log experiment activity
 
-     * @param int $bt_eid The experiment ID
+ *
 
-     * @param string $bt_variation The variation ID
+ * @param int $bt_eid The experiment ID
 
-     * @param string $bt_type The type of activity (visit|conversion|goal)
+ * @param string $bt_variation The variation ID
 
-     * @param bool $from_api Whether the request is coming from a js navigator.beacon() call or the AB Test admin page
+ * @param string $bt_type The type of activity (visit|conversion|goal)
 
-     * @param string $bt_location The location of the activity
+ * @param bool $from_api Whether the request is coming from a js navigator.beacon() call or the AB Test admin page
 
-     * @param int $abConversionValue The value of the conversion
+ * @param string $bt_location The location of the activity
 
-     * @param string $uuid The user's UUID
+ * @param int $abConversionValue The value of the conversion
 
-     * @param string $size The size of the device (mobile|tablet|desktop)
+ * @param string $uuid The user's UUID
 
-     * @param string $advancedId The user's advanced ID
+ * @param string $size The size of the device (mobile|tablet|desktop)
 
-     *
+ * @param string $advancedId The user's advanced ID
 
-     * @return void
+ *
 
-     *
+ * @return void
 
-     * @since 1.0.0
+ *
 
-     */
+ * @since 1.0.0
 
-    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false, $uuid = false, $size = false, $advancedId = false)
-    {
+ */
 
+      function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false,$uuid = false,$size = false, $advancedId = false){
 
+      
 
-      $error = false;
+        $error = false;
 
+  
 
+        //is it coming from a js navigator.beacon() call?
 
-      //is it coming from a js navigator.beacon() call?
+        if(isset($_GET['method']) && ($_GET['method'] == 'beacon'))
 
-      if (isset($_GET['method']) && ($_GET['method'] == 'beacon')) {
+        {
 
-        $beaconData = file_get_contents("php://input");
+          $beaconData = file_get_contents("php://input");
 
-        $decodedBeacon = json_decode($beaconData, true);
+          $decodedBeacon = json_decode($beaconData, true);
 
-        $eid = (int)($decodedBeacon['eid'] ?? 0);
+          $eid = (int)($decodedBeacon['eid'] ?? 0);
 
-        $variation = sanitize_text_field($decodedBeacon['variation'] ?? '');
+          $variation = sanitize_text_field($decodedBeacon['variation'] ?? '');
 
-        $type = sanitize_text_field($decodedBeacon['type'] ?? ''); // 'conversion'|'visit'|goal(0-9)
+          $type = sanitize_text_field($decodedBeacon['type'] ?? ''); // 'conversion'|'visit'|goal(0-9)
 
-        $location = sanitize_text_field($decodedBeacon['location'] ?? '');
+          $location = sanitize_text_field($decodedBeacon['location'] ?? '');
 
-        $size = sanitize_text_field($decodedBeacon['size'] ?? null);
+          $size = sanitize_text_field($decodedBeacon['size'] ?? null);
 
-        $abConversionValue = floatval($decodedBeacon['orderValue'] ?? 1);
+          $abConversionValue = floatval($decodedBeacon['orderValue'] ?? 1);
 
-        $uuid = sanitize_text_field($decodedBeacon['uuid'] ?? null);
+          $uuid = sanitize_text_field($decodedBeacon['uuid'] ?? null);
 
-        $advancedId = sanitize_text_field($decodedBeacon['ab_advanced_id'] ?? null);
-      } else {
+          $advancedId = sanitize_text_field($decodedBeacon['ab_advanced_id'] ?? null);
 
-        $eid                = sanitize_text_field(($bt_eid) ? (int)$bt_eid : (int)wp_unslash($_POST['eid'] ?? 0));
-
-        $variation          = $bt_variation ?? sanitize_text_field(wp_unslash($_POST['variation'] ?? ''));
-
-        $type               = sanitize_text_field(($bt_type) ? $bt_type : wp_unslash($_POST['type'] ?? ''));
-
-        $location           = $bt_location;
-
-        if ($location === false)
-
-          $location           = sanitize_text_field(wp_unslash($_POST['location'] ?? ''));
-
-        $size               = $size ?? sanitize_text_field(wp_unslash($_POST['size'] ?? ''));
-
-        $abConversionValue  = sanitize_text_field(($abConversionValue) ? $abConversionValue : wp_unslash($_POST['orderValue'] ?? 1));
-
-        $uuid               = sanitize_text_field(($uuid) ? $uuid : wp_unslash($_POST['uuid'] ?? null));
-
-        $advancedId         = sanitize_text_field(($advancedId) ? $advancedId : wp_unslash($_POST['ab_advanced_id'] ?? null));
-      }
-
-
-
-      // conversion-delayed is now just conversion - JS flushes every 2s so data should be there
-
-      if ($type == 'conversion-delayed') {
-
-        $type = 'conversion';
-      }
-
-
-
-      $allowAny = apply_filters('abst_allow_cors', false); // do cors if ppl are using subdomain multisite stuff
-
-      if ($allowAny && !headers_sent())
-
-        header("Access-Control-Allow-Origin: *");
-
-
-
-      abst_log('Log event: eid:' . $eid . ' variation:' . $variation . ' type:' . $type . ' location:' . $location . ' conversion value:' . $abConversionValue . ' uuid:' . $uuid . ' size:' . $size . ' advancedId:' . $advancedId . ' from_api:' . $from_api);
-
-
-
-      if (!empty($size)) // sanitize size
-
-        if ($size != 'mobile' && $size != 'tablet' && $size != 'desktop')
-
-          $size = false;
-
-
-
-      if (!$from_api && !$this->is_tracking_allowed($eid))
-
-        $error = 'Tracking not allowed..';
-
-
-
-      if (!get_post_status($eid))
-
-        $error = 'Test ID ' . $eid . ' not found';
-
-
-
-      if (!empty($variation) && is_string($variation) && strlen($variation) > 100)
-
-        $error = 'Variation Name too long. 100 characters max.';
-
-
-
-      if (is_string($location) && strlen($location) > 100)
-
-        $error = 'Location Name too long. 100 characters max.';
-
-
-
-      if (!empty($variation) && ((string)abst_sanitize((string)$variation) !== (string)$variation))
-
-        $error = 'Variation Name contains invalid characters.';
-
-
-
-      if ((string)abst_sanitize((string)$location) !== (string)$location)
-
-        $error = 'Location Name contains invalid characters. sanitized: ' . abst_sanitize($location);
-
-
-
-      // For UUID/AdvancedID-based events, update the fingerprint table and back-fill variation if needed.
-
-      if ((!empty($uuid) || !empty($advancedId)) && !$error) {
-
-
-
-        //check with db if uuid + eid exists and has not already been created/converted 
-
-        abst_log('UUID/ADV update begin: type:' . $type . ' eid:' . $eid . ' using:' . (!empty($advancedId) ? 'advancedId' : 'uuid'));
-
-        if (!empty($advancedId))
-
-          $fpresult = $this->update_fingerprint_db($advancedId, $type, $variation, $eid, null, $location, $size);
-
-        else if (!empty($uuid))
-
-          $fpresult = $this->update_fingerprint_db($uuid, $type, $variation, $eid, null, $location, $size);
-
-
-
-        // if no variation was found, return false
-
-
-
-        if (empty($fpresult) || $fpresult == false) {
-
-          $error = 'UUID/Advanced ID not updated (already logged) or does not exist';
-
-          abst_log('Log event ERROR: ' . $error);
-
-          if ($from_api) {
-
-            return new WP_REST_Response([
-
-              'error'  => $error
-
-            ], 200);
-          } else if (defined('ABST_SSR_MODE') && ABST_SSR_MODE) {
-
-            // SSR mode - don't terminate execution, just return error
-
-            return ['error' => $error];
-          } else {
-
-            abst_log('Log  ERROR: ' . $error);
-
-            echo (json_encode(array('error' => $error)));
-
-            die();
-          }
-        } else {
-
-          if (!is_int($fpresult)) // visit or conversion
-
-          {
-
-            $variation = $fpresult;
-          } else // goal
-
-          {
-
-            $variation = $variation;
-          }
         }
-      }
+
+        else
+
+        {
+
+          $eid                = sanitize_text_field(($bt_eid)? (int)$bt_eid : (int)wp_unslash( $_POST['eid'] ?? 0 ));
+
+          $variation          = $bt_variation ?? sanitize_text_field( wp_unslash( $_POST['variation'] ?? '' ) );
+
+          $type               = sanitize_text_field(($bt_type)? $bt_type : wp_unslash( $_POST['type'] ?? '' ));
+
+          $location           = $bt_location;
+
+          if($location === false)
+
+            $location           = sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) );
+
+          $size               = $size ?? sanitize_text_field( wp_unslash( $_POST['size'] ?? '' ) );
+
+          $abConversionValue  = sanitize_text_field(($abConversionValue)? $abConversionValue : wp_unslash( $_POST['orderValue'] ?? 1 ));
+
+          $uuid               = sanitize_text_field(($uuid)? $uuid : wp_unslash( $_POST['uuid'] ?? null ));
+
+          $advancedId         = sanitize_text_field(($advancedId)? $advancedId : wp_unslash( $_POST['ab_advanced_id'] ?? null ));
+
+        }
+
+        
+
+        // conversion-delayed is now just conversion - JS flushes every 2s so data should be there
+
+        if ($type == 'conversion-delayed') {
+
+          $type = 'conversion';
+
+        }
 
 
 
-      //if no variation or variation is false
+        $allowAny = apply_filters( 'abst_allow_cors', false); // do cors if ppl are using subdomain multisite stuff
 
-      if ($variation === "" || $variation === false)
+        if($allowAny && !headers_sent())
 
-        $error = 'Variation name is required, blank or false given';
+          header("Access-Control-Allow-Origin: *");
 
+            
 
-
-      if (!$error) {
-
-        $test_meta = get_post_meta($eid);
-
-        //get the experiment
-
-        if (get_post_type($eid) == 'bt_experiments' && isset($test_meta['test_type'][0])) {
-
-          //get all post meta
-
-          $test_type = $test_meta['test_type'][0];
+        abst_log('Log event: eid:' . $eid . ' variation:' . $variation . ' type:' . $type . ' location:' . $location . ' conversion value:' . $abConversionValue . ' uuid:' . $uuid . ' size:' . $size . ' advancedId:' . $advancedId . ' from_api:' . $from_api);
 
 
 
-          if ($test_type == 'full_page') {
+        if(!empty($size)) // sanitize size
 
-            $location = (int)$location;
+          if($size != 'mobile' && $size != 'tablet' && $size != 'desktop')
 
-            $variation = (int)$variation;
+            $size = false;
+
+        
+
+        if(!$from_api && !$this->is_tracking_allowed( $eid ) )
+
+          $error = 'Tracking not allowed..';
+
+      
+
+        if(!get_post_status ( $eid ))
+
+          $error = 'Test ID ' . $eid . ' not found';
+
+      
+
+        if(!empty($variation) && is_string($variation) && strlen($variation) > 100)
+
+          $error = 'Variation Name too long. 100 characters max.';
+
+        
+
+        if(is_string($location) && strlen($location) > 100)
+
+          $error = 'Location Name too long. 100 characters max.';
 
 
 
-            // Validate that variation is actually part of this test
+        if(!empty($variation) && ((string)abst_sanitize((string)$variation) !== (string)$variation))
 
-            $default_page = isset($test_meta['bt_experiments_full_page_default_page'][0]) ? (int)$test_meta['bt_experiments_full_page_default_page'][0] : 0;
-
-            $page_variations = isset($test_meta['page_variations'][0]) ? maybe_unserialize($test_meta['page_variations'][0]) : [];
+          $error = 'Variation Name contains invalid characters.';
 
 
 
-            // Build list of valid variation IDs (default page + all variation page IDs)
+        if((string)abst_sanitize((string)$location) !== (string)$location)
 
-            $valid_variations = [$default_page];
+          $error = 'Location Name contains invalid characters. sanitized: ' . abst_sanitize($location);        
 
-            if (is_array($page_variations)) {
 
-              $valid_variations = array_merge($valid_variations, array_map('intval', array_keys($page_variations)));
+
+        //if no variation or variation is false
+
+        if($variation === "" || $variation === false)
+
+          $error = 'Variation name is required, blank or false given';
+
+
+
+        if(!$error)
+
+        {
+
+          $test_meta = get_post_meta($eid);
+
+          //get the experiment
+
+          if(get_post_type($eid) == 'bt_experiments' && isset($test_meta['test_type'][0]))
+
+          {
+
+            //get all post meta
+
+            $test_type = $test_meta['test_type'][0]; 
+
+  
+
+            if($test_type == 'full_page')
+
+            {
+
+              $location = (int)$location;
+
+              $variation = (int)$variation;
+
+              
+
+              // Validate that variation is actually part of this test
+
+              $default_page = isset($test_meta['bt_experiments_full_page_default_page'][0]) ? (int)$test_meta['bt_experiments_full_page_default_page'][0] : 0;
+
+              $page_variations = isset($test_meta['page_variations'][0]) ? maybe_unserialize($test_meta['page_variations'][0]) : [];
+
+              
+
+              // Build list of valid variation IDs (default page + all variation page IDs)
+
+              $valid_variations = [$default_page];
+
+              if(is_array($page_variations)) {
+
+                $valid_variations = array_merge($valid_variations, array_map('intval', array_keys($page_variations)));
+
+              }
+
+              
+
+              // Check if the submitted variation is valid
+
+              if(!in_array($variation, $valid_variations, true)) {
+
+                $error = 'Invalid variation ID ' . $variation . ' for full page test. Valid IDs: ' . implode(', ', $valid_variations);
+
+                abst_log('Full page test validation failed: ' . $error);
+
+              }
+
             }
 
 
 
-            // Check if the submitted variation is valid
+          } 
 
-            if (!in_array($variation, $valid_variations, true)) {
+          else
 
-              $error = 'Invalid variation ID ' . $variation . ' for full page test. Valid IDs: ' . implode(', ', $valid_variations);
+          {
 
-              abst_log('Full page test validation failed: ' . $error);
-            }
+            $error = 'Test not found';
+
           }
-        } else {
 
-          $error = 'Test not found';
         }
-      }
+
+        
 
 
 
+        if(!$error)
 
+        {
 
-      if (!$error) {
+          $obs = $test_meta['observations'][0] ?? null;
 
-        $obs = $test_meta['observations'][0] ?? null;
-
-
+        
 
         // Unserialize the observations data if it's a string
 
-        if (is_string($obs) && !empty($obs)) {
+        if(is_string($obs) && !empty($obs)) {
 
-          $obs = maybe_unserialize($obs);
+            $obs = maybe_unserialize($obs);
+
         }
 
+        
 
+        if(!isset($obs) || $obs == "" || !is_array($obs))
 
-        if (!isset($obs) || $obs == "" || !is_array($obs)) {
+        {
 
           $obs = array(
 
@@ -14458,11 +14711,14 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             )
 
           );
+
         }
 
 
 
-        if (!isset($obs[$variation]) || (isset($obs[$variation]) && !is_array($obs[$variation]))) {
+        if(!isset($obs[$variation]) || (isset($obs[$variation]) && !is_array($obs[$variation])))
+
+        {
 
           $obs[$variation] = array(
 
@@ -14493,13 +14749,16 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             ),
 
           );
+
         }
 
 
 
         // Back-fill device_size for legacy observations created before this structure existed
 
-        if (!isset($obs[$variation]['device_size']) || !is_array($obs[$variation]['device_size'])) {
+        if(!isset($obs[$variation]['device_size']) || !is_array($obs[$variation]['device_size']))
+
+        {
 
           $obs[$variation]['device_size'] = array(
 
@@ -14510,23 +14769,32 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             'desktop' => array('visit' => 0, 'conversion' => 0, 'goals' => array()),
 
           );
-        } else {
 
-          foreach (array('mobile', 'tablet', 'desktop') as $__s) {
+        }
 
-            if (!isset($obs[$variation]['device_size'][$__s]) || !is_array($obs[$variation]['device_size'][$__s]))
+        else
+
+        {
+
+          foreach(array('mobile','tablet','desktop') as $__s)
+
+          {
+
+            if(!isset($obs[$variation]['device_size'][$__s]) || !is_array($obs[$variation]['device_size'][$__s]))
 
               $obs[$variation]['device_size'][$__s] = array('visit' => 0, 'conversion' => 0, 'goals' => array());
 
-            if (!isset($obs[$variation]['device_size'][$__s]['goals']) || !is_array($obs[$variation]['device_size'][$__s]['goals']))
+            if(!isset($obs[$variation]['device_size'][$__s]['goals']) || !is_array($obs[$variation]['device_size'][$__s]['goals']))
 
               $obs[$variation]['device_size'][$__s]['goals'] = array();
+
           }
+
         }
 
 
 
-        if (isset($test_meta['conversion_use_order_value'][0]) && $test_meta['conversion_use_order_value'][0] != '1') // if not using order value
+        if( isset($test_meta['conversion_use_order_value'][0]) && $test_meta['conversion_use_order_value'][0] != '1' ) // if not using order value
 
         {
 
@@ -14534,24 +14802,27 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         }
 
+  
 
+        if($type == 'conversion')
 
-        if ($type == 'conversion') {
+        {
 
           abst_log('OBS: add conversion variation ' . $variation . ' += ' . floatval($abConversionValue));
 
           $obs[$variation][$type] = floatval($obs[$variation][$type]) + floatval($abConversionValue);
 
-          if ($size && isset($obs[$variation]['device_size'][$size])) {
+          if($size && isset($obs[$variation]['device_size'][$size])) {
 
             $obs[$variation]['device_size'][$size]['conversion'] = floatval($obs[$variation]['device_size'][$size]['conversion']) + floatval($abConversionValue);
+
           }
 
 
 
           // Welford's online algorithm for running variance (used by revenue analyzer)
 
-          if (isset($test_meta['conversion_use_order_value'][0]) && $test_meta['conversion_use_order_value'][0] == '1') {
+          if( isset($test_meta['conversion_use_order_value'][0]) && $test_meta['conversion_use_order_value'][0] == '1' ) {
 
             $val = floatval($abConversionValue);
 
@@ -14583,9 +14854,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             // Mirror Welford per device size so the revenue analyzer can run on slices
 
-            if ($size && isset($obs[$variation]['device_size'][$size])) {
+            if($size && isset($obs[$variation]['device_size'][$size])) {
 
-              $ds = &$obs[$variation]['device_size'][$size];
+              $ds =& $obs[$variation]['device_size'][$size];
 
               $ds_n = isset($ds['_rv_count']) ? $ds['_rv_count'] + 1 : 1;
 
@@ -14606,177 +14877,236 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
               $ds['_rv_m2'] = $ds_old_m2 + $ds_delta * $ds_delta2;
 
               unset($ds);
+
             }
+
           }
-        } else if ($type == 'visit') {
+
+        }
+
+        else if ($type == 'visit')
+
+        {
 
           abst_log('OBS: add visit variation ' . $variation);
 
           ++$obs[$variation][$type];
 
-          if ($size && isset($obs[$variation]['device_size'][$size])) {
+          if($size && isset($obs[$variation]['device_size'][$size])) {
 
             ++$obs[$variation]['device_size'][$size]['visit'];
+
           }
-        } else // goal
+
+        }
+
+        else // goal
 
         {
 
-          if ((string)abst_sanitize($type) !== (string)$type) {
+          if((string)abst_sanitize($type) !== (string)$type)
+
+          {
 
             $error = 'Goal Name contains invalid characters.';
 
-            if ($from_api) {
+            if( $from_api ) {
 
               return new WP_REST_Response([
 
                 'error'  => $error
 
               ], 200);
-            } else if (defined('ABST_SSR_MODE') && ABST_SSR_MODE) {
+
+            } else if( defined('ABST_SSR_MODE') && ABST_SSR_MODE ) {
 
               // SSR mode - don't terminate execution, just return error
 
               return false;
+
             } else {
 
-              abst_log('Log  ERROR: ' . $error);
+              abst_log( 'Log  ERROR: ' . $error );
 
-              echo (json_encode(array('error' => $error)));
+              echo( json_encode(array('error'=>$error)) );
 
               die();
-            }
-          } else {
 
-            if (!isset($obs[$variation]['goals'][$type])) {
+            }
+
+          }
+
+          else
+
+          {
+
+            if(!isset($obs[$variation]['goals'][$type]))
+
+            {
 
               $obs[$variation]['goals'][$type] = 0;
+
             }
 
             abst_log("OBS: add goal variation " . $variation . " goal '" . $type . "'++");
 
             ++$obs[$variation]['goals'][$type];
 
-            if ($size && isset($obs[$variation]['device_size'][$size])) {
+            if($size && isset($obs[$variation]['device_size'][$size])) {
 
-              if (!isset($obs[$variation]['device_size'][$size]['goals'][$type]))
+              if(!isset($obs[$variation]['device_size'][$size]['goals'][$type]))
 
                 $obs[$variation]['device_size'][$size]['goals'][$type] = 0;
 
               ++$obs[$variation]['device_size'][$size]['goals'][$type];
+
             }
+
           }
+
         }
+
       }
 
 
 
-      if ($error) {
+        if($error)
 
-        abst_log('Log event ERROR: ' . $error);
+        {
 
-        if ($from_api) {
+          abst_log( 'Log event ERROR: ' . $error );
 
-          return new WP_REST_Response([
+          if( $from_api ) {
 
-            'error'  => $error
+            return new WP_REST_Response([
 
-          ], 200);
-        } else if (defined('ABST_SSR_MODE') && ABST_SSR_MODE) {
+              'error'  => $error
 
-          // SSR mode - don't terminate execution, just return error
+            ], 200);
 
-          return false;
+          } else if( defined('ABST_SSR_MODE') && ABST_SSR_MODE ) {
+
+            // SSR mode - don't terminate execution, just return error
+
+            return false;
+
+          } else {
+
+            echo( json_encode(array('error'=>$error)) );
+
+            die();
+
+          }
+
+        }
+
+
+
+        //update conversion rate if we have visits (conversions can be 0 for 0% rate)
+
+        if(isset($obs[$variation]['visit']) && isset($obs[$variation]['conversion']) &&
+
+           $obs[$variation]['visit'] > 0 &&
+
+           is_numeric($obs[$variation]['visit']) && is_numeric($obs[$variation]['conversion']))
+
+        {
+
+          $obs[$variation]['rate'] = round( ( ($obs[$variation]['conversion'] / $obs[$variation]['visit']) * 100), 2); // round it to 2 decimal places
+
+        }
+
+
+
+        // Mirror rate per device_size so per-size analyzers get the same shape
+
+        if(isset($obs[$variation]['device_size']) && is_array($obs[$variation]['device_size']))
+
+        {
+
+          foreach($obs[$variation]['device_size'] as $__sk => &$__sb)
+
+          {
+
+            if(is_array($__sb) && isset($__sb['visit']) && isset($__sb['conversion']) &&
+
+               $__sb['visit'] > 0 && is_numeric($__sb['visit']) && is_numeric($__sb['conversion']))
+
+            {
+
+              $__sb['rate'] = round((($__sb['conversion'] / $__sb['visit']) * 100), 2);
+
+            }
+
+            else if(is_array($__sb))
+
+            {
+
+              $__sb['rate'] = -1;
+
+            }
+
+          }
+
+          unset($__sb);
+
+        }
+
+
+
+        if(($type == 'visit' || $type == 'conversion') && !empty($location))
+
+        {
+
+          if(isset($obs[$variation]['location'][$type]) && is_array($obs[$variation]['location'][$type]))
+
+          {
+
+            if (!in_array($location, $obs[$variation]['location'][$type]))
+
+            {
+
+              abst_log('OBS: add location ' . $location . ' for variation ' . $variation . ' type ' . $type);
+
+              $obs[$variation]['location'][$type][] = $location;
+
+            }
+
+          }
+
+        }
+
+
+
+        do_action('abst_log_experiment_activity', $eid, $variation, $type, $location); // do ya thing vibe coders
+
+        
+
+        update_post_meta($eid,'observations',$obs);
+
+  
+
+        if( $from_api ) {
+
+          return new WP_REST_Response(['success' => true], 200);        
+
+        } else if( defined('ABST_SSR_MODE') && ABST_SSR_MODE ) {
+
+          // SSR mode - don't terminate execution, just return success
+
+          return true;
+
         } else {
 
-          echo (json_encode(array('error' => $error)));
+          echo( json_encode(['success' => true]) );
 
           die();
-        }
-      }
 
-
-
-      //update conversion rate if we have visits (conversions can be 0 for 0% rate)
-
-      if (
-        isset($obs[$variation]['visit']) && isset($obs[$variation]['conversion']) &&
-
-        $obs[$variation]['visit'] > 0 &&
-
-        is_numeric($obs[$variation]['visit']) && is_numeric($obs[$variation]['conversion'])
-      ) {
-
-        $obs[$variation]['rate'] = round((($obs[$variation]['conversion'] / $obs[$variation]['visit']) * 100), 2); // round it to 2 decimal places
-
-      }
-
-
-
-      // Mirror rate per device_size so per-size analyzers get the same shape
-
-      if (isset($obs[$variation]['device_size']) && is_array($obs[$variation]['device_size'])) {
-
-        foreach ($obs[$variation]['device_size'] as $__sk => &$__sb) {
-
-          if (
-            is_array($__sb) && isset($__sb['visit']) && isset($__sb['conversion']) &&
-
-            $__sb['visit'] > 0 && is_numeric($__sb['visit']) && is_numeric($__sb['conversion'])
-          ) {
-
-            $__sb['rate'] = round((($__sb['conversion'] / $__sb['visit']) * 100), 2);
-          } else if (is_array($__sb)) {
-
-            $__sb['rate'] = -1;
-          }
         }
 
-        unset($__sb);
       }
 
-
-
-      if (($type == 'visit' || $type == 'conversion') && !empty($location)) {
-
-        if (isset($obs[$variation]['location'][$type]) && is_array($obs[$variation]['location'][$type])) {
-
-          if (!in_array($location, $obs[$variation]['location'][$type])) {
-
-            abst_log('OBS: add location ' . $location . ' for variation ' . $variation . ' type ' . $type);
-
-            $obs[$variation]['location'][$type][] = $location;
-          }
-        }
-      }
-
-
-
-      do_action('abst_log_experiment_activity', $eid, $variation, $type, $location); // do ya thing vibe coders
-
-
-
-      update_post_meta($eid, 'observations', $obs);
-
-
-
-      if ($from_api) {
-
-        return new WP_REST_Response(['success' => true], 200);
-      } else if (defined('ABST_SSR_MODE') && ABST_SSR_MODE) {
-
-        // SSR mode - don't terminate execution, just return success
-
-        return true;
-      } else {
-
-        echo (json_encode(['success' => true]));
-
-        die();
-      }
-    }
-
-
+  
 
 
 
@@ -14799,8 +15129,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function detect_invalid_fullpage_variations($test_id)
-    {
+    function detect_invalid_fullpage_variations($test_id) {
 
       $result = [
 
@@ -14814,20 +15143,21 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       ];
 
-
+      
 
       $test_type = get_post_meta($test_id, 'test_type', true);
 
       if ($test_type !== 'full_page') {
 
         return $result;
+
       }
 
-
+      
 
       $observations = get_post_meta($test_id, 'observations', true);
 
-
+      
 
       // Handle both serialized and JSON formats
 
@@ -14838,23 +15168,26 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (!is_array($decoded)) {
 
           $decoded = json_decode($observations, true);
+
         }
 
         $observations = $decoded;
+
       }
 
-
+      
 
       if (empty($observations) || !is_array($observations)) {
 
         return $result;
+
       }
 
-
+      
 
       $result['observations'] = $observations;
 
-
+      
 
       // Get valid variation IDs
 
@@ -14869,18 +15202,21 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (!is_array($decoded)) {
 
           $decoded = json_decode($page_variations, true);
+
         }
 
         $page_variations = $decoded;
+
       }
 
-
+      
 
       // Build valid variations list
 
       if ($default_page > 0) {
 
         $result['valid_variations'][] = $default_page;
+
       }
 
       if (is_array($page_variations) && !empty($page_variations)) {
@@ -14892,20 +15228,24 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           if ($int_id > 0) {
 
             $result['valid_variations'][] = $int_id;
+
           }
+
         }
+
       }
 
-
+      
 
       // Skip if no valid variations found (can't determine what's invalid)
 
       if (empty($result['valid_variations'])) {
 
         return $result;
+
       }
 
-
+      
 
       // Find invalid keys
 
@@ -14916,6 +15256,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if ($var_key === 'bt_bb_ab_stats') {
 
           continue;
+
         }
 
         $int_key = (int) $var_key;
@@ -14923,17 +15264,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if ($int_key <= 0 || !in_array($int_key, $result['valid_variations'], true)) {
 
           $result['invalid_keys'][] = $var_key;
+
         }
+
       }
 
-
+      
 
       $result['has_invalid'] = !empty($result['invalid_keys']);
 
       return $result;
+
     }
 
-
+    
 
     /**
 
@@ -14947,12 +15291,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function cleanup_single_fullpage_test($test_id)
-    {
+    function cleanup_single_fullpage_test($test_id) {
 
       $detection = $this->detect_invalid_fullpage_variations($test_id);
 
-
+      
 
       if (!$detection['has_invalid']) {
 
@@ -14965,9 +15308,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           'message' => 'No invalid variation keys found.'
 
         ];
+
       }
 
-
+      
 
       // Build cleaned observations
 
@@ -14978,10 +15322,12 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (!in_array($var_key, $detection['invalid_keys'], true)) {
 
           $cleaned_obs[$var_key] = $var_data;
+
         }
+
       }
 
-
+      
 
       // Save cleaned observations
 
@@ -14989,7 +15335,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       abst_log("Cleanup: Removed invalid variation keys [" . implode(', ', $detection['invalid_keys']) . "] from test {$test_id}");
 
-
+      
 
       return [
 
@@ -15000,232 +15346,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'message' => 'Removed ' . count($detection['invalid_keys']) . ' invalid variation keys.'
 
       ];
+
     }
 
 
 
-    /**
-
-     * Clean up invalid variation keys from full page test observations
-
-     * Triggered via ?abst_cleanup_observations=1 (admin only)
-
-     * Add &confirm=1 to actually delete, otherwise dry-run preview
-
-     */
-
-    function cleanup_fullpage_observations()
-    {
-
-      if (!isset($_GET['abst_cleanup_observations']) || !current_user_can('manage_options')) {
-
-        return;
-      }
-
-
-
-      $dry_run = !isset($_GET['confirm']) || $_GET['confirm'] !== '1';
-
-      $cleaned = 0;
-
-      $tests_checked = 0;
-
-      $output = [];
-
-
-
-      // Get all full page tests
-
-      $tests = get_posts([
-
-        'post_type' => 'bt_experiments',
-
-        'posts_per_page' => -1,
-
-        'post_status' => 'any',
-
-        'meta_query' => [
-
-          [
-
-            'key' => 'test_type',
-
-            'value' => 'full_page',
-
-          ]
-
-        ]
-
-      ]);
-
-
-
-      foreach ($tests as $test) {
-
-        $tests_checked++;
-
-        $observations = get_post_meta($test->ID, 'observations', true);
-
-
-
-        // Handle both serialized and JSON formats
-
-        if (is_string($observations) && !empty($observations)) {
-
-          $decoded = maybe_unserialize($observations);
-
-          if (!is_array($decoded)) {
-
-            $decoded = json_decode($observations, true);
-          }
-
-          $observations = $decoded;
-        }
-
-
-
-        if (empty($observations) || !is_array($observations)) {
-
-          continue;
-        }
-
-
-
-        // Get valid variation IDs
-
-        $default_page = (int) get_post_meta($test->ID, 'bt_experiments_full_page_default_page', true);
-
-        $page_variations = get_post_meta($test->ID, 'page_variations', true);
-
-        if (is_string($page_variations) && !empty($page_variations)) {
-
-          $decoded = maybe_unserialize($page_variations);
-
-          if (!is_array($decoded)) {
-
-            $decoded = json_decode($page_variations, true);
-          }
-
-          $page_variations = $decoded;
-        }
-
-
-
-        // Safety: Skip if we can't determine valid variations
-
-        if ($default_page <= 0 && empty($page_variations)) {
-
-          $output[] = "⚠️ Test {$test->ID} ({$test->post_title}): Skipped - no valid default page or variations configured";
-
-          continue;
-        }
-
-
-
-        $valid_variations = [];
-
-        if ($default_page > 0) {
-
-          $valid_variations[] = $default_page;
-        }
-
-        if (is_array($page_variations) && !empty($page_variations)) {
-
-          foreach (array_keys($page_variations) as $var_id) {
-
-            $int_id = (int) $var_id;
-
-            if ($int_id > 0) {
-
-              $valid_variations[] = $int_id;
-            }
-          }
-        }
-
-
-
-        // Safety: Skip if no valid variations found
-
-        if (empty($valid_variations)) {
-
-          $output[] = "⚠️ Test {$test->ID} ({$test->post_title}): Skipped - could not determine valid variation IDs";
-
-          continue;
-        }
-
-
-
-        // Find invalid keys
-
-        $cleaned_obs = [];
-
-        $invalid_keys = [];
-
-        foreach ($observations as $var_key => $var_data) {
-
-          $int_key = (int) $var_key;
-
-          if ($int_key > 0 && in_array($int_key, $valid_variations, true)) {
-
-            $cleaned_obs[$var_key] = $var_data;
-          } else {
-
-            $invalid_keys[] = $var_key;
-
-            $cleaned++;
-          }
-        }
-
-
-
-        if (!empty($invalid_keys)) {
-
-          $output[] = "🧹 Test {$test->ID} ({$test->post_title}): " .
-
-            "Valid IDs: [" . implode(', ', $valid_variations) . "] | " .
-
-            "Removing: [" . implode(', ', $invalid_keys) . "]";
-
-
-
-          if (!$dry_run) {
-
-            update_post_meta($test->ID, 'observations', $cleaned_obs);
-
-            abst_log("Cleanup: Removed invalid variation keys [" . implode(', ', $invalid_keys) . "] from test {$test->ID}");
-          }
-        }
-      }
-
-
-
-      $mode = $dry_run ? "DRY RUN (preview only)" : "CONFIRMED";
-
-      $summary = "<h2>Full Page Test Observations Cleanup - $mode</h2>";
-
-      $summary .= "<p>Checked $tests_checked full page tests. Found $cleaned invalid variation keys.</p>";
-
-
-
-      if ($dry_run && $cleaned > 0) {
-
-        $summary .= "<p><strong><a href='?abst_cleanup_observations=1&confirm=1'>Click here to confirm and delete invalid keys</a></strong></p>";
-      }
-
-
-
-      if (!empty($output)) {
-
-        $summary .= "<pre>" . implode("\n", $output) . "</pre>";
-      } else {
-
-        $summary .= "<p>✅ No invalid variation keys found.</p>";
-      }
-
-
-
-      wp_die(wp_kses_post($summary));
-    }
 
 
 
@@ -15245,12 +15370,12 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function register_abilities()
-    {
+    function register_abilities() {
 
       if (!function_exists('wp_register_ability')) {
 
         return;
+
       }
 
 
@@ -15271,61 +15396,33 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $active_types = ['selector', 'link', 'url', 'page', 'time', 'scroll', 'text', 'block', 'javascript'];
 
-      if (class_exists('FluentForm\\Framework\\Foundation\\Application')) {
-        $active_types[] = 'form-fluentform';
-      }
+      if (class_exists('FluentForm\\Framework\\Foundation\\Application'))       { $active_types[] = 'form-fluentform'; }
 
-      if (defined('WPCF7_VERSION')) {
-        $active_types[] = 'form-cf7';
-      }
+      if (defined('WPCF7_VERSION'))                                             { $active_types[] = 'form-cf7'; }
 
-      if (class_exists('WPForms')) {
-        $active_types[] = 'form-wpforms';
-      }
+      if (class_exists('WPForms'))                                              { $active_types[] = 'form-wpforms'; }
 
-      if (class_exists('GFForms')) {
-        $active_types[] = 'form-gravity';
-      }
+      if (class_exists('GFForms'))                                              { $active_types[] = 'form-gravity'; }
 
-      if (class_exists('Ninja_Forms')) {
-        $active_types[] = 'form-ninjaforms';
-      }
+      if (class_exists('Ninja_Forms'))                                          { $active_types[] = 'form-ninjaforms'; }
 
-      if (class_exists('FrmForm')) {
-        $active_types[] = 'form-formidable';
-      }
+      if (class_exists('FrmForm'))                                              { $active_types[] = 'form-formidable'; }
 
-      if (class_exists('Forminator')) {
-        $active_types[] = 'form-forminator';
-      }
+      if (class_exists('Forminator'))                                           { $active_types[] = 'form-forminator'; }
 
-      if (defined('ELEMENTOR_PRO_VERSION')) {
-        $active_types[] = 'form-elementor';
-      }
+      if (defined('ELEMENTOR_PRO_VERSION'))                                     { $active_types[] = 'form-elementor'; }
 
-      if (class_exists('Jet_Form_Builder')) {
-        $active_types[] = 'form-jetformbuilder';
-      }
+      if (class_exists('Jet_Form_Builder'))                                     { $active_types[] = 'form-jetformbuilder'; }
 
-      if (class_exists('SureForms')) {
-        $active_types[] = 'form-sureforms';
-      }
+      if (class_exists('SureForms'))                                            { $active_types[] = 'form-sureforms'; }
 
-      if (defined('BRICKS_VERSION')) {
-        $active_types[] = 'form-bricks';
-      }
+      if (defined('BRICKS_VERSION'))                                            { $active_types[] = 'form-bricks'; }
 
-      if (class_exists('Breakdance\\Forms\\Actions\\Actions')) {
-        $active_types[] = 'form-breakdance';
-      }
+      if (class_exists('Breakdance\\Forms\\Actions\\Actions'))                  { $active_types[] = 'form-breakdance'; }
 
-      if (class_exists('FLBuilder')) {
-        $active_types[] = 'form-beaver';
-      }
+      if (class_exists('FLBuilder'))                                            { $active_types[] = 'form-beaver'; }
 
-      if (class_exists('MailPoet\\Config\\Initializer')) {
-        $active_types[] = 'form-mailpoet';
-      }
+      if (class_exists('MailPoet\\Config\\Initializer'))                        { $active_types[] = 'form-mailpoet'; }
 
       $active_types = array_values(array_intersect($active_types, $supported));
 
@@ -15345,13 +15442,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $meta = ['show_in_rest' => true, 'mcp' => ['public' => true]];
 
-      $permission = function () {
-        return current_user_can('edit_posts');
-      };
+      $permission = function() { return current_user_can('edit_posts'); };
 
-      $permission_write = function () {
-        return current_user_can('edit_posts');
-      };
+      $permission_write = function() { return current_user_can('edit_posts'); };
 
 
 
@@ -15365,15 +15458,15 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'description' => 'Create a new A/B test or lightweight test idea. IMPORTANT: always ask the user what their conversion goal is before creating a runnable test. ' .
 
-          'If status is "idea", only test_title and abst_idea_hypothesis are required. Ideas are lightweight placeholders that can be converted into draft tests later. ' .
+                         'If status is "idea", only test_title and abst_idea_hypothesis are required. Ideas are lightweight placeholders that can be converted into draft tests later. ' .
 
-          'Supports magic (visual element), ab_test (on-page variations), css_test, and full_page (split URL) types. ' .
+                         'Supports magic (visual element), ab_test (on-page variations), css_test, and full_page (split URL) types. ' .
 
-          'Conversion type options are generated from integrations active on this site — do not assume any ecommerce or form plugin is installed. ' .
+                         'Conversion type options are generated from integrations active on this site — do not assume any ecommerce or form plugin is installed. ' .
 
-          'The response includes preview_urls for magic, css_test, and full_page tests — visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (variations are defined in page content). ' .
+                         'The response includes preview_urls for magic, css_test, and full_page tests — visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (variations are defined in page content). ' .
 
-          'For magic tests: before choosing selectors, browse the target page with ?abhash=1 appended to the URL (use &abhash=1 if the URL already has query params) — a table will appear at the bottom of the page listing every visible text element and its unique CSS selector; use those selector values in magic_definition.',
+                         'For magic tests: before choosing selectors, browse the target page with ?abhash=1 appended to the URL (use &abhash=1 if the URL already has query params) — a table will appear at the bottom of the page listing every visible text element and its unique CSS selector; use those selector values in magic_definition.',
 
         'input_schema' => [
 
@@ -15411,13 +15504,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               'description' => 'For magic tests: array of element definitions. Each item must have selector, type, variations (plain strings), and scope. ' .
 
-                'scope examples: {"page_id": 42}, {"url": "pricing"}, {"page_id": "*"} or {"url": "*"} for all pages. ' .
+                               'scope examples: {"page_id": 42}, {"url": "pricing"}, {"page_id": "*"} or {"url": "*"} for all pages. ' .
 
-                'variations must be a plain array of strings — NOT objects. ' .
+                               'variations must be a plain array of strings — NOT objects. ' .
 
-                'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array — each visitor sees the same variation slot across all elements, keeping them in sync. ' .
+                               'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array — each visitor sees the same variation slot across all elements, keeping them in sync. ' .
 
-                'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"variations":["Original headline","Variation B headline","Variation C headline"]},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"variations":["Original subtitle","Variation B subtitle","Variation C subtitle"]}]',
+                               'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"variations":["Original headline","Variation B headline","Variation C headline"]},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"variations":["Original subtitle","Variation B subtitle","Variation C subtitle"]}]',
 
               'items' => [
 
@@ -15495,13 +15588,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               'description' => 'Secondary conversion goals to track alongside the primary goal. ' .
 
-                'When omitted, no subgoals are created. ' .
+                               'When omitted, no subgoals are created. ' .
 
-                'Pass an empty array [] to explicitly create the test with no subgoals. ' .
+                               'Pass an empty array [] to explicitly create the test with no subgoals. ' .
 
-                'Each item needs a "type" (same values as conversion_type) and a "value". ' .
+                               'Each item needs a "type" (same values as conversion_type) and a "value". ' .
 
-                'Examples: {"type":"scroll","value":"50"}, {"type":"url","value":"thank-you"}, {"type":"page","value":"123"}',
+                               'Examples: {"type":"scroll","value":"50"}, {"type":"url","value":"thank-you"}, {"type":"page","value":"123"}',
 
               'items' => [
 
@@ -15621,9 +15714,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'description' => 'Get full results for a specific A/B test including visits, conversions, conversion rate, ' .
 
-          'likelihood of winning, uplift vs control, time remaining, winner confidence, ' .
+                         'likelihood of winning, uplift vs control, time remaining, winner confidence, ' .
 
-          'variation preview URLs, and a shareable public report URL',
+                         'variation preview URLs, and a shareable public report URL',
 
         'input_schema' => [
 
@@ -15773,9 +15866,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'description' => 'Update conversion goals and other settings for an existing test. ' .
 
-          'Use this when a test was created without proper conversion settings or needs to be reconfigured. ' .
+                         'Use this when a test was created without proper conversion settings or needs to be reconfigured. ' .
 
-          'Conversion type options reflect integrations active on this site.',
+                         'Conversion type options reflect integrations active on this site.',
 
         'input_schema' => [
 
@@ -15841,9 +15934,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               'description' => 'Replace all subgoals for this test. Pass an empty array [] to remove all subgoals. ' .
 
-                'Each item needs a "type" and "value". ' .
+                               'Each item needs a "type" and "value". ' .
 
-                'Examples: {"type":"scroll","value":"50"}, {"type":"url","value":"thank-you"}',
+                               'Examples: {"type":"scroll","value":"50"}, {"type":"url","value":"thank-you"}',
 
               'items' => [
 
@@ -15900,6 +15993,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'meta'                => $meta,
 
       ]);
+
     }
 
 
@@ -15928,8 +16022,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function build_preview_urls($test_id)
-    {
+    private function build_preview_urls($test_id) {
 
       $test_type = get_post_meta($test_id, 'test_type', true);
 
@@ -15976,13 +16069,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
               $base = $candidate;
 
               break;
+
             }
+
           }
 
           $base = $base ? trailingslashit($base) : null;
+
         } elseif (!empty($scope['url']) && $scope['url'] !== '*') {
 
           $base = trailingslashit(home_url('/' . ltrim($scope['url'], '/')));
+
         } else {
 
           $base = home_url('/'); // wildcard scope: use homepage as preview base
@@ -16002,7 +16099,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $k = 'magic-' . $i;
 
           $preview_urls[$k] = add_query_arg(['abtv' => $k, 'abtid' => $test_id], $base);
+
         }
+
+
+
       } elseif ($test_type === 'css_test') {
 
         // CSS variations: test-css-{id}-1, test-css-{id}-2, ...
@@ -16018,7 +16119,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $k = 'test-css-' . $test_id . '-' . $i;
 
           $preview_urls[$k] = add_query_arg(['abtv' => $k, 'abtid' => $test_id], $base);
+
         }
+
+
+
       } elseif ($test_type === 'full_page') {
 
         // Control page — just visit it directly (no forced-variation param needed)
@@ -16030,6 +16135,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $url = is_numeric($default) ? get_permalink(intval($default)) : home_url('/' . ltrim($default, '/'));
 
           if ($url) $preview_urls['control'] = $url;
+
         }
 
 
@@ -16045,8 +16151,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             $url = is_numeric($page_id) ? get_permalink(intval($page_id)) : ($page_url ?: null);
 
             if ($url) $preview_urls[(string) $page_id] = $url;
+
           }
+
         }
+
       }
 
       // ab_test: variation keys come from [bt-variation="..."] shortcode attributes in page
@@ -16056,18 +16165,19 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
       return $preview_urls;
+
     }
 
 
 
-    public function clear_test_variation_weights($test_id)
-    {
+    public function clear_test_variation_weights($test_id) {
 
       $variation_meta = get_post_meta($test_id, 'variation_meta', true);
 
       if (empty($variation_meta) || !is_array($variation_meta)) {
 
         return;
+
       }
 
 
@@ -16077,18 +16187,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (isset($variation_meta[$key]['weight'])) {
 
           unset($variation_meta[$key]['weight']);
+
         }
+
       }
 
 
 
       update_post_meta($test_id, 'variation_meta', $variation_meta);
+
     }
 
 
 
-    public function get_test_details_payload($test_id)
-    {
+    public function get_test_details_payload($test_id) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -16099,6 +16211,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!$test || $test->post_type !== 'bt_experiments') {
 
         return null;
+
       }
 
 
@@ -16114,6 +16227,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!is_array($allowed_roles)) {
 
         $allowed_roles = [];
+
       }
 
 
@@ -16129,6 +16243,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!is_array($page_variations)) {
 
         $page_variations = [];
+
       }
 
 
@@ -16138,6 +16253,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!is_array($variation_meta)) {
 
         $variation_meta = [];
+
       }
 
 
@@ -16161,6 +16277,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           'weight' => isset($meta['weight']) ? $meta['weight'] : null,
 
         ];
+
       }
 
 
@@ -16274,6 +16391,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
       return $details;
+
     }
 
 
@@ -16288,39 +16406,41 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function ability_list_tests($input)
-    {
+    function ability_list_tests($input) {
 
       $request = new WP_REST_Request('GET', '/bt-bb-ab/v1/list-tests');
 
       if (!empty($input['status'])) {
 
         $request->set_param('status', $input['status']);
+
       }
 
       if (!empty($input['test_type'])) {
 
         $request->set_param('test_type', $input['test_type']);
+
       }
 
       $response = $this->rest_list_tests($request);
 
-
+      
 
       // Extract data from WP_REST_Response or return WP_Error as-is
 
       if (is_wp_error($response)) {
 
         return $response;
+
       }
 
       return $response->get_data();
+
     }
 
 
 
-    function ability_create_test($input)
-    {
+    function ability_create_test($input) {
 
       $request = new WP_REST_Request('POST', '/bt-bb-ab/v1/create-test');
 
@@ -16330,20 +16450,21 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $response = $this->rest_create_test($request);
 
-
+      
 
       if (is_wp_error($response)) {
 
         return $response;
+
       }
 
       return $response->get_data();
+
     }
 
 
 
-    function ability_get_test_results($input)
-    {
+    function ability_get_test_results($input) {
 
       $request = new WP_REST_Request('GET', '/bt-bb-ab/v1/test-results/' . ($input['test_id'] ?? 0));
 
@@ -16351,20 +16472,21 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $response = $this->rest_get_test_results($request);
 
-
+      
 
       if (is_wp_error($response)) {
 
         return $response;
+
       }
 
       return $response->get_data();
+
     }
 
 
 
-    function ability_get_test_details($input)
-    {
+    function ability_get_test_details($input) {
 
       $request = new WP_REST_Request('GET', '/bt-bb-ab/v1/test-details/' . ($input['test_id'] ?? 0));
 
@@ -16377,15 +16499,16 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (is_wp_error($response)) {
 
         return $response;
+
       }
 
       return $response->get_data();
+
     }
 
 
 
-    function ability_update_test_status($input)
-    {
+    function ability_update_test_status($input) {
 
       $request = new WP_REST_Request('POST', '/bt-bb-ab/v1/update-test-status');
 
@@ -16400,15 +16523,16 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (is_wp_error($response)) {
 
         return $response;
+
       }
 
       return $response->get_data();
+
     }
 
 
 
-    function ability_update_test_settings($input)
-    {
+    function ability_update_test_settings($input) {
 
       $request = new WP_REST_Request('POST', '/bt-bb-ab/v1/update-test-settings');
 
@@ -16423,6 +16547,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (is_wp_error($response)) {
 
         return $response;
+
       }
 
       $data = $response->get_data();
@@ -16432,9 +16557,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!empty($data['test_id'])) {
 
         $data['preview_urls'] = $this->build_preview_urls($data['test_id']);
+
       }
 
       return $data;
+
     }
 
 
@@ -16445,8 +16572,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function register_rest_routes()
-    {
+    function register_rest_routes() {
 
       // Generic endpoint for all test types
 
@@ -16456,9 +16582,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'callback' => [$this, 'rest_create_test'],
 
-        'permission_callback' => function () {
+        'permission_callback' => function() {
 
           return current_user_can('edit_posts');
+
         }
 
       ]);
@@ -16473,9 +16600,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'callback' => [$this, 'rest_list_tests'],
 
-        'permission_callback' => function () {
+        'permission_callback' => function() {
 
           return current_user_can('edit_posts');
+
         }
 
       ]);
@@ -16490,18 +16618,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'callback' => [$this, 'rest_get_test_results'],
 
-        'permission_callback' => function () {
+        'permission_callback' => function() {
 
           return current_user_can('edit_posts');
+
         },
 
         'args' => [
 
           'id' => [
 
-            'validate_callback' => function ($param) {
+            'validate_callback' => function($param) {
 
               return is_numeric($param);
+
             }
 
           ]
@@ -16518,18 +16648,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'callback' => [$this, 'rest_get_test_details'],
 
-        'permission_callback' => function () {
+        'permission_callback' => function() {
 
           return current_user_can('edit_posts');
+
         },
 
         'args' => [
 
           'id' => [
 
-            'validate_callback' => function ($param) {
+            'validate_callback' => function($param) {
 
               return is_numeric($param);
+
             }
 
           ]
@@ -16548,9 +16680,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'callback' => [$this, 'rest_update_test_status'],
 
-        'permission_callback' => function () {
+        'permission_callback' => function() {
 
           return current_user_can('edit_posts');
+
         }
 
       ]);
@@ -16565,12 +16698,16 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'callback' => [$this, 'rest_update_test_settings'],
 
-        'permission_callback' => function () {
+        'permission_callback' => function() {
 
           return current_user_can('edit_posts');
+
         }
 
       ]);
+
+
+
     }
 
 
@@ -16591,18 +16728,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function rest_update_test_settings($request)
-    {
+    function rest_update_test_settings($request) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-rest-update-settings.php';
 
       return abst_rest_update_test_settings($request);
+
     }
 
 
 
-    function rest_get_test_details($request)
-    {
+    function rest_get_test_details($request) {
 
       $test_id = intval($request->get_param('id'));
 
@@ -16613,6 +16749,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!$post || $post->post_type !== 'bt_experiments') {
 
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
+
       }
 
 
@@ -16620,6 +16757,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!(defined('WP_CLI') && WP_CLI) && !current_user_can('edit_post', $test_id)) {
 
         return new WP_Error('forbidden', 'You do not have permission to view this test.', ['status' => 403]);
+
       }
 
 
@@ -16633,6 +16771,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'test' => $details,
 
       ], 200);
+
     }
 
 
@@ -16653,43 +16792,45 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function rest_update_test_status($request)
-    {
+    function rest_update_test_status($request) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
       $params = $request->get_json_params();
 
-
+      
 
       if (empty($params['test_id'])) {
 
         return new WP_Error('missing_test_id', 'Test ID is required', ['status' => 400]);
+
       }
 
-
+      
 
       if (empty($params['status'])) {
 
         return new WP_Error('missing_status', 'Status is required', ['status' => 400]);
+
       }
 
-
+      
 
       $test_id = intval($params['test_id']);
 
       $status = abst_normalize_test_status($params['status']);
 
-
+      
 
       // Validate status
 
       if (!in_array($status, abst_get_supported_test_statuses(), true)) {
 
         return new WP_Error('invalid_status', 'Status must be one of: ' . implode(', ', abst_get_supported_test_statuses()), ['status' => 400]);
+
       }
 
-
+      
 
       // Check if test exists
 
@@ -16698,6 +16839,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!$test || $test->post_type !== 'bt_experiments') {
 
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
+
       }
 
 
@@ -16705,9 +16847,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!(defined('WP_CLI') && WP_CLI) && !current_user_can('edit_post', $test_id)) {
 
         return new WP_Error('forbidden', 'You do not have permission to update this test.', ['status' => 403]);
+
       }
 
-
+      
 
       // Update the post status
 
@@ -16719,20 +16862,21 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       ]);
 
-
+      
 
       if (is_wp_error($result)) {
 
         return new WP_Error('update_failed', 'Failed to update test status: ' . $result->get_error_message(), ['status' => 500]);
+
       }
 
-
+      
 
       // Refresh conversion pages cache if publishing or unpublishing
 
       $this->refresh_conversion_pages();
 
-
+      
 
       return new WP_REST_Response([
 
@@ -16745,6 +16889,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'message' => 'Test status updated to ' . $status
 
       ], 200);
+
     }
 
 
@@ -16765,8 +16910,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function rest_list_tests($request)
-    {
+    function rest_list_tests($request) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -16797,9 +16941,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (!in_array($requested_status, abst_get_supported_test_statuses(), true)) {
 
           return new WP_Error('invalid_status', 'Status must be one of: any, ' . implode(', ', abst_get_supported_test_statuses()), ['status' => 400]);
+
         }
 
         $args['post_status'] = $requested_status;
+
       }
 
 
@@ -16809,6 +16955,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (!in_array($requested_test_type, abst_get_supported_test_types(), true)) {
 
           return new WP_Error('invalid_test_type', 'Test type must be one of: ' . implode(', ', abst_get_supported_test_types()), ['status' => 400]);
+
         }
 
         $args['meta_query'] = [[
@@ -16820,6 +16967,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           'compare' => '=',
 
         ]];
+
       }
 
 
@@ -16849,18 +16997,23 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if ($conversion_type === 'selector') {
 
           $conversion_value = get_post_meta($test->ID, 'conversion_selector', true);
+
         } elseif ($conversion_type === 'url') {
 
           $conversion_value = get_post_meta($test->ID, 'conversion_url', true);
+
         } elseif ($conversion_type === 'text') {
 
           $conversion_value = get_post_meta($test->ID, 'conversion_text', true);
+
         } elseif ($conversion_type === 'link') {
 
           $conversion_value = get_post_meta($test->ID, 'conversion_link_pattern', true);
+
         } elseif ($conversion_type === 'page') {
 
           $conversion_value = is_numeric($conversion_trigger) ? intval($conversion_trigger) : 0;
+
         }
 
 
@@ -16912,6 +17065,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           ],
 
         ];
+
       }
 
 
@@ -16925,6 +17079,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'tests' => $results
 
       ], 200);
+
     }
 
 
@@ -16945,8 +17100,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function rest_get_test_results($request)
-    {
+    function rest_get_test_results($request) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -16961,6 +17115,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (!$post || $post->post_type !== 'bt_experiments') {
 
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
+
       }
 
 
@@ -16996,6 +17151,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           if ($test_type === 'full_page') {
 
             $variation['preview_url'] = $variation['page_id'] ? get_permalink($variation['page_id']) : null;
+
           } else {
 
             $base = $variation['page_id'] ? trailingslashit(get_permalink($variation['page_id'])) : null;
@@ -17009,10 +17165,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
               ? add_query_arg(['abtv' => $abtv, 'abtid' => $test_id], $base)
 
               : null;
+
           }
+
         }
 
         unset($variation);
+
       }
 
 
@@ -17044,6 +17203,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         ])
 
       ], 200);
+
     }
 
 
@@ -17064,8 +17224,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function rest_create_test($request)
-    {
+    function rest_create_test($request) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -17077,13 +17236,14 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $validation_warnings = $guard_result['warnings'];
 
-
+      
 
       $validation_error = abst_validate_test_payload($params, 'create');
 
       if (is_wp_error($validation_error)) {
 
         return $validation_error;
+
       }
 
 
@@ -17095,6 +17255,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (abst_user_level() !== 'pro') {
 
           return new WP_Error('pro_feature', 'Test Ideas are only available in the Pro version. Upgrade to create test ideas.', ['status' => 403]);
+
         }
 
         $post_data = [
@@ -17116,6 +17277,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (is_wp_error($test_id)) {
 
           return new WP_Error('creation_failed', 'Failed to create idea: ' . $test_id->get_error_message(), ['status' => 500]);
+
         }
 
 
@@ -17151,13 +17313,14 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           'message' => 'Idea created successfully'
 
         ], 201);
+
       }
 
 
 
       $test_type = $params['test_type'];
 
-
+      
 
       // Create the test post
 
@@ -17173,24 +17336,25 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       ];
 
-
+      
 
       $test_id = wp_insert_post($post_data);
 
-
+      
 
       if (is_wp_error($test_id)) {
 
         return new WP_Error('creation_failed', 'Failed to create test: ' . $test_id->get_error_message(), ['status' => 500]);
+
       }
 
-
+      
 
       // Set test type
 
       update_post_meta($test_id, 'test_type', $test_type);
 
-
+      
 
       // Configure test based on type
 
@@ -17221,6 +17385,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $type_config_result = $this->configure_full_page_test($test_id, $params);
 
           break;
+
       }
 
 
@@ -17230,9 +17395,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         wp_delete_post($test_id, true);
 
         return $type_config_result;
+
       }
 
-
+      
 
       // Set common configuration (conversion goals, targeting, etc.)
 
@@ -17243,6 +17409,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         wp_delete_post($test_id, true);
 
         return $config_result;
+
       }
 
 
@@ -17304,9 +17471,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'message' => ucfirst($test_type) . ' test created successfully'
 
       ], 201);
+
     }
 
-
+    
 
     /**
 
@@ -17314,8 +17482,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function configure_magic_test($test_id, $params)
-    {
+    private function configure_magic_test($test_id, $params) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -17332,9 +17499,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (is_wp_error($magic_validation)) {
 
           return $magic_validation;
+
         }
 
-
+        
 
         // If it's already JSON string, validate it
 
@@ -17345,25 +17513,30 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           if (json_last_error() === JSON_ERROR_NONE) {
 
             $magic_def = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
           }
+
         } else if (is_array($magic_def)) {
 
           // If it's an array, encode it
 
           $magic_def = json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
         }
 
-
+        
 
         update_post_meta($test_id, 'magic_definition', $magic_def);
+
       }
 
 
 
       return true;
+
     }
 
-
+    
 
     /**
 
@@ -17371,8 +17544,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function configure_ab_test($test_id, $params)
-    {
+    private function configure_ab_test($test_id, $params) {
 
       // On-page tests don't have specific meta fields
 
@@ -17381,9 +17553,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       // Configuration is handled via common settings
 
       return true;
+
     }
 
-
+    
 
     /**
 
@@ -17391,12 +17564,12 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function configure_css_test($test_id, $params)
-    {
+    private function configure_css_test($test_id, $params) {
 
       if (!empty($params['css_variations'])) {
 
         update_post_meta($test_id, 'css_test_variations', intval($params['css_variations']));
+
       } else {
 
         update_post_meta($test_id, 'css_test_variations', 2); // Default 2 variations
@@ -17406,9 +17579,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
       return true;
+
     }
 
-
+    
 
     /**
 
@@ -17416,22 +17590,23 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function configure_full_page_test($test_id, $params)
-    {
+    private function configure_full_page_test($test_id, $params) {
 
       if (empty($params['default_page'])) {
 
         return new WP_Error('missing_default_page', 'Default page is required for full page tests', ['status' => 400]);
+
       }
 
-
+      
 
       if (empty($params['variations']) || !is_array($params['variations'])) {
 
         return new WP_Error('missing_variations', 'At least one variation page is required for full page tests', ['status' => 400]);
+
       }
 
-
+      
 
       // Set default page
 
@@ -17439,7 +17614,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       update_post_meta($test_id, 'bt_experiments_full_page_default_page', $default_page);
 
-
+      
 
       // Set page variations
 
@@ -17447,7 +17622,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $variation_meta = [];
 
-
+      
 
       foreach ($params['variations'] as $index => $variation) {
 
@@ -17455,7 +17630,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $page_variations[$var_id] = $this->get_url_from_slug($var_id);
 
-
+        
 
         // Set variation metadata if provided
 
@@ -17468,9 +17643,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           'weight' => 1
 
         ];
+
       }
 
-
+      
 
       update_post_meta($test_id, 'page_variations', $page_variations);
 
@@ -17479,9 +17655,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
       return true;
+
     }
 
-
+    
 
     /**
 
@@ -17489,8 +17666,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    private function configure_common_test_settings($test_id, $params)
-    {
+    private function configure_common_test_settings($test_id, $params) {
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -17510,7 +17686,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         update_post_meta($test_id, 'conversion_page', $conversion_type);
 
-
+        
 
         // Handle different conversion types
 
@@ -17521,6 +17697,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_selector'])) {
 
               update_post_meta($test_id, 'conversion_selector', $params['conversion_selector']);
+
             }
 
             break;
@@ -17530,6 +17707,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_link_pattern'])) {
 
               update_post_meta($test_id, 'conversion_link_pattern', $params['conversion_link_pattern']);
+
             }
 
             break;
@@ -17539,6 +17717,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_url'])) {
 
               update_post_meta($test_id, 'conversion_url', $params['conversion_url']);
+
             }
 
             break;
@@ -17548,6 +17727,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_page_id'])) {
 
               update_post_meta($test_id, 'conversion_page', intval($params['conversion_page_id']));
+
             }
 
             break;
@@ -17557,6 +17737,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_time'])) {
 
               update_post_meta($test_id, 'conversion_time', intval($params['conversion_time']));
+
             }
 
             break;
@@ -17566,6 +17747,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_scroll'])) {
 
               update_post_meta($test_id, 'conversion_scroll', intval($params['conversion_scroll']));
+
             }
 
             break;
@@ -17575,17 +17757,21 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             if (!empty($params['conversion_text'])) {
 
               update_post_meta($test_id, 'conversion_text', sanitize_text_field($params['conversion_text']));
+
             }
 
             break;
+
         }
+
       }
 
-
+      
 
       if (isset($params['conversion_use_order_value'])) {
 
         update_post_meta($test_id, 'conversion_use_order_value', $params['conversion_use_order_value'] ? '1' : '0');
+
       }
 
 
@@ -17596,20 +17782,22 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       update_post_meta($test_id, 'target_percentage', $target_percentage);
 
-
+      
 
       if (!empty($params['target_device'])) {
 
         update_post_meta($test_id, 'target_option_device_size', sanitize_text_field($params['target_device']));
+
       }
 
-
+      
 
       if (!empty($params['allowed_roles']) && is_array($params['allowed_roles'])) {
 
         $allowed_roles = array_map('esc_attr', $params['allowed_roles']);
 
         update_post_meta($test_id, 'bt_allowed_roles', $allowed_roles);
+
       } else {
 
         // Default to logged out, subscribers, and customers only (excludes admin and editor roles)
@@ -17617,9 +17805,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         $default_roles = ['subscriber', 'customer', 'logout'];
 
         update_post_meta($test_id, 'bt_allowed_roles', $default_roles);
+
       }
 
-
+      
 
       // Set optimization type
 
@@ -17630,27 +17819,30 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if ($optimization_type !== 'thompson') {
 
         $this->clear_test_variation_weights($test_id);
+
       }
 
-
+      
 
       // Set URL query parameter filter
 
       if (!empty($params['url_query'])) {
 
         update_post_meta($test_id, 'url_query', sanitize_textarea_field($params['url_query']));
+
       }
 
-
+      
 
       // Set webhook URL
 
       if (!empty($params['webhook_url'])) {
 
         update_post_meta($test_id, 'webhook_url', esc_url($params['webhook_url']));
+
       }
 
-
+      
 
       // Set subgoals (new API format takes priority; fall back to legacy 'goals' param)
 
@@ -17661,9 +17853,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (is_wp_error($validation)) {
 
           return $validation;
+
         }
 
         update_post_meta($test_id, 'goals', abst_normalize_subgoals_to_storage($params['subgoals']));
+
       } elseif (!empty($params['goals']) && is_array($params['goals'])) {
 
         // Legacy internal-format goals (backward compatibility)
@@ -17679,37 +17873,44 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             foreach ($goal as $goal_key => $goal_value) {
 
               $sanitized_goal[$goal_key] = sanitize_text_field($goal_value);
+
             }
 
             $sanitized_goals[$key] = $sanitized_goal;
+
           } else {
 
             $sanitized_goals[$key] = sanitize_text_field($goal);
+
           }
+
         }
 
         update_post_meta($test_id, 'goals', $sanitized_goals);
+
       }
 
-
+      
 
       // Set log on visible
 
       if (isset($params['log_on_visible'])) {
 
         update_post_meta($test_id, 'log_on_visible', $params['log_on_visible'] ? '1' : '0');
+
       }
 
-
+      
 
       // Set conversion order value tracking
 
       if (isset($params['conversion_use_order_value'])) {
 
         update_post_meta($test_id, 'conversion_use_order_value', $params['conversion_use_order_value'] ? '1' : '0');
+
       }
 
-
+      
 
       // Set autocomplete settings
 
@@ -17726,106 +17927,46 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           update_post_meta($test_id, 'ac_min_days', $min_days);
 
           update_post_meta($test_id, 'ac_min_views', $min_views);
+
         }
+
       }
+
     }
 
 
 
-    function handle_sample_data_request()
-    {
-
-      if (!isset($_GET['addtestdata']) || !current_user_can('manage_options')) {
-
-        return;
-      }
-
-
-
-      $results = abst_load_sample_tests_from_json(true); // Force creation
-
-
-
-      // Display results to user
-
-      if ($results['created'] > 0) {
-
-        add_action('admin_notices', function () use ($results) {
-
-          echo '<div class="notice notice-success is-dismissible">';
-
-          echo '<p><strong>Sample Data Loaded Successfully!</strong></p>';
-
-          echo '<p>Created ' . intval($results['created']) . ' sample tests with realistic data.</p>';
-
-          echo '<p>Tests are created as drafts - you can review and activate them in the <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments')) . '">A/B Tests</a> section.</p>';
-
-          echo '</div>';
-        });
-      }
-
-
-
-      if (!empty($results['errors'])) {
-
-        add_action('admin_notices', function () use ($results) {
-
-          echo '<div class="notice notice-error">';
-
-          echo '<p><strong>Sample Data Loading Errors:</strong></p>';
-
-          echo '<p>' . wp_kses_post(implode('</p><p>', $results['errors'])) . '</p>';
-
-          echo '</div>';
-        });
-      }
-
-
-
-      if ($results['skipped']) {
-
-        add_action('admin_notices', function () use ($results) {
-
-          echo '<div class="notice notice-warning">';
-
-          echo '<p><strong>Sample Data Skipped:</strong> ' . intval($results['skipped']) . '</p>';
-
-          echo '</div>';
-        });
-      }
-    }
-
-
-
-    function handle_mcp_adapter_install()
-    {
+    function handle_mcp_adapter_install() {
 
       // Check if install button was clicked
 
       if (!isset($_POST['install_mcp_adapter'])) {
 
         return;
+
       }
 
-
+      
 
       // Verify nonce
 
       if (!isset($_POST['absplittest_mcp_nonce']) || !wp_verify_nonce($_POST['absplittest_mcp_nonce'], 'absplittest_install_mcp')) {
 
         wp_die('Security check failed');
+
       }
 
-
+      
 
       // Check user permissions
 
       if (!current_user_can('install_plugins')) {
 
         wp_die('You do not have permission to install plugins.');
+
       }
 
-
+      
 
       // Include required WordPress files
 
@@ -17835,25 +17976,25 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       require_once ABSPATH . 'wp-admin/includes/file.php';
 
-
+      
 
       // GitHub release URL for WordPress MCP Adapter
 
       $plugin_zip = 'https://github.com/WordPress/mcp-adapter/releases/latest/download/mcp-adapter.zip';
 
-
+      
 
       // Create upgrader instance with silent skin
 
       $upgrader = new Plugin_Upgrader(new WP_Ajax_Upgrader_Skin());
 
-
+      
 
       // Install the plugin
 
       $result = $upgrader->install($plugin_zip);
 
-
+      
 
       // Check if installation was successful
 
@@ -17864,18 +18005,20 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode($error_message)));
 
         exit;
+
       }
 
-
+      
 
       if ($result === false) {
 
         wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode('Installation failed. Please try manual installation.')));
 
         exit;
+
       }
 
-
+      
 
       // Activate the plugin
 
@@ -17883,7 +18026,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $activate_result = activate_plugin($plugin_file);
 
-
+      
 
       if (is_wp_error($activate_result)) {
 
@@ -17892,23 +18035,24 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_error=' . urlencode('Plugin installed but activation failed: ' . $error_message)));
 
         exit;
+
       }
 
-
+      
 
       // Success - redirect with success message
 
       wp_safe_redirect(admin_url('options-general.php?page=bt_bb_ab_test&tab=mcp&mcp_install_success=1'));
 
       exit;
+
     }
 
 
 
-    function wp_ajax_bt_clear_results()
-    {
+    function wp_ajax_bt_clear_results(){
 
-
+      
 
       $post = $_POST;
 
@@ -17922,191 +18066,142 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       );
 
+      
 
+      if(isset($eid) && $eid !== '' && $post['bt_action'] == 'clear')
 
-      if (isset($eid) && $eid !== '' && $post['bt_action'] == 'clear') {
+      {
 
-        if (!current_user_can('delete_posts', $eid)) {
+        if(!current_user_can('delete_posts', $eid))
+
+        {
 
           $response['text'] = 'You do not have permission to reset these results.';
 
           echo json_encode($response);
 
           wp_die();
+
         }
 
-
+        
 
         //query for an experiment that this user can edit
 
         $experiment = get_post($eid);
 
+        
 
+        if(!$experiment)
 
-        if (!$experiment) {
+        {
 
           $response['text'] = 'Not found.';
 
           echo json_encode($response);
 
           wp_die();
+
         }
 
+        
 
+          //clear meta
 
-        //clear meta
+          update_post_meta($eid,'observations',false);
 
-        update_post_meta($eid, 'observations', false);
+          update_post_meta($eid,'test_winner',false);
 
-        update_post_meta($eid, 'test_winner', false);
+          update_post_meta($eid,'ab-test-winner',false);
 
-        update_post_meta($eid, 'ab-test-winner', false);
+          
 
+          //update published date
 
+          $post = array(
 
-        //update published date
+              'ID' => $eid,
 
-        $post = array(
+              'post_date' => current_time( 'Y-m-d H:i:s' ), // UPDATE 
 
-          'ID' => $eid,
+              'post_status' => 'publish', // make active again if necess
 
-          'post_date' => current_time('Y-m-d H:i:s'), // UPDATE 
+          );
 
-          'post_status' => 'publish', // make active again if necess
+          wp_update_post( $post );
 
-        );
+        
 
-        wp_update_post($post);
+          $response['text'] = 'Results reset. Reloading page.';
 
+          $response['success'] = true;
 
+          echo json_encode($response);
 
-        $response['text'] = 'Results reset. Reloading page.';
+          wp_die();
 
-        $response['success'] = true;
-
-        echo json_encode($response);
-
-        wp_die();
-      } else {
-
-        $response['text'] = 'Try again later.';
-
-        echo json_encode($response);
-
-        wp_die();
-      }
-    }
-
-
-
-    function custom_plugin_new_update_text($file, $plugin)
-
-    {
-
-      $settings_link = BT_BB_AB_Admin::get_current_settings_url();
-
-
-
-      if (!isset($plugin['new_version'])) {
-        return;
       }
 
-
-
-      echo '<tr class="plugin-update-tr active" id="bt-bb-ab-update" data-slug="bt-bb-ab" data-plugin="bt-bb-ab/bt-bb-ab.php">
-
-                <td colspan="3" class="plugin-update colspanchange">
-
-                    <div class="update-message notice inline notice-warning notice-alt">
-
-                        <p>There is a new version of ' . esc_html($plugin['name']) . ' available. Please <a href="' . esc_attr($settings_link) . '">activate your licence key</a> to recieve updates. <br>Go to your <a href="' . esc_attr(BT_AB_TEST_MERCHANT_URL) . '/my-account/" target="_blank">account page</a> to get your license key.</p>
-
-                    </div>
-
-                </td>
-
-            </tr>';
-    }
-
-
-
-    //show plugin update error if necessary
-
-    function prefix_bt_bb_ab_update_message($currentPluginMetadata, $newPluginMetadata)
-    {
-
-
-
-      if (is_network_admin() || (!is_multisite() && is_super_admin())) // only show in admin, and network admin if its multisite
+      else
 
       {
 
-        $message = '';
+          $response['text'] = 'Try again later.';
 
-        $licenceStatus = abst_licence_details();
+          echo json_encode($response);
 
-        $licenceKey = abst_get_admin_setting('bt_bb_ab_licence');
+          wp_die();
 
-        $licenceKey = apply_filters('abst_licence_key', $licenceKey);
-        // Backward compatibility: also allow old hook name (new hook takes precedence)
-        $licenceKey = apply_filters('abst_licence_key', $licenceKey);
+      }      
 
-
-
-        if (!isset($licenceKey) || $licenceKey == "") {
-
-          $message = 'Please <a href="/wp-admin/network/settings.php?page=fl-builder-multisite-settings#developer">add your licence key</a> to recieve updates.';
-        } else if ((int)$licenceStatus->active != 1) {
-
-          $message = '. Check you have<a href="/wp-admin/network/settings.php?page=fl-builder-multisite-settings#developer"> entered your licence key correctly</a>, or check your subscription status in the <a href="' . BT_AB_TEST_MERCHANT_URL . '/my-account/" target="_blank"> dashboard.</a>';
-        }
-
-
-
-        if (isset($newPluginMetadata->upgrade_notice) && strlen(trim($newPluginMetadata->upgrade_notice)) > 0 && $message !== '') {
-
-          echo '<span style="display:block; font-weight:600; margin-top:10px;">' . $message . '</span>';
-        }
-      }
     }
 
 
 
-    function add_btvar_attribute_to_all_blocks($block_content, $block, $instance)
-    {
+    function add_btvar_attribute_to_all_blocks( $block_content, $block,$instance ) {
 
-      if (!empty($block['attrs']['bt-eid'])) {
+      if(!empty($block['attrs']['bt-eid']))
 
-        $ignored = ['style', 'script', 'link', 'meta'];
+      {
 
-
-
-        $processor = new WP_HTML_Tag_Processor($block_content);
-
-        while ($processor->next_tag()) {
-
-          $tag_name = strtolower($processor->get_tag());
-
-          if (in_array($tag_name, $ignored, true)) {
-
-            continue;
-          }
-
-          // set attributes here, then return updated HTML
-
-          $processor->set_attribute('bt-eid', $block['attrs']['bt-eid']  ?? '');
-
-          if (!empty($block['attrs']['bt-variation']))
-
-            $processor->set_attribute('bt-variation', $block['attrs']['bt-variation'] ?? '');
+        $ignored = ['style','script','link','meta'];
 
 
 
-          return $processor->get_updated_html();
+        $processor = new WP_HTML_Tag_Processor( $block_content );
+
+        while ( $processor->next_tag() ) {
+
+            $tag_name = strtolower( $processor->get_tag() );
+
+            if ( in_array( $tag_name, $ignored, true ) ) {
+
+                continue;
+
+            }
+
+            // set attributes here, then return updated HTML
+
+            $processor->set_attribute( 'bt-eid', $block['attrs']['bt-eid']  ?? '');
+
+            if(!empty($block['attrs']['bt-variation']))
+
+              $processor->set_attribute( 'bt-variation', $block['attrs']['bt-variation'] ?? '');
+
+            
+
+            return $processor->get_updated_html();
+
         }
+
+        
+
       }
 
       return $block_content;
+
+    
+
     }
 
 
@@ -18119,532 +18214,568 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function matches_ssr_url_query_targeting($url_query)
-    {
+    function matches_ssr_url_query_targeting($url_query) {
 
-      $url_query = sanitize_textarea_field((string) $url_query);
+        $url_query = sanitize_textarea_field((string) $url_query);
 
-      if ($url_query === '') {
+        if ($url_query === '') {
 
-        return true;
-      }
+            return true;
 
-
-
-      $host = $_SERVER['HTTP_HOST'] ?? '';
-
-      $request_uri = $_SERVER['REQUEST_URI'] ?? '';
-
-      $current_url = ($host !== '' ? home_url($request_uri) : $request_uri);
-
-
-
-      $matches_single_rule = function ($rule) use ($current_url) {
-
-        $rule = trim((string) $rule);
-
-        if ($rule === '') {
-
-          return true;
         }
 
 
 
-        $is_not = false;
+        $host = $_SERVER['HTTP_HOST'] ?? '';
 
-        if (stripos($rule, 'NOT') === 0) {
+        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
 
-          $is_not = true;
+        $current_url = ($host !== '' ? home_url($request_uri) : $request_uri);
 
-          $rule = trim(preg_replace('/^NOT\s*/i', '', $rule));
+
+
+        $matches_single_rule = function($rule) use ($current_url) {
+
+            $rule = trim((string) $rule);
+
+            if ($rule === '') {
+
+                return true;
+
+            }
+
+
+
+            $is_not = false;
+
+            if (stripos($rule, 'NOT') === 0) {
+
+                $is_not = true;
+
+                $rule = trim(preg_replace('/^NOT\s*/i', '', $rule));
+
+            }
+
+
+
+            if (strpos($rule, '*') !== false) {
+
+                $needle = str_replace('*', '', $rule);
+
+                $matches = ($needle === '') ? true : (strpos($current_url, $needle) !== false);
+
+                return $is_not ? !$matches : $matches;
+
+            }
+
+
+
+            $exploded_query = explode('=', $rule, 2);
+
+            if (count($exploded_query) === 1) {
+
+                $matches = isset($_GET[$exploded_query[0]]);
+
+            } else {
+
+                $query_value = isset($_GET[$exploded_query[0]]) ? wp_unslash($_GET[$exploded_query[0]]) : null;
+
+                $matches = ((string) $query_value === (string) $exploded_query[1]);
+
+            }
+
+
+
+            return $is_not ? !$matches : $matches;
+
+        };
+
+
+
+        // OR targeting: one per line (recommended), or pipe/comma-separated
+
+        $rules = preg_split('/[\r\n|,]+/', $url_query);
+
+        $rules = array_filter(array_map('trim', (array) $rules), function($rule) {
+
+            return $rule !== '';
+
+        });
+
+
+
+        if (empty($rules)) {
+
+            return true;
+
         }
 
 
 
-        if (strpos($rule, '*') !== false) {
+        foreach ($rules as $rule) {
 
-          $needle = str_replace('*', '', $rule);
+            if ($matches_single_rule($rule)) {
 
-          $matches = ($needle === '') ? true : (strpos($current_url, $needle) !== false);
+                return true;
 
-          return $is_not ? !$matches : $matches;
+            }
+
         }
 
 
 
-        $exploded_query = explode('=', $rule, 2);
+        return false;
 
-        if (count($exploded_query) === 1) {
-
-          $matches = isset($_GET[$exploded_query[0]]);
-        } else {
-
-          $query_value = isset($_GET[$exploded_query[0]]) ? wp_unslash($_GET[$exploded_query[0]]) : null;
-
-          $matches = ((string) $query_value === (string) $exploded_query[1]);
-        }
-
-
-
-        return $is_not ? !$matches : $matches;
-      };
-
-
-
-      // OR targeting: one per line (recommended), or pipe/comma-separated
-
-      $rules = preg_split('/[\r\n|,]+/', $url_query);
-
-      $rules = array_filter(array_map('trim', (array) $rules), function ($rule) {
-
-        return $rule !== '';
-      });
-
-
-
-      if (empty($rules)) {
-
-        return true;
-      }
-
-
-
-      foreach ($rules as $rule) {
-
-        if ($matches_single_rule($rule)) {
-
-          return true;
-        }
-      }
-
-
-
-      return false;
     }
 
 
 
-    function handle_abtest_query_param()
-    {
+    function handle_abtest_query_param() {
 
-      // Check if we have the server-side rendering parameter
+        // Check if we have the server-side rendering parameter
 
-      if (!isset($_GET['ssr'])) {
+        if (!isset($_GET['ssr'])) {
 
-        return;
-      }
+            return;
 
-
-
-      if (is_admin() || !is_singular()) {
-
-        return;
-      }
+        }
 
 
 
-      $queried_object_id = get_queried_object_id();
+        if (is_admin() || !is_singular()) {
 
-      if (empty($queried_object_id)) {
+            return;
 
-        return;
-      }
-
-
-
-      abst_log('ABST: Server-side rendering mode request detected ?ssr=1');
-
-      // ssr=1 means "use server-side rendering instead of JavaScript redirect"
-
-      // We don't actually use the value, just detect the parameter exists
-
-      // Find matching full page test for current page.
-
-      // Prefer an active published test over an older completed autocomplete winner.
-
-      $base_query = array(
-
-        'post_type' => 'bt_experiments',
-
-        'posts_per_page' => 1, // Only need first match - faster
-
-        'meta_query' => array(
-
-          array(
-
-            'key' => 'test_type',
-
-            'value' => 'full_page',
-
-            'compare' => '='
-
-          ),
-
-          array(
-
-            'key' => 'bt_experiments_full_page_default_page',
-
-            'value' => $queried_object_id,
-
-            'compare' => '='
-
-          )
-
-        )
-
-      );
+        }
 
 
 
-      $tests = get_posts(array_merge($base_query, array(
+        $queried_object_id = get_queried_object_id();
 
-        'post_status' => 'publish',
+        if (empty($queried_object_id)) {
 
-      )));
+            return;
 
+        }
 
+        
 
-      if (empty($tests)) {
+        abst_log('ABST: Server-side rendering mode request detected ?ssr=1');
 
-        $tests = get_posts(array_merge($base_query, array(
+        // ssr=1 means "use server-side rendering instead of JavaScript redirect"
 
-          'post_status' => 'complete',
+        // We don't actually use the value, just detect the parameter exists
 
-          'meta_query' => array_merge($base_query['meta_query'], array(
+        // Find matching full page test for current page.
+
+        // Prefer an active published test over an older completed autocomplete winner.
+
+        $base_query = array(
+
+          'post_type' => 'bt_experiments',
+
+          'posts_per_page' => 1, // Only need first match - faster
+
+          'meta_query' => array(
 
             array(
 
-              'key' => 'test_winner',
+              'key' => 'test_type',
 
-              'value' => '',
+              'value' => 'full_page',
 
-              'compare' => '!='
+              'compare' => '='
+
+            ),
+
+            array(
+
+              'key' => 'bt_experiments_full_page_default_page',
+
+              'value' => $queried_object_id,
+
+              'compare' => '='
 
             )
 
-          ))
+          )
+
+        );
+
+
+
+        $tests = get_posts(array_merge($base_query, array(
+
+          'post_status' => 'publish',
 
         )));
-      }
 
 
 
-      if (empty($tests)) {
+        if (empty($tests)) {
 
-        abst_log('ABST: No matching full page tests found for current page');
+          $tests = get_posts(array_merge($base_query, array(
 
-        return; // No matching tests found - exit early
+            'post_status' => 'complete',
 
-      }
+            'meta_query' => array_merge($base_query['meta_query'], array(
 
-      $test_id = $tests[0]->ID;
+              array(
 
-      $detected_device_size = 'desktop';
+                'key' => 'test_winner',
 
-      // Check if user already has a cookie for this test 
+                'value' => '',
 
-      $cookie_name = 'btab_' . $test_id;
+                'compare' => '!='
 
-      $existing_variation = null;
+              )
 
-      if (isset($_COOKIE[$cookie_name])) {
+            ))
 
-        $cookie_data = json_decode(stripslashes($_COOKIE[$cookie_name]), true);
+          )));
 
-        if (isset($cookie_data['variation'])) {
-
-          $existing_variation = $cookie_data['variation'];
-        }
-      } else {
-
-
-
-        // Get all post meta at once (single query - more efficient)
-
-        $meta = get_post_meta($test_id);
-
-        $url_query = $meta['url_query'][0] ?? '';
-
-        $target_device = $meta['target_option_device_size'][0] ?? 'all';
-
-        $target_percentage = $meta['target_percentage'][0] ?? 100;
-
-
-
-        // Apply same targeting filters as JavaScript (in same order)
-
-
-
-        // 1. Check user role targeting (cheapest check first)
-
-        if (!$this->is_tracking_allowed($test_id)) {
-
-          abst_log('ABST: User role targeting failed for test ' . $test_id);
-
-          return;
         }
 
+        
 
+        if (empty($tests)) {
 
-        // 2. Check URL query filtering
+            abst_log('ABST: No matching full page tests found for current page');
 
-        if (!empty($url_query)) {
+            return; // No matching tests found - exit early
 
-          if (!$this->matches_ssr_url_query_targeting($url_query)) {
-
-            abst_log('ABST: URL query filtering failed for test ' . $test_id);
-
-            return;
-          }
         }
 
+        $test_id = $tests[0]->ID;
+
+        $detected_device_size = 'desktop';
+
+        // Check if user already has a cookie for this test 
+
+        $cookie_name = 'btab_' . $test_id;
+
+        $existing_variation = null;
+
+        if (isset($_COOKIE[$cookie_name])) {
+
+            $cookie_data = json_decode(stripslashes($_COOKIE[$cookie_name]), true);
+
+            if (isset($cookie_data['variation'])) {
+
+                $existing_variation = $cookie_data['variation'];
+
+            }
+
+        }
+
+        else
+
+        {
+
+        
+
+          // Get all post meta at once (single query - more efficient)
+
+          $meta = get_post_meta($test_id);
+
+          $url_query = $meta['url_query'][0] ?? '';
+
+          $target_device = $meta['target_option_device_size'][0] ?? 'all';
+
+          $target_percentage = $meta['target_percentage'][0] ?? 100;
 
 
-        // Determine approximate device category from User-Agent for SSR
 
-        $detected_device_size = abst_detect_device_size_from_user_agent();
+          // Apply same targeting filters as JavaScript (in same order)
 
+          
 
+          // 1. Check user role targeting (cheapest check first)
 
-        // 3. Check device size targeting (server-side approximation using User-Agent)
+          if (!$this->is_tracking_allowed($test_id)) {
 
-        // NOTE: Server-side cannot detect viewport width. We approximate device category only.
+              abst_log('ABST: User role targeting failed for test ' . $test_id);
 
-        if (!empty($target_device) && $target_device !== 'all') {
+              return;
 
-          $device_match = false;
-
-          if ($target_device === 'mobile' && $detected_device_size === 'mobile') {
-
-            $device_match = true;
-          } elseif ($target_device === 'tablet' && $detected_device_size === 'tablet') {
-
-            $device_match = true;
-          } elseif ($target_device === 'desktop' && $detected_device_size === 'desktop') {
-
-            $device_match = true;
-          } elseif ($target_device === 'desktop_tablet' && ($detected_device_size === 'desktop' || $detected_device_size === 'tablet')) {
-
-            $device_match = true;
-          } elseif ($target_device === 'tablet_mobile' && ($detected_device_size === 'tablet' || $detected_device_size === 'mobile')) {
-
-            $device_match = true;
           }
 
+          
 
+          // 2. Check URL query filtering
 
-          if (!$device_match) {
+          if (!empty($url_query)) {
 
-            abst_log('ABST: Device size targeting failed for test ' . $test_id . ' target:' . $target_device . ' detected:' . $detected_device_size);
+              if (!$this->matches_ssr_url_query_targeting($url_query)) {
 
-            return;
+                  abst_log('ABST: URL query filtering failed for test ' . $test_id);
+
+                  return;
+
+              }
+
           }
+
+          
+
+          // Determine approximate device category from User-Agent for SSR
+
+          $detected_device_size = abst_detect_device_size_from_user_agent();
+
+
+
+          // 3. Check device size targeting (server-side approximation using User-Agent)
+
+          // NOTE: Server-side cannot detect viewport width. We approximate device category only.
+
+          if (!empty($target_device) && $target_device !== 'all') {
+
+              $device_match = false;
+
+              if ($target_device === 'mobile' && $detected_device_size === 'mobile') {
+
+                  $device_match = true;
+
+              } elseif ($target_device === 'tablet' && $detected_device_size === 'tablet') {
+
+                  $device_match = true;
+
+              } elseif ($target_device === 'desktop' && $detected_device_size === 'desktop') {
+
+                  $device_match = true;
+
+              } elseif ($target_device === 'desktop_tablet' && ($detected_device_size === 'desktop' || $detected_device_size === 'tablet')) {
+
+                  $device_match = true;
+
+              } elseif ($target_device === 'tablet_mobile' && ($detected_device_size === 'tablet' || $detected_device_size === 'mobile')) {
+
+                  $device_match = true;
+
+              }
+
+
+
+              if (!$device_match) {
+
+                abst_log('ABST: Device size targeting failed for test ' . $test_id . ' target:' . $target_device . ' detected:' . $detected_device_size);
+
+                return;
+
+              }
+
+          }
+
+          
+
+          // 4. Check traffic percentage (LAST - matches JavaScript order)
+
+          if ($target_percentage < 100) {
+
+              $random = wp_rand(1, 100);
+
+              if ($random > $target_percentage) {
+
+                abst_log('ABST: Traffic percentage filtering failed for test ' . $test_id);
+
+                  return;
+
+              }
+
+          }
+
         }
 
+        
 
+        
 
-        // 4. Check traffic percentage (LAST - matches JavaScript order)
+        // If no existing variation, assign one
 
-        if ($target_percentage < 100) {
+        if (!$existing_variation) {
 
-          $random = wp_rand(1, 100);
+            $variation = $this->assign_variation_for_query_param($test_id);
 
-          if ($random > $target_percentage) {
+            abst_log('ABST: server side redirect: Assigning variation ' . $variation . ' for test ' . $test_id);
 
-            abst_log('ABST: Traffic percentage filtering failed for test ' . $test_id);
+            // Set cookie using same pattern as rest of plugin
 
-            return;
-          }
+            $cookie_data = [
+
+                'eid' => $test_id,
+
+                'variation' => $variation,
+
+                'conversion' => 0,
+
+                'goals' => [],
+
+                'size' => $detected_device_size
+
+            ];
+
+            
+
+            // Handle domain for cookies (localhost vs production)
+
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+
+            $domain = '';
+
+            
+
+            // Detect localhost/development environments
+
+            $is_localhost = (
+
+                strpos($host, 'localhost') !== false || 
+
+                strpos($host, '127.0.0.1') !== false || 
+
+                strpos($host, '.test') !== false ||  // Laragon .test domains
+
+                strpos($host, '.local') !== false || // MAMP/XAMPP .local domains
+
+                strpos($host, '.dev') !== false ||   // .dev domains
+
+                filter_var($host, FILTER_VALIDATE_IP) // IP addresses
+
+            );
+
+            
+
+            // Check if it's localhost or IP address
+
+            if (!$is_localhost && $host !== '') {
+
+                // Production domain - use root domain
+
+                $domain = abst_get_root_domain($host);
+
+            }
+
+            // For localhost/IP, leave domain empty (works for current host)
+
+            
+
+            $cookie_options = array(
+
+                'expires' => time() + 60 * 60 * 24 * 1000,
+
+                'path' => '/',
+
+                'SameSite' => $is_localhost ? 'Lax' : 'None',
+
+                'Secure' => is_ssl(),
+
+            );
+
+            
+
+            // Only set domain if not localhost
+
+            if (!empty($domain)) {
+
+                $cookie_options['domain'] = $domain;
+
+            }
+
+            
+
+            // Set cookie with fallback strategy
+
+            abst_set_cookie_with_fallback(
+
+                $cookie_name,
+
+                json_encode($cookie_data, JSON_UNESCAPED_SLASHES),
+
+                1000
+
+            );
+
+                        
+
+            // Log the visit server-side
+
+            global $post;
+
+            $location = $post->ID ?? '';
+
+            abst_log('ABST: server side redirect: Logging visit for test ' . $test_id . ' variation ' . $variation . ' location ' . $location);
+
+            
+
+            // Set SSR mode to prevent abst_log_experiment_activity from terminating
+
+            define('ABST_SSR_MODE', true);
+
+            
+
+            // Get or generate advancedId for fingerprint tracking
+
+            $advancedId = null;
+
+            if (isset($_COOKIE['ab-advanced-id'])) {
+
+              $advancedId = sanitize_text_field($_COOKIE['ab-advanced-id']);
+
+            } else {
+
+              // Generate UUID v4 server-side if not already set
+
+              // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+
+              $advancedId = sprintf(
+
+                '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+
+                wp_rand(0, 0xffff), wp_rand(0, 0xffff),
+
+                wp_rand(0, 0xffff),
+
+                wp_rand(0, 0x0fff) | 0x4000,
+
+                wp_rand(0, 0x3fff) | 0x8000,
+
+                wp_rand(0, 0xffff), wp_rand(0, 0xffff), wp_rand(0, 0xffff)
+
+              );
+
+              abst_log('ABST: Generated server-side advancedId: ' . $advancedId);
+
+              
+
+              // Set cookie so frontend uses same ID with fallback strategy
+
+              abst_set_cookie_with_fallback('ab-advanced-id', $advancedId, 365);
+
+            }
+
+            
+
+            $this->abst_log_experiment_activity($test_id, $variation, 'visit', true, $location, false, false, $detected_device_size, $advancedId); // from_api = true to prevent echo/die
+
+        } else {
+
+            $variation = $existing_variation;
+
         }
-      }
 
+        
 
+        // Store in global for template_include to use
 
+        global $abst_abtest_query_variation;
 
+        $abst_abtest_query_variation = [
 
-      // If no existing variation, assign one
+            'test_id' => $test_id,
 
-      if (!$existing_variation) {
-
-        $variation = $this->assign_variation_for_query_param($test_id);
-
-        abst_log('ABST: server side redirect: Assigning variation ' . $variation . ' for test ' . $test_id);
-
-        // Set cookie using same pattern as rest of plugin
-
-        $cookie_data = [
-
-          'eid' => $test_id,
-
-          'variation' => $variation,
-
-          'conversion' => 0,
-
-          'goals' => [],
-
-          'size' => $detected_device_size
+            'variation' => $variation
 
         ];
 
-
-
-        // Handle domain for cookies (localhost vs production)
-
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-
-        $domain = '';
-
-
-
-        // Detect localhost/development environments
-
-        $is_localhost = (
-
-          strpos($host, 'localhost') !== false ||
-
-          strpos($host, '127.0.0.1') !== false ||
-
-          strpos($host, '.test') !== false ||  // Laragon .test domains
-
-          strpos($host, '.local') !== false || // MAMP/XAMPP .local domains
-
-          strpos($host, '.dev') !== false ||   // .dev domains
-
-          filter_var($host, FILTER_VALIDATE_IP) // IP addresses
-
-        );
-
-
-
-        // Check if it's localhost or IP address
-
-        if (!$is_localhost && $host !== '') {
-
-          // Production domain - use root domain
-
-          $domain = abst_get_root_domain($host);
-        }
-
-        // For localhost/IP, leave domain empty (works for current host)
-
-
-
-        $cookie_options = array(
-
-          'expires' => time() + 60 * 60 * 24 * 1000,
-
-          'path' => '/',
-
-          'SameSite' => $is_localhost ? 'Lax' : 'None',
-
-          'Secure' => is_ssl(),
-
-        );
-
-
-
-        // Only set domain if not localhost
-
-        if (!empty($domain)) {
-
-          $cookie_options['domain'] = $domain;
-        }
-
-
-
-        // Set cookie with fallback strategy
-
-        abst_set_cookie_with_fallback(
-
-          $cookie_name,
-
-          json_encode($cookie_data, JSON_UNESCAPED_SLASHES),
-
-          1000
-
-        );
-
-
-
-        // Log the visit server-side
-
-        global $post;
-
-        $location = $post->ID ?? '';
-
-        abst_log('ABST: server side redirect: Logging visit for test ' . $test_id . ' variation ' . $variation . ' location ' . $location);
-
-
-
-        // Set SSR mode to prevent abst_log_experiment_activity from terminating
-
-        define('ABST_SSR_MODE', true);
-
-
-
-        // Get or generate advancedId for fingerprint tracking
-
-        $advancedId = null;
-
-        if (isset($_COOKIE['ab-advanced-id'])) {
-
-          $advancedId = sanitize_text_field($_COOKIE['ab-advanced-id']);
-        } else {
-
-          // Generate UUID v4 server-side if not already set
-
-          // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-
-          $advancedId = sprintf(
-
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-
-            wp_rand(0, 0xffff),
-            wp_rand(0, 0xffff),
-
-            wp_rand(0, 0xffff),
-
-            wp_rand(0, 0x0fff) | 0x4000,
-
-            wp_rand(0, 0x3fff) | 0x8000,
-
-            wp_rand(0, 0xffff),
-            wp_rand(0, 0xffff),
-            wp_rand(0, 0xffff)
-
-          );
-
-          abst_log('ABST: Generated server-side advancedId: ' . $advancedId);
-
-
-
-          // Set cookie so frontend uses same ID with fallback strategy
-
-          abst_set_cookie_with_fallback('ab-advanced-id', $advancedId, 365);
-        }
-
-
-
-        $this->abst_log_experiment_activity($test_id, $variation, 'visit', true, $location, false, false, $detected_device_size, $advancedId); // from_api = true to prevent echo/die
-
-      } else {
-
-        $variation = $existing_variation;
-      }
-
-
-
-      // Store in global for template_include to use
-
-      global $abst_abtest_query_variation;
-
-      $abst_abtest_query_variation = [
-
-        'test_id' => $test_id,
-
-        'variation' => $variation
-
-      ];
     }
 
 
@@ -18655,105 +18786,112 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function abtest_swap_page_content($template)
-    {
+    function abtest_swap_page_content($template) {
 
-      global $abst_abtest_query_variation, $wp_query, $post;
+        global $abst_abtest_query_variation, $wp_query, $post;
 
+        
 
+        if (empty($abst_abtest_query_variation)) {
 
-      if (empty($abst_abtest_query_variation)) {
+            return $template;
 
-        return $template;
-      }
-
-      abst_log('ABST: server side redirect: Swapping page content for test ' . $abst_abtest_query_variation['test_id'] . ' variation ' . $abst_abtest_query_variation['variation']);
-
-
-
-      $variation = $abst_abtest_query_variation['variation'];
-
-
-
-      // Get variation post
-
-      $variation_post = null;
-
-      if (is_numeric($variation)) {
-
-        $variation_post = get_post($variation);
-      } else {
-
-        // Handle special cases like 'category-news', 'post-type-archive-product'
-
-        return $template;
-      }
-
-
-
-      if (!$variation_post || $variation_post->post_status !== 'publish') {
-
-        return $template;
-      }
-
-      abst_log('ABST: server side redirect: Found variation post ' . $variation_post->ID);
-
-
-
-      // Set up WordPress to think we're viewing the variation page
-
-      $wp_query->queried_object = $variation_post;
-
-      $wp_query->queried_object_id = $variation_post->ID;
-
-      $wp_query->is_singular = true;
-
-      $wp_query->is_single = ($variation_post->post_type !== 'page');
-
-      $wp_query->is_page = ($variation_post->post_type === 'page');
-
-      $wp_query->is_404 = false;
-
-      $wp_query->posts = [$variation_post];
-
-      $wp_query->post_count = 1;
-
-      $wp_query->found_posts = 1;
-
-
-
-      // Set global post
-
-      $post = $variation_post;
-
-      setup_postdata($post);
-
-
-
-      // Return appropriate template
-
-      if ($variation_post->post_type === 'page') {
-
-        // Check for custom page template
-
-        $page_template = get_post_meta($variation_post->ID, '_wp_page_template', true);
-
-        if ($page_template && $page_template !== 'default') {
-
-          $custom_template = locate_template($page_template);
-
-          if ($custom_template) {
-
-            return $custom_template;
-          }
         }
 
-        return get_page_template();
-      }
+        abst_log('ABST: server side redirect: Swapping page content for test ' . $abst_abtest_query_variation['test_id'] . ' variation ' . $abst_abtest_query_variation['variation']);
 
-      abst_log('ABST: server side redirect: Returning single template');
+        
 
-      return get_single_template();
+        $variation = $abst_abtest_query_variation['variation'];
+
+        
+
+        // Get variation post
+
+        $variation_post = null;
+
+        if (is_numeric($variation)) {
+
+            $variation_post = get_post($variation);
+
+        } else {
+
+            // Handle special cases like 'category-news', 'post-type-archive-product'
+
+            return $template;
+
+        }
+
+        
+
+        if (!$variation_post || $variation_post->post_status !== 'publish') {
+
+            return $template;
+
+        }
+
+        abst_log('ABST: server side redirect: Found variation post ' . $variation_post->ID);
+
+        
+
+        // Set up WordPress to think we're viewing the variation page
+
+        $wp_query->queried_object = $variation_post;
+
+        $wp_query->queried_object_id = $variation_post->ID;
+
+        $wp_query->is_singular = true;
+
+        $wp_query->is_single = ($variation_post->post_type !== 'page');
+
+        $wp_query->is_page = ($variation_post->post_type === 'page');
+
+        $wp_query->is_404 = false;
+
+        $wp_query->posts = [$variation_post];
+
+        $wp_query->post_count = 1;
+
+        $wp_query->found_posts = 1;
+
+        
+
+        // Set global post
+
+        $post = $variation_post;
+
+        setup_postdata($post);
+
+        
+
+        // Return appropriate template
+
+        if ($variation_post->post_type === 'page') {
+
+            // Check for custom page template
+
+            $page_template = get_post_meta($variation_post->ID, '_wp_page_template', true);
+
+            if ($page_template && $page_template !== 'default') {
+
+                $custom_template = locate_template($page_template);
+
+                if ($custom_template) {
+
+                    return $custom_template;
+
+                }
+
+            }
+
+            return get_page_template();
+
+        }
+
+        abst_log('ABST: server side redirect: Returning single template');
+
+        return get_single_template();
+
     }
 
 
@@ -18766,76 +18904,82 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function assign_variation_for_query_param($test_id)
-    {
+    function assign_variation_for_query_param($test_id) {
 
-      // Check if tracking allowed for this user
+        // Check if tracking allowed for this user
 
-      if (!$this->is_tracking_allowed($test_id)) {
+        if (!$this->is_tracking_allowed($test_id)) {
 
-        // Show default page
+            // Show default page
 
-        abst_log('ABST: server side redirect: Tracking not allowed for test ' . $test_id);
+            abst_log('ABST: server side redirect: Tracking not allowed for test ' . $test_id);
 
-        return get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
-      }
+            return get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
-
-
-      // Check traffic percentage
-
-      $target_percentage = get_post_meta($test_id, 'target_percentage', true);
-
-      if ($target_percentage && $target_percentage < 100) {
-
-        $random = wp_rand(1, 100);
-
-        if ($random > $target_percentage) {
-
-          // Show default, don't track
-
-          return get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
         }
-      }
 
+        
 
+        // Check traffic percentage
 
-      // Get test configuration
+        $target_percentage = get_post_meta($test_id, 'target_percentage', true);
 
-      $page_variations = get_post_meta($test_id, 'page_variations', true);
+        if ($target_percentage && $target_percentage < 100) {
 
-      $default_page = get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
+            $random = wp_rand(1, 100);
 
-      $conversion_style = get_post_meta($test_id, 'conversion_style', true) ?? 'bayesian';
+            if ($random > $target_percentage) {
 
+                // Show default, don't track
 
+                return get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
-      // Build variations array
+            }
 
-      $variations = [$default_page];
+        }
 
-      if (!empty($page_variations) && is_array($page_variations)) {
+        
 
-        $variations = array_merge($variations, array_keys($page_variations));
-      }
+        // Get test configuration
 
+        $page_variations = get_post_meta($test_id, 'page_variations', true);
 
+        $default_page = get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
-      // Select variation based on test mode
+        $conversion_style = get_post_meta($test_id, 'conversion_style', true) ?? 'bayesian';
 
-      if ($conversion_style === 'thompson') {
+        
 
-        $selected = $this->thompson_select_variation_for_query($test_id, $variations);
-      } else {
+        // Build variations array
 
-        // Equal distribution (Bayesian mode)
+        $variations = [$default_page];
 
-        $selected = $variations[array_rand($variations)];
-      }
+        if (!empty($page_variations) && is_array($page_variations)) {
 
+            $variations = array_merge($variations, array_keys($page_variations));
 
+        }
 
-      return $selected;
+        
+
+        // Select variation based on test mode
+
+        if ($conversion_style === 'thompson') {
+
+            $selected = $this->thompson_select_variation_for_query($test_id, $variations);
+
+        } else {
+
+            // Equal distribution (Bayesian mode)
+
+            $selected = $variations[array_rand($variations)];
+
+        }
+
+        
+
+        return $selected;
+
     }
 
 
@@ -18846,10 +18990,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function thompson_select_variation_for_query($test_id, $variations)
-    {
+    function thompson_select_variation_for_query($test_id, $variations) {
 
-      return $variations[array_rand($variations)];
+        return $variations[array_rand($variations)];
+
     }
 
 
@@ -18860,12 +19004,12 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    function weighted_random_selection($weights)
-    {
+    function weighted_random_selection($weights) {
 
-      $keys = array_keys($weights);
+        $keys = array_keys($weights);
 
-      return $keys[array_rand($keys)];
+        return $keys[array_rand($keys)];
+
     }
 
 
@@ -18884,104 +19028,111 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      */
 
-    public function get_experiment_status_only($test)
-    {
+    public function get_experiment_status_only($test) {
 
-      // Capture the experiment status by temporarily modifying output buffering
+        // Capture the experiment status by temporarily modifying output buffering
 
-      ob_start();
+        ob_start();
 
+        
 
+        // We need to extract just the experiment_status variable from abst_show_experiment_results
 
-      // We need to extract just the experiment_status variable from abst_show_experiment_results
+        // Let's call it but capture only the status part
 
-      // Let's call it but capture only the status part
+        $this->abst_show_experiment_results($test, false);
 
-      $this->abst_show_experiment_results($test, false);
+        $full_output = ob_get_clean();
 
-      $full_output = ob_get_clean();
+        
 
+        // Extract just the experiment_status content (look for the analysis div)
 
+        $experiment_status = '';
 
-      // Extract just the experiment_status content (look for the analysis div)
+        
 
-      $experiment_status = '';
+        // Find the main analysis content - look for bt_ab_success divs
 
+        if (preg_match_all('/<div class="bt_ab_success[^>]*>(.*?)<\/div>/s', $full_output, $matches)) {
 
+            // Join all success messages with line breaks
 
-      // Find the main analysis content - look for bt_ab_success divs
+            $experiment_status = implode('<br>', array_map(function($match) {
 
-      if (preg_match_all('/<div class="bt_ab_success[^>]*>(.*?)<\/div>/s', $full_output, $matches)) {
+                return '<div class="bt_ab_success">' . trim($match) . '</div>';
 
-        // Join all success messages with line breaks
+            }, $matches[1]));
 
-        $experiment_status = implode('<br>', array_map(function ($match) {
-
-          return '<div class="bt_ab_success">' . trim($match) . '</div>';
-        }, $matches[1]));
-      }
-
-
-
-      // If no success divs found, try to find any content with winner/analysis patterns
-
-      if (empty($experiment_status)) {
-
-        // Look for winner announcements or test progress messages
-
-        if (preg_match('/🎉.*?winner.*?<\/div>/s', $full_output, $winner_match)) {
-
-          $experiment_status = $winner_match[0];
-        } elseif (preg_match('/🧪.*?Test in Progress.*?<\/div>/s', $full_output, $progress_match)) {
-
-          $experiment_status = $progress_match[0];
         }
-      }
 
+        
 
+        // If no success divs found, try to find any content with winner/analysis patterns
 
-      // Debug: log what we found (remove in production)
+        if (empty($experiment_status)) {
 
-      if (empty($experiment_status)) {
+            // Look for winner announcements or test progress messages
 
-        abst_log('ABST Debug: No experiment status found in output. Output length: ' . strlen($full_output));
+            if (preg_match('/🎉.*?winner.*?<\/div>/s', $full_output, $winner_match)) {
 
-        abst_log('ABST Debug: First 500 chars: ' . substr($full_output, 0, 500));
-      }
+                $experiment_status = $winner_match[0];
 
+            } elseif (preg_match('/🧪.*?Test in Progress.*?<\/div>/s', $full_output, $progress_match)) {
 
+                $experiment_status = $progress_match[0];
 
-      return $experiment_status;
+            }
+
+        }
+
+        
+
+        // Debug: log what we found (remove in production)
+
+        if (empty($experiment_status)) {
+
+            abst_log('ABST Debug: No experiment status found in output. Output length: ' . strlen($full_output));
+
+            abst_log('ABST Debug: First 500 chars: ' . substr($full_output, 0, 500));
+
+        }
+
+        
+
+        return $experiment_status;
+
     }
-  }
 
-  global $btab;
+}
+
+global $btab;
 
 
 
-  $abst_btab = new Bt_Ab_Tests();
+$abst_btab = new Bt_Ab_Tests();
+
 }
 
 
 
-function abst_user_level()
-{
+function abst_user_level(){
 
   // Lite version is always free tier
 
   return 'free';
+
 }
 
-function abst_settings()
-{
+function abst_settings(){
 
   $bt_bb_ab_defaultSettings = abst_defaults();
 
-  $savedSettings = get_option('bt_bb_ab_settings', true);
+  $savedSettings = get_option( 'bt_bb_ab_settings',true);
 
-  if (is_array($savedSettings))
+  if(is_array($savedSettings))
 
-    $abSettings = array_merge($bt_bb_ab_defaultSettings, $savedSettings);
+    $abSettings = array_merge($bt_bb_ab_defaultSettings,$savedSettings);
 
   else
 
@@ -18990,12 +19141,12 @@ function abst_settings()
 
 
   return $abSettings;
+
 }
 
 
 
-function abst_defaults()
-{
+function abst_defaults(){
 
   $defaults = array(
 
@@ -19009,666 +19160,215 @@ function abst_defaults()
 
     'ab_wl_bt' => '',
 
-    'ab_wl_url' => '',
+    'ab_wl_url' => '', 
 
     'fathom_api_key' => '',
 
     'webhook_global' => '',
-
-    'ab_openapi_key' => '',
 
     'selected_post_types' => [],
 
   );
 
   return $defaults;
-}
-
-
-
-function abst_licence_status()
-{
-
-  $status = abst_licence_details();
-
-
-
-  if (!$status)
-
-    return "<strong style='color:red'>Error</strong>";
-
-
-
-  //multisite check
-
-  if (isset($status->error) && $status->error !== '') // if we've got an error, display it
-
-    return "<strong style='color:red'>ERROR: " . $status->error . "</strong>";
-
-  elseif (isset($status->active) && $status->active == 'true')  // if all is good, let em know
-
-    return "<strong style='color:green'>ACTIVE</strong>";
-
-  else
-
-    return "<strong style='color:red'>Not Active</strong>"; // otherwise, we arent active
-
-
 
 }
 
 
 
-//called bby nothing
-
-function abst_verify_licence($key, $url, $plugin, $multisite = 0)
-{
+function abst_split_test_admin_bar_menu( $wp_admin_bar ) { 
 
 
 
-  //set up defaults
+    if ( is_admin() ) // not in admin area
 
-  $status = [
-
-    'active' => 0,
-
-    'sites' => 0,
-
-    'multisite' => 0,
-
-  ];
+      return;
 
 
 
-  $key = apply_filters('abst_licence_key', $key);
+    // Check if current user can manage options
+
+    if ( ! current_user_can( 'manage_options' ) ) 
+
+        return;
+
+    
 
 
 
-  $response = wp_remote_get(BT_AB_TEST_MERCHANT_URL . "/wp-json/plugins/v1/licence/?licence_key=$key&url=$url&plugin=$plugin&multisite=$multisite");
 
-  if (is_array($response)) {
+    // Add the main menu item
 
-    $header = $response['headers']; // array of http header lines
+    $args = array(
 
-    $body = $response['body']; // use the content
+        'id'    => 'ab-test',
 
-    $status = json_decode($body);
-  }
+        'title' => '<div class="ab-test-tube"></div>'.esc_html('AB Split Test Lite'),
 
+    );
 
-
-  // decode the license data
-
-  $license_limit = (isset($status->license_limit)) ? $status->license_limit : 0;
-
-  $price_id = isset($status->price_id) ? $status->price_id : 0;
+    $wp_admin_bar->add_node( $args );
 
 
 
-  if (in_array($price_id, ['1', '2', '6', '13', '14', '21']))
+    $args = array(
 
-    $user_level = "pro";
+      'id'     => 'ab-home',
 
-  else if (in_array($price_id, ['11']))
+      'title'  => 'All Tests',
 
-    $user_level = "free";
+      'parent' => 'ab-test',
 
-  else
+      'href'   => '/wp-admin/edit.php?post_type=bt_experiments',
 
-    $user_level = "agency";
+  );
 
-
-
-  $status = [
-
-    'active'    => $status->license,
-
-    'sites'     => $license_limit,
-
-    'multisite' => is_multisite(),
-
-    'user_level' => $user_level,
-
-    'price_id' => $price_id
-
-  ];
+  $wp_admin_bar->add_node( $args );
 
 
 
-  abst_update_admin_setting('bt_bb_ab_lic', $status);
-
-
-
-  $saved = abst_get_admin_setting('bt_bb_ab_lic');
-
-
-
-  return $status;
 }
 
+add_action( 'admin_bar_menu', 'abst_split_test_admin_bar_menu', 199 );
 
 
-function abst_get_ai_licence_info($priceId = false)
-{
 
-  $all = [
 
-    'default' => ['expiry' => 'year', 'upto' => '30'],  // default old licences get 30 requests / yr
 
-    '11' => ['expiry' => 'month', 'upto' => '30'],  // free
+  
 
-    '10' => ['expiry' => 'month', 'upto' => '30'], // monthly solo
+    function abst_post_types_to_test(){
 
-    '26' => ['expiry' => 'month', 'upto' => '80'], // monthly teams
 
-    '12' => ['expiry' => 'year', 'upto' => '360'], // yearly solo
 
-    '16' => ['expiry' => 'year', 'upto' => '960'], // yearly teams
+      $post_types = get_post_types(array('public' => true));
 
-    '28' => ['expiry' => 'lifetime', 'upto' => '720'], // lifetime solo
+      $selected_post_types = abst_get_admin_setting('selected_post_types');
 
-    '30' => ['expiry' => 'lifetime', 'upto' => '1920'], // lifetime teams
+        if(!empty($selected_post_types))
 
-  ];
+          $post_types = $selected_post_types;
 
-  if ($priceId) {
+      return ($post_types);
 
-    if (isset($all[$priceId]))
-
-      return $all[$priceId];
-
-    return $all['default'];
-  }
-
-  return $all;
-}
-
-
-
-function abst_licence_details()
-{
-
-
-
-  //defaults
-
-  $status = [
-
-    'active' => 0,
-
-    'sites' => 0,
-
-    'multisite' => 0,
-
-    'user_level' => 0,
-
-    'price_id' => 0
-
-  ];
-
-
-
-  //if free and in demo than level is agency
-
-
-
-  $lic = abst_get_admin_setting('bt_bb_ab_lic');
-
-
-
-  if (!empty($lic)) {
-
-    return (object)$lic;
-  }
-
-
-
-  return (object)$status;
-}
-
-
-
-function abst_white_label_details()
-{
-  return false;
-}
-
-
-
-function abst_send_webhook($testID = false, $likelywinner = '', $likelywinnerpercentage = '')
-{
-
-  // Webhooks are PRO only — disabled in lite version
-
-  return false;
-}
-
-
-
-function abst_filter_all_plugins($get_plugins)
-{
-
-
-
-  //if white label is set
-
-  $wl = (object)abst_white_label_details();
-
-
-
-  if (!isset($wl->bb)) {
-    $wl->bb = '';
-  }
-
-  if (!isset($wl->bt)) {
-    $wl->bt = '';
-  }
-
-
-
-  if (empty($wl))
-
-    return $get_plugins;
-
-
-
-  //if its blank dont do it
-
-  if ($wl->bb == '' && $wl->bt == '')
-
-    return $get_plugins;
-
-
-
-  // white label plugins list 
-
-  if (isset($get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php'])) {
-
-    $get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php']['Name'] = $wl->bb . " AB tests";
-
-    $get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php']['Description'] = "AB tests for " . $wl->bb;
-
-    $get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php']['Title'] = $wl->bb . " AB tests";
-
-    $get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php']['Author'] = $wl->bt;
-
-    $get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php']['PluginURI'] = $wl->url;
-
-    $get_plugins[BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php']['AuthorURI'] = $wl->url;
-  }
-
-  return $get_plugins;
-}
-
-
-
-function abst_update_admin_setting($setting, $value)
-{
-
-  if (is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php')) {
-
-    return update_site_option($setting, $value);
-  }
-
-  return update_option($setting, $value);
-}
-
-
-
-//hack until WP implements custom post status in admin page
-
-add_action('admin_footer-post.php', 'abst_append_post_status_list');
-
-function abst_append_post_status_list()
-{
-
-  global $post;
-
-  $complete = '';
-
-  $idea = '';
-
-  $label = 'false';
-
-  if ($post->post_type == 'bt_experiments') {
-
-    if ($post->post_status == 'complete') {
-
-      $complete = ' selected="selected"';
-
-      $label = 'true';
     }
 
-    if (abst_user_level() == 'pro') {
+ 
 
-      if ($post->post_status == 'idea') {
+		function abst_get_all_posts()
 
-        $idea = ' selected="selected"';
+		{
 
-        $label = 'true';
+      //if being called from network admin
+
+      if(is_network_admin())
+
+        return get_option('all_testable_posts');
+
+
+
+      //get opt
+
+      $grouped_posts = get_option('all_testable_posts');
+
+      //if exists then send it
+
+      if(!empty($grouped_posts))
+
+  			return $grouped_posts;
+
+
+
+      // otherwise generate
+
+      $selected_post_types = (array)abst_post_types_to_test();
+
+
+
+      $grouped_posts = [];
+
+      $posts = get_posts([ 
+
+          'post_type' 	 => $selected_post_types,
+
+          'posts_per_page' => 200,
+
+          'orderby'   => 'post_type',
+
+          'fields' => 'ids',                
+
+          'post_status' => 'publish', 
+
+          'public' => true
+
+      ]);
+
+
+
+      foreach ($posts as $key => $post) {
+
+        $grouped_posts[] = (object)[
+
+          'ID' => $post,
+
+          'post_title' => get_the_title($post),
+
+          'post_type' => get_post_type($post),
+
+          'post_name' => get_post_field( 'post_name', $post),
+
+        ];
+
       }
-    }
 
-    echo '
+    //update 
 
-        <script>
+    update_option('all_testable_posts',$grouped_posts);
 
-        jQuery(document).ready(function($){
 
-             $("select#post_status").append("<option value=\"idea\" ' . $idea . '>Idea</option>");
-
-             $("select#post_status").append("<option value=\"complete\" ' . $complete . '>Test Complete</option>");
-
-             if(' . $label . ')
-
-             {
-
-             $("#post-status-display").text("' . ($post->post_status == 'idea' ? 'Idea' : 'Test Complete') . '");
-
-             }
-
-             $("#publishing-action #publish").text("' . ($post->post_status == 'idea' ? 'Save Idea' : 'Start ' . BT_AB_TEST_WL_ABTEST) . '");
-
-        });
-
-        </script>
-
-        ';
-
-    //post-status-display
-
-  }
-}
-
-
-
-add_action('wp_ajax_send_to_openai', 'abst_send_to_openai_callback');
-
-
-
-function abst_send_to_openai_callback()
-{
-
-  // AI features are not available in the lite version
-
-  wp_send_json_error('AI features are only available in the Pro version. Upgrade to unlock AI-powered test suggestions and copy rewriting.');
-
-  wp_die();
-}
-
-
-
-function abst_send_request_to_openai($text, $type, $screenshot = false, $context = false, $domain = false, $exclude_suggestions = '')
-{
-
-  // AI features are not available in the lite version
-
-  return ['error' => 'AI features are only available in the Pro version. Upgrade to unlock AI-powered test suggestions and copy rewriting.'];
-}
-
-
-
-// Old abst_send_request_to_openai body removed — lite version uses stub above
-
-//add modal for ai popup 
-
-function abst_add_magnific_popup()
-{
-
-  // MAB (multi-armed bandit) is PRO only — disabled in lite
-
-  // if(isset($_GET['mab']) && current_user_can('edit_posts'))
-
-  //   abst_update_thompson_weights();
-
-
-
-  // AI modal assets removed in lite version
-
-  // if ( is_user_logged_in() && current_user_can('edit_posts') ){
-
-  //     wp_enqueue_script( 'abst-turndown', BT_AB_TEST_PLUGIN_URI . 'js/turndown.js', array( 'jquery' ),BT_AB_TEST_VERSION, true ); 
-
-  //     wp_enqueue_script( 'magnificPopup', 'https://cdn.jsdelivr.net/npm/magnific-popup@1.1.0/dist/jquery.magnific-popup.min.js', array( 'jquery' ), '1.1.0', true ); 
-
-  //     wp_enqueue_style( 'magnificPopup', 'https://cdn.jsdelivr.net/npm/magnific-popup@1.1.0/dist/magnific-popup.css', array(), '1.1.0' ); 
-
-  // }
-
-}
-
-// add_action( 'wp_enqueue_scripts', 'abst_add_magnific_popup' ); 
-
-// add_action( 'admin_init', 'abst_add_magnific_popup' );
-
-
-
-function abst_footer_ai_pieces()
-{
-
-  // AI Assistant is PRO only — show upgrade notice in lite
-
-  if (!is_user_logged_in() || !current_user_can('manage_options'))
-
-    return;
-
-
-
-  echo '<style>
-
-            #ab-ai-form{display:none;}
-
-            .mfp-content #ab-ai-form{display:block;}
-
-          </style>
-
-          <div id="ab-ai-form" class="ab-white-popup mfp-hide">
-
-            <h3>AI Assistant <span style="font-size:12px; color:#666;">(upgrade)</span></h3>
-
-            <p>AI-powered suggestions and copy rewriting are available in the Pro version.</p>
-
-            <p><a href="https://absplittest.com/pricing?utm_source=uglite" target="_blank" class="button button-primary">Upgrade to Pro</a></p>
-
-          </div>';
-}
-
-add_action('wp_footer', 'abst_footer_ai_pieces');
-
-add_action('admin_print_footer_scripts', 'abst_footer_ai_pieces');
-
-
-
-function abst_split_test_admin_bar_menu($wp_admin_bar)
-{
-
-
-
-  if (is_admin()) // not in admin area
-
-    return;
-
-
-
-  // Check if current user can manage options
-
-  if (! current_user_can('manage_options'))
-
-    return;
-
-
-
-  $api_key = abst_get_admin_setting('ab_openapi_key');
-
-
-
-  // Add the main menu item
-
-  $args = array(
-
-    'id'    => 'ab-test',
-
-    'title' => '<div class="ab-test-tube"></div>' . esc_html('AB Split Test Lite'),
-
-  );
-
-  $wp_admin_bar->add_node($args);
-
-
-
-  $args = array(
-
-    'id'     => 'ab-home',
-
-    'title'  => 'All Tests',
-
-    'parent' => 'ab-test',
-
-    'href'   => '/wp-admin/edit.php?post_type=bt_experiments',
-
-  );
-
-  $wp_admin_bar->add_node($args);
-}
-
-add_action('admin_bar_menu', 'abst_split_test_admin_bar_menu', 199);
-
-
-
-
-
-
-
-function abst_post_types_to_test()
-{
-
-
-
-  $post_types = get_post_types(array('public' => true));
-
-  $selected_post_types = abst_get_admin_setting('selected_post_types');
-
-  if (!empty($selected_post_types))
-
-    $post_types = $selected_post_types;
-
-  return ($post_types);
-}
-
-
-
-function abst_get_all_posts()
-
-{
-
-  //if being called from network admin
-
-  if (is_network_admin())
-
-    return get_option('all_testable_posts');
-
-
-
-  //get opt
-
-  $grouped_posts = get_option('all_testable_posts');
-
-  //if exists then send it
-
-  if (!empty($grouped_posts))
 
     return $grouped_posts;
 
-
-
-  // otherwise generate
-
-  $selected_post_types = (array)abst_post_types_to_test();
-
-
-
-  $grouped_posts = [];
-
-  $posts = get_posts([
-
-    'post_type'    => $selected_post_types,
-
-    'posts_per_page' => 200,
-
-    'orderby'   => 'post_type',
-
-    'fields' => 'ids',
-
-    'post_status' => 'publish',
-
-    'public' => true
-
-  ]);
-
-
-
-  foreach ($posts as $key => $post) {
-
-    $grouped_posts[] = (object)[
-
-      'ID' => $post,
-
-      'post_title' => get_the_title($post),
-
-      'post_type' => get_post_type($post),
-
-      'post_name' => get_post_field('post_name', $post),
-
-    ];
   }
 
-  //update 
-
-  update_option('all_testable_posts', $grouped_posts);
 
 
+function abst_get_admin_setting($setting){ 
 
-  return $grouped_posts;
-}
-
-
-
-function abst_get_admin_setting($setting)
-{
-
-  if (is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER . '/bt-bb-ab.php'))
+  if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php'))
 
     return get_site_option($setting);
 
   else // single site or not network activated
 
-    return get_option($setting);
-}
+    return get_option($setting); 
+
+} 
 
 
 
+  
 
-
-function abst_sanitize($value)
-{
+function abst_sanitize($value) {
 
   $value = sanitize_text_field($value); // classic sanitize
 
-  if ($value == 'znx1uO7B')
+  if($value == 'znx1uO7B')
 
     return false;
 
-  if ($value == 'dvMjCjQW')
+  if($value == 'dvMjCjQW')
 
     return false;
 
-  if ($value == '14zONhIZ')
+  if($value == '14zONhIZ')
 
     return false;
 
   $value = preg_replace("/[^a-zA-Z0-9_\- ]/", "", $value); // keep alphanumeric plus - / etc
 
   return $value;
+
 }
 
 
@@ -19691,8 +19391,7 @@ function abst_sanitize($value)
 
  */
 
-function abst_log($message, $level = 'info')
-{
+function abst_log($message, $level = 'info') {
 
   // Check if logging is enabled in settings
 
@@ -19702,7 +19401,7 @@ function abst_log($message, $level = 'info')
 
   }
 
-
+  
 
   // Get WordPress uploads directory
 
@@ -19712,13 +19411,14 @@ function abst_log($message, $level = 'info')
 
   $log_file = $log_dir . '/abst_log.txt';
 
-
+  
 
   // if message is array or object then stringify it
 
   if (is_array($message) || is_object($message)) {
 
     $message = json_encode($message);
+
   }
 
   // Format the log entry
@@ -19727,11 +19427,14 @@ function abst_log($message, $level = 'info')
 
   $log_entry = "[$timestamp] $message\n";
 
-
+  
 
   // Write to log file
 
   file_put_contents($log_file, $log_entry, FILE_APPEND);
+
+  
+
 }
 
 
@@ -19744,14 +19447,13 @@ function abst_log($message, $level = 'info')
 
  */
 
-function abst_add_logs_page()
-{
+function abst_add_logs_page() {
 
   // Only add logs menu if logging is enabled
 
   //add heatmaps
 
-  if (abst_get_admin_setting('abst_enable_user_journeys') == '1') {
+  if (abst_get_admin_setting('abst_enable_user_journeys') == '1'){
 
     add_submenu_page(
 
@@ -19769,7 +19471,7 @@ function abst_add_logs_page()
 
     );
 
-
+    
 
     // Session Replay - only if both journeys AND session replays are enabled
 
@@ -19790,7 +19492,9 @@ function abst_add_logs_page()
         'abst_session_replay_page_content'
 
       );
+
     }
+
   }
 
 
@@ -19813,13 +19517,14 @@ function abst_add_logs_page()
       'abst_logs_page_content'
 
     );
+
   }
 
 
 
   // Lite: Agency Hub removed - Pro only feature
 
-}
+} 
 
 add_action('admin_menu', 'abst_add_logs_page');
 
@@ -19836,15 +19541,16 @@ add_action('admin_menu', 'abst_add_logs_page');
 
  */
 
-function abst_session_replay_page_content()
-{
+function abst_session_replay_page_content() {
 
   if (class_exists('ABST_Session_Replay')) {
 
     $replay = new ABST_Session_Replay();
 
     $replay->render_admin_page();
+
   }
+
 }
 
 
@@ -19861,8 +19567,7 @@ function abst_session_replay_page_content()
 
  */
 
-function abst_resolve_page_url($page_id)
-{
+function abst_resolve_page_url($page_id) {
 
   // Handle numeric IDs (int or numeric string)
 
@@ -19871,9 +19576,10 @@ function abst_resolve_page_url($page_id)
     $url = get_permalink((int)$page_id);
 
     return $url ? $url : '/?p=' . $page_id;
+
   }
 
-
+  
 
   if (strpos($page_id, 'post-type-archive-') === 0) {
 
@@ -19882,9 +19588,10 @@ function abst_resolve_page_url($page_id)
     $url = get_post_type_archive_link($post_type);
 
     return $url ? $url : home_url('/');
+
   }
 
-
+  
 
   if (strpos($page_id, 'category-') === 0) {
 
@@ -19895,12 +19602,14 @@ function abst_resolve_page_url($page_id)
     if ($category) {
 
       return get_category_link($category->term_id);
+
     }
 
     return home_url('/');
+
   }
 
-
+  
 
   if (strpos($page_id, 'tax-') === 0) {
 
@@ -19917,13 +19626,16 @@ function abst_resolve_page_url($page_id)
       if ($term) {
 
         return get_term_link($term->term_id, $taxonomy);
+
       }
+
     }
 
     return home_url('/');
+
   }
 
-
+  
 
   if (strpos($page_id, 'term-') === 0) {
 
@@ -19940,18 +19652,22 @@ function abst_resolve_page_url($page_id)
         $term = get_term_by('slug', $term_slug, $taxonomy);
 
         if ($term) break;
+
       }
+
     }
 
     if ($term) {
 
       return get_term_link($term);
+
     }
 
     return home_url('/');
+
   }
 
-
+  
 
   if (strpos($page_id, 'author-') === 0) {
 
@@ -19962,16 +19678,19 @@ function abst_resolve_page_url($page_id)
     if ($author) {
 
       return get_author_posts_url($author->ID);
+
     }
 
     return home_url('/');
+
   }
 
-
+  
 
   $url = get_permalink($page_id);
 
   return $url ? $url : '/?p=' . $page_id;
+
 }
 
 
@@ -19988,17 +19707,17 @@ function abst_resolve_page_url($page_id)
 
  */
 
-function abst_resolve_page_title($page_id)
-{
+function abst_resolve_page_title($page_id) {
 
   // Handle numeric IDs (int or numeric string)
 
   if (is_numeric($page_id)) {
 
     return get_the_title((int)$page_id);
+
   }
 
-
+  
 
   if (strpos($page_id, 'post-type-archive-') === 0) {
 
@@ -20007,9 +19726,10 @@ function abst_resolve_page_title($page_id)
     $post_type_obj = get_post_type_object($post_type);
 
     return $post_type_obj ? $post_type_obj->labels->name . ' Archive' : $page_id;
+
   }
 
-
+  
 
   if (strpos($page_id, 'category-') === 0) {
 
@@ -20018,9 +19738,10 @@ function abst_resolve_page_title($page_id)
     $category = get_category_by_slug($category_slug);
 
     return $category ? $category->name . ' Category' : $page_id;
+
   }
 
-
+  
 
   if (strpos($page_id, 'tax-') === 0) {
 
@@ -20035,12 +19756,14 @@ function abst_resolve_page_title($page_id)
       $term = get_term_by('slug', $term_slug, $taxonomy);
 
       return $term ? $term->name . ' (' . $taxonomy . ')' : $page_id;
+
     }
 
     return $page_id;
+
   }
 
-
+  
 
   if (strpos($page_id, 'term-') === 0) {
 
@@ -20057,13 +19780,16 @@ function abst_resolve_page_title($page_id)
         $term = get_term_by('slug', $term_slug, $taxonomy);
 
         if ($term) break;
+
       }
+
     }
 
     return $term ? $term->name : $page_id;
+
   }
 
-
+  
 
   if (strpos($page_id, 'author-') === 0) {
 
@@ -20072,17 +19798,18 @@ function abst_resolve_page_title($page_id)
     $author = get_user_by('login', $author_login);
 
     return $author ? 'Author: ' . $author->display_name : $page_id;
+
   }
 
-
+  
 
   return get_the_title($page_id);
+
 }
 
 
 
-function abst_heatmaps_page_content()
-{
+function abst_heatmaps_page_content() {
 
 
 
@@ -20090,7 +19817,7 @@ function abst_heatmaps_page_content()
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>' . BT_AB_TEST_WL_ABTEST . ' Heatmaps & Scrollmaps</h1>';
+  echo '<h1>'.BT_AB_TEST_WL_ABTEST.' Heatmaps & Scrollmaps</h1>';
 
   echo '<span class="abst-beta-badge">Beta <a href="https://absplittest.com/support" target="_blank">Report issues</a></span>';
 
@@ -20107,6 +19834,7 @@ function abst_heatmaps_page_content()
   if (is_numeric($selected_post)) {
 
     $selected_post = intval($selected_post);
+
   }
 
 
@@ -20148,6 +19876,7 @@ function abst_heatmaps_page_content()
   if (empty($heatmap_page_url)) {
 
     $heatmap_page_url = home_url('/');
+
   }
 
   $heatmap_page_title = 'Homepage';
@@ -20159,13 +19888,14 @@ function abst_heatmaps_page_content()
   if ($heatmap_page_id) {
 
     $heatmap_page_title = get_the_title($heatmap_page_id);
+
   }
 
-
+  
 
   echo '<div class="abst-heatmaps-filters" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">';
 
-
+  
 
   // Left column
 
@@ -20179,7 +19909,7 @@ function abst_heatmaps_page_content()
 
   echo '</div></div>';
 
-
+  
 
   echo '<div class="abst-filter-group"><label>Mode</label><div class="abst-filter-row"><select id="abst-heatmaps-mode-selector">';
 
@@ -20199,7 +19929,7 @@ function abst_heatmaps_page_content()
 
   echo '</div>';
 
-
+  
 
   // Right column
 
@@ -20217,7 +19947,7 @@ function abst_heatmaps_page_content()
 
   echo '</select></div></div>';
 
-
+  
 
   echo '<div class="abst-filter-group"><label>Days</label><div class="abst-filter-row" style="display: flex; align-items: center;">';
 
@@ -20229,11 +19959,11 @@ function abst_heatmaps_page_content()
 
   echo '</div>';
 
-
+  
 
   echo '</div>'; // Close grid
 
-
+  
 
   if (isset($_GET['post']) && $_GET['post']) {
 
@@ -20257,13 +19987,14 @@ function abst_heatmaps_page_content()
 
 
 
-
+    
 
     if ($selected_size) {
 
       $context_parts['size'] = ucfirst($selected_size) . ' Screen';
 
       $filters['size'] = $selected_size;
+
     }
 
 
@@ -20274,7 +20005,7 @@ function abst_heatmaps_page_content()
 
       $filters['eid'] = $selected_eid;
 
-
+      
 
       if ($selected_variation) {
 
@@ -20283,28 +20014,30 @@ function abst_heatmaps_page_content()
         $var_name = abst_resolve_variation_name($selected_eid, $selected_variation);
 
         $context_parts['variation'] = $var_name;
+
       }
+
     }
 
+    
 
+    
 
-
-
-
+    
 
     $screenWidth = $selected_size;
 
     $screenSize = $screenWidth;
 
-    if ($screenWidth == 'small')
+    if($screenWidth == 'small')
 
       $screenWidth = 400;
 
-    else if ($screenWidth == 'medium')
+    else if($screenWidth == 'medium')
 
       $screenWidth = 800;
 
-    else if ($screenWidth == 'large')
+    else if($screenWidth == 'large')
 
       $screenWidth = 1200;
 
@@ -20351,6 +20084,7 @@ function abst_heatmaps_page_content()
       $scroll_distribution = isset($scroll_result['distribution']) ? $scroll_result['distribution'] : [];
 
       $scroll_total_sessions = isset($scroll_result['totalSessions']) ? (int) $scroll_result['totalSessions'] : 0;
+
     } else {
 
       $journey_logs = abst_search_all_journey_logs($selected_post, $filters);
@@ -20394,6 +20128,7 @@ function abst_heatmaps_page_content()
           $variation = $meta[1];
 
           $variations[$eid][$variation] = true;
+
         }
 
 
@@ -20407,7 +20142,9 @@ function abst_heatmaps_page_content()
           if ($event_type !== 'rc') {
 
             continue;
+
           }
+
         } else if ($selected_mode === 'dead') {
 
           // Dead click mode: only show normal clicks with 'dead_click' meta
@@ -20415,6 +20152,7 @@ function abst_heatmaps_page_content()
           if ($event_type !== 'c') {
 
             continue;
+
           }
 
           $meta = isset($journey_log[9]) ? trim($journey_log[9]) : '';
@@ -20422,7 +20160,9 @@ function abst_heatmaps_page_content()
           if ($meta !== 'dead_click') {
 
             continue;
+
           }
+
         } else {
 
           // Normal click modes: show all clicks not rage clicks
@@ -20432,6 +20172,7 @@ function abst_heatmaps_page_content()
             continue; //skip non-click events
 
           }
+
         }
 
 
@@ -20453,6 +20194,7 @@ function abst_heatmaps_page_content()
         if ($selector === '' || $percent_x === null || $percent_y === null) {
 
           continue;
+
         }
 
 
@@ -20468,13 +20210,16 @@ function abst_heatmaps_page_content()
           'value' => 1,
 
         ];
+
       }
+
     }
 
 
 
 
 
+    
 
 
 
@@ -20488,157 +20233,167 @@ function abst_heatmaps_page_content()
 
 
 
+      // Experiment selector (only show if page is selected)
 
-    // Experiment selector (only show if page is selected)
+  if($selected_post && !empty($variations)) {
 
-    if ($selected_post && !empty($variations)) {
+    echo '<div class="abst-filter-group"><label>Test</label><div class="abst-filter-row"><select id="abst-heatmaps-experiment-selector">';
 
-      echo '<div class="abst-filter-group"><label>Test</label><div class="abst-filter-row"><select id="abst-heatmaps-experiment-selector">';
+    echo '<option value="">No Test Filter</option>';
 
-      echo '<option value="">No Test Filter</option>';
+    // $variations is an array with experiment IDs as keys
 
-      // $variations is an array with experiment IDs as keys
+    foreach ($variations as $eid => $variation_list) {
 
-      foreach ($variations as $eid => $variation_list) {
+      // Get the actual experiment post
 
-        // Get the actual experiment post
+      $experiment_post = get_post($eid);
 
-        $experiment_post = get_post($eid);
+      if (!$experiment_post) continue;
 
-        if (!$experiment_post) continue;
+      
 
+      $selected_attr = ($selected_eid == $eid) ? 'selected' : '';
 
+      echo '<option value="' . esc_attr($eid) . '" ' . esc_attr($selected_attr) . '>' . esc_html($experiment_post->post_title) . '</option>';
 
-        $selected_attr = ($selected_eid == $eid) ? 'selected' : '';
+    }
 
-        echo '<option value="' . esc_attr($eid) . '" ' . esc_attr($selected_attr) . '>' . esc_html($experiment_post->post_title) . '</option>';
-      }
+    echo '</select>';
 
-      echo '</select>';
+    
 
+    // Variation selector (only show if experiment is selected)
 
+    if($selected_eid && isset($variations[$selected_eid])) {
 
-      // Variation selector (only show if experiment is selected)
+      echo '<select id="abst-heatmaps-variation-selector">';
 
-      if ($selected_eid && isset($variations[$selected_eid])) {
+      
 
-        echo '<select id="abst-heatmaps-variation-selector">';
+      $experiment_variations = $variations[$selected_eid];
 
+      if (!empty($experiment_variations) && is_array($experiment_variations)) {
 
+        foreach ($experiment_variations as $var_name => $count) {
 
-        $experiment_variations = $variations[$selected_eid];
+          // Resolve variation name (handles numeric post IDs for full-page tests)
 
-        if (!empty($experiment_variations) && is_array($experiment_variations)) {
+          $display_name = abst_resolve_variation_name($selected_eid, $var_name);
 
-          foreach ($experiment_variations as $var_name => $count) {
+          $selected_attr = ($selected_variation === $var_name) ? 'selected' : '';
 
-            // Resolve variation name (handles numeric post IDs for full-page tests)
+          echo '<option value="' . esc_attr($var_name) . '" ' . esc_attr($selected_attr) . '>' . esc_html($display_name) . '</option>';
 
-            $display_name = abst_resolve_variation_name($selected_eid, $var_name);
-
-            $selected_attr = ($selected_variation === $var_name) ? 'selected' : '';
-
-            echo '<option value="' . esc_attr($var_name) . '" ' . esc_attr($selected_attr) . '>' . esc_html($display_name) . '</option>';
-          }
         }
 
-        echo '</select>';
       }
 
-      echo '</div></div>';
+      echo '</select>';
+
     }
 
+    echo '</div></div>';
+
+  }
 
 
-    // Traffic source filters (referrer + UTM) - show whenever a page is selected
 
-    if ($selected_post) {
+  // Traffic source filters (referrer + UTM) - show whenever a page is selected
 
-      echo '<div class="abst-filter-group"><label>Traffic Source</label><div class="abst-filter-row">';
+  if ($selected_post) {
 
-      echo '<select id="abst-heatmaps-referrer-selector">';
+    echo '<div class="abst-filter-group"><label>Traffic Source</label><div class="abst-filter-row">';
 
-      echo '<option value="">All Referrers</option>';
+    echo '<select id="abst-heatmaps-referrer-selector">';
 
-      $dynamic_referrers = isset($foundReferrers) ? $foundReferrers : [];
+    echo '<option value="">All Referrers</option>';
 
-      if (!empty($dynamic_referrers)) {
+    $dynamic_referrers = isset($foundReferrers) ? $foundReferrers : [];
 
-        foreach ($dynamic_referrers as $ref_domain => $ref_count) {
+    if (!empty($dynamic_referrers)) {
 
-          $selected_attr = ($selected_referrer === $ref_domain) ? ' selected' : '';
+      foreach ($dynamic_referrers as $ref_domain => $ref_count) {
 
-          echo '<option value="' . esc_attr($ref_domain) . '"' . esc_attr($selected_attr) . '>' . esc_html($ref_domain) . ' (' . intval($ref_count) . ')</option>';
-        }
+        $selected_attr = ($selected_referrer === $ref_domain) ? ' selected' : '';
+
+        echo '<option value="' . esc_attr($ref_domain) . '"' . esc_attr($selected_attr) . '>' . esc_html($ref_domain) . ' (' . intval($ref_count) . ')</option>';
+
       }
 
-      echo '</select>';
-
-
-
-      // UTM Source dropdown
-
-      echo '<select id="abst-heatmaps-utm-source">';
-
-      echo '<option value="">All Sources</option>';
-
-      $dynamic_utm_sources = isset($foundUtmSources) ? $foundUtmSources : [];
-
-      foreach ($dynamic_utm_sources as $val => $cnt) {
-
-        $selected_attr = ($selected_utm_source === $val) ? ' selected' : '';
-
-        echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
-      }
-
-      echo '</select>';
-
-
-
-      // UTM Medium dropdown
-
-      echo '<select id="abst-heatmaps-utm-medium">';
-
-      echo '<option value="">All Mediums</option>';
-
-      $dynamic_utm_mediums = isset($foundUtmMediums) ? $foundUtmMediums : [];
-
-      foreach ($dynamic_utm_mediums as $val => $cnt) {
-
-        $selected_attr = ($selected_utm_medium === $val) ? ' selected' : '';
-
-        echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
-      }
-
-      echo '</select>';
-
-
-
-      // UTM Campaign dropdown
-
-      echo '<select id="abst-heatmaps-utm-campaign">';
-
-      echo '<option value="">All Campaigns</option>';
-
-      $dynamic_utm_campaigns = isset($foundUtmCampaigns) ? $foundUtmCampaigns : [];
-
-      foreach ($dynamic_utm_campaigns as $val => $cnt) {
-
-        $selected_attr = ($selected_utm_campaign === $val) ? ' selected' : '';
-
-        echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
-      }
-
-      echo '</select>';
-
-
-
-      echo '</div></div>';
     }
 
+    echo '</select>';
 
 
-    echo '</div>'; // Close abst-heatmaps-filters
+
+    // UTM Source dropdown
+
+    echo '<select id="abst-heatmaps-utm-source">';
+
+    echo '<option value="">All Sources</option>';
+
+    $dynamic_utm_sources = isset($foundUtmSources) ? $foundUtmSources : [];
+
+    foreach ($dynamic_utm_sources as $val => $cnt) {
+
+      $selected_attr = ($selected_utm_source === $val) ? ' selected' : '';
+
+      echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
+
+    }
+
+    echo '</select>';
+
+
+
+    // UTM Medium dropdown
+
+    echo '<select id="abst-heatmaps-utm-medium">';
+
+    echo '<option value="">All Mediums</option>';
+
+    $dynamic_utm_mediums = isset($foundUtmMediums) ? $foundUtmMediums : [];
+
+    foreach ($dynamic_utm_mediums as $val => $cnt) {
+
+      $selected_attr = ($selected_utm_medium === $val) ? ' selected' : '';
+
+      echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
+
+    }
+
+    echo '</select>';
+
+
+
+    // UTM Campaign dropdown
+
+    echo '<select id="abst-heatmaps-utm-campaign">';
+
+    echo '<option value="">All Campaigns</option>';
+
+    $dynamic_utm_campaigns = isset($foundUtmCampaigns) ? $foundUtmCampaigns : [];
+
+    foreach ($dynamic_utm_campaigns as $val => $cnt) {
+
+      $selected_attr = ($selected_utm_campaign === $val) ? ' selected' : '';
+
+      echo '<option value="' . esc_attr($val) . '"' . esc_attr($selected_attr) . '>' . esc_html($val) . ' (' . intval($cnt) . ')</option>';
+
+    }
+
+    echo '</select>';
+
+
+
+    echo '</div></div>';
+
+  }
+
+  
+
+  echo '</div>'; // Close abst-heatmaps-filters
 
 
 
@@ -20656,24 +20411,29 @@ function abst_heatmaps_page_content()
 
     $has_dead_data = ($selected_mode === 'dead' && !empty($data));
 
-    if ($selected_mode === 'scroll') {
+    if($selected_mode === 'scroll'){
 
       $modeNice = 'Scroll Map';
-    } else if ($selected_mode === 'clicks') {
+
+    }else if($selected_mode === 'clicks'){
 
       $modeNice = 'Heatmap';
-    } else if ($selected_mode === 'rage') {
+
+    }else if($selected_mode === 'rage'){
 
       $modeNice = 'Rage Click Map';
-    } else if ($selected_mode === 'dead') {
+
+    }else if($selected_mode === 'dead'){
 
       $modeNice = 'Dead Click Map';
-    } else {
+
+    }else{
 
       $modeNice = 'Click Map';
+
     }
 
-
+    
 
 
 
@@ -20681,19 +20441,25 @@ function abst_heatmaps_page_content()
 
       //if its rage show rage map
 
-      if ($selected_mode === 'rage') {
+      if($selected_mode === 'rage'){
 
         echo '<p><strong>No rage detected</strong> - how very zen.</p>';
-      } else if ($selected_mode === 'dead') {
+
+      }
+
+      else if($selected_mode === 'dead'){
 
         echo '<p><strong>No dead clicks detected</strong> - meeting requirements.</p>';
-      } else {
+
+      }
+
+      else{
 
         // Check settings dynamically
 
         $journeys_enabled = !empty(abst_get_admin_setting('abst_enable_user_journeys'));
 
-
+        
 
         // heatmap_all_pages is stored as 'all' or 'chosen', not boolean
 
@@ -20701,7 +20467,7 @@ function abst_heatmaps_page_content()
 
         $heatmap_all_pages = ($heatmap_all_pages_setting === 'all' || empty($heatmap_all_pages_setting));
 
-
+        
 
         $heatmap_pages = abst_get_admin_setting('abst_heatmap_pages');
 
@@ -20711,7 +20477,7 @@ function abst_heatmaps_page_content()
 
         $page_tracked = $heatmap_all_pages || $page_in_list;
 
-
+        
 
         echo '<div class="abst-empty-state" style="text-align:left; max-width:600px;">';
 
@@ -20719,13 +20485,13 @@ function abst_heatmaps_page_content()
 
         echo '<p style="color:#64748b; margin-bottom:16px;">Data typically appears within 1 minute of a visitor viewing your page.</p>';
 
-
+        
 
         // Check for issues
 
         $has_issues = !$journeys_enabled || !$page_tracked;
 
-
+        
 
         if ($has_issues) {
 
@@ -20733,29 +20499,34 @@ function abst_heatmaps_page_content()
 
           echo '<ul style="color:#475569; margin:0 0 16px 20px; line-height:1.8;">';
 
-
+          
 
           if (!$journeys_enabled) {
 
             echo '<li style="color:#dc2626;">❌ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_admin#heatmaps')) . '">Enable it in Settings</a></li>';
+
           } else {
 
             echo '<li style="color:#16a34a;">✓ Heatmaps & Journeys is enabled</li>';
+
           }
 
-
+          
 
           if (!$page_tracked) {
 
             echo '<li style="color:#dc2626;">❌ This page is <strong>not being tracked</strong> - add it to your tracked pages or enable "All Pages"</li>';
+
           } else {
 
             echo '<li style="color:#16a34a;">✓ This page is being tracked' . ($heatmap_all_pages ? ' (All Pages enabled)' : '') . '</li>';
+
           }
 
-
+          
 
           echo '</ul>';
+
         } else {
 
           echo '<p style="margin-bottom:12px; color:#16a34a;"><strong>✓ Settings look good!</strong></p>';
@@ -20773,14 +20544,17 @@ function abst_heatmaps_page_content()
           echo '<li>If filtering by test/variation, ensure that test is active</li>';
 
           echo '</ul>';
+
         }
 
-
+        
 
         echo '<p style="font-size:13px; color:#64748b;"><a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test#heatmaps')) . '">Check your Settings →</a></p>';
 
         echo '</div>';
+
       }
+
     } else {
 
       // Build context strings
@@ -20789,7 +20563,7 @@ function abst_heatmaps_page_content()
 
       $context_variation = !empty($context_parts['variation']) ? ' <span class="abst-context-sep">›</span> Variation: ' . esc_html($context_parts['variation']) : '';
 
-
+      
 
       // Build description based on mode
 
@@ -20802,6 +20576,7 @@ function abst_heatmaps_page_content()
         $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
 
         $description = 'Scroll map covers <strong>' . intval($scroll_total_sessions) . '</strong> ' . $session_label . ' from ' . $days_label . '. Each band shows the share of visitors who reached that depth.';
+
       } elseif ($selected_mode === 'clicks') {
 
         $click_count = count($data);
@@ -20811,6 +20586,7 @@ function abst_heatmaps_page_content()
         $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
 
         $description = 'Click heatmap shows <strong>' . intval($click_count) . '</strong> ' . $click_label . ' from ' . $days_label . '. Warmer colors indicate areas with more clicks.';
+
       } elseif ($selected_mode === 'confetti') {
 
         $click_count = count($data);
@@ -20820,6 +20596,7 @@ function abst_heatmaps_page_content()
         $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
 
         $description = 'Confetti map shows <strong>' . intval($click_count) . '</strong> individual ' . $click_label . ' from ' . $days_label . '. Each dot represents one visitor interaction.';
+
       } elseif ($selected_mode === 'rage') {
 
         $rage_count = count($data);
@@ -20829,6 +20606,7 @@ function abst_heatmaps_page_content()
         $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
 
         $description = 'Rage map shows <strong>' . intval($rage_count) . '</strong> ' . $rage_label . ' from ' . $days_label . '. Red areas indicate where users clicked repeatedly in frustration.';
+
       } elseif ($selected_mode === 'dead') {
 
         $dead_count = count($data);
@@ -20838,23 +20616,24 @@ function abst_heatmaps_page_content()
         $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
 
         $description = 'Dead click map shows <strong>' . intval($dead_count) . '</strong> ' . $dead_label . ' from ' . $days_label . '. Orange areas show clicks on non-interactive elements.';
+
       }
 
+      
 
-
-
+      
 
       // Build iframe URL with proper preview parameters
 
       $iframe_url = abst_resolve_page_url($selected_post);
 
-
+      
 
       // Add heatmap view parameter
 
       $iframe_url = add_query_arg('abst_heatmap_view', '1', $iframe_url);
 
-
+      
 
       // If experiment and variation are selected, use preview URL format
 
@@ -20863,23 +20642,24 @@ function abst_heatmaps_page_content()
         $iframe_url = add_query_arg('abtid', $selected_eid, $iframe_url);
 
         $iframe_url = add_query_arg('abtv', $selected_variation, $iframe_url);
+
       }
 
 
 
       // Context and description outside preview
 
-      echo '<div class="abst-heatmap-context"><div><span class="abst-context-icon">📊</span><strong>' . esc_html($modeNice) . ':</strong> ' . esc_html($context_parts['page']) . ' <span class="abst-context-sep">›</span> Size: '  . esc_html($context_parts['size']) . wp_kses_post($context_eid) . wp_kses_post($context_variation) . '</div>';
+      echo '<div class="abst-heatmap-context"><div><span class="abst-context-icon">📊</span><strong>'. esc_html($modeNice) . ':</strong> ' . esc_html($context_parts['page']) . ' <span class="abst-context-sep">›</span> Size: '  . esc_html($context_parts['size']) . wp_kses_post($context_eid) . wp_kses_post($context_variation) . '</div>';
 
       echo '<p class="abst-heatmap-description">' . wp_kses_post($description) . '</p></div>';
 
-
+      
 
       // Add legend for scroll mode
 
       if ($selected_mode === 'scroll') {
 
-        echo '<div class="abst-scroll-legend" style="position: sticky; top: 40px; z-index: 1000; width: ' . intval($screenWidth) . 'px; max-width:90%; margin: 20px auto 10px; padding: 20px 10px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
+        echo '<div class="abst-scroll-legend" style="position: sticky; top: 40px; z-index: 1000; width: '.intval($screenWidth).'px; max-width:90%; margin: 20px auto 10px; padding: 20px 10px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
 
         echo '<div style="font-weight: 600; color: #333; font-size: 14px;">Scroll Depth:</div>';
 
@@ -20898,19 +20678,23 @@ function abst_heatmaps_page_content()
         echo '</div>';
 
         echo '</div>';
-      } else
+
+      }
+
+      else
 
         echo '<p class="previewwiderthan">This preview is wider than your viewport. Don\'t forget to scroll ← →</p>';
 
+      
 
-
-      echo '<div class="abst-heatmap-wrapper" style="position: relative; max-width: ' . intval($screenWidth) . 'px; width:calc(100% - 20px); margin: 40px auto; border: 10px solid #d9d9d9; box-shadow: 0 1px 10px -4px black;">';
+      echo '<div class="abst-heatmap-wrapper" style="position: relative; max-width: '.intval($screenWidth).'px; width:calc(100% - 20px); margin: 40px auto; border: 10px solid #d9d9d9; box-shadow: 0 1px 10px -4px black;">';
 
       echo '<iframe id="abst-heatmaps-iframe" src="' . esc_url($iframe_url) . '" style="display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; z-index: 0; pointer-events: none;"></iframe>';
 
       echo '<div id="heatmap-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;"></div>';
 
       echo '</div>';
+
     }
 
     echo '<script>';
@@ -20930,8 +20714,11 @@ function abst_heatmaps_page_content()
           $sel = $point['selector'];
 
           $click_counts[$sel] = isset($click_counts[$sel]) ? $click_counts[$sel] + 1 : 1;
+
         }
+
       }
+
     }
 
     echo 'window.heatmapClickCounts = ' . wp_json_encode($click_counts) . ';';
@@ -20991,6 +20778,7 @@ function abst_heatmaps_page_content()
     ';
 
     echo '</script>';
+
   } else {
 
     echo '<div class="abst-empty-state" style="text-align:left; max-width:600px;">';
@@ -21000,17 +20788,18 @@ function abst_heatmaps_page_content()
     echo '<p style="color:#64748b; margin-bottom:16px;">Select a page from the dropdown above to view its heatmap, scroll map, or click data.</p>';
 
     echo '</div>';
+
   }
 
 
 
   echo '</div>';
+
 }
 
 
 
-function abst_read_journey_file_lines($journey_file)
-{
+function abst_read_journey_file_lines($journey_file) {
 
   $is_gzip = substr($journey_file, -3) === '.gz';
 
@@ -21021,6 +20810,7 @@ function abst_read_journey_file_lines($journey_file)
     if (!function_exists('gzdecode')) {
 
       return [];
+
     }
 
 
@@ -21030,6 +20820,7 @@ function abst_read_journey_file_lines($journey_file)
     if ($raw_contents === false) {
 
       return [];
+
     }
 
 
@@ -21039,11 +20830,13 @@ function abst_read_journey_file_lines($journey_file)
     if ($decoded === false) {
 
       return [];
+
     }
 
 
 
     $content = $decoded;
+
   } else {
 
     $content = @file_get_contents($journey_file);
@@ -21051,7 +20844,9 @@ function abst_read_journey_file_lines($journey_file)
     if ($content === false) {
 
       return [];
+
     }
+
   }
 
 
@@ -21061,17 +20856,18 @@ function abst_read_journey_file_lines($journey_file)
   if ($lines === false) {
 
     return [];
+
   }
 
 
 
   return array_values(array_filter(array_map('trim', $lines), 'strlen'));
+
 }
 
 
 
-function abst_get_scroll_data($post_id, $filters)
-{
+function abst_get_scroll_data($post_id, $filters) {
 
   $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt');
 
@@ -21094,6 +20890,7 @@ function abst_get_scroll_data($post_id, $filters)
   if (is_numeric($post_id)) {
 
     $post_id = (int) $post_id;
+
   }
 
   $scrollEvents = [];
@@ -21121,6 +20918,7 @@ function abst_get_scroll_data($post_id, $filters)
     if (!preg_match('/(\d{8})/', $basename, $matches)) {
 
       continue;
+
     }
 
 
@@ -21130,6 +20928,7 @@ function abst_get_scroll_data($post_id, $filters)
     if ($file_date === false || $file_date < $cutoff) {
 
       continue;
+
     }
 
 
@@ -21139,6 +20938,7 @@ function abst_get_scroll_data($post_id, $filters)
     if (empty($lines)) {
 
       continue;
+
     }
 
 
@@ -21156,6 +20956,7 @@ function abst_get_scroll_data($post_id, $filters)
       if (empty($parts[0])) {
 
         continue;
+
       }
 
 
@@ -21173,7 +20974,9 @@ function abst_get_scroll_data($post_id, $filters)
             $candidate = max(0, min(100, $candidate));
 
             $scroll_depth = (string) round($candidate);
+
           }
+
         }
 
 
@@ -21189,6 +20992,7 @@ function abst_get_scroll_data($post_id, $filters)
             if ($experiment === '') {
 
               continue;
+
             }
 
             $exp_parts = explode(':', $experiment);
@@ -21202,6 +21006,7 @@ function abst_get_scroll_data($post_id, $filters)
               if (!isset($foundExperiments[$eid])) {
 
                 $foundExperiments[$eid] = [];
+
               }
 
               $foundExperiments[$eid][$variation] = true;
@@ -21213,8 +21018,11 @@ function abst_get_scroll_data($post_id, $filters)
                 'variation' => $variation,
 
               ];
+
             }
+
           }
+
         }
 
 
@@ -21230,7 +21038,9 @@ function abst_get_scroll_data($post_id, $filters)
           if ($meta_screen !== $filter_screen) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
 
@@ -21244,6 +21054,7 @@ function abst_get_scroll_data($post_id, $filters)
             if ((string) $meta_experiment['eid'] !== $filter_eid) {
 
               continue;
+
             }
 
             if ($filter_variation === '' || (string) $meta_experiment['variation'] === $filter_variation) {
@@ -21251,7 +21062,9 @@ function abst_get_scroll_data($post_id, $filters)
               $has_matching_experiment = true;
 
               break;
+
             }
+
           }
 
 
@@ -21259,7 +21072,9 @@ function abst_get_scroll_data($post_id, $filters)
           if (!$has_matching_experiment) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
 
@@ -21275,7 +21090,9 @@ function abst_get_scroll_data($post_id, $filters)
           if (!$ref_host || stripos($ref_host, $filters['referrer']) === false) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
 
@@ -21287,6 +21104,7 @@ function abst_get_scroll_data($post_id, $filters)
         ];
 
         continue;
+
       }
 
 
@@ -21294,6 +21112,7 @@ function abst_get_scroll_data($post_id, $filters)
       if (!$metadata_matches_filter) {
 
         continue;
+
       }
 
 
@@ -21301,6 +21120,7 @@ function abst_get_scroll_data($post_id, $filters)
       if ($current_metadata === null || $current_metadata['scroll_depth'] === '') {
 
         continue;
+
       }
 
 
@@ -21312,6 +21132,7 @@ function abst_get_scroll_data($post_id, $filters)
       if ($event_post_id !== $post_id) {
 
         continue;
+
       }
 
 
@@ -21323,6 +21144,7 @@ function abst_get_scroll_data($post_id, $filters)
         $current_metadata['scroll_depth'] = '';
 
         continue;
+
       }
 
 
@@ -21332,7 +21154,9 @@ function abst_get_scroll_data($post_id, $filters)
       $scrollEvents[] = (int) round($scroll_value);
 
       $current_metadata['scroll_depth'] = '';
+
     }
+
   }
 
 
@@ -21348,6 +21172,7 @@ function abst_get_scroll_data($post_id, $filters)
       'experiments' => $foundExperiments,
 
     ];
+
   }
 
 
@@ -21369,9 +21194,11 @@ function abst_get_scroll_data($post_id, $filters)
     if (isset($gradientMap[$depth])) {
 
       $running += $gradientMap[$depth];
+
     }
 
     $cumulative[$depth] = $running;
+
   }
 
 
@@ -21399,6 +21226,7 @@ function abst_get_scroll_data($post_id, $filters)
       'count' => $reached,
 
     ];
+
   }
 
 
@@ -21412,20 +21240,20 @@ function abst_get_scroll_data($post_id, $filters)
     'experiments' => $foundExperiments,
 
   ];
+
 }
 
 
 
-function abst_logs_by_screen_size($screenWidth, $journey_logs)
-{
+function abst_logs_by_screen_size($screenWidth,$journey_logs) {
 
   $return_object = [];
 
-  if ($screenWidth == 'small')
+  if($screenWidth == 'small')
 
     $screenWidth = 's';
 
-  else if ($screenWidth == 'medium')
+  else if($screenWidth == 'medium')
 
     $screenWidth = 'm';
 
@@ -21445,16 +21273,18 @@ function abst_logs_by_screen_size($screenWidth, $journey_logs)
 
     //change to size
 
-    if ($screen_size == $screenWidth) { // if the width matches
+    if($screen_size == $screenWidth) { // if the width matches
 
       $return_object[] = $journey_log; // add to return object
 
     }
+
   }
 
   abst_log('after filter by screen size ' . $screenWidth . " " . sizeof($return_object));
 
   return $return_object;
+
 }
 
 
@@ -21473,8 +21303,7 @@ function abst_logs_by_screen_size($screenWidth, $journey_logs)
 
  */
 
-function abst_resolve_variation_name($eid, $variation)
-{
+function abst_resolve_variation_name($eid, $variation) {
 
   // If variation is numeric, it's likely a post ID (full-page test)
 
@@ -21484,19 +21313,22 @@ function abst_resolve_variation_name($eid, $variation)
 
     $post_title = get_the_title($post_id);
 
-
+    
 
     if ($post_title && $post_title !== '') {
 
       return $post_title . ' (ID: ' . $post_id . ')';
+
     }
+
   }
 
-
+  
 
   // Otherwise return as-is (e.g., "magic-1", "magic-0")
 
   return $variation;
+
 }
 
 
@@ -21505,12 +21337,11 @@ function abst_resolve_variation_name($eid, $variation)
 
 
 
-function abst_search_all_journey_logs($post_id, $filters = [])
-{
+function abst_search_all_journey_logs($post_id, $filters = []) {
 
 
 
-  // attributes will be one of the journey 
+// attributes will be one of the journey 
 
   //load all the files in /journey_logs
 
@@ -21557,6 +21388,7 @@ function abst_search_all_journey_logs($post_id, $filters = [])
   if (is_numeric($post_id)) {
 
     $post_id = (int) $post_id;
+
   }
 
 
@@ -21575,7 +21407,7 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
     $date_str = substr($filename, -8); // Last 8 chars: YYYYMMDD
 
-
+    
 
     // Format date string properly: 20250109 -> 2025-01-09
 
@@ -21583,11 +21415,12 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
     $file_date = strtotime($formatted_date);
 
+    
 
-
-    if ($file_date === false || $file_date < time() - ($days * 24 * 60 * 60)) { // the last x days
+    if ($file_date === false || $file_date < time() - ($days * 24 * 60 * 60)) {// the last x days
 
       continue;
+
     }
 
     $lines = @file($journey_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -21595,6 +21428,7 @@ function abst_search_all_journey_logs($post_id, $filters = [])
     if (empty($lines)) {
 
       continue;
+
     }
 
 
@@ -21603,13 +21437,13 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
     $metadata_matches_filter = false;
 
-
+    
 
     foreach ($lines as $line) {
 
       $parts = array_map('trim', explode('|', $line));
 
-
+      
 
       // Check if this is a metadata line
 
@@ -21634,15 +21468,16 @@ function abst_search_all_journey_logs($post_id, $filters = [])
             'referrer' => isset($parts[6]) ? $parts[6] : '',
 
           ];
+
         }
 
-
+        
 
         // Check if this metadata matches our filters
 
         $metadata_matches_filter = true;
 
-
+        
 
         // Filter by screen size if specified 
 
@@ -21655,10 +21490,12 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           if ($current_metadata['screen_size'] !== $filter_screen) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
-
+        
 
         // Filter by experiment ID and variation if specified
 
@@ -21668,9 +21505,9 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
           $has_matching_experiment = false;
 
+          
 
-
-          foreach ($metaExperiments as $experiment) {
+          foreach($metaExperiments as $experiment) {
 
             $exp_parts = explode(':', $experiment);
 
@@ -21680,18 +21517,19 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
               $variation = $exp_parts[1];
 
-
+              
 
               // Track all experiments/variations for dropdown
 
               if (!isset($foundExperiments[$eid])) {
 
                 $foundExperiments[$eid] = [];
+
               }
 
               $foundExperiments[$eid][$variation] = true;
 
-
+              
 
               // Check if this matches our filter
 
@@ -21700,24 +21538,30 @@ function abst_search_all_journey_logs($post_id, $filters = [])
                 if (empty($filters['variation']) || $variation === $filters['variation']) {
 
                   $has_matching_experiment = true;
+
                 }
+
               }
+
             }
+
           }
 
-
+          
 
           if (!$has_matching_experiment) {
 
             $metadata_matches_filter = false;
+
           }
+
         } else {
 
           // No eid filter, just track all experiments
 
           $metaExperiments = explode(',', $current_metadata['experiments']);
 
-          foreach ($metaExperiments as $experiment) {
+          foreach($metaExperiments as $experiment) {
 
             $exp_parts = explode(':', $experiment);
 
@@ -21730,11 +21574,15 @@ function abst_search_all_journey_logs($post_id, $filters = [])
               if (!isset($foundExperiments[$eid])) {
 
                 $foundExperiments[$eid] = [];
+
               }
 
               $foundExperiments[$eid][$variation] = true;
+
             }
+
           }
+
         }
 
 
@@ -21752,7 +21600,9 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           if ($ref_host) {
 
             $foundReferrers[$ref_host] = ($foundReferrers[$ref_host] ?? 0) + 1;
+
           }
+
         }
 
 
@@ -21766,16 +21616,18 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           if (!$ref_host || stripos($ref_host, $filters['referrer']) === false) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
-
+        
 
         continue; // Don't add metadata lines to results
 
       }
 
-
+      
 
       // Event line: timestamp|type|post_id|url|element|click_x|click_y|meta
 
@@ -21840,9 +21692,13 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           ];
 
           $return_object[] = $full_event;
+
         }
+
       }
+
     }
+
   }
 
 
@@ -21855,7 +21711,7 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
     $date_str = substr($filename, -8); // Last 8 chars: YYYYMMDD
 
-
+    
 
     // Format date string properly: 20250109 -> 2025-01-09
 
@@ -21863,14 +21719,15 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
     $file_date = strtotime($formatted_date);
 
-
+    
 
     if ($file_date === false || $file_date < time() - ($days * 24 * 60 * 60)) { // the last x days
 
       continue;
+
     }
 
-
+    
 
     //unzip from gz
 
@@ -21904,19 +21761,20 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
       continue; // Failed to decompress
 
-    }
+    } 
 
     $lines = explode("\n", $unzipped_content);
 
     $lines = array_filter(array_map('trim', $lines)); // Remove empty lines
 
-
+    
 
     if (empty($lines)) {
 
       abst_log('No data found in file: ' . $journey_file);
 
       continue;
+
     }
 
 
@@ -21925,13 +21783,13 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
     $metadata_matches_filter = false;
 
-
+    
 
     foreach ($lines as $line) {
 
       $parts = array_map('trim', explode('|', $line));
 
-
+      
 
       // Check if this is a metadata line
 
@@ -21956,15 +21814,16 @@ function abst_search_all_journey_logs($post_id, $filters = [])
             'referrer' => isset($parts[6]) ? $parts[6] : ''
 
           ];
+
         }
 
-
+        
 
         // Check if this metadata matches our filters
 
         $metadata_matches_filter = true;
 
-
+        
 
         // Filter by screen size if specified
 
@@ -21977,10 +21836,12 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           if ($current_metadata['screen_size'] !== $filter_screen) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
-
+        
 
         // Filter by experiment ID and variation if specified
 
@@ -21990,9 +21851,9 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
           $has_matching_experiment = false;
 
+          
 
-
-          foreach ($metaExperiments as $experiment) {
+          foreach($metaExperiments as $experiment) {
 
             $exp_parts = explode(':', $experiment);
 
@@ -22002,18 +21863,19 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
               $variation = $exp_parts[1];
 
-
+              
 
               // Track all experiments/variations for dropdown
 
               if (!isset($foundExperiments[$eid])) {
 
                 $foundExperiments[$eid] = [];
+
               }
 
               $foundExperiments[$eid][$variation] = true;
 
-
+              
 
               // Check if this matches our filter
 
@@ -22022,24 +21884,30 @@ function abst_search_all_journey_logs($post_id, $filters = [])
                 if (empty($filters['variation']) || $variation === $filters['variation']) {
 
                   $has_matching_experiment = true;
+
                 }
+
               }
+
             }
+
           }
 
-
+          
 
           if (!$has_matching_experiment) {
 
             $metadata_matches_filter = false;
+
           }
+
         } else {
 
           // No eid filter, just track all experiments
 
           $metaExperiments = explode(',', $current_metadata['experiments']);
 
-          foreach ($metaExperiments as $experiment) {
+          foreach($metaExperiments as $experiment) {
 
             $exp_parts = explode(':', $experiment);
 
@@ -22052,11 +21920,15 @@ function abst_search_all_journey_logs($post_id, $filters = [])
               if (!isset($foundExperiments[$eid])) {
 
                 $foundExperiments[$eid] = [];
+
               }
 
               $foundExperiments[$eid][$variation] = true;
+
             }
+
           }
+
         }
 
 
@@ -22070,7 +21942,9 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           if ($ref_host) {
 
             $foundReferrers[$ref_host] = ($foundReferrers[$ref_host] ?? 0) + 1;
+
           }
+
         }
 
 
@@ -22084,16 +21958,18 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           if (!$ref_host || stripos($ref_host, $filters['referrer']) === false) {
 
             $metadata_matches_filter = false;
+
           }
+
         }
 
-
+        
 
         continue; // Don't add metadata lines to results
 
       }
 
-
+      
 
       // Event line: timestamp|type|post_id|url|element|click_x|click_y|meta
 
@@ -22158,9 +22034,13 @@ function abst_search_all_journey_logs($post_id, $filters = [])
           ];
 
           $return_object[] = $full_event;
+
         }
+
       }
+
     }
+
   }
 
   abst_log('returning ' . count($foundExperiments) . ' experiments and ' . count($return_object) . ' events');
@@ -22190,6 +22070,7 @@ function abst_search_all_journey_logs($post_id, $filters = [])
     'utm_campaigns' => $foundUtmCampaigns,
 
   ];
+
 }
 
 
@@ -22198,8 +22079,7 @@ function abst_search_all_journey_logs($post_id, $filters = [])
 
 
 
-function abst_logs_page_content()
-{
+function abst_logs_page_content() {
 
   // Get WordPress uploads directory
 
@@ -22209,13 +22089,13 @@ function abst_logs_page_content()
 
   $log_file = $log_dir . '/abst_log.txt';
 
-
+  
 
   // Get retention settings
 
   $heatmap_retention = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
 
-
+  
 
   // Clear logs button
 
@@ -22224,19 +22104,20 @@ function abst_logs_page_content()
     file_put_contents($log_file, '');
 
     echo '<div class="notice notice-success"><p>Logs cleared successfully.</p></div>';
+
   }
 
-
+  
 
   echo '<div class="wrap abst-logs-wrap">';
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>' . 'Split Test' . ' Debug Logs</h1>';
+  echo '<h1>'.'Split Test'.' Debug Logs</h1>';
 
   echo '</div>';
 
-
+  
 
   echo '<div class="abst-logs-info">';
 
@@ -22244,7 +22125,7 @@ function abst_logs_page_content()
 
   echo '</div>';
 
-
+  
 
   echo '<div class="abst-logs-actions">';
 
@@ -22258,13 +22139,13 @@ function abst_logs_page_content()
 
   echo '</div>';
 
-
+  
 
   // Display logs
 
   echo '<div class="abst-logs-container">';
 
-
+  
 
   if (file_exists($log_file)) {
 
@@ -22283,22 +22164,26 @@ function abst_logs_page_content()
       $logs = preg_replace('/\[(error)\]/', '<span class="log-error">[error]</span>', $logs);
 
       echo '<pre>' . wp_kses_post($logs) . '</pre>';
+
     } else {
 
       echo '<p class="abst-logs-empty">No logs found yet. Logs will appear here once debug logging captures activity.</p>';
+
     }
+
   } else {
 
     echo '<p class="abst-logs-empty">Log file does not exist yet. Enable logging in Settings to start capturing debug information.</p>';
+
   }
 
-
-
-  echo '</div>';
+  
 
   echo '</div>';
 
+  echo '</div>';
 
+  
 
   // Inline styles to match the admin style guide
 
@@ -22450,7 +22335,7 @@ function abst_logs_page_content()
 
   </style>';
 
-
+  
 
   // JavaScript for copy functionality
 
@@ -22501,12 +22386,12 @@ function abst_logs_page_content()
   });
 
   </script>';
+
 }
 
 
 
-function abst_trim_abst_log()
-{
+function abst_trim_abst_log() {
 
   // Get WordPress uploads directory
 
@@ -22537,18 +22422,25 @@ function abst_trim_abst_log()
         file_put_contents($log_file, implode('', $lines));
 
         abst_log('Log trimmed from ' . $line_count . ' to 500 lines');
+
       } else {
 
         abst_log('Log file has ' . $line_count . ' lines, no trimming needed');
+
       }
+
     } else {
 
       abst_log('Could not read log file for trimming');
+
     }
+
   } else {
 
     abst_log('Log file does not exist yet, nothing to trim');
+
   }
+
 }
 
 
@@ -22558,6 +22450,7 @@ function abst_trim_abst_log()
 if (!wp_next_scheduled('abst_trim_log')) {
 
   wp_schedule_event(time(), 'daily', 'abst_trim_log');
+
 }
 
 add_action('abst_trim_log', 'abst_trim_abst_log');
@@ -22574,8 +22467,7 @@ add_action('abst_trim_log', 'abst_trim_abst_log');
 
 
 
-function abst_get_detected_caches()
-{
+function abst_get_detected_caches() {
 
 
 
@@ -22583,7 +22475,7 @@ function abst_get_detected_caches()
 
 
 
-  if (class_exists('FLBuilderModel'))
+  if( class_exists('FLBuilderModel') ) 
 
     $detected_caches[] = 'Beaver Builder';
 
@@ -22595,85 +22487,85 @@ function abst_get_detected_caches()
 
 
 
-  if (function_exists('nitropack_sdk_purge'))
+  if(function_exists('nitropack_sdk_purge'))
 
     $detected_caches[] = 'Nitropack';
 
 
 
-  if (class_exists('WP_Optimize'))
+  if(class_exists('WP_Optimize'))
 
     $detected_caches[] = 'WP Optimize';
 
 
 
-  if (class_exists('\FlyingPress\Purge'))
+  if ( class_exists( '\FlyingPress\Purge' ) )
 
     $detected_caches[] = 'FlyingPress';
 
 
 
-  if (class_exists('autoptimizeCache'))
+  if ( class_exists( 'autoptimizeCache' ) )
 
     $detected_caches[] = 'Autoptimize';
 
 
 
-  if (class_exists('autoptimizeCache'))
+  if ( class_exists( 'autoptimizeCache' ) )
 
     $detected_caches[] = 'Autoptimize';
 
 
 
-  if (has_action('breeze_clear_all_cache'))
+  if (has_action('breeze_clear_all_cache')) 
 
     $detected_caches[] = 'Breeze Cache';
 
 
 
-  if (class_exists('\WebSharks\CometCache\Classes\ApiBase'))
+  if ( class_exists( '\WebSharks\CometCache\Classes\ApiBase' ) )
 
     $detected_caches[] = 'Comet Cache';
 
 
 
-  if (class_exists('\WebSharks\CometCache\Pro\Classes\ApiBase'))
+  if ( class_exists( '\WebSharks\CometCache\Pro\Classes\ApiBase' ) )
 
     $detected_caches[] = 'Comet Cache Pro';
 
 
 
-  if (class_exists('\WPaaS\Cache') && function_exists('ccfm_godaddy_purge'))
+  if ( class_exists( '\WPaaS\Cache' ) && function_exists( 'ccfm_godaddy_purge' ) ) 
 
     $detected_caches[] = 'GoDaddy';
 
 
 
-  if (class_exists('\Kinsta\Cache') && ! empty($kinsta_cache))
+  if ( class_exists( '\Kinsta\Cache' ) && ! empty( $kinsta_cache ) ) 
 
     $detected_caches[] = 'Kinsta';
 
+      
 
-
-  if (has_action('litespeed_purge_all'))
+  if (has_action('litespeed_purge_all')) 
 
     $detected_caches[] = 'LiteSpeed';
 
 
 
-  if (class_exists('RapidLoad_Cache') && method_exists('RapidLoad_Cache', 'clear_site_cache'))
+  if ( class_exists( 'RapidLoad_Cache' ) && method_exists( 'RapidLoad_Cache', 'clear_site_cache' ) ) 
 
     $detected_caches[] = 'RapidLoad';
 
+    
 
-
-  if (class_exists('W3_Plugin_TotalCacheAdmin'))
+  if ( class_exists( 'W3_Plugin_TotalCacheAdmin' ) ) 
 
     $detected_caches[] = 'W3 Total Cache';
 
 
 
-  if (function_exists('wp_cache_flush'))
+  if ( function_exists( 'wp_cache_flush' ) ) 
 
     $detected_caches[] = 'WordPress Object Cache';
 
@@ -22681,53 +22573,56 @@ function abst_get_detected_caches()
 
   global $wp_fastest_cache;
 
-  if (! empty($wp_fastest_cache) && method_exists($wp_fastest_cache, 'deleteCache'))
+  if ( ! empty( $wp_fastest_cache ) && method_exists( $wp_fastest_cache, 'deleteCache' ) )
 
     $detected_caches[] = 'WP Fastest Cache';
 
 
 
-  if (function_exists('wp_cache_clean_cache'))
+  if ( function_exists( 'wp_cache_clean_cache' ) ) 
 
     $detected_caches[] = 'WP Cache Clean';
 
+        
 
-
-  if (function_exists('rocket_clean_domain'))
+  if ( function_exists( 'rocket_clean_domain' ) ) 
 
     $detected_caches[] = 'WP Rocket';
 
-
+        
 
 
 
   global $nginx_purger;
 
-  if (isset($nginx_purger) && method_exists($nginx_purger, 'purge_all')) {
+  if (  isset( $nginx_purger ) && method_exists( $nginx_purger, 'purge_all' ) ) {
 
-    $detected_caches[] = 'nginx';
+      $detected_caches[] = 'nginx';
+
   }
 
 
 
-  if (class_exists('WpeCommon')) {
+  if (  class_exists( 'WpeCommon' ) ) {
 
-    if (method_exists('WpeCommon', 'purge_memcached'))
+    if ( method_exists( 'WpeCommon', 'purge_memcached' ) ) 
 
       $detected_caches[] = 'WPEngine Memcached';
 
-    if (method_exists('WpeCommon', 'clear_maxcdn_cache'))
+    if ( method_exists( 'WpeCommon', 'clear_maxcdn_cache' ) ) 
 
       $detected_caches[] = 'WPEngine MaxCDN';
 
-    if (method_exists('WpeCommon', 'purge_varnish_cache'))
+    if ( method_exists( 'WpeCommon', 'purge_varnish_cache' ) ) 
 
       $detected_caches[] = 'WPEngine Varnish';
+
   }
 
 
 
   return $detected_caches;
+
 }
 
 
@@ -22738,8 +22633,7 @@ function abst_get_detected_caches()
 
  */
 
-function abst_create_sample_tests_on_activation()
-{
+function abst_create_sample_tests_on_activation() {
 
   return abst_load_sample_tests_from_json(false); // Don't force on activation
 
@@ -22757,12 +22651,11 @@ function abst_create_sample_tests_on_activation()
 
  */
 
-function abst_load_sample_tests_from_json($force = false)
-{
+function abst_load_sample_tests_from_json($force = false) {
 
   $results = ['created' => 0, 'skipped' => 0, 'errors' => []];
 
-
+  
 
   // Check if any tests already exist (unless forced)
 
@@ -22778,59 +22671,63 @@ function abst_load_sample_tests_from_json($force = false)
 
     ]);
 
-
+    
 
     if (!empty($existing_tests)) {
 
       $results['skipped'] = 'Tests already exist';
 
       return $results;
+
     }
+
   }
 
-
+  
 
   // Get sample data directory
 
   $sample_dir = plugin_dir_path(__FILE__) . 'includes/sampledata/';
 
-
+  
 
   if (!is_dir($sample_dir)) {
 
     $results['errors'][] = 'Sample data directory not found: ' . $sample_dir;
 
     return $results;
+
   }
 
-
+  
 
   // Scan for JSON files
 
   $json_files = glob($sample_dir . '*.json');
 
-
+  
 
   // Reverse order so newest/alphabetically last is imported first
 
   $json_files = array_reverse($json_files);
 
-
+  
 
   if (empty($json_files)) {
 
     $results['errors'][] = 'No JSON sample files found in: ' . $sample_dir;
 
     return $results;
+
   }
 
-
+  
 
   foreach ($json_files as $json_file) {
 
     $filename = basename($json_file);
 
-
+    
 
     // Read and decode JSON
 
@@ -22841,9 +22738,10 @@ function abst_load_sample_tests_from_json($force = false)
       $results['errors'][] = "Could not read file: {$filename}";
 
       continue;
+
     }
 
-
+    
 
     $sample_data = json_decode($json_content, true);
 
@@ -22852,34 +22750,39 @@ function abst_load_sample_tests_from_json($force = false)
       $results['errors'][] = "Invalid JSON in file: {$filename}";
 
       continue;
+
     }
 
-
+    
 
     // Create test based on filename and data
 
     $test_created = abst_create_test_from_json_data($filename, $sample_data);
 
-
+    
 
     if ($test_created) {
 
       $results['created']++;
+
     } else {
 
       $results['errors'][] = "Failed to create test from: {$filename}";
+
     }
+
   }
 
-
+  
 
   // Clear any cached posts
 
   delete_transient('ab_posts_cache');
 
-
+  
 
   return $results;
+
 }
 
 
@@ -22896,28 +22799,30 @@ function abst_load_sample_tests_from_json($force = false)
 
  */
 
-function abst_create_test_from_json_data($filename, $data)
-{
+function abst_create_test_from_json_data($filename, $data) {
 
   // Handle the current format (test results data)
 
   if (isset($data['magic-1']) || isset($data['magic-2'])) {
 
     return abst_create_test_from_results_data($filename, $data);
+
   }
 
-
+  
 
   // Handle structured format (post_data, test_config, sample_results)
 
   if (isset($data['post_data']) && isset($data['test_config'])) {
 
     return abst_create_test_from_structured_data($data);
+
   }
 
-
+  
 
   return false;
+
 }
 
 
@@ -22928,14 +22833,13 @@ function abst_create_test_from_json_data($filename, $data)
 
  */
 
-function abst_create_test_from_results_data($filename, $data)
-{
+function abst_create_test_from_results_data($filename, $data) {
 
   // Extract test name from filename
 
   $test_name = 'Sample: ' . ucwords(str_replace(['-', '.json'], [' ', ''], basename($filename, '.json')));
 
-
+  
 
   // Create the post
 
@@ -22955,11 +22859,11 @@ function abst_create_test_from_results_data($filename, $data)
 
   ];
 
-
+  
 
   $test_id = wp_insert_post($sample_test);
 
-
+  
 
   if ($test_id) {
 
@@ -22973,7 +22877,7 @@ function abst_create_test_from_results_data($filename, $data)
 
     update_post_meta($test_id, 'conversion_time', '30');
 
-
+    
 
     // Create sample magic definition based on filename
 
@@ -22981,20 +22885,22 @@ function abst_create_test_from_results_data($filename, $data)
 
     update_post_meta($test_id, 'magic_definition', json_encode($magic_definition));
 
-
+    
 
     // Store the sample results data
 
     update_post_meta($test_id, 'sample_results', json_encode($data));
 
-
+    
 
     return $test_id;
+
   }
 
-
+  
 
   return false;
+
 }
 
 
@@ -23005,8 +22911,7 @@ function abst_create_test_from_results_data($filename, $data)
 
  */
 
-function abst_create_test_from_structured_data($data)
-{
+function abst_create_test_from_structured_data($data) {
 
   abst_log('abst_create_test_from_structured_data');
 
@@ -23014,7 +22919,7 @@ function abst_create_test_from_structured_data($data)
 
   $test_config = $data['test_config'];
 
-
+  
 
   // Create the post with date set to 14 days ago
 
@@ -23022,7 +22927,7 @@ function abst_create_test_from_structured_data($data)
 
   $two_weeks_ago_gmt = gmdate('Y-m-d H:i:s', strtotime('-14 days'));
 
-
+  
 
   $sample_test = [
 
@@ -23040,11 +22945,11 @@ function abst_create_test_from_structured_data($data)
 
   ];
 
-
+  
 
   $test_id = wp_insert_post($sample_test);
 
-
+  
 
   if ($test_id) {
 
@@ -23106,7 +23011,7 @@ function abst_create_test_from_structured_data($data)
 
     ];
 
-
+    
 
     foreach ($test_config as $key => $value) {
 
@@ -23114,13 +23019,14 @@ function abst_create_test_from_structured_data($data)
 
         $meta_key = $meta_mapping[$key];
 
-
+        
 
         // Special handling for certain fields
 
         if ($key === 'magic_definition') {
 
           $value = json_encode($value);
+
         } elseif ($key === 'observations' && is_array($value)) {
 
           // Observations are stored as array, no JSON encoding needed
@@ -23128,6 +23034,7 @@ function abst_create_test_from_structured_data($data)
         } elseif ($key === 'bt_allowed_roles' && is_array($value)) {
 
           $value = array_map('esc_attr', $value);
+
         } elseif ($key === 'goals' && is_array($value)) {
 
           // Goals are stored as array, no JSON encoding needed
@@ -23142,13 +23049,15 @@ function abst_create_test_from_structured_data($data)
 
         }
 
-
+        
 
         update_post_meta($test_id, $meta_key, $value);
+
       }
+
     }
 
-
+    
 
     // Store observations if provided (updated from sample_results)
 
@@ -23156,7 +23065,7 @@ function abst_create_test_from_structured_data($data)
 
       update_post_meta($test_id, 'observations', $data['observations']);
 
-
+      
 
       // Run statistical analysis on the observations data
 
@@ -23171,32 +23080,37 @@ function abst_create_test_from_structured_data($data)
         // Use Welch's T-Test for revenue/order value data (continuous values)
 
         $analyzed_observations = bt_bb_ab_revenue_analyzer($data['observations'], $test_age);
+
       } else {
 
         // Use Bayesian analyzer for binary conversion data
 
         $analyzed_observations = bt_bb_ab_split_test_analyzer($data['observations'], $test_age);
+
       }
 
-
+      
 
       // Update with analyzed data including statistical calculations
 
       update_post_meta($test_id, 'observations', $analyzed_observations);
 
-
+      
 
       abst_log('Statistical analysis completed for test ' . $test_id);
+
     }
 
-
+    
 
     return $test_id;
+
   }
 
-
+  
 
   return false;
+
 }
 
 
@@ -23207,12 +23121,11 @@ function abst_create_test_from_structured_data($data)
 
  */
 
-function abst_create_sample_magic_definition($filename)
-{
+function abst_create_sample_magic_definition($filename) {
 
   $name = strtolower($filename);
 
-
+  
 
   if (strpos($name, 'button') !== false || strpos($name, 'cta') !== false) {
 
@@ -23259,9 +23172,10 @@ function abst_create_sample_magic_definition($filename)
       ]
 
     ];
+
   }
 
-
+  
 
   // Default to headline test
 
@@ -23302,6 +23216,7 @@ function abst_create_sample_magic_definition($filename)
     ]
 
   ];
+
 }
 
 
@@ -23320,24 +23235,25 @@ register_activation_hook(__FILE__, 'abst_create_sample_tests_on_activation');
 
 
 
-function abst_monday_morning_report()
-{
+function abst_monday_morning_report() {
 
 
 
-  if (!abst_get_admin_setting('abst_send_weekly_reports'))
+  if(!abst_get_admin_setting('abst_send_weekly_reports'))
 
     return false;
 
 
 
   abst_send_report_email(abst_get_admin_setting('abst_weekly_report_emails'));
+
+
+
 }
 
 
 
-function abst_send_report_email($emails)
-{
+function abst_send_report_email($emails){
 
   abst_log('Attempting to send Email Report');
 
@@ -23347,12 +23263,13 @@ function abst_send_report_email($emails)
 
   //if contains comma then explode 
 
-  if (strpos($emails, ',') !== false) {
+  if(strpos($emails, ',') !== false){
 
     $emails = explode(',', $emails);
+
   }
 
-
+  
 
   $email_subject = 'AB Split Test Lite Weekly Report';
 
@@ -23364,9 +23281,10 @@ function abst_send_report_email($emails)
 
   $report_content = do_shortcode('[ab_split_test_report emailreport="true"]');
 
-  if (empty($report_content)) {
+  if(empty($report_content)) {
 
     $report_content = 'No active tests.';
+
   }
 
 
@@ -23377,7 +23295,7 @@ function abst_send_report_email($emails)
 
   $report_content = str_replace('</h1>', '</h2>', $report_content);
 
-
+  
 
   $email_message = '<html><body style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; padding: 20px;">';
 
@@ -23397,21 +23315,22 @@ function abst_send_report_email($emails)
 
   $email_message = apply_filters('abst_email_report_message', $email_message);
 
-
+  
 
   // Set HTML headers for email
 
   $headers = array('Content-Type: text/html; charset=UTF-8');
 
+ 
 
-
-  if (wp_mail($emails, $email_subject, $email_message, $headers)) // send email
+  if(wp_mail($emails, $email_subject, $email_message, $headers)) // send email
 
     abst_log('Email Report Sent to ' . $emails);
 
   else
 
-    abst_log('Email Report Failed to ' . $emails);
+    abst_log('Email Report Failed to ' . $emails);    
+
 }
 
 
@@ -23422,10 +23341,9 @@ function abst_send_report_email($emails)
 
  */
 
-function abst_add_two_hour_schedule($schedules)
-{
+function abst_add_two_hour_schedule( $schedules ) {
 
-  if (! isset($schedules['ab_two_hours'])) {
+  if ( ! isset( $schedules['ab_two_hours'] ) ) {
 
     $schedules['ab_two_hours'] = [
 
@@ -23434,98 +23352,92 @@ function abst_add_two_hour_schedule($schedules)
       'display'  => 'Every 2 Hours',
 
     ];
+
   }
 
   return $schedules;
+
 }
 
-add_filter('cron_schedules', 'abst_add_two_hour_schedule');
+add_filter( 'cron_schedules', 'abst_add_two_hour_schedule' );
 
 
 
-if (! wp_next_scheduled('abst_update_thompson_weights')) {
-
-  wp_schedule_event(time(), 'ab_two_hours', 'abst_update_thompson_weights');
-}
-
-add_action('abst_update_thompson_weights', 'abst_update_thompson_weights');
+// MAB cron removed in lite version — abst_update_thompson_weights is a no-op stub kept for backwards compatibility if event fires during upgrade.
+function abst_update_thompson_weights() { return; }
 
 
 
-function abst_update_thompson_weights()
-{
+function abst_beta_random( $alpha, $beta ) {
 
-  // MAB (Thompson Sampling) is PRO only — disabled in lite version
+  $x = abst_gamma_random( $alpha );
 
-  return;
-}
+  $y = abst_gamma_random( $beta );
 
+  return $x / ( $x + $y );
 
-
-function abst_beta_random($alpha, $beta)
-{
-
-  $x = abst_gamma_random($alpha);
-
-  $y = abst_gamma_random($beta);
-
-  return $x / ($x + $y);
 }
 
 
 
-function abst_gamma_random($shape)
-{
+function abst_gamma_random( $shape ) {
 
-  if ($shape < 1) {
+  if ( $shape < 1 ) {
 
     $u = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
 
-    return abst_gamma_random(1 + $shape) * pow($u, 1 / $shape);
+    return abst_gamma_random( 1 + $shape ) * pow( $u, 1 / $shape );
+
   }
 
-  $d = $shape - 1 / 3;
+  $d = $shape - 1/3;
 
-  $c = 1 / sqrt(9 * $d);
+  $c = 1 / sqrt( 9 * $d );
 
-  while (true) {
+  while ( true ) {
 
     $x = abst_normal_random();
 
-    $v = pow(1 + $c * $x, 3);
+    $v = pow( 1 + $c * $x, 3 );
 
-    if ($v <= 0) {
+    if ( $v <= 0 ) {
 
       continue;
+
     }
 
     $u = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
 
-    if ($u < 1 - 0.331 * pow($x, 4) || log($u) < 0.5 * $x * $x + $d * (1 - $v + log($v))) {
+    if ( $u < 1 - 0.331 * pow( $x, 4 ) || log( $u ) < 0.5 * $x * $x + $d * ( 1 - $v + log( $v ) ) ) {
 
       return $d * $v;
+
     }
+
   }
+
 }
 
 
 
-function abst_normal_random()
-{
+function abst_normal_random() {
 
   $u = $v = 0;
 
-  while ($u === 0) {
+  while ( $u === 0 ) {
 
     $u = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
+
   }
 
-  while ($v === 0) {
+  while ( $v === 0 ) {
 
     $v = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
+
   }
 
-  return sqrt(-2 * log($u)) * cos(2 * M_PI * $v);
+  return sqrt( -2 * log( $u ) ) * cos( 2 * M_PI * $v );
+
 }
 
 
@@ -23536,10 +23448,9 @@ function abst_normal_random()
 
  */
 
-function abst_add_weekly_schedule($schedules)
-{
+function abst_add_weekly_schedule( $schedules ) {
 
-  if (! isset($schedules['ab_weekly'])) {
+  if ( ! isset( $schedules['ab_weekly'] ) ) {
 
     $schedules['ab_weekly'] = [
 
@@ -23548,12 +23459,14 @@ function abst_add_weekly_schedule($schedules)
       'display'  => 'Once Weekly',
 
     ];
+
   }
 
   return $schedules;
+
 }
 
-add_filter('cron_schedules', 'abst_add_weekly_schedule');
+add_filter( 'cron_schedules', 'abst_add_weekly_schedule' );
 
 
 
@@ -23563,30 +23476,31 @@ add_filter('cron_schedules', 'abst_add_weekly_schedule');
 
  */
 
-function abst_schedule_weekly_report_cron()
-{
+function abst_schedule_weekly_report_cron() {
 
   // Lite version: weekly reports disabled
 
   return;
+
 }
 
 
 
-function abst_clear_weekly_report_cron()
-{
+function abst_clear_weekly_report_cron() {
 
   // Lite version: weekly reports disabled
 
-  $timestamp = wp_next_scheduled('ab_weekly_monday_report');
+  $timestamp = wp_next_scheduled( 'ab_weekly_monday_report' );
 
-  if ($timestamp) {
+  if ( $timestamp ) {
 
-    wp_unschedule_event($timestamp, 'ab_weekly_monday_report');
+    wp_unschedule_event( $timestamp, 'ab_weekly_monday_report' );
+
   }
+
 }
 
-add_action('ab_weekly_monday_report', 'abst_monday_morning_report');
+add_action( 'ab_weekly_monday_report', 'abst_monday_morning_report' );
 
 /**
 
@@ -23596,151 +23510,158 @@ add_action('ab_weekly_monday_report', 'abst_monday_morning_report');
 
  */
 
-function abst_set_cookie_with_fallback($name, $value, $days, $host = null)
-{
+function abst_set_cookie_with_fallback($name, $value, $days, $host = null) {
 
-  if ($host === null) {
+    if ($host === null) {
 
-    $host = sanitize_text_field($_SERVER['HTTP_HOST'] ?? '');
-  }
+        $host = sanitize_text_field($_SERVER['HTTP_HOST'] ?? '');
 
+    }
 
+    
 
-  // Check if localhost
+    // Check if localhost
 
-  $is_localhost = (
+    $is_localhost = (
 
-    in_array($host, ['localhost', '127.0.0.1'], true) ||
+        in_array($host, ['localhost', '127.0.0.1'], true) ||
 
-    strpos($host, 'localhost:') === 0 ||
+        strpos($host, 'localhost:') === 0 ||
 
-    substr($host, -6) === '.test' ||
+        substr($host, -6) === '.test' ||
 
-    substr($host, -6) === '.local' ||
+        substr($host, -6) === '.local' ||
 
-    substr($host, -4) === '.dev' ||
+        substr($host, -4) === '.dev' ||
 
-    filter_var(preg_replace('/:\d+$/', '', $host), FILTER_VALIDATE_IP)
+        filter_var(preg_replace('/:\d+$/', '', $host), FILTER_VALIDATE_IP)
 
-  );
+    );
 
-  if ($is_localhost) {
+    if ($is_localhost) {
 
-    return setcookie($name, $value, [
+        return setcookie($name, $value, [
 
-      'expires' => time() + ($days * 86400),
+            'expires' => time() + ($days * 86400),
 
-      'path' => '/',
+            'path' => '/',
 
-      'SameSite' => 'Lax',
+            'SameSite' => 'Lax',
 
-      'Secure' => false,
+            'Secure' => false,
 
-    ]);
-  }
+        ]);
 
+    }
 
+    
 
-  // Get root domain
+    // Get root domain
 
-  $domain = abst_get_root_domain($host);
+    $domain = abst_get_root_domain($host);
 
-  $expiry = time() + ($days * 86400);
+    $expiry = time() + ($days * 86400);
 
-  $same_site = (is_ssl() ? 'None' : 'Lax');
+    $same_site = (is_ssl() ? 'None' : 'Lax');
 
-  $secure = is_ssl();
+    $secure = is_ssl();
 
+    
 
+    // Strategy 1: Try main domain first
 
-  // Strategy 1: Try main domain first
+    $options = [
 
-  $options = [
+        'expires' => $expiry,
 
-    'expires' => $expiry,
+        'path' => '/',
 
-    'path' => '/',
+        'domain' => $domain,
 
-    'domain' => $domain,
+        'SameSite' => $same_site,
 
-    'SameSite' => $same_site,
+        'Secure' => $secure,
 
-    'Secure' => $secure,
+    ];
 
-  ];
+    
 
+    if (setcookie($name, $value, $options)) {
 
+        return true;
 
-  if (setcookie($name, $value, $options)) {
+    }
 
-    return true;
-  }
+    
 
+    // Strategy 2: Fallback to current subdomain only
 
+    $options['domain'] = ''; // No domain = current host only
 
-  // Strategy 2: Fallback to current subdomain only
+    
 
-  $options['domain'] = ''; // No domain = current host only
+    if (setcookie($name, $value, $options)) {
 
+        return true;
 
+    }
 
-  if (setcookie($name, $value, $options)) {
+    
 
-    return true;
-  }
+    // Strategy 3: Last resort - minimal cookie
 
+    $minimal_options = [
 
+        'expires' => $expiry,
 
-  // Strategy 3: Last resort - minimal cookie
+        'path' => '/',
 
-  $minimal_options = [
+    ];
 
-    'expires' => $expiry,
+    
 
-    'path' => '/',
+    if (setcookie($name, $value, $minimal_options)) {
 
-  ];
+        return true;
 
+    }
 
+    
 
-  if (setcookie($name, $value, $minimal_options)) {
+    return false;
 
-    return true;
-  }
-
-
-
-  return false;
 }
 
 
 
-function abst_detect_device_size_from_user_agent()
-{
+function abst_detect_device_size_from_user_agent() {
 
-  $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-  $is_mobile = preg_match('/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile/i', $user_agent);
+    $is_mobile = preg_match('/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile/i', $user_agent);
 
-  $is_tablet = preg_match('/iPad|Android(?!.*Mobile)/i', $user_agent);
-
-
-
-  if ($is_mobile && !$is_tablet) {
-
-    return 'mobile';
-  }
+    $is_tablet = preg_match('/iPad|Android(?!.*Mobile)/i', $user_agent);
 
 
 
-  if ($is_tablet) {
+    if ($is_mobile && !$is_tablet) {
 
-    return 'tablet';
-  }
+        return 'mobile';
+
+    }
 
 
 
-  return 'desktop';
+    if ($is_tablet) {
+
+        return 'tablet';
+
+    }
+
+
+
+    return 'desktop';
+
 }
 
 
@@ -23753,1210 +23674,642 @@ function abst_detect_device_size_from_user_agent()
 
  */
 
-function abst_get_root_domain($host)
-{
+function abst_get_root_domain($host) {
 
-  // Remove www prefix
+    // Remove www prefix
 
-  $host = preg_replace('/^www\./', '', $host);
+    $host = preg_replace('/^www\./', '', $host);
 
-  $parts = explode('.', $host);
+    $parts = explode('.', $host);
 
+    
 
+    // Multi-part TLDs that need 3 parts instead of 2
 
-  // Multi-part TLDs that need 3 parts instead of 2
+    $multiPartTlds = [
 
-  $multiPartTlds = [
+        // Australia
 
-    // Australia
+        'com.au', 'net.au', 'edu.au', 'gov.au', 'org.au', 'asn.au',
 
-    'com.au',
-    'net.au',
-    'edu.au',
-    'gov.au',
-    'org.au',
-    'asn.au',
+        // United Kingdom
 
-    // United Kingdom
+        'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'me.uk', 'ltd.uk', 'plc.uk',
 
-    'co.uk',
-    'org.uk',
-    'ac.uk',
-    'gov.uk',
-    'me.uk',
-    'ltd.uk',
-    'plc.uk',
+        // New Zealand
 
-    // New Zealand
+        'co.nz', 'org.nz', 'net.nz', 'govt.nz', 'ac.nz',
 
-    'co.nz',
-    'org.nz',
-    'net.nz',
-    'govt.nz',
-    'ac.nz',
+        // South Africa
 
-    // South Africa
+        'co.za', 'org.za', 'net.za', 'gov.za', 'ac.za',
 
-    'co.za',
-    'org.za',
-    'net.za',
-    'gov.za',
-    'ac.za',
+        // Japan
 
-    // Japan
+        'co.jp', 'ne.jp', 'or.jp', 'go.jp', 'ac.jp',
 
-    'co.jp',
-    'ne.jp',
-    'or.jp',
-    'go.jp',
-    'ac.jp',
+        // China
 
-    // China
+        'com.cn', 'net.cn', 'org.cn', 'gov.cn', 'ac.cn',
 
-    'com.cn',
-    'net.cn',
-    'org.cn',
-    'gov.cn',
-    'ac.cn',
+        // Taiwan
 
-    // Taiwan
+        'com.tw', 'org.tw', 'net.tw', 'gov.tw', 'edu.tw',
 
-    'com.tw',
-    'org.tw',
-    'net.tw',
-    'gov.tw',
-    'edu.tw',
+        // Hong Kong
 
-    // Hong Kong
+        'com.hk', 'org.hk', 'net.hk', 'gov.hk', 'edu.hk',
 
-    'com.hk',
-    'org.hk',
-    'net.hk',
-    'gov.hk',
-    'edu.hk',
+        // Singapore
 
-    // Singapore
+        'com.sg', 'org.sg', 'net.sg', 'gov.sg', 'edu.sg',
 
-    'com.sg',
-    'org.sg',
-    'net.sg',
-    'gov.sg',
-    'edu.sg',
+        // India
 
-    // India
+        'co.in', 'org.in', 'net.in', 'gov.in', 'ac.in',
 
-    'co.in',
-    'org.in',
-    'net.in',
-    'gov.in',
-    'ac.in',
+        // South Korea
 
-    // South Korea
+        'co.kr', 'or.kr', 'ne.kr', 'go.kr', 'ac.kr',
 
-    'co.kr',
-    'or.kr',
-    'ne.kr',
-    'go.kr',
-    'ac.kr',
-
-    // Brazil
-
-    'com.br',
-    'org.br',
-    'net.br',
-    'gov.br',
-    'edu.br',
-
-    // Mexico
-
-    'com.mx',
-    'org.mx',
-    'net.mx',
-    'gov.mx',
-    'edu.mx',
-
-    // Israel
-
-    'co.il',
-    'org.il',
-    'net.il',
-    'gov.il',
-    'ac.il',
-
-    // Thailand
-
-    'co.th',
-    'or.th',
-    'net.th',
-    'go.th',
-    'ac.th',
-
-    // Malaysia
-
-    'com.my',
-    'org.my',
-    'net.my',
-    'gov.my',
-    'edu.my',
-
-    // Philippines
-
-    'com.ph',
-    'org.ph',
-    'net.ph',
-    'gov.ph',
-    'edu.ph',
-
-    // Indonesia
-
-    'co.id',
-    'org.id',
-    'net.id',
-    'go.id',
-    'ac.id',
-
-    // Canada
-
-    'co.ca',
-    'org.ca',
-    'net.ca',
-    'gov.ca',
-    'edu.ca',
-
-    // UAE
-
-    'co.ae',
-    'org.ae',
-    'net.ae',
-    'gov.ae',
-    'edu.ae',
-
-    // Pakistan
-
-    'com.pk',
-    'org.pk',
-    'net.pk',
-    'gov.pk',
-    'edu.pk',
-
-    // Bangladesh
-
-    'com.bd',
-    'org.bd',
-    'net.bd',
-    'gov.bd',
-    'edu.bd',
-
-    // Sri Lanka
-
-    'com.lk',
-    'org.lk',
-    'net.lk',
-    'gov.lk',
-    'ac.lk',
-
-    // Vietnam
-
-    'com.vn',
-    'org.vn',
-    'net.vn',
-    'gov.vn',
-    'edu.vn',
-
-    // Thailand
-
-    'com.tn',
-    'org.tn',
-    'net.tn',
-    'gov.tn',
+        // Brazil
 
-    // Egypt
-
-    'com.eg',
-    'org.eg',
-    'net.eg',
-    'gov.eg',
-    'edu.eg',
+        'com.br', 'org.br', 'net.br', 'gov.br', 'edu.br',
 
-    // Nigeria
-
-    'com.ng',
-    'org.ng',
-    'net.ng',
-    'gov.ng',
-    'edu.ng',
+        // Mexico
 
-    // Kenya
-
-    'co.ke',
-    'or.ke',
-    'ne.ke',
-    'go.ke',
-    'ac.ke',
+        'com.mx', 'org.mx', 'net.mx', 'gov.mx', 'edu.mx',
 
-    // Argentina
-
-    'com.ar',
-    'org.ar',
-    'net.ar',
-    'gov.ar',
-    'edu.ar',
+        // Israel
 
-    // Chile
-
-    'com.cl',
-    'org.cl',
-    'net.cl',
-    'gov.cl',
-    'edu.cl',
+        'co.il', 'org.il', 'net.il', 'gov.il', 'ac.il',
 
-    // Colombia
-
-    'com.co',
-    'org.co',
-    'net.co',
-    'gov.co',
-    'edu.co',
+        // Thailand
 
-    // Peru
-
-    'com.pe',
-    'org.pe',
-    'net.pe',
-    'gov.pe',
-    'edu.pe',
+        'co.th', 'or.th', 'net.th', 'go.th', 'ac.th',
 
-    // Venezuela
-
-    'com.ve',
-    'org.ve',
-    'net.ve',
-    'gov.ve',
-    'edu.ve',
+        // Malaysia
 
-    // Ecuador
-
-    'com.ec',
-    'org.ec',
-    'net.ec',
-    'gov.ec',
-    'edu.ec',
+        'com.my', 'org.my', 'net.my', 'gov.my', 'edu.my',
 
-    // Russia
-
-    'com.ru',
-    'org.ru',
-    'net.ru',
-    'gov.ru',
-    'edu.ru',
+        // Philippines
 
-    // Ukraine
-
-    'com.ua',
-    'org.ua',
-    'net.ua',
-    'gov.ua',
-    'edu.ua',
+        'com.ph', 'org.ph', 'net.ph', 'gov.ph', 'edu.ph',
 
-    // Turkey
-
-    'com.tr',
-    'org.tr',
-    'net.tr',
-    'gov.tr',
-    'edu.tr',
+        // Indonesia
 
-    // Greece
-
-    'com.gr',
-    'org.gr',
-    'net.gr',
-    'gov.gr',
-    'edu.gr',
+        'co.id', 'org.id', 'net.id', 'go.id', 'ac.id',
 
-    // Poland
-
-    'com.pl',
-    'org.pl',
-    'net.pl',
-    'gov.pl',
-    'edu.pl',
+        // Canada
 
-    // Czech Republic
-
-    'com.cz',
-    'org.cz',
-    'net.cz',
-    'gov.cz',
-    'edu.cz',
+        'co.ca', 'org.ca', 'net.ca', 'gov.ca', 'edu.ca',
 
-    // Hungary
-
-    'com.hu',
-    'org.hu',
-    'net.hu',
-    'gov.hu',
-    'edu.hu',
+        // UAE
 
-    // Romania
-
-    'com.ro',
-    'org.ro',
-    'net.ro',
-    'gov.ro',
-    'edu.ro',
+        'co.ae', 'org.ae', 'net.ae', 'gov.ae', 'edu.ae',
 
-    // Serbia
-
-    'com.rs',
-    'org.rs',
-    'net.rs',
-    'gov.rs',
-    'edu.rs',
+        // Pakistan
 
-    // Croatia
-
-    'com.hr',
-    'org.hr',
-    'net.hr',
-    'gov.hr',
-    'edu.hr',
+        'com.pk', 'org.pk', 'net.pk', 'gov.pk', 'edu.pk',
 
-    // Slovenia
-
-    'com.si',
-    'org.si',
-    'net.si',
-    'gov.si',
-    'edu.si',
+        // Bangladesh
 
-    // Slovakia
-
-    'com.sk',
-    'org.sk',
-    'net.sk',
-    'gov.sk',
-    'edu.sk',
+        'com.bd', 'org.bd', 'net.bd', 'gov.bd', 'edu.bd',
 
-    // Bulgaria
-
-    'com.bg',
-    'org.bg',
-    'net.bg',
-    'gov.bg',
-    'edu.bg',
+        // Sri Lanka
 
-    // Portugal
-
-    'com.pt',
-    'org.pt',
-    'net.pt',
-    'gov.pt',
-    'edu.pt',
+        'com.lk', 'org.lk', 'net.lk', 'gov.lk', 'ac.lk',
 
-    // Belgium
-
-    'com.be',
-    'org.be',
-    'net.be',
-    'gov.be',
-    'edu.be',
+        // Vietnam
 
-    // Netherlands
-
-    'com.nl',
-    'org.nl',
-    'net.nl',
-    'gov.nl',
-    'edu.nl',
+        'com.vn', 'org.vn', 'net.vn', 'gov.vn', 'edu.vn',
 
-    // Austria
-
-    'com.at',
-    'org.at',
-    'net.at',
-    'gov.at',
-    'edu.at',
+        // Thailand
 
-    // Switzerland
-
-    'com.ch',
-    'org.ch',
-    'net.ch',
-    'gov.ch',
-    'edu.ch',
+        'com.tn', 'org.tn', 'net.tn', 'gov.tn',
 
-    // Germany
-
-    'com.de',
-    'org.de',
-    'net.de',
-    'gov.de',
-    'edu.de',
+        // Egypt
 
-    // France
-
-    'com.fr',
-    'org.fr',
-    'net.fr',
-    'gov.fr',
-    'edu.fr',
+        'com.eg', 'org.eg', 'net.eg', 'gov.eg', 'edu.eg',
 
-    // Spain
-
-    'com.es',
-    'org.es',
-    'net.es',
-    'gov.es',
-    'edu.es',
+        // Nigeria
 
-    // Italy
-
-    'com.it',
-    'org.it',
-    'net.it',
-    'gov.it',
-    'edu.it',
+        'com.ng', 'org.ng', 'net.ng', 'gov.ng', 'edu.ng',
 
-    // Sweden
-
-    'com.se',
-    'org.se',
-    'net.se',
-    'gov.se',
-    'edu.se',
+        // Kenya
 
-    // Norway
-
-    'com.no',
-    'org.no',
-    'net.no',
-    'gov.no',
-    'edu.no',
+        'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke',
 
-    // Denmark
-
-    'com.dk',
-    'org.dk',
-    'net.dk',
-    'gov.dk',
-    'edu.dk',
+        // Argentina
 
-    // Finland
-
-    'com.fi',
-    'org.fi',
-    'net.fi',
-    'gov.fi',
-    'edu.fi',
+        'com.ar', 'org.ar', 'net.ar', 'gov.ar', 'edu.ar',
 
-    // Iceland
-
-    'com.is',
-    'org.is',
-    'net.is',
-    'gov.is',
-    'edu.is',
+        // Chile
 
-    // Ireland
-
-    'com.ie',
-    'org.ie',
-    'net.ie',
-    'gov.ie',
-    'edu.ie',
+        'com.cl', 'org.cl', 'net.cl', 'gov.cl', 'edu.cl',
 
-    // Luxembourg
-
-    'com.lu',
-    'org.lu',
-    'net.lu',
-    'gov.lu',
-    'edu.lu',
+        // Colombia
 
-    // Malta
-
-    'com.mt',
-    'org.mt',
-    'net.mt',
-    'gov.mt',
-    'edu.mt',
+        'com.co', 'org.co', 'net.co', 'gov.co', 'edu.co',
 
-    // Cyprus
-
-    'com.cy',
-    'org.cy',
-    'net.cy',
-    'gov.cy',
-    'edu.cy',
+        // Peru
 
-    // Lithuania
-
-    'com.lt',
-    'org.lt',
-    'net.lt',
-    'gov.lt',
-    'edu.lt',
+        'com.pe', 'org.pe', 'net.pe', 'gov.pe', 'edu.pe',
 
-    // Latvia
-
-    'com.lv',
-    'org.lv',
-    'net.lv',
-    'gov.lv',
-    'edu.lv',
+        // Venezuela
 
-    // Estonia
-
-    'com.ee',
-    'org.ee',
-    'net.ee',
-    'gov.ee',
-    'edu.ee',
+        'com.ve', 'org.ve', 'net.ve', 'gov.ve', 'edu.ve',
 
-    // Bosnia and Herzegovina
-
-    'com.ba',
-    'org.ba',
-    'net.ba',
-    'gov.ba',
-    'edu.ba',
+        // Ecuador
 
-    // Montenegro
-
-    'com.me',
-    'org.me',
-    'net.me',
-    'gov.me',
-    'edu.me',
+        'com.ec', 'org.ec', 'net.ec', 'gov.ec', 'edu.ec',
 
-    // Macedonia
-
-    'com.mk',
-    'org.mk',
-    'net.mk',
-    'gov.mk',
-    'edu.mk',
+        // Russia
 
-    // Albania
-
-    'com.al',
-    'org.al',
-    'net.al',
-    'gov.al',
-    'edu.al',
+        'com.ru', 'org.ru', 'net.ru', 'gov.ru', 'edu.ru',
 
-    // Moldova
-
-    'com.md',
-    'org.md',
-    'net.md',
-    'gov.md',
-    'edu.md',
+        // Ukraine
 
-    // Belarus
-
-    'com.by',
-    'org.by',
-    'net.by',
-    'gov.by',
-    'edu.by',
+        'com.ua', 'org.ua', 'net.ua', 'gov.ua', 'edu.ua',
 
-    // Kazakhstan
-
-    'com.kz',
-    'org.kz',
-    'net.kz',
-    'gov.kz',
-    'edu.kz',
+        // Turkey
 
-    // Uzbekistan
-
-    'com.uz',
-    'org.uz',
-    'net.uz',
-    'gov.uz',
-    'edu.uz',
+        'com.tr', 'org.tr', 'net.tr', 'gov.tr', 'edu.tr',
 
-    // Tajikistan
-
-    'com.tj',
-    'org.tj',
-    'net.tj',
-    'gov.tj',
-    'edu.tj',
+        // Greece
 
-    // Kyrgyzstan
-
-    'com.kg',
-    'org.kg',
-    'net.kg',
-    'gov.kg',
-    'edu.kg',
+        'com.gr', 'org.gr', 'net.gr', 'gov.gr', 'edu.gr',
 
-    // Turkmenistan
-
-    'com.tm',
-    'org.tm',
-    'net.tm',
-    'gov.tm',
-    'edu.tm',
+        // Poland
 
-    // Afghanistan
-
-    'com.af',
-    'org.af',
-    'net.af',
-    'gov.af',
-    'edu.af',
+        'com.pl', 'org.pl', 'net.pl', 'gov.pl', 'edu.pl',
 
-    // Iran
-
-    'com.ir',
-    'org.ir',
-    'net.ir',
-    'gov.ir',
-    'ac.ir',
+        // Czech Republic
 
-    // Iraq
-
-    'com.iq',
-    'org.iq',
-    'net.iq',
-    'gov.iq',
-    'edu.iq',
+        'com.cz', 'org.cz', 'net.cz', 'gov.cz', 'edu.cz',
 
-    // Saudi Arabia
-
-    'com.sa',
-    'org.sa',
-    'net.sa',
-    'gov.sa',
-    'edu.sa',
+        // Hungary
 
-    // Yemen
-
-    'com.ye',
-    'org.ye',
-    'net.ye',
-    'gov.ye',
-    'edu.ye',
+        'com.hu', 'org.hu', 'net.hu', 'gov.hu', 'edu.hu',
 
-    // Oman
-
-    'com.om',
-    'org.om',
-    'net.om',
-    'gov.om',
-    'edu.om',
+        // Romania
 
-    // Qatar
-
-    'com.qa',
-    'org.qa',
-    'net.qa',
-    'gov.qa',
-    'edu.qa',
+        'com.ro', 'org.ro', 'net.ro', 'gov.ro', 'edu.ro',
 
-    // Bahrain
-
-    'com.bh',
-    'org.bh',
-    'net.bh',
-    'gov.bh',
-    'edu.bh',
+        // Serbia
 
-    // Kuwait
-
-    'com.kw',
-    'org.kw',
-    'net.kw',
-    'gov.kw',
-    'edu.kw',
+        'com.rs', 'org.rs', 'net.rs', 'gov.rs', 'edu.rs',
 
-    // Jordan
-
-    'com.jo',
-    'org.jo',
-    'net.jo',
-    'gov.jo',
-    'edu.jo',
+        // Croatia
 
-    // Lebanon
-
-    'com.lb',
-    'org.lb',
-    'net.lb',
-    'gov.lb',
-    'edu.lb',
+        'com.hr', 'org.hr', 'net.hr', 'gov.hr', 'edu.hr',
 
-    // Syria
-
-    'com.sy',
-    'org.sy',
-    'net.sy',
-    'gov.sy',
-    'edu.sy',
+        // Slovenia
 
-    // Palestine
+        'com.si', 'org.si', 'net.si', 'gov.si', 'edu.si',
 
-    'com.ps',
-    'org.ps',
-    'net.ps',
-    'gov.ps',
-    'edu.ps',
+        // Slovakia
 
-    // Myanmar
+        'com.sk', 'org.sk', 'net.sk', 'gov.sk', 'edu.sk',
 
-    'com.mm',
-    'org.mm',
-    'net.mm',
-    'gov.mm',
-    'edu.mm',
+        // Bulgaria
 
-    // Cambodia
+        'com.bg', 'org.bg', 'net.bg', 'gov.bg', 'edu.bg',
 
-    'com.kh',
-    'org.kh',
-    'net.kh',
-    'gov.kh',
-    'edu.kh',
+        // Portugal
 
-    // Laos
+        'com.pt', 'org.pt', 'net.pt', 'gov.pt', 'edu.pt',
 
-    'com.la',
-    'org.la',
-    'net.la',
-    'gov.la',
-    'edu.la',
+        // Belgium
 
-    // Mongolia
+        'com.be', 'org.be', 'net.be', 'gov.be', 'edu.be',
 
-    'com.mn',
-    'org.mn',
-    'net.mn',
-    'gov.mn',
-    'edu.mn',
+        // Netherlands
 
-    // Nepal
+        'com.nl', 'org.nl', 'net.nl', 'gov.nl', 'edu.nl',
 
-    'com.np',
-    'org.np',
-    'net.np',
+        // Austria
 
-    // Bhutan
+        'com.at', 'org.at', 'net.at', 'gov.at', 'edu.at',
 
-    'com.bt',
-    'org.bt',
-    'net.bt',
-    'gov.bt',
-    'edu.bt',
+        // Switzerland
 
-    // Maldives
+        'com.ch', 'org.ch', 'net.ch', 'gov.ch', 'edu.ch',
 
-    'com.mv',
-    'org.mv',
-    'net.mv',
-    'gov.mv',
-    'edu.mv',
+        // Germany
 
-    // Thailand (additional)
+        'com.de', 'org.de', 'net.de', 'gov.de', 'edu.de',
 
-    'com.th',
-    'org.th',
-    'net.th',
-    'go.th',
-    'ac.th',
+        // France
 
-    // USA
+        'com.fr', 'org.fr', 'net.fr', 'gov.fr', 'edu.fr',
 
-    'com.us',
-    'org.us',
-    'net.us',
-    'gov.us',
-    'edu.us',
+        // Spain
 
-    // Canada (additional)
+        'com.es', 'org.es', 'net.es', 'gov.es', 'edu.es',
 
-    'com.ca',
-    'org.ca',
-    'net.ca',
-    'gov.ca',
-    'edu.ca',
+        // Italy
 
-    // Mexico (additional)
+        'com.it', 'org.it', 'net.it', 'gov.it', 'edu.it',
 
-    'com.mx',
-    'org.mx',
-    'net.mx',
-    'gov.mx',
-    'edu.mx',
+        // Sweden
 
-    // Belize
+        'com.se', 'org.se', 'net.se', 'gov.se', 'edu.se',
 
-    'com.bz',
-    'org.bz',
-    'net.bz',
+        // Norway
 
-    // Costa Rica
+        'com.no', 'org.no', 'net.no', 'gov.no', 'edu.no',
 
-    'co.cr',
-    'org.cr',
-    'net.cr',
+        // Denmark
 
-    // Panama
+        'com.dk', 'org.dk', 'net.dk', 'gov.dk', 'edu.dk',
 
-    'com.pa',
-    'org.pa',
-    'net.pa',
+        // Finland
 
-    // Dominican Republic
+        'com.fi', 'org.fi', 'net.fi', 'gov.fi', 'edu.fi',
 
-    'com.do',
-    'org.do',
-    'net.do',
+        // Iceland
 
-    // Puerto Rico
+        'com.is', 'org.is', 'net.is', 'gov.is', 'edu.is',
 
-    'com.pr',
-    'org.pr',
-    'net.pr',
+        // Ireland
 
-    // Cuba
+        'com.ie', 'org.ie', 'net.ie', 'gov.ie', 'edu.ie',
 
-    'com.cu',
-    'org.cu',
-    'net.cu',
+        // Luxembourg
 
-    // Jamaica
+        'com.lu', 'org.lu', 'net.lu', 'gov.lu', 'edu.lu',
 
-    'com.jm',
-    'org.jm',
-    'net.jm',
+        // Malta
 
-    // Trinidad and Tobago
+        'com.mt', 'org.mt', 'net.mt', 'gov.mt', 'edu.mt',
 
-    'com.tt',
-    'org.tt',
-    'net.tt',
+        // Cyprus
 
-    // Suriname
+        'com.cy', 'org.cy', 'net.cy', 'gov.cy', 'edu.cy',
 
-    'com.sr',
-    'org.sr',
-    'net.sr',
+        // Lithuania
 
-    // Guyana
+        'com.lt', 'org.lt', 'net.lt', 'gov.lt', 'edu.lt',
 
-    'com.gy',
-    'org.gy',
-    'net.gy',
+        // Latvia
 
-    // Bolivia
+        'com.lv', 'org.lv', 'net.lv', 'gov.lv', 'edu.lv',
 
-    'com.bo',
-    'org.bo',
-    'net.bo',
+        // Estonia
 
-    // Paraguay
+        'com.ee', 'org.ee', 'net.ee', 'gov.ee', 'edu.ee',
 
-    'com.py',
-    'org.py',
-    'net.py',
+        // Bosnia and Herzegovina
 
-    // Uruguay
+        'com.ba', 'org.ba', 'net.ba', 'gov.ba', 'edu.ba',
 
-    'com.uy',
-    'org.uy',
-    'net.uy',
+        // Montenegro
 
-    // Ethiopia
+        'com.me', 'org.me', 'net.me', 'gov.me', 'edu.me',
 
-    'com.et',
-    'org.et',
-    'net.et',
-    'gov.et',
-    'edu.et',
+        // Macedonia
 
-    // Ghana
+        'com.mk', 'org.mk', 'net.mk', 'gov.mk', 'edu.mk',
 
-    'com.gh',
-    'org.gh',
-    'net.gh',
-    'gov.gh',
-    'edu.gh',
+        // Albania
 
-    // Uganda
+        'com.al', 'org.al', 'net.al', 'gov.al', 'edu.al',
 
-    'com.ug',
-    'org.ug',
-    'net.ug',
-    'gov.ug',
-    'edu.ug',
+        // Moldova
 
-    // Tanzania
+        'com.md', 'org.md', 'net.md', 'gov.md', 'edu.md',
 
-    'com.tz',
-    'org.tz',
-    'net.tz',
-    'gov.tz',
-    'edu.tz',
+        // Belarus
 
-    // Zambia
+        'com.by', 'org.by', 'net.by', 'gov.by', 'edu.by',
 
-    'com.zm',
-    'org.zm',
-    'net.zm',
-    'gov.zm',
-    'edu.zm',
+        // Kazakhstan
 
-    // Zimbabwe
+        'com.kz', 'org.kz', 'net.kz', 'gov.kz', 'edu.kz',
 
-    'com.zw',
-    'org.zw',
-    'net.zw',
-    'gov.zw',
-    'edu.zw',
+        // Uzbekistan
 
-    // Botswana
+        'com.uz', 'org.uz', 'net.uz', 'gov.uz', 'edu.uz',
 
-    'co.bw',
-    'org.bw',
-    'net.bw',
-    'gov.bw',
-    'edu.bw',
+        // Tajikistan
 
-    // Namibia
+        'com.tj', 'org.tj', 'net.tj', 'gov.tj', 'edu.tj',
 
-    'com.na',
-    'org.na',
-    'net.na',
-    'gov.na',
-    'edu.na',
+        // Kyrgyzstan
 
-    // Mauritius
+        'com.kg', 'org.kg', 'net.kg', 'gov.kg', 'edu.kg',
 
-    'com.mu',
-    'org.mu',
-    'net.mu',
-    'gov.mu',
-    'edu.mu',
+        // Turkmenistan
 
-    // Seychelles
+        'com.tm', 'org.tm', 'net.tm', 'gov.tm', 'edu.tm',
 
-    'com.sc',
-    'org.sc',
-    'net.sc',
-    'gov.sc',
-    'edu.sc',
+        // Afghanistan
 
-    // Morocco
+        'com.af', 'org.af', 'net.af', 'gov.af', 'edu.af',
 
-    'com.ma',
-    'org.ma',
-    'net.ma',
-    'gov.ma',
-    'edu.ma',
+        // Iran
 
-    // Algeria
+        'com.ir', 'org.ir', 'net.ir', 'gov.ir', 'ac.ir',
 
-    'com.dz',
-    'org.dz',
-    'net.dz',
-    'gov.dz',
-    'edu.dz',
+        // Iraq
 
-    // Tunisia
+        'com.iq', 'org.iq', 'net.iq', 'gov.iq', 'edu.iq',
 
-    'com.tn',
-    'org.tn',
-    'net.tn',
-    'gov.tn',
-    'edu.tn',
+        // Saudi Arabia
 
-    // Libya
+        'com.sa', 'org.sa', 'net.sa', 'gov.sa', 'edu.sa',
 
-    'com.ly',
-    'org.ly',
-    'net.ly',
-    'gov.ly',
-    'edu.ly',
+        // Yemen
 
-    // Sudan
+        'com.ye', 'org.ye', 'net.ye', 'gov.ye', 'edu.ye',
 
-    'com.sd',
-    'org.sd',
-    'net.sd',
-    'gov.sd',
-    'edu.sd',
+        // Oman
 
-    // Senegal
+        'com.om', 'org.om', 'net.om', 'gov.om', 'edu.om',
 
-    'com.sn',
-    'org.sn',
-    'net.sn',
-    'gov.sn',
-    'edu.sn',
+        // Qatar
 
-    // Ivory Coast
+        'com.qa', 'org.qa', 'net.qa', 'gov.qa', 'edu.qa',
 
-    'com.ci',
-    'org.ci',
-    'net.ci',
-    'gov.ci',
-    'edu.ci',
+        // Bahrain
 
-    // Cameroon
+        'com.bh', 'org.bh', 'net.bh', 'gov.bh', 'edu.bh',
 
-    'com.cm',
-    'org.cm',
-    'net.cm',
-    'gov.cm',
-    'edu.cm',
+        // Kuwait
 
-    // Angola
+        'com.kw', 'org.kw', 'net.kw', 'gov.kw', 'edu.kw',
 
-    'com.ao',
-    'org.ao',
-    'net.ao',
-    'gov.ao',
-    'edu.ao',
+        // Jordan
 
-    // Mozambique
+        'com.jo', 'org.jo', 'net.jo', 'gov.jo', 'edu.jo',
 
-    'com.mz',
-    'org.mz',
-    'net.mz',
-    'gov.mz',
-    'edu.mz',
+        // Lebanon
 
-    // Madagascar
+        'com.lb', 'org.lb', 'net.lb', 'gov.lb', 'edu.lb',
 
-    'com.mg',
-    'org.mg',
-    'net.mg',
-    'gov.mg',
-    'edu.mg',
+        // Syria
 
-    // Fiji
+        'com.sy', 'org.sy', 'net.sy', 'gov.sy', 'edu.sy',
 
-    'com.fj',
-    'org.fj',
-    'net.fj',
-    'gov.fj',
-    'edu.fj',
+        // Palestine
 
-    // New Caledonia
+        'com.ps', 'org.ps', 'net.ps', 'gov.ps', 'edu.ps',
 
-    'com.nc',
-    'org.nc',
-    'net.nc',
-    'gov.nc',
-    'edu.nc',
+        // Myanmar
 
-    // Papua New Guinea
+        'com.mm', 'org.mm', 'net.mm', 'gov.mm', 'edu.mm',
 
-    'com.pg',
-    'org.pg',
-    'net.pg',
-    'gov.pg',
-    'edu.pg',
+        // Cambodia
 
-    // Solomon Islands
+        'com.kh', 'org.kh', 'net.kh', 'gov.kh', 'edu.kh',
 
-    'com.sb',
-    'org.sb',
-    'net.sb',
-    'gov.sb',
-    'edu.sb',
+        // Laos
 
-    // Samoa
+        'com.la', 'org.la', 'net.la', 'gov.la', 'edu.la',
 
-    'com.ws',
-    'org.ws',
-    'net.ws',
-    'gov.ws',
-    'edu.ws',
+        // Mongolia
 
-    // Tonga
+        'com.mn', 'org.mn', 'net.mn', 'gov.mn', 'edu.mn',
 
-    'com.to',
-    'org.to',
-    'net.to',
-    'gov.to',
-    'edu.to',
+        // Nepal
 
-    // Kiribati
+        'com.np', 'org.np', 'net.np',
 
-    'com.ki',
-    'org.ki',
-    'net.ki',
-    'gov.ki',
-    'edu.ki',
+        // Bhutan
 
-    // Marshall Islands
+        'com.bt', 'org.bt', 'net.bt', 'gov.bt', 'edu.bt',
 
-    'com.mh',
-    'org.mh',
-    'net.mh',
-    'gov.mh',
-    'edu.mh',
+        // Maldives
 
-    // Palau
+        'com.mv', 'org.mv', 'net.mv', 'gov.mv', 'edu.mv',
 
-    'com.pw',
-    'org.pw',
-    'net.pw',
-    'gov.pw',
-    'edu.pw',
+        // Thailand (additional)
 
-    // Micronesia
+        'com.th', 'org.th', 'net.th', 'go.th', 'ac.th',
 
-    'com.fm',
-    'org.fm',
-    'net.fm',
-    'gov.fm',
-    'edu.fm',
+        // USA
 
-    // Nauru
+        'com.us', 'org.us', 'net.us', 'gov.us', 'edu.us',
 
-    'com.nr',
-    'org.nr',
-    'net.nr',
-    'gov.nr',
-    'edu.nr',
+        // Canada (additional)
 
-    // Tuvalu
+        'com.ca', 'org.ca', 'net.ca', 'gov.ca', 'edu.ca',
 
-    'com.tv',
-    'org.tv',
-    'net.tv',
-    'gov.tv',
-    'edu.tv',
+        // Mexico (additional)
 
-  ];
+        'com.mx', 'org.mx', 'net.mx', 'gov.mx', 'edu.mx',
 
+        // Belize
 
+        'com.bz', 'org.bz', 'net.bz',
 
-  // Check if last 2 parts match a multi-part TLD
+        // Costa Rica
 
-  if (count($parts) >= 3) {
+        'co.cr', 'org.cr', 'net.cr',
 
-    $potential_tld = implode('.', array_slice($parts, -2));
+        // Panama
 
-    if (in_array($potential_tld, $multiPartTlds)) {
+        'com.pa', 'org.pa', 'net.pa',
 
-      // Use last 3 parts for multi-part TLDs
+        // Dominican Republic
 
-      return '.' . implode('.', array_slice($parts, -3));
+        'com.do', 'org.do', 'net.do',
+
+        // Puerto Rico
+
+        'com.pr', 'org.pr', 'net.pr',
+
+        // Cuba
+
+        'com.cu', 'org.cu', 'net.cu',
+
+        // Jamaica
+
+        'com.jm', 'org.jm', 'net.jm',
+
+        // Trinidad and Tobago
+
+        'com.tt', 'org.tt', 'net.tt',
+
+        // Suriname
+
+        'com.sr', 'org.sr', 'net.sr',
+
+        // Guyana
+
+        'com.gy', 'org.gy', 'net.gy',
+
+        // Bolivia
+
+        'com.bo', 'org.bo', 'net.bo',
+
+        // Paraguay
+
+        'com.py', 'org.py', 'net.py',
+
+        // Uruguay
+
+        'com.uy', 'org.uy', 'net.uy',
+
+        // Ethiopia
+
+        'com.et', 'org.et', 'net.et', 'gov.et', 'edu.et',
+
+        // Ghana
+
+        'com.gh', 'org.gh', 'net.gh', 'gov.gh', 'edu.gh',
+
+        // Uganda
+
+        'com.ug', 'org.ug', 'net.ug', 'gov.ug', 'edu.ug',
+
+        // Tanzania
+
+        'com.tz', 'org.tz', 'net.tz', 'gov.tz', 'edu.tz',
+
+        // Zambia
+
+        'com.zm', 'org.zm', 'net.zm', 'gov.zm', 'edu.zm',
+
+        // Zimbabwe
+
+        'com.zw', 'org.zw', 'net.zw', 'gov.zw', 'edu.zw',
+
+        // Botswana
+
+        'co.bw', 'org.bw', 'net.bw', 'gov.bw', 'edu.bw',
+
+        // Namibia
+
+        'com.na', 'org.na', 'net.na', 'gov.na', 'edu.na',
+
+        // Mauritius
+
+        'com.mu', 'org.mu', 'net.mu', 'gov.mu', 'edu.mu',
+
+        // Seychelles
+
+        'com.sc', 'org.sc', 'net.sc', 'gov.sc', 'edu.sc',
+
+        // Morocco
+
+        'com.ma', 'org.ma', 'net.ma', 'gov.ma', 'edu.ma',
+
+        // Algeria
+
+        'com.dz', 'org.dz', 'net.dz', 'gov.dz', 'edu.dz',
+
+        // Tunisia
+
+        'com.tn', 'org.tn', 'net.tn', 'gov.tn', 'edu.tn',
+
+        // Libya
+
+        'com.ly', 'org.ly', 'net.ly', 'gov.ly', 'edu.ly',
+
+        // Sudan
+
+        'com.sd', 'org.sd', 'net.sd', 'gov.sd', 'edu.sd',
+
+        // Senegal
+
+        'com.sn', 'org.sn', 'net.sn', 'gov.sn', 'edu.sn',
+
+        // Ivory Coast
+
+        'com.ci', 'org.ci', 'net.ci', 'gov.ci', 'edu.ci',
+
+        // Cameroon
+
+        'com.cm', 'org.cm', 'net.cm', 'gov.cm', 'edu.cm',
+
+        // Angola
+
+        'com.ao', 'org.ao', 'net.ao', 'gov.ao', 'edu.ao',
+
+        // Mozambique
+
+        'com.mz', 'org.mz', 'net.mz', 'gov.mz', 'edu.mz',
+
+        // Madagascar
+
+        'com.mg', 'org.mg', 'net.mg', 'gov.mg', 'edu.mg',
+
+        // Fiji
+
+        'com.fj', 'org.fj', 'net.fj', 'gov.fj', 'edu.fj',
+
+        // New Caledonia
+
+        'com.nc', 'org.nc', 'net.nc', 'gov.nc', 'edu.nc',
+
+        // Papua New Guinea
+
+        'com.pg', 'org.pg', 'net.pg', 'gov.pg', 'edu.pg',
+
+        // Solomon Islands
+
+        'com.sb', 'org.sb', 'net.sb', 'gov.sb', 'edu.sb',
+
+        // Samoa
+
+        'com.ws', 'org.ws', 'net.ws', 'gov.ws', 'edu.ws',
+
+        // Tonga
+
+        'com.to', 'org.to', 'net.to', 'gov.to', 'edu.to',
+
+        // Kiribati
+
+        'com.ki', 'org.ki', 'net.ki', 'gov.ki', 'edu.ki',
+
+        // Marshall Islands
+
+        'com.mh', 'org.mh', 'net.mh', 'gov.mh', 'edu.mh',
+
+        // Palau
+
+        'com.pw', 'org.pw', 'net.pw', 'gov.pw', 'edu.pw',
+
+        // Micronesia
+
+        'com.fm', 'org.fm', 'net.fm', 'gov.fm', 'edu.fm',
+
+        // Nauru
+
+        'com.nr', 'org.nr', 'net.nr', 'gov.nr', 'edu.nr',
+
+        // Tuvalu
+
+        'com.tv', 'org.tv', 'net.tv', 'gov.tv', 'edu.tv',
+
+    ];
+
+    
+
+    // Check if last 2 parts match a multi-part TLD
+
+    if (count($parts) >= 3) {
+
+        $potential_tld = implode('.', array_slice($parts, -2));
+
+        if (in_array($potential_tld, $multiPartTlds)) {
+
+            // Use last 3 parts for multi-part TLDs
+
+            return '.' . implode('.', array_slice($parts, -3));
+
+        }
+
     }
-  }
 
+    
 
+    // Default: use last 2 parts for standard TLDs
 
-  // Default: use last 2 parts for standard TLDs
+    return '.' . implode('.', array_slice($parts, -2));
 
-  return '.' . implode('.', array_slice($parts, -2));
 }
 
 
@@ -24977,79 +24330,86 @@ function abst_get_root_domain($host)
 
  */
 
-function abst_get_variation_label($variation, $variation_meta = null)
-{
+function abst_get_variation_label( $variation, $variation_meta = null ) {
 
-  $variation = (string) $variation;
+    $variation = (string) $variation;
 
-  $variation_label = $variation;
+    $variation_label = $variation;
 
-  $alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+    $alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
+    
 
+    // Check for custom label in variation_meta first (highest priority)
 
-  // Check for custom label in variation_meta first (highest priority)
+    if ( is_array( $variation_meta ) && isset( $variation_meta[ $variation ]['label'] ) && ! empty( $variation_meta[ $variation ]['label'] ) ) {
 
-  if (is_array($variation_meta) && isset($variation_meta[$variation]['label']) && ! empty($variation_meta[$variation]['label'])) {
+        return $variation_meta[ $variation ]['label'];
 
-    return $variation_meta[$variation]['label'];
-  }
-
-
-
-  // Handle magic test variations (magic-0, magic-1, etc.)
-
-  if (substr($variation, 0, 6) === 'magic-') {
-
-    $index = (int) substr($variation, 6);
-
-    if ($index === 0) {
-
-      return 'Variation ' . $alphabet[0] . ' (Original)';
     }
 
-    return 'Variation ' . (isset($alphabet[$index]) ? $alphabet[$index] : $index);
-  }
+    
 
+    // Handle magic test variations (magic-0, magic-1, etc.)
 
+    if ( substr( $variation, 0, 6 ) === 'magic-' ) {
 
-  // Handle CSS test variations (test-css-TESTID-N)
+        $index = (int) substr( $variation, 6 );
 
-  if (preg_match('/^test-css-(\d+)-(\d+)$/', $variation, $matches)) {
+        if ( $index === 0 ) {
 
-    $test_id = $matches[1];
+            return 'Variation ' . $alphabet[0] . ' (Original)';
 
-    $var_num = (int) $matches[2];
+        }
 
-    $index = $var_num - 1; // Convert 1-based to 0-based for alphabet
+        return 'Variation ' . ( isset( $alphabet[ $index ] ) ? $alphabet[ $index ] : $index );
 
-    if ($index === 0) {
-
-      return 'Variation ' . $alphabet[0] . ' (Original)';
     }
 
-    return 'Variation ' . (isset($alphabet[$index]) ? $alphabet[$index] : $var_num);
-  }
+    
 
+    // Handle CSS test variations (test-css-TESTID-N)
 
+    if ( preg_match( '/^test-css-(\d+)-(\d+)$/', $variation, $matches ) ) {
 
-  // Handle numeric post IDs (full page tests)
+        $test_id = $matches[1];
 
-  if (is_numeric($variation)) {
+        $var_num = (int) $matches[2];
 
-    $post_id = (int) $variation;
+        $index = $var_num - 1; // Convert 1-based to 0-based for alphabet
 
-    if (get_post_status($post_id)) {
+        if ( $index === 0 ) {
 
-      return get_the_title($post_id);
+            return 'Variation ' . $alphabet[0] . ' (Original)';
+
+        }
+
+        return 'Variation ' . ( isset( $alphabet[ $index ] ) ? $alphabet[ $index ] : $var_num );
+
     }
-  }
 
+    
 
+    // Handle numeric post IDs (full page tests)
 
-  // Fallback: return the variation key as-is
+    if ( is_numeric( $variation ) ) {
 
-  return $variation_label;
+        $post_id = (int) $variation;
+
+        if ( get_post_status( $post_id ) ) {
+
+            return get_the_title( $post_id );
+
+        }
+
+    }
+
+    
+
+    // Fallback: return the variation key as-is
+
+    return $variation_label;
+
 }
 
 
@@ -25072,96 +24432,102 @@ function abst_get_variation_label($variation, $variation_meta = null)
 
  */
 
-function abst_get_or_set_experiment_variation($test_id)
-{
+function abst_get_or_set_experiment_variation($test_id) {
 
-  // Validate test exists and is active
+    // Validate test exists and is active
 
-  $test = get_post($test_id);
+    $test = get_post($test_id);
 
-  if (!$test || $test->post_type !== 'bt_experiments' || $test->post_status !== 'publish') {
+    if (!$test || $test->post_type !== 'bt_experiments' || $test->post_status !== 'publish') {
 
-    return false;
-  }
+        return false;
 
-
-
-  // Batch fetch all meta in single query
-
-  $meta = get_post_meta($test_id);
-
-  $test_type = $meta['test_type'][0] ?? '';
-
-  $variation_meta = maybe_unserialize($meta['variation_meta'][0] ?? '');
-
-  $targeting_options = maybe_unserialize($meta['targeting_options'][0] ?? '');
-
-
-
-  // On-page tests don't support SSR
-
-  if (!in_array($test_type, ['full_page', 'magic', 'code'], true)) {
-
-    return false;
-  }
-
-
-
-  // Check for existing cookie first
-
-  $cookie_name = 'btab_' . $test_id;
-
-  if (!empty($_COOKIE[$cookie_name])) {
-
-    $cookie_data = json_decode(stripslashes($_COOKIE[$cookie_name]), true);
-
-    if (!empty($cookie_data['variation'])) {
-
-      return abst_parse_variation_result($cookie_data['variation'], $test_type);
     }
-  }
 
 
 
-  // Apply targeting rules
+    // Batch fetch all meta in single query
 
-  if (!abst_should_user_see_test($test_id, $targeting_options)) {
+    $meta = get_post_meta($test_id);
 
-    return false;
-  }
+    $test_type = $meta['test_type'][0] ?? '';
 
+    $variation_meta = maybe_unserialize($meta['variation_meta'][0] ?? '');
 
-
-  // Select variation
-
-  $variation = abst_select_variation_for_user($test_id, $variation_meta);
-
-  if (!$variation) {
-
-    return false;
-  }
+    $targeting_options = maybe_unserialize($meta['targeting_options'][0] ?? '');
 
 
 
-  // Set cookie for future requests (365 days expiry)
+    // On-page tests don't support SSR
 
-  abst_set_cookie_with_fallback($cookie_name, json_encode([
+    if (!in_array($test_type, ['full_page', 'magic', 'code'], true)) {
 
-    'variation' => $variation,
+        return false;
 
-    'conversion' => 0,
-
-    'goals' => [],
-
-    'size' => 'desktop',
-
-    'location' => abst_get_current_post_id()
-
-  ]), 365);
+    }
 
 
 
-  return abst_parse_variation_result($variation, $test_type);
+    // Check for existing cookie first
+
+    $cookie_name = 'btab_' . $test_id;
+
+    if (!empty($_COOKIE[$cookie_name])) {
+
+        $cookie_data = json_decode(stripslashes($_COOKIE[$cookie_name]), true);
+
+        if (!empty($cookie_data['variation'])) {
+
+            return abst_parse_variation_result($cookie_data['variation'], $test_type);
+
+        }
+
+    }
+
+
+
+    // Apply targeting rules
+
+    if (!abst_should_user_see_test($test_id, $targeting_options)) {
+
+        return false;
+
+    }
+
+
+
+    // Select variation
+
+    $variation = abst_select_variation_for_user($test_id, $variation_meta);
+
+    if (!$variation) {
+
+        return false;
+
+    }
+
+
+
+    // Set cookie for future requests (365 days expiry)
+
+    abst_set_cookie_with_fallback($cookie_name, json_encode([
+
+        'variation' => $variation,
+
+        'conversion' => 0,
+
+        'goals' => [],
+
+        'size' => 'desktop',
+
+        'location' => abst_get_current_post_id()
+
+    ]), 365);
+
+
+
+    return abst_parse_variation_result($variation, $test_type);
+
 }
 
 
@@ -25180,26 +24546,28 @@ function abst_get_or_set_experiment_variation($test_id)
 
  */
 
-function abst_parse_variation_result($variation, $test_type)
-{
+function abst_parse_variation_result($variation, $test_type) {
 
-  if ($test_type === 'full_page') {
+    if ($test_type === 'full_page') {
 
-    return is_numeric($variation) ? (int) $variation : false;
-  }
+        return is_numeric($variation) ? (int) $variation : false;
 
+    }
 
+    
 
-  // Magic/code tests use 'magic-X' format
+    // Magic/code tests use 'magic-X' format
 
-  if (preg_match('/^magic-(\d+)$/', $variation, $matches)) {
+    if (preg_match('/^magic-(\d+)$/', $variation, $matches)) {
 
-    return (int) $matches[1];
-  }
+        return (int) $matches[1];
 
+    }
 
+    
 
-  return false;
+    return false;
+
 }
 
 
@@ -25218,109 +24586,120 @@ function abst_parse_variation_result($variation, $test_type)
 
  */
 
-function abst_should_user_see_test($test_id, $targeting_options)
-{
+function abst_should_user_see_test($test_id, $targeting_options) {
 
-  // Check user role targeting
+    // Check user role targeting
 
-  if (isset($targeting_options['user_roles']) && !empty($targeting_options['user_roles'])) {
+    if (isset($targeting_options['user_roles']) && !empty($targeting_options['user_roles'])) {
 
-    $user = wp_get_current_user();
+        $user = wp_get_current_user();
 
-    $allowed_roles = $targeting_options['user_roles'];
-
+        $allowed_roles = $targeting_options['user_roles'];
 
 
-    // Convert string roles to array if needed
 
-    if (is_string($allowed_roles)) {
+        // Convert string roles to array if needed
 
-      $allowed_roles = explode(',', $allowed_roles);
+        if (is_string($allowed_roles)) {
+
+            $allowed_roles = explode(',', $allowed_roles);
+
+        }
+
+
+
+        // Check if user has any of the allowed roles
+
+        $user_has_role = false;
+
+        foreach ($allowed_roles as $role) {
+
+            $role = trim($role);
+
+            if (in_array($role, $user->roles)) {
+
+                $user_has_role = true;
+
+                break;
+
+            }
+
+        }
+
+
+
+        if (!$user_has_role) {
+
+            return false;
+
+        }
+
     }
 
 
 
-    // Check if user has any of the allowed roles
+    // Check device targeting
 
-    $user_has_role = false;
+    if (isset($targeting_options['device_size'])) {
 
-    foreach ($allowed_roles as $role) {
+        $device = $targeting_options['device_size'];
 
-      $role = trim($role);
+        // Simple device detection - can be enhanced
 
-      if (in_array($role, $user->roles)) {
+        $is_mobile = wp_is_mobile();
 
-        $user_has_role = true;
+        $is_tablet = false; // Would need better detection
 
-        break;
-      }
+
+
+        if ($device === 'mobile' && !$is_mobile) {
+
+            return false;
+
+        }
+
+        if ($device === 'tablet' && !$is_tablet) {
+
+            return false;
+
+        }
+
+        if ($device === 'desktop' && $is_mobile) {
+
+            return false;
+
+        }
+
     }
 
 
 
-    if (!$user_has_role) {
+    // Check URL targeting
 
-      return false;
-    }
-  }
+    if (isset($targeting_options['url_filter']) && !empty($targeting_options['url_filter'])) {
 
+        $current_url = $_SERVER['REQUEST_URI'];
 
-
-  // Check device targeting
-
-  if (isset($targeting_options['device_size'])) {
-
-    $device = $targeting_options['device_size'];
-
-    // Simple device detection - can be enhanced
-
-    $is_mobile = wp_is_mobile();
-
-    $is_tablet = false; // Would need better detection
+        $url_pattern = $targeting_options['url_filter'];
 
 
 
-    if ($device === 'mobile' && !$is_mobile) {
+        // Simple pattern matching - supports wildcards
 
-      return false;
+        $pattern = str_replace('*', '.*', $url_pattern);
+
+        if (!preg_match('#^' . $pattern . '$#i', $current_url)) {
+
+            return false;
+
+        }
+
     }
 
-    if ($device === 'tablet' && !$is_tablet) {
-
-      return false;
-    }
-
-    if ($device === 'desktop' && $is_mobile) {
-
-      return false;
-    }
-  }
 
 
+    return true;
 
-  // Check URL targeting
-
-  if (isset($targeting_options['url_filter']) && !empty($targeting_options['url_filter'])) {
-
-    $current_url = $_SERVER['REQUEST_URI'];
-
-    $url_pattern = $targeting_options['url_filter'];
-
-
-
-    // Simple pattern matching - supports wildcards
-
-    $pattern = str_replace('*', '.*', $url_pattern);
-
-    if (!preg_match('#^' . $pattern . '$#i', $current_url)) {
-
-      return false;
-    }
-  }
-
-
-
-  return true;
 }
 
 
@@ -25339,37 +24718,40 @@ function abst_should_user_see_test($test_id, $targeting_options)
 
  */
 
-function abst_select_variation_for_user($test_id, $variation_meta)
-{
+function abst_select_variation_for_user($test_id, $variation_meta) {
 
-  $conversion_style = get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian';
-
-
-
-  // Get available variations
-
-  if (!$variation_meta || !is_array($variation_meta)) {
-
-    return false;
-  }
+    $conversion_style = get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian';
 
 
 
-  $variations = array_keys($variation_meta);
+    // Get available variations
+
+    if (!$variation_meta || !is_array($variation_meta)) {
+
+        return false;
+
+    }
 
 
 
-  if ($conversion_style === 'thompson') {
+    $variations = array_keys($variation_meta);
 
-    // Use Thompson sampling weights
 
-    return abst_select_variation_by_weights($variation_meta);
-  } else {
 
-    // Simple random selection
+    if ($conversion_style === 'thompson') {
 
-    return $variations[array_rand($variations)];
-  }
+        // Use Thompson sampling weights
+
+        return abst_select_variation_by_weights($variation_meta);
+
+    } else {
+
+        // Simple random selection
+
+        return $variations[array_rand($variations)];
+
+    }
+
 }
 
 
@@ -25386,58 +24768,62 @@ function abst_select_variation_for_user($test_id, $variation_meta)
 
  */
 
-function abst_select_variation_by_weights($variation_meta)
-{
+function abst_select_variation_by_weights($variation_meta) {
 
-  $weights = [];
+    $weights = [];
 
-  $total_weight = 0;
-
-
-
-  foreach ($variation_meta as $key => $meta) {
-
-    $weight = isset($meta['weight']) ? floatval($meta['weight']) : 1.0;
-
-    $weights[$key] = $weight;
-
-    $total_weight += $weight;
-  }
+    $total_weight = 0;
 
 
 
-  if ($total_weight <= 0) {
+    foreach ($variation_meta as $key => $meta) {
 
-    // Fallback to random if no weights
+        $weight = isset($meta['weight']) ? floatval($meta['weight']) : 1.0;
 
-    return array_rand($variation_meta);
-  }
+        $weights[$key] = $weight;
 
+        $total_weight += $weight;
 
-
-  // Weighted random selection
-
-  $rand = wp_rand(0, $total_weight * 100) / 100;
-
-  $cumulative = 0;
-
-
-
-  foreach ($weights as $key => $weight) {
-
-    $cumulative += $weight;
-
-    if ($rand <= $cumulative) {
-
-      return $key;
     }
-  }
 
 
 
-  // Fallback
+    if ($total_weight <= 0) {
 
-  return array_key_first($variation_meta);
+        // Fallback to random if no weights
+
+        return array_rand($variation_meta);
+
+    }
+
+
+
+    // Weighted random selection
+
+    $rand = wp_rand(0, $total_weight * 100) / 100;
+
+    $cumulative = 0;
+
+
+
+    foreach ($weights as $key => $weight) {
+
+        $cumulative += $weight;
+
+        if ($rand <= $cumulative) {
+
+            return $key;
+
+        }
+
+    }
+
+
+
+    // Fallback
+
+    return array_key_first($variation_meta);
+
 }
 
 
@@ -25458,70 +24844,76 @@ function abst_select_variation_by_weights($variation_meta)
 
  */
 
-function abst_get_current_post_id()
-{
+function abst_get_current_post_id() {
 
-  global $post;
-
-
-
-  $gqo = get_queried_object();
+    global $post;
 
 
 
-  if ($gqo instanceof WP_Post_Type) {
-
-    return 'post-type-archive-' . $gqo->name;
-  }
-
-  if (is_category()) {
-
-    return 'category-' . $gqo->slug;
-  }
-
-  if (is_tag() || is_tax()) {
-
-    return 'tax-' . $gqo->taxonomy . ' term-' . $gqo->slug;
-  }
-
-  if (is_author()) {
-
-    return 'author-' . $gqo->user_login;
-  }
-
-  if (!empty($post)) {
-
-    return $post->ID;
-  }
-
-  if (is_home() || is_front_page()) {
-
-    $page_on_front = get_option('page_on_front');
-
-    return $page_on_front ? (int) $page_on_front : 'home';
-  }
-
-  if (is_404()) {
-
-    return '404-not-found';
-  }
-
-  if (is_search()) {
-
-    return 'search';
-  }
+    $gqo = get_queried_object();
 
 
 
-  return 0;
+    if ($gqo instanceof WP_Post_Type) {
+
+        return 'post-type-archive-' . $gqo->name;
+
+    }
+
+    if (is_category()) {
+
+        return 'category-' . $gqo->slug;
+
+    }
+
+    if (is_tag() || is_tax()) {
+
+        return 'tax-' . $gqo->taxonomy . ' term-' . $gqo->slug;
+
+    }
+
+    if (is_author()) {
+
+        return 'author-' . $gqo->user_login;
+
+    }
+
+    if (!empty($post)) {
+
+        return $post->ID;
+
+    }
+
+    if (is_home() || is_front_page()) {
+
+        $page_on_front = get_option('page_on_front');
+
+        return $page_on_front ? (int) $page_on_front : 'home';
+
+    }
+
+    if (is_404()) {
+
+        return '404-not-found';
+
+    }
+
+    if (is_search()) {
+
+        return 'search';
+
+    }
+
+
+
+    return 0;
+
 }
 
 
 
 if (!function_exists('abst_get_current_post_id')) {
 
-  function abst_get_current_post_id()
-  {
-    return abst_get_current_post_id();
-  }
+    function abst_get_current_post_id() { return abst_get_current_post_id(); }
+
 }
