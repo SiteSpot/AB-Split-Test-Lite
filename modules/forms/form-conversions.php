@@ -790,41 +790,8 @@ class ABST_Form_Conversions {
             if (is_array($abst_data) && isset($abst_data[$eid])) {
                 $variation = sanitize_text_field($abst_data[$eid]);
                 abst_log("Form conversion: Found variation '{$variation}' from hidden field for eid={$eid}");
-                
-                // Check if already converted via UUID database (if UUID available from cookie)
-                if ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
-                    global $wpdb;
-                    $table_name = $wpdb->prefix . 'abst_fingerprints';
-                    $row = $wpdb->get_row($wpdb->prepare(
-                        "SELECT type FROM $table_name WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
-                        $uuid, $eid
-                    ));
-                    if ($row && $row->type === 'conversion') {
-                        $already_converted = true;
-                    }
-                }
             } else {
                 abst_log("Form conversion: Hidden field found but no data for eid={$eid}");
-            }
-        }
-        // Fallback #2: Try to get variation from fingerprint database using UUID
-        elseif ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
-            global $wpdb;
-            $table_name = $wpdb->prefix . 'abst_fingerprints';
-
-            // Check if this UUID has visited this test
-            $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT variation, type FROM {$table_name} WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
-                $uuid, $eid
-            ));
-            
-            if ($row) {
-                $variation = $row->variation;
-                $already_converted = ($row->type === 'conversion');
-                abst_log("Form conversion: Found variation '{$variation}' from UUID database for eid={$eid}");
-            } else {
-                abst_log("Form conversion skipped (no visit record in UUID db): eid={$eid}, uuid={$uuid}");
-                return;
             }
         }
         
@@ -955,44 +922,8 @@ class ABST_Form_Conversions {
             if (is_array($abst_data) && isset($abst_data[$eid])) {
                 $variation = sanitize_text_field($abst_data[$eid]);
                 abst_log("Form goal: Found variation '{$variation}' from hidden field for eid={$eid}");
-                
-                // Check if goal already completed via UUID database (if UUID available from cookie)
-                if ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
-                    global $wpdb;
-                    $table_name = $wpdb->prefix . 'abst_fingerprints';
-                    $row = $wpdb->get_row($wpdb->prepare(
-                        "SELECT goals FROM {$table_name} WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
-                        $uuid, $eid
-                    ));
-                    if ($row && !empty($row->goals)) {
-                        $goals_data = json_decode($row->goals, true);
-                        $goal_already_completed = isset($goals_data[$goal_index]) && $goals_data[$goal_index] == 1;
-                    }
-                }
             } else {
                 abst_log("Form goal: Hidden field found but no data for eid={$eid}");
-            }
-        }
-        // Fallback #2: Try to get variation from fingerprint database using UUID
-        elseif ($uuid && abst_get_admin_setting('ab_use_uuid') == 1) {
-            global $wpdb;
-            $table_name = $wpdb->prefix . 'abst_fingerprints';
-
-            // Check if this UUID has visited this test
-            $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT variation, goals FROM {$table_name} WHERE uuid = %s AND testId = %d ORDER BY timestamp DESC LIMIT 1",
-                $uuid, $eid
-            ));
-            
-            if ($row) {
-                $variation = $row->variation;
-                // Check if goal already completed in DB
-                $goals_data = !empty($row->goals) ? json_decode($row->goals, true) : [];
-                $goal_already_completed = isset($goals_data[$goal_index]) && $goals_data[$goal_index] == 1;
-                abst_log("Form goal: Found variation '{$variation}' from UUID database for eid={$eid}");
-            } else {
-                abst_log("Form goal skipped (no visit record in UUID db): eid={$eid}, uuid={$uuid}");
-                return;
             }
         }
         
@@ -1016,14 +947,6 @@ class ABST_Form_Conversions {
         if (empty($variation)) {
             abst_log("Form goal skipped (no variation found): eid={$eid}");
             return;
-        }
-        
-        // When using UUID tracking, ensure a visit record exists before logging goal.
-        // This handles the race condition where form submission fires before JavaScript visit tracking completes.
-        if ($uuid && abst_get_admin_setting('ab_use_uuid') == 1 && method_exists($btab, 'log_experiment_activity')) {
-            // Log visit first (will be ignored if already exists) - use page location from cookie if available
-            $visit_location = !empty($page_location) ? $page_location : $location;
-            $btab->log_experiment_activity($eid, $variation, 'visit', true, $visit_location, 1, $uuid, $device_size);
         }
         
         // Log the goal

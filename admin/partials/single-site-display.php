@@ -82,12 +82,7 @@ $selected_post_types = abst_get_admin_setting('selected_post_types');
 
 $add_canonical = abst_get_admin_setting('ab_change_canonicals');
 
-$use_fingerprint = abst_get_admin_setting('ab_use_fingerprint');
-
-$fingerprint_length = abst_get_admin_setting('ab_fingerprint_length') ?: 2;
-
-$use_uuid = abst_get_admin_setting('ab_use_uuid');
-
+$use_uuid = '';
 $uuid_length = abst_get_admin_setting('ab_uuid_length') ?: 30;
 
 $enable_user_journeys = abst_get_admin_setting('abst_enable_user_journeys');
@@ -104,21 +99,9 @@ $abst_enable_heatmaps = abst_get_admin_setting('abst_enable_heatmaps');
 
 $heatmap_retention_length = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
 
-$abst_send_weekly_reports = abst_get_admin_setting('abst_send_weekly_reports');
-
-$weekly_report_emails = abst_get_admin_setting('abst_weekly_report_emails');
-
 $abst_notification_emails = abst_get_admin_setting('abst_notification_emails');
 
-$weekly_reports_checked = ($abst_send_weekly_reports == 1) ? 'checked' : '';
-
-$abst_thompson_sampling_enabled = abst_get_admin_setting('abst_thompson_sampling_enabled');
-
-$thompson_sampling_checked = ($abst_thompson_sampling_enabled == 1) ? 'checked' : '';
-
 $detected_caches = !empty(abst_get_detected_caches()) ? implode(', ', abst_get_detected_caches()) : 'None detected';
-
-$delete_fingerprint_db_on_uninstall = abst_get_admin_setting('ab_delete_fingerprint_db_on_uninstall');  
 
 $wait_for_approval = abst_get_admin_setting('abst_wait_for_approval');
 
@@ -263,18 +246,6 @@ if($visit_on_visible)
 
 
 
-if($use_fingerprint)
-
-  $use_fingerprint = 'checked';
-
-
-
-if($use_uuid)
-
-  $use_uuid = 'checked';
-
-
-
 if($add_canonical)
 
   $add_canonical = 'checked';
@@ -343,20 +314,6 @@ if(empty($heatmap_all_pages)) {
 
 
 
-// Set delete_fingerprint_db_on_uninstall to be checked by default
-
-if($delete_fingerprint_db_on_uninstall !== '0') {
-
-  $delete_fingerprint_db_on_uninstall = 'checked';
-
-} else {
-
-  $delete_fingerprint_db_on_uninstall = '';
-
-}
-
-
-
 if ($license_status !== 'valid') {
 
   // if file exists plugin root/includes/config.php
@@ -366,12 +323,6 @@ if ($license_status !== 'valid') {
     $user_level = 'free';
 
 }
-
-
-
-if(empty($weekly_report_emails))
-
-  $weekly_report_emails = get_option('admin_email');
 
 
 
@@ -779,10 +730,6 @@ if(empty($weekly_report_emails))
 
             </div>
 
-            <?php } ?>
-
-          </div>
-
           <?php } ?>
 
 
@@ -910,46 +857,6 @@ if(empty($weekly_report_emails))
             </div>
 
             <?php } ?>
-
-          </div>
-
-
-
-          <div class="ab-settings-subsection ab-test-fingerprint">
-
-            <label for="use_fingerprint"><strong>Fingerprint Conversion Type</strong></label>
-
-            <p>A JavaScript snippet that triggers a test conversion on any remote website.</p>
-
-            <p>Fingerprint conversion tests use the visitor's hashed IP address to track them. Ensure you have permission & enable cookie consent mode.</p>
-
-            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
-
-            <p><input type="checkbox" class="ab-toggle" id="use_fingerprint" name="use_fingerprint" value="1" <?php echo esc_attr($use_fingerprint); ?> /> Enable fingerprinting.</p>
-
-            <div id="fingerprint_settings_area" style="<?php echo empty($use_fingerprint) ? 'display:none;' : ''; ?>">
-
-              <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-
-              
-
-              <label for="fingerprint_length"><strong>Fingerprint validity</strong></label>
-
-              <p>The number of days to remember the visitor: <input type="number" id="fingerprint_length" name="fingerprint_length" style="width:60px;" value="<?php echo esc_attr($fingerprint_length); ?>" /> days</p>
-
-            </div>
-
-            <?php } ?>
-
-          </div>
-
-          <div class="ab-settings-subsection">
-
-            <label for="delete_fingerprint_db_on_uninstall"><strong>Delete data on uninstall</strong></label>
-
-            <p>Remove all plugin data (tracking database, test ideas, settings) when you uninstall the plugin.</p>
-
-            <p><input type="checkbox" class="ab-toggle" id="delete_fingerprint_db_on_uninstall" name="delete_fingerprint_db_on_uninstall" value="1" <?php echo esc_attr($delete_fingerprint_db_on_uninstall); ?> /> Delete data on uninstall</p>
 
           </div>
 
@@ -1105,18 +1012,6 @@ if(empty($weekly_report_emails))
           </div>
 
 
-
-          <div class="ab-settings-subsection ab-settings-reports">
-
-            <label><strong>Weekly Reports</strong></label>
-
-            <p>Send weekly reports with test results and analysis.<br/>
-
-            <small>Sends on Monday morning, website time.</small></p>
-
-            <?php echo wp_kses_post($upgrade_link); ?>
-
-          </div>
 
         </div><!-- end #tab-advanced -->
 
@@ -2719,22 +2614,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   
-
-  // Fingerprint toggle
-
-  const fingerprintToggle = document.getElementById('use_fingerprint');
-
-  const fingerprintSettings = document.getElementById('fingerprint_settings_area');
-
-  if (fingerprintToggle && fingerprintSettings) {
-
-    fingerprintToggle.addEventListener('change', function() {
-
-      fingerprintSettings.style.display = this.checked ? 'block' : 'none';
-
-    });
-
-  }
 
 });
 

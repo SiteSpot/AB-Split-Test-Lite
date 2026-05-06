@@ -34,8 +34,6 @@ define( 'BT_AB_TEST_PLUGIN_NAME', 'AB Split Test' );
 
 define( 'BT_AB_TEST_VERSION', '1.0.0' );
 
-define( 'BT_AB_TEST_ITEM_ID', '9487');
-
 define( 'BT_AB_TEST_PLUGIN_DIR', __FILE__ );
 
 define( 'BT_AB_TEST_PLUGIN_PATH', plugin_dir_path( __FILE__ )  );
@@ -678,83 +676,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    public function wp_plugin_update_rows()
-
-    {
-
-      $license = abst_licence_details();
-
-
-
-      if( $license->active != 'valid' ) {
-
-        remove_action( 'after_plugin_row_bt-bb-ab/bt-bb-ab.php', 'wp_plugin_update_row', 10, 2 );
-
-        add_action( 'after_plugin_row_bt-bb-ab/bt-bb-ab.php', [$this, 'custom_plugin_new_update_text'], 10, 2 );
-
-      }
-
-    }
-
-
-
     function activate_plugin($plugin) {
 
-      
-
-      // if using fingerprint or uuiiod from previously activated, check table exists
-
-      if(abst_get_admin_setting('ab_use_fingerprint') == 1 || abst_get_admin_setting('ab_use_uuid') == 1) {
-
-        $this->create_fingerprint_db();
-
-        abst_log('fingerprint table created on activation , ' . abst_get_admin_setting('ab_use_fingerprint') . ' ' . abst_get_admin_setting('ab_use_uuid'));
-
-      }
-
-
-
       if($plugin == plugin_basename(__FILE__)) {
-
-          $purchased_license_file = plugin_dir_path(__FILE__) . 'purchased_license.php';
-
-
-
-          if (file_exists($purchased_license_file)) {
-
-              $license_contents = file_get_contents($purchased_license_file);
-
-
-
-              if ($license_contents !== false) {
-
-                  $license_key = preg_replace('/<\?(?:php)?|\?>/i', '', $license_contents);
-
-                  $license_key = preg_replace('/^\s*return\s+/i', '', $license_key);
-
-                  $license_key = trim($license_key);
-
-                  $license_key = rtrim($license_key, ';');
-
-                  $license_key = trim($license_key, " \t\n\r\0\x0B'\"");
-
-
-
-                  if ($license_key !== '') {
-
-                      abst_update_admin_setting('bt_bb_ab_licence', $license_key);
-
-                  }
-
-              }
-
-
-
-              wp_delete_file($purchased_license_file);
-
-          }
-
-
 
           if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php')) {
 
@@ -774,27 +698,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    function create_fingerprint_db() {
-
-      // Delegate to the admin initializer to ensure all required columns exist
-
-      if ( class_exists( 'BT_BB_AB_Admin' ) ) {
-
-        BT_BB_AB_Admin::initialize_fingerprint_database();
-
-      }
-
-    }
-
-
-
      function bt_ab_uninstall() {
 
       abst_log('bt_ab_uninstall');
-
-      //actions performend on uninstall
-
-      $this->delete_fingerprint_db_on_uninstall();
 
     }
 
@@ -1347,48 +1253,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       delete_option('abst_plugin_test_ideas');
 
       abst_log('upgraded to v2.5.1: Migrated ' . $migrated_ideas . ' legacy test idea(s)');
-
-    }
-
-
-
-    function handle_ab251_upgrade() {
-
-      if (!is_admin() || !isset($_GET['ab251']) || !current_user_can('manage_options')) {
-
-        return;
-
-      }
-
-
-
-      $this->upgrade_to_251();
-
-
-
-      if (isset($_GET['ab251_done'])) {
-
-        return;
-
-      }
-
-
-
-      $redirect_url = remove_query_arg(['ab251'], wp_get_referer());
-
-      if (!$redirect_url) {
-
-        $redirect_url = admin_url();
-
-      }
-
-
-
-      $redirect_url = add_query_arg('ab251_done', '1', $redirect_url);
-
-      wp_safe_redirect($redirect_url);
-
-      exit;
 
     }
 
@@ -2767,28 +2631,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
     }
 
 
-
-    function ab_fingerprint_event(){
-
-      // Fingerprint/UUID tracking is PRO only — disabled in lite version
-
-      wp_die();
-
-    }
-
-
-
-    function fingerprint_event() {
-
-      // Fingerprint/UUID tracking is PRO only — disabled in lite version
-
-      wp_die();
-
-    }
-
-
-
-    
 
     function refresh_on_update($post_ID, $post_after, $post_before){
 
@@ -7346,38 +7188,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
      */
 
-    function abst_send_test_email() {
-
-      if(!current_user_can('manage_options')) {
-
-        wp_send_json_error('You do not have permission to send test emails');
-
-        return;
-
-      }
-
-      //get email from POST
-
-      $email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
-
-      if(empty($email)) {
-
-        wp_send_json_error('Email address is required');
-
-        return;
-
-      }
-
-      //send email to email
-
-      abst_send_report_email($email);
-
-      wp_send_json_success('Test email sent successfully!');
-
-    }
-
-
-
 function abst_all_experiments_shortcode($emailreport = false){
 
   
@@ -10238,11 +10048,6 @@ $titles = array();
 
 
 
-      if (abst_get_admin_setting('ab_use_uuid') == 1 || abst_get_admin_setting('ab_use_fingerprint') == 1) {
-
-        echo '<button id="abst-export-data" class="button abst-export-data" test_id="' . esc_attr( $pid ) . '">Export Visitor Data</button>';
-
-      }
 
 
 
@@ -10845,14 +10650,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'javascript' => 'JavaScript',
       );
 
-      if(abst_get_admin_setting('ab_use_fingerprint') == 1) {
-        $conversion_type_options['fingerprint'] = 'Fingerprint Pixel';
-      }
-
-      if(abst_get_admin_setting('ab_use_uuid') == 1) {
-        $conversion_type_options['advanced'] = 'Advanced Mode (PHP/AJAX)';
-      }
-
       $select = "<select id='bt_experiments_conversion_page' name='bt_experiments_conversion_page' class=''>";
 
       foreach ($conversion_type_options as $option_value => $option_label) {
@@ -11453,433 +11250,9 @@ echo "    if( selectval !== 'url' )
 
 
 
-    /**
+    // Pro-only payment integrations (FluentCart, EDD, WooCommerce) removed in lite version.
 
- * FluentCart Split Test Integration
 
- * Hook into order completion to track conversions
-
- * Ultra error-proof with comprehensive checks
-
- */
-
-
-
-function abst_fluent_cart_order_paid($eventData) {
-
-    // Check if eventData is valid
-
-    abst_log( 'fluent cart order, event data: ' . json_encode($eventData) );
-
-    if (empty($eventData) || !is_array($eventData)) {
-
-      abst_log( 'fluent cart order, invalid event data' );
-
-        return;
-
-    }
-
-    
-
-    // Check if order exists and is an object
-
-    if (empty($eventData['order']) ){
-
-      abst_log( 'fluent cart order, invalid order data' );
-
-        return;
-
-    }
-
-    
-
-    $order = $eventData['order'];
-
-    
-
-    // Ensure total_amount is numeric and valid
-
-    $orderAmount = isset($order['total']) ? ($order['total'] / 100) : 1;
-
-    
-
-    if (isset($order['payment_status']) && $order['payment_status'] !== 'paid') {
-
-      abst_log( 'fluent cart order, order not paid' );
-
-        return;
-
-    }
-
-
-
-      $tests = get_posts( array(
-
-        'numberposts' => -1,
-
-        'post_type' => 'bt_experiments',
-
-        'meta_key' => 'bt_experiments_conversion_page',
-
-        'meta_value' => 'fluentcart-order-paid',
-
-        'post_status' => 'publish',
-
-        'fields' => 'ids',
-
-      ));
-
-      
-
-      foreach($tests as $eid){ // look through results 
-
-        //update cookie
-
-        if (!empty($eid)) {
-
-          abst_log( 'Fluent cart order paid and found for  test ID: ' . $eid );
-
-          $uuid = isset($_COOKIE['ab-advanced-id']) ? sanitize_text_field( wp_unslash( $_COOKIE['ab-advanced-id'] ) ) : false; 
-
-          $advancedId = $uuid;
-
-          if (isset($_COOKIE['btab_' . $eid])) {
-
-            $cookie = json_decode( wp_unslash( $_COOKIE['btab_' . $eid] ), true );
-
-            if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
-
-              $cookie['conversion'] = 1;
-
-              $variation = $cookie['variation'] ?? '';
-
-              $device_size = $cookie['size'] ?? abst_detect_device_size_from_user_agent();
-
-              // update cookie with fallback strategy
-
-              abst_set_cookie_with_fallback('btab_' . $eid, json_encode($cookie, JSON_UNESCAPED_SLASHES), 1000);
-
-              // set server event cookie
-
-              $this->set_server_event_cookie($eid, $variation, 'conversion');
-
-              abst_log( 'Fluent cart order paid and found for  test ID: ' . $eid . ' and conversion page: ' . $variation . ' and conversion value: ' . $orderAmount );
-
-              //    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false){ 
-
-              $this->abst_log_experiment_activity($eid, $variation, 'conversion', true, 'fluent-cart-order-complete', $orderAmount, $uuid, $device_size,$advancedId);
-
-
-
-            }
-
-            else
-
-            {
-
-              abst_log( 'Fluent cart order paid and cookie found for test ID: ' . $eid . ' but conversion already set, so no conversion.' );  
-
-            }
-
-          }
-
-          else
-
-          {
-
-            abst_log( 'Fluent cart order paid and found for test ID: ' . $eid . ' but no visit , so no conversion.' );  
-
-          }
-
-        }
-
-      } // end foreach tests
-
-
-
-    
-
-}
-
-
-
-
-
-    function edd_trigger_conversion( $payment_id ) {
-
-      // Basic payment meta
-
-      $payment_meta = edd_get_order( $payment_id );
-
-      $total = $payment_meta->total;
-
-
-
-      $tests = get_posts( array(
-
-        'numberposts' => -1,
-
-        'post_type' => 'bt_experiments',
-
-        'meta_key' => 'conversion_page',
-
-        'meta_value' => 'edd-purchase',
-
-        'post_status' => 'publish',
-
-        'fields' => 'ids',
-
-      ));
-
-      foreach($tests as $eid){ // look through results 
-
-        //update cookie
-
-        if (!empty($eid)) {
-
-          if (isset($_COOKIE['btab_' . $eid])) {
-
-            $cookie = json_decode( wp_unslash( $_COOKIE['btab_' . $eid] ), true );
-
-            if (is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
-
-              $cookie['conversion'] = 1;
-
-              $variation = $cookie['variation'] ?? '';
-
-              $size = $cookie['size'] ?? abst_detect_device_size_from_user_agent();
-
-              $advancedId = $cookie['ab-advanced-id'] ?? false;
-
-              $fingerprint = $cookie['ab-uuid'] ?? false;
-
-              // update cookie with fallback strategy
-
-              abst_set_cookie_with_fallback('btab_' . $eid, json_encode($cookie, JSON_UNESCAPED_SLASHES), 1000);
-
-              // set server event cookie
-
-              $this->set_server_event_cookie($eid, $variation, 'conversion');
-
-
-
-              //    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false){ 
-
-              $this->abst_log_experiment_activity($eid, $variation, 'conversion', true, 'edd-order-complete', $total, $fingerprint, $size, $advancedId);
-
-
-
-            }
-
-          }
-
-        }
-
-      } // end foreach tests
-
-    } // end function
-
-  
-
-
-
-  
-
-
-
-    //wooconvert on woocommerce_checkout_order_processed
-
-    function woo_convert_on_checkout( $order_id, $from, $to ) {
-
-      if( abst_get_admin_setting( 'abst_server_convert_woo' ) !== '1' ) // only if enables in settings
-
-      {
-
-        abst_log('Woo order: Server convert on checkout not enabled, Will convert on woo thankyou page if enabled instead');
-
-        return;
-
-      }
-
-      abst_log('woo server convert on checkout running on ' . $order_id . ' from: ' . $from . ' to: ' . $to);
-
-
-
-      $convert_status = abst_get_admin_setting( 'abst_server_convert_woo_status' );
-
-      if(empty($convert_status))
-
-        $wooCompleteStatuses = array( 'processing', 'completed', 'on-hold' );// add woofunnels primary order complete
-
-      else if (is_array($convert_status))
-
-        $wooCompleteStatuses = $convert_status;
-
-      else
-
-        $wooCompleteStatuses = array( $convert_status );
-
-      
-
-      if ( !in_array( $to, $wooCompleteStatuses ) ) {
-
-        abst_log('convert on checkout not in complete statuses, not converting');
-
-        abst_log($wooCompleteStatuses);
-
-        return;
-
-      }
-
-      else
-
-      {
-
-        abst_log('convert on checkout continuing with status match: ' . $to);
-
-      }
-
-
-
-      $fingerprint = false;
-
-      $advancedId = false;
-
-      $device_size = false;
-
-      //create filter for customer to enable this feature
-
-
-
-      $order = wc_get_order( $order_id );
-
-      //order total
-
-      $total = $order->get_total();
-
-      //get tests whose meta is 'conversion_page' = 'woo-order-received' and is running
-
-      $tests = get_posts( array(
-
-        'numberposts' => -1,
-
-        'post_type' => 'bt_experiments',
-
-        'meta_key' => 'conversion_page',
-
-        'meta_value' => 'woo-order-received',
-
-        'post_status' => 'publish', 
-
-        'fields' => 'ids',
-
-      )); 
-
-
-
-      foreach($tests as $eid){ // look through results 
-
-        //update cookie
-
-        $shouldConvert = true;
-
-        if (!empty($eid) && $order && $order->get_meta('_abuuid') && (abst_get_admin_setting('ab_use_fingerprint') == 1 || abst_get_admin_setting('ab_use_uuid') == 1)) { // if no cookie check for UUID and fingerprint
-
-          abst_log('Convert on checkout with Advanced ID found on order ' . $eid);
-
-          //check if uuid is set on woo order meta
-
-          if($order->get_meta('_abuuid')){
-
-            $advancedId = $order->get_meta('_abuuid');
-
-            $device_size = abst_detect_device_size_from_user_agent();
-
-            abst_log('convert on checkout found the order _abuuid ' . $advancedId);
-
-            $variation = false; //doesnt matter its a conversion will get from db
-
-          }
-
-          else{
-
-            $shouldConvert = false;
-
-          }       
-
-        }
-
-        else if (isset($_COOKIE['btab_' . $eid])) {
-
-          $cookie = json_decode(stripslashes($_COOKIE['btab_' . $eid]), true);
-
-          abst_log('Convert on checkout cookie found');
-
-          abst_log($cookie);
-
-          if ( is_array($cookie) && isset($cookie['conversion']) && $cookie['conversion'] == 0) {
-
-            abst_log('convert on checkout cookie found and is a conversion');
-
-            $variation = $cookie['variation'] ?? false;
-
-            $advancedId = $cookie['ab-advanced-id'] ?? false;
-
-            $fingerprint = $cookie['ab-uuid'] ?? false;
-
-            $device_size = $cookie['size'] ?? abst_detect_device_size_from_user_agent();
-
-          }  // end if conversion
-
-          else
-
-          {
-
-            $shouldConvert = false;
-
-          }
-
-        }  // end if cookie
-
-        
-
-        
-
-        if(!$shouldConvert)
-
-        {
-
-          abst_log('should not convert from woo order.');
-
-          continue;
-
-        }
-
-        
-
-        $cookie['conversion'] = 1;
-
-        // update cookie with fallback strategy
-
-        abst_set_cookie_with_fallback('btab_' . $eid, json_encode($cookie, JSON_UNESCAPED_SLASHES), 1000);
-
-        // set server event cookie
-
-        $this->set_server_event_cookie($eid, $variation, 'conversion');
-
-        //    function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false){ 
-
-        $this->abst_log_experiment_activity($eid, $variation, 'conversion', true, 'woo-order-received', $total, $fingerprint, $device_size, $advancedId);
-
-//     function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false,$uuid = false,$size = false, $advancedId = false){
-
-
-
-         // end if eid
-
-      } // end foreach
-
-    }
 
 
 
@@ -14499,17 +13872,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             $target_option_device_size = get_post_meta($module->settings->ab_test, "target_option_device_size", true);
 
-            $ab_use_fingerprint = get_post_meta($module->settings->ab_test, "ab_use_fingerprint", true);
-
             if ($target_option_device_size === '') {
 
               $target_option_device_size = 'all';
-
-            }
-
-            if ($ab_use_fingerprint === false) {
-
-              $ab_use_fingerprint = '';
 
             }
 
@@ -14534,8 +13899,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             $experiments[$module->settings->ab_test]['url_query'] = $url_query;
 
             $experiments[$module->settings->ab_test]['target_option_device_size'] = $target_option_device_size;
-
-            $experiments[$module->settings->ab_test]['ab_use_fingerprint'] = $ab_use_fingerprint;
 
             $experiments[$module->settings->ab_test]['log_on_visible'] = get_post_meta($module->settings->ab_test, 'log_on_visible', true) === '1';
 
@@ -14674,8 +14037,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'is_agency' => ($user_level  == 'agency'),
         'is_free' => '1',
         'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
-        'do_fingerprint' => abst_get_admin_setting( 'ab_use_fingerprint' ) ? '1' : '0',
-        'advanced_tracking' => abst_get_admin_setting( 'ab_use_uuid' ) ? '1' : '0',
         'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'abst_disable_ai' => abst_get_admin_setting( 'abst_disable_ai' ) ? '1' : '0',
@@ -15126,14 +14487,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       } 
 
-      $do_fingerprint = abst_get_admin_setting( 'ab_use_fingerprint' );        
-
-      $do_fingerprint = apply_filters( 'bt_ab_fingerprint', $do_fingerprint );
-
-      $advanced_tracking = abst_get_admin_setting( 'ab_use_uuid' );
-
-      $advanced_tracking = apply_filters( 'bt_ab_use_uuid', $advanced_tracking );
-
       $abst_server_convert_woo = abst_get_admin_setting( 'abst_server_convert_woo' );
 
       $abst_disable_ai = abst_get_admin_setting( 'abst_disable_ai' );
@@ -15163,10 +14516,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'is_free' => true,
 
         'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
-
-        'do_fingerprint' => $do_fingerprint ? '1' : '0',
-
-        'advanced_tracking' => $advanced_tracking ? '1' : '0',
 
         'abst_server_convert_woo' => $abst_server_convert_woo ? '1' : '0',
 
@@ -15524,8 +14873,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         wp_enqueue_script('abst-insights', BT_AB_TEST_PLUGIN_URI . 'js/insights.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
-        wp_enqueue_script('abst-turndown', BT_AB_TEST_PLUGIN_URI . 'js/turndown.js', array('jquery'), BT_AB_TEST_VERSION, true);
-
       }
 
       // Enqueue modernScreenshot for heatmaps page
@@ -15831,90 +15178,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if((string)abst_sanitize((string)$location) !== (string)$location)
 
           $error = 'Location Name contains invalid characters. sanitized: ' . abst_sanitize($location);        
-
-
-
-        // For UUID/AdvancedID-based events, update the fingerprint table and back-fill variation if needed.
-
-        if((!empty($uuid) || !empty($advancedId)) && !$error)
-
-        {
-
-
-
-          //check with db if uuid + eid exists and has not already been created/converted 
-
-          abst_log('UUID/ADV update begin: type:' . $type . ' eid:' . $eid . ' using:' . (!empty($advancedId) ? 'advancedId' : 'uuid'));
-
-          if(!empty($advancedId))
-
-            $fpresult = $this->update_fingerprint_db($advancedId,$type,$variation, $eid, null, $location, $size);          
-
-          else if(!empty($uuid))
-
-            $fpresult = $this->update_fingerprint_db($uuid,$type,$variation , $eid , null, $location, $size);
-
-
-
-          // if no variation was found, return false
-
-          
-
-          if(empty($fpresult) || $fpresult == false)
-
-          {
-
-            $error = 'UUID/Advanced ID not updated (already logged) or does not exist';
-
-            abst_log( 'Log event ERROR: ' . $error );
-
-            if( $from_api ) {
-
-              return new WP_REST_Response([
-
-                'error'  => $error
-
-              ], 200);
-
-            } else if( defined('ABST_SSR_MODE') && ABST_SSR_MODE ) {
-
-              // SSR mode - don't terminate execution, just return error
-
-              return ['error' => $error];
-
-            } else {
-
-              abst_log( 'Log  ERROR: ' . $error );
-
-              echo( json_encode(array('error'=>$error)) );
-
-              die();
-
-            }
-
-          }
-
-          else{
-
-            if(!is_int($fpresult)) // visit or conversion
-
-            {
-
-              $variation = $fpresult;
-
-            }
-
-            else // goal
-
-            {
-
-              $variation = $variation;
-
-            }
-
-          }
-
-        }
 
 
 
@@ -16699,249 +15962,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-    /**
-
-     * Clean up invalid variation keys from full page test observations
-
-     * Triggered via ?abst_cleanup_observations=1 (admin only)
-
-     * Add &confirm=1 to actually delete, otherwise dry-run preview
-
-     */
-
-    function cleanup_fullpage_observations() {
-
-      if (!isset($_GET['abst_cleanup_observations']) || !current_user_can('manage_options')) {
-
-        return;
-
-      }
-
-      
-
-      $dry_run = !isset($_GET['confirm']) || $_GET['confirm'] !== '1';
-
-      $cleaned = 0;
-
-      $tests_checked = 0;
-
-      $output = [];
-
-      
-
-      // Get all full page tests
-
-      $tests = get_posts([
-
-        'post_type' => 'bt_experiments',
-
-        'posts_per_page' => -1,
-
-        'post_status' => 'any',
-
-        'meta_query' => [
-
-          [
-
-            'key' => 'test_type',
-
-            'value' => 'full_page',
-
-          ]
-
-        ]
-
-      ]);
-
-      
-
-      foreach ($tests as $test) {
-
-        $tests_checked++;
-
-        $observations = get_post_meta($test->ID, 'observations', true);
-
-        
-
-        // Handle both serialized and JSON formats
-
-        if (is_string($observations) && !empty($observations)) {
-
-          $decoded = maybe_unserialize($observations);
-
-          if (!is_array($decoded)) {
-
-            $decoded = json_decode($observations, true);
-
-          }
-
-          $observations = $decoded;
-
-        }
-
-        
-
-        if (empty($observations) || !is_array($observations)) {
-
-          continue;
-
-        }
-
-        
-
-        // Get valid variation IDs
-
-        $default_page = (int) get_post_meta($test->ID, 'bt_experiments_full_page_default_page', true);
-
-        $page_variations = get_post_meta($test->ID, 'page_variations', true);
-
-        if (is_string($page_variations) && !empty($page_variations)) {
-
-          $decoded = maybe_unserialize($page_variations);
-
-          if (!is_array($decoded)) {
-
-            $decoded = json_decode($page_variations, true);
-
-          }
-
-          $page_variations = $decoded;
-
-        }
-
-        
-
-        // Safety: Skip if we can't determine valid variations
-
-        if ($default_page <= 0 && empty($page_variations)) {
-
-          $output[] = "⚠️ Test {$test->ID} ({$test->post_title}): Skipped - no valid default page or variations configured";
-
-          continue;
-
-        }
-
-        
-
-        $valid_variations = [];
-
-        if ($default_page > 0) {
-
-          $valid_variations[] = $default_page;
-
-        }
-
-        if (is_array($page_variations) && !empty($page_variations)) {
-
-          foreach (array_keys($page_variations) as $var_id) {
-
-            $int_id = (int) $var_id;
-
-            if ($int_id > 0) {
-
-              $valid_variations[] = $int_id;
-
-            }
-
-          }
-
-        }
-
-        
-
-        // Safety: Skip if no valid variations found
-
-        if (empty($valid_variations)) {
-
-          $output[] = "⚠️ Test {$test->ID} ({$test->post_title}): Skipped - could not determine valid variation IDs";
-
-          continue;
-
-        }
-
-        
-
-        // Find invalid keys
-
-        $cleaned_obs = [];
-
-        $invalid_keys = [];
-
-        foreach ($observations as $var_key => $var_data) {
-
-          $int_key = (int) $var_key;
-
-          if ($int_key > 0 && in_array($int_key, $valid_variations, true)) {
-
-            $cleaned_obs[$var_key] = $var_data;
-
-          } else {
-
-            $invalid_keys[] = $var_key;
-
-            $cleaned++;
-
-          }
-
-        }
-
-        
-
-        if (!empty($invalid_keys)) {
-
-          $output[] = "🧹 Test {$test->ID} ({$test->post_title}): " . 
-
-                      "Valid IDs: [" . implode(', ', $valid_variations) . "] | " .
-
-                      "Removing: [" . implode(', ', $invalid_keys) . "]";
-
-          
-
-          if (!$dry_run) {
-
-            update_post_meta($test->ID, 'observations', $cleaned_obs);
-
-            abst_log("Cleanup: Removed invalid variation keys [" . implode(', ', $invalid_keys) . "] from test {$test->ID}");
-
-          }
-
-        }
-
-      }
-
-      
-
-      $mode = $dry_run ? "DRY RUN (preview only)" : "CONFIRMED";
-
-      $summary = "<h2>Full Page Test Observations Cleanup - $mode</h2>";
-
-      $summary .= "<p>Checked $tests_checked full page tests. Found $cleaned invalid variation keys.</p>";
-
-      
-
-      if ($dry_run && $cleaned > 0) {
-
-        $summary .= "<p><strong><a href='?abst_cleanup_observations=1&confirm=1'>Click here to confirm and delete invalid keys</a></strong></p>";
-
-      }
-
-      
-
-      if (!empty($output)) {
-
-        $summary .= "<pre>" . implode("\n", $output) . "</pre>";
-
-      } else {
-
-        $summary .= "<p>✅ No invalid variation keys found.</p>";
-
-      }
-
-      
-
-      wp_die( wp_kses_post( $summary ) );
-
-    }
 
 
 
@@ -19527,78 +18547,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-    function handle_sample_data_request() {
-
-      if (!isset($_GET['addtestdata']) || !current_user_can('manage_options')) {
-
-        return;
-
-      }
-
-      
-
-      $results = abst_load_sample_tests_from_json(true); // Force creation
-
-      
-
-      // Display results to user
-
-      if ($results['created'] > 0) {
-
-        add_action('admin_notices', function() use ($results) {
-
-          echo '<div class="notice notice-success is-dismissible">';
-
-          echo '<p><strong>Sample Data Loaded Successfully!</strong></p>';
-
-          echo '<p>Created ' . intval( $results['created'] ) . ' sample tests with realistic data.</p>';
-
-          echo '<p>Tests are created as drafts - you can review and activate them in the <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments')) . '">A/B Tests</a> section.</p>';
-
-          echo '</div>';
-
-        });
-
-      }
-
-      
-
-      if (!empty($results['errors'])) {
-
-        add_action('admin_notices', function() use ($results) {
-
-          echo '<div class="notice notice-error">';
-
-          echo '<p><strong>Sample Data Loading Errors:</strong></p>';
-
-          echo '<p>' . wp_kses_post( implode('</p><p>', $results['errors']) ) . '</p>';
-
-          echo '</div>';
-
-        });
-
-      }
-
-      
-
-      if ($results['skipped']) {
-
-        add_action('admin_notices', function() use ($results) {
-
-          echo '<div class="notice notice-warning">';
-
-          echo '<p><strong>Sample Data Skipped:</strong> ' . intval( $results['skipped'] ) . '</p>';
-
-          echo '</div>';
-
-        });
-
-      }
-
-    }
-
-
-
     function handle_mcp_adapter_install() {
 
       // Check if install button was clicked
@@ -19816,88 +18764,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           wp_die();
 
       }      
-
-    }
-
-
-
-    function custom_plugin_new_update_text( $file, $plugin )
-
-    {
-
-      $settings_link = BT_BB_AB_Admin::get_current_settings_url();
-
-
-
-      if( !isset($plugin['new_version']) ) { return; }
-
-
-
-      echo '<tr class="plugin-update-tr active" id="bt-bb-ab-update" data-slug="bt-bb-ab" data-plugin="bt-bb-ab/bt-bb-ab.php">
-
-                <td colspan="3" class="plugin-update colspanchange">
-
-                    <div class="update-message notice inline notice-warning notice-alt">
-
-                        <p>There is a new version of ' . esc_html( $plugin['name'] ) . ' available. Please <a href="' . esc_attr( $settings_link ) . '">activate your licence key</a> to recieve updates. <br>Go to your <a href="' . esc_attr( BT_AB_TEST_MERCHANT_URL ) . '/my-account/" target="_blank">account page</a> to get your license key.</p>
-
-                    </div>
-
-                </td>
-
-            </tr>';
-
-    }
-
-
-
-    //show plugin update error if necessary
-
-    function prefix_bt_bb_ab_update_message( $currentPluginMetadata, $newPluginMetadata ) {
-
-
-
-      if(is_network_admin() || (!is_multisite() && is_super_admin() )) // only show in admin, and network admin if its multisite
-
-      {
-
-        $message = '';
-
-        $licenceStatus = abst_licence_details();
-
-        $licenceKey = abst_get_admin_setting('bt_bb_ab_licence');
-
-        $licenceKey = apply_filters( 'abst_licence_key', $licenceKey );
-        // Backward compatibility: also allow old hook name (new hook takes precedence)
-        $licenceKey = apply_filters( 'abst_licence_key', $licenceKey );
-
-
-
-        if(!isset($licenceKey) || $licenceKey == "")
-
-        {
-
-          $message = 'Please <a href="/wp-admin/network/settings.php?page=fl-builder-multisite-settings#developer">add your licence key</a> to recieve updates.';
-
-        }
-
-        else if((int)$licenceStatus->active != 1)
-
-        {
-
-          $message = '. Check you have<a href="/wp-admin/network/settings.php?page=fl-builder-multisite-settings#developer"> entered your licence key correctly</a>, or check your subscription status in the <a href="'. BT_AB_TEST_MERCHANT_URL .'/my-account/" target="_blank"> dashboard.</a>';
-
-        }
-
-
-
-        if (isset($newPluginMetadata->upgrade_notice) && strlen(trim($newPluginMetadata->upgrade_notice)) > 0 && $message !== ''){
-
-            echo '<span style="display:block; font-weight:600; margin-top:10px;">'.$message.'</span>';
-
-        }
-
-      }
 
     }
 
@@ -25573,23 +24439,8 @@ add_filter( 'cron_schedules', 'abst_add_two_hour_schedule' );
 
 
 
-if ( ! wp_next_scheduled( 'abst_update_thompson_weights' ) ) {
-
-  wp_schedule_event( time(), 'ab_two_hours', 'abst_update_thompson_weights' );
-
-}
-
-add_action( 'abst_update_thompson_weights', 'abst_update_thompson_weights' );
-
-
-
-function abst_update_thompson_weights() {
-
-  // MAB (Thompson Sampling) is PRO only — disabled in lite version
-
-  return;
-
-}
+// MAB cron removed in lite version — abst_update_thompson_weights is a no-op stub kept for backwards compatibility if event fires during upgrade.
+function abst_update_thompson_weights() { return; }
 
 
 
