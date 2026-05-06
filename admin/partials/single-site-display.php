@@ -38,43 +38,9 @@ $license_status = 'valid';
 
 $user_level = 'free';
 
-$price_id = false;
-
-
-
-if($price_id)
-
-{  
-
-  $creditLevels = abst_get_ai_licence_info($price_id);
-
-  $aiCreditFrequency = $creditLevels['expiry'];
-
-  $aiCreditAmount = $creditLevels['upto'];
-
-}
-
-else
-
-{
-
-  $aiCreditFrequency = 'expired';
-
-  $aiCreditAmount = 0;
-
-}
-
-
-
 $fathom_api_key = abst_get_admin_setting('fathom_api_key');
 
 $webhook_global = abst_get_admin_setting('webhook_global');
-
-$ab_openapi_key = abst_get_admin_setting('ab_openapi_key');
-
-// AI model constant removed in lite version
-
-$ab_openapi_model = 'gpt-4o'; // placeholder for UI only
 
 $post_types = get_post_types(array('public' => true), 'objects');
 
@@ -82,12 +48,7 @@ $selected_post_types = abst_get_admin_setting('selected_post_types');
 
 $add_canonical = abst_get_admin_setting('ab_change_canonicals');
 
-$use_fingerprint = abst_get_admin_setting('ab_use_fingerprint');
-
-$fingerprint_length = abst_get_admin_setting('ab_fingerprint_length') ?: 2;
-
-$use_uuid = abst_get_admin_setting('ab_use_uuid');
-
+$use_uuid = '';
 $uuid_length = abst_get_admin_setting('ab_uuid_length') ?: 30;
 
 $enable_user_journeys = abst_get_admin_setting('abst_enable_user_journeys');
@@ -104,21 +65,9 @@ $abst_enable_heatmaps = abst_get_admin_setting('abst_enable_heatmaps');
 
 $heatmap_retention_length = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
 
-$abst_send_weekly_reports = abst_get_admin_setting('abst_send_weekly_reports');
-
-$weekly_report_emails = abst_get_admin_setting('abst_weekly_report_emails');
-
 $abst_notification_emails = abst_get_admin_setting('abst_notification_emails');
 
-$weekly_reports_checked = ($abst_send_weekly_reports == 1) ? 'checked' : '';
-
-$abst_thompson_sampling_enabled = abst_get_admin_setting('abst_thompson_sampling_enabled');
-
-$thompson_sampling_checked = ($abst_thompson_sampling_enabled == 1) ? 'checked' : '';
-
 $detected_caches = !empty(abst_get_detected_caches()) ? implode(', ', abst_get_detected_caches()) : 'None detected';
-
-$delete_fingerprint_db_on_uninstall = abst_get_admin_setting('ab_delete_fingerprint_db_on_uninstall');  
 
 $wait_for_approval = abst_get_admin_setting('abst_wait_for_approval');
 
@@ -263,18 +212,6 @@ if($visit_on_visible)
 
 
 
-if($use_fingerprint)
-
-  $use_fingerprint = 'checked';
-
-
-
-if($use_uuid)
-
-  $use_uuid = 'checked';
-
-
-
 if($add_canonical)
 
   $add_canonical = 'checked';
@@ -343,20 +280,6 @@ if(empty($heatmap_all_pages)) {
 
 
 
-// Set delete_fingerprint_db_on_uninstall to be checked by default
-
-if($delete_fingerprint_db_on_uninstall !== '0') {
-
-  $delete_fingerprint_db_on_uninstall = 'checked';
-
-} else {
-
-  $delete_fingerprint_db_on_uninstall = '';
-
-}
-
-
-
 if ($license_status !== 'valid') {
 
   // if file exists plugin root/includes/config.php
@@ -366,12 +289,6 @@ if ($license_status !== 'valid') {
     $user_level = 'free';
 
 }
-
-
-
-if(empty($weekly_report_emails))
-
-  $weekly_report_emails = get_option('admin_email');
 
 
 
@@ -779,39 +696,10 @@ if(empty($weekly_report_emails))
 
             </div>
 
-            <?php } ?>
-
-          </div>
-
           <?php } ?>
 
 
 
-          <div class="ab-settings-subsection ab-settings-open-ai">
-
-            <label><strong>AI Assist</strong></label>
-
-            <p>AI Assist gives you access to automatic test suggestions, and CRO website insights.</p>
-
-            <p>Your plan includes <?php echo esc_html( isset($aiCreditAmount) ? $aiCreditAmount : '' ); ?> AI requests, <?php echo esc_html( isset($aiCreditFrequency) ? $aiCreditFrequency : '' ); ?>.</p>
-
-            <p><?php echo esc_html( abst_get_admin_setting('abst_remaining_calls') ); ?> remaining</p>
-
-            <p>If you need more requests, please add your OpenAI key below.</p>
-
-            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
-
-            <label for="ab_openapi_key">Your OpenAI API Key</label><br>
-
-            <input name="ab_openapi_key" id="ab_openapi_key" type="password" value="<?php echo esc_attr($ab_openapi_key); ?>" />
-
-            <p>Enter your OpenAI API key for text suggestions. <a href="https://platform.openai.com/" target="_blank">Get a key here.</a></p>
-
-            <p>To disable AI integrations, enter "DISABLED" in the API key field above.</p>
-
-            <?php } ?>
-
-          </div>
 
 
 
@@ -910,46 +798,6 @@ if(empty($weekly_report_emails))
             </div>
 
             <?php } ?>
-
-          </div>
-
-
-
-          <div class="ab-settings-subsection ab-test-fingerprint">
-
-            <label for="use_fingerprint"><strong>Fingerprint Conversion Type</strong></label>
-
-            <p>A JavaScript snippet that triggers a test conversion on any remote website.</p>
-
-            <p>Fingerprint conversion tests use the visitor's hashed IP address to track them. Ensure you have permission & enable cookie consent mode.</p>
-
-            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
-
-            <p><input type="checkbox" class="ab-toggle" id="use_fingerprint" name="use_fingerprint" value="1" <?php echo esc_attr($use_fingerprint); ?> /> Enable fingerprinting.</p>
-
-            <div id="fingerprint_settings_area" style="<?php echo empty($use_fingerprint) ? 'display:none;' : ''; ?>">
-
-              <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-
-              
-
-              <label for="fingerprint_length"><strong>Fingerprint validity</strong></label>
-
-              <p>The number of days to remember the visitor: <input type="number" id="fingerprint_length" name="fingerprint_length" style="width:60px;" value="<?php echo esc_attr($fingerprint_length); ?>" /> days</p>
-
-            </div>
-
-            <?php } ?>
-
-          </div>
-
-          <div class="ab-settings-subsection">
-
-            <label for="delete_fingerprint_db_on_uninstall"><strong>Delete data on uninstall</strong></label>
-
-            <p>Remove all plugin data (tracking database, test ideas, settings) when you uninstall the plugin.</p>
-
-            <p><input type="checkbox" class="ab-toggle" id="delete_fingerprint_db_on_uninstall" name="delete_fingerprint_db_on_uninstall" value="1" <?php echo esc_attr($delete_fingerprint_db_on_uninstall); ?> /> Delete data on uninstall</p>
 
           </div>
 
@@ -1105,18 +953,6 @@ if(empty($weekly_report_emails))
           </div>
 
 
-
-          <div class="ab-settings-subsection ab-settings-reports">
-
-            <label><strong>Weekly Reports</strong></label>
-
-            <p>Send weekly reports with test results and analysis.<br/>
-
-            <small>Sends on Monday morning, website time.</small></p>
-
-            <?php echo wp_kses_post($upgrade_link); ?>
-
-          </div>
 
         </div><!-- end #tab-advanced -->
 
@@ -2660,23 +2496,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// Iframe message handler
-
-window.addEventListener('message', function(event) {
-
-  if (event.data === 'aidone') {
-
-    const iframe = document.getElementById('abst-insights-iframe');
-
-    if (iframe) iframe.remove();
-
-    jQuery('#abwelcomearea h3').remove();
-
-    jQuery('#abwelcomearea h2').after('<h3>Website analysed</h3><p>To view your insights <a href="admin.php?page=abst-insights">click here</a></p>');
-
-  }
-
-});
 
 
 
@@ -2719,22 +2538,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   
-
-  // Fingerprint toggle
-
-  const fingerprintToggle = document.getElementById('use_fingerprint');
-
-  const fingerprintSettings = document.getElementById('fingerprint_settings_area');
-
-  if (fingerprintToggle && fingerprintSettings) {
-
-    fingerprintToggle.addEventListener('change', function() {
-
-      fingerprintSettings.style.display = this.checked ? 'block' : 'none';
-
-    });
-
-  }
 
 });
 
