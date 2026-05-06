@@ -57,12 +57,9 @@ class BT_BB_AB_Admin {
       // Cache clearing stays enabled in lite to avoid stale-cache support issues;
       // only advanced cache controls are PRO.
       $dont_clear_cache = 0;
-      $use_fingerprint = (isset($_POST['use_fingerprint']) && $_POST['use_fingerprint'] == 1) ? 1 : 0;
-      $abst_server_convert_woo = (isset($_POST['abst_server_convert_woo']) && $_POST['abst_server_convert_woo'] == 1) ? 1 : 0;
       $abst_enable_logging = (isset($_POST['abst_enable_logging']) && $_POST['abst_enable_logging'] == 1) ? 1 : 0;
       $abst_enable_heatmaps = (isset($_POST['abst_enable_heatmaps']) && $_POST['abst_enable_heatmaps'] == 1) ? 1 : 0;
-      $ab_fingerprint_length = isset($_POST['fingerprint_length']) ? intval($_POST['fingerprint_length']) : 30; // days default 30 
-      $uuid_length = isset($_POST['uuid_length']) ? intval($_POST['uuid_length']) : 30; // days default 30 
+      $uuid_length = isset($_POST['uuid_length']) ? intval($_POST['uuid_length']) : 30;
       $wait_for_approval = (isset($_POST['wait_for_approval']) && $_POST['wait_for_approval'] == 1) ? 1 : 0;
       $heatmap_retention_length = isset($_POST['heatmap_retention_length']) ? min(3, intval($_POST['heatmap_retention_length'])) : 3; // free: max 3 days
       // Lite version ignores premium-only toggles (MAB, agency, weekly reports, AI, webhooks, fingerprint, UUID)

@@ -42,8 +42,6 @@ define( 'BT_AB_TEST_PLUGIN_PATH', plugin_dir_path( __FILE__ )  );
 
 define( 'BT_AB_TEST_PLUGIN_URI', plugins_url('/', __FILE__) ); 
 
-define( 'BT_AB_TEST_MERCHANT_URL', 'https://absplittest.com' );
-
 $abst_parts = explode('/', BT_AB_TEST_PLUGIN_PATH, -1);
 
 $abst_folder_path = end($abst_parts);
@@ -11194,62 +11192,6 @@ echo "    if( selectval !== 'url' )
 
 
 
-    // onn woo thank you page, add woo order value js variable to be used as conversion value
-
-    function enqueue_order_total_script($order_id) {
-
-        // Check if the filter to disable this function has been set.
-
-      if (apply_filters('abst_disable_woo_order_value', false)) 
-
-        return;
-
-
-
-      if(abst_get_admin_setting( 'abst_server_convert_woo' ) == '1')
-
-        return;
-
-
-
-      $order = wc_get_order($order_id);
-
-
-
-      $to_status = $order->get_status();
-
-      //if they have been modified by filter, then filter, otherwise use the default thankyou page statuses ( completed, processing, on-hold, other custom)
-
-      if(apply_filters('abst_convert_statuses', false))
-
-      {
-
-        $valid_statuses = apply_filters('abst_convert_statuses', array( 'processing', 'completed' ));
-
-        if(!in_array($to_status, $valid_statuses))
-
-          return;
-
-      }
-
-
-
-      $total = $order->get_total();
-
-  
-
-    echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . " id='abst_conv_value'>
-
-            window.abst = window.abst || {};
-
-            window.abst.abConversionValue = '", esc_js( $total ), "';
-
-        </script>";
-
-    }
-
-
-
     // Pro-only payment integrations (FluentCart, EDD, WooCommerce) removed in lite version.
 
 
@@ -19789,128 +19731,6 @@ function abst_defaults(){
 
 
 
-function abst_licence_status(){
-
-  $status = abst_licence_details();
-
-  
-
-  if(!$status)
-
-    return "<strong style='color:red'>Error</strong>";
-
-  
-
-  //multisite check
-
-  if(isset($status->error) && $status->error !== '') // if we've got an error, display it
-
-    return "<strong style='color:red'>ERROR: ".$status->error."</strong>";    
-
-  elseif(isset($status->active) && $status->active == 'true')  // if all is good, let em know
-
-    return "<strong style='color:green'>ACTIVE</strong>";
-
-  else
-
-    return "<strong style='color:red'>Not Active</strong>"; // otherwise, we arent active
-
-
-
-}
-
-
-
-//called bby nothing
-
-function abst_verify_licence($key,$url,$plugin,$multisite = 0){
-
-    
-
-  //set up defaults
-
-  $status = [
-
-    'active' => 0,
-
-    'sites' => 0,
-
-    'multisite' => 0,
-
-  ];  
-
-  
-
-  $key = apply_filters('abst_licence_key',$key);
-
-  
-
-  $response = wp_remote_get( BT_AB_TEST_MERCHANT_URL ."/wp-json/plugins/v1/licence/?licence_key=$key&url=$url&plugin=$plugin&multisite=$multisite" );
-
-  if( is_array( $response ) ) {
-
-    $header = $response['headers']; // array of http header lines
-
-    $body = $response['body']; // use the content
-
-    $status = json_decode($body);
-
-  }
-
-   
-
-  // decode the license data
-
-  $license_limit = (isset($status->license_limit))? $status->license_limit : 0;
-
-  $price_id = isset($status->price_id) ? $status->price_id : 0;
-
-
-
-  if(in_array($price_id,['1','2','6','13','14','21']))
-
-    $user_level = "pro";
-
-  else if(in_array($price_id,['11']))
-
-    $user_level = "free";
-
-  else
-
-    $user_level = "agency";
-
-
-
-  $status = [
-
-    'active'    => $status->license,
-
-    'sites'     => $license_limit,
-
-    'multisite' => is_multisite(),
-
-    'user_level' => $user_level,
-
-    'price_id' => $price_id
-
-  ];
-
-  
-
-  abst_update_admin_setting( 'bt_bb_ab_lic', $status );  
-
-
-
-  $saved = abst_get_admin_setting('bt_bb_ab_lic');
-
-
-
-  return $status;
-
-}
-
-
-
 function abst_get_ai_licence_info($priceId = false) {
 
   $all = [
@@ -19946,52 +19766,6 @@ function abst_get_ai_licence_info($priceId = false) {
   }
 
   return $all;
-
-}
-
-
-
-function abst_licence_details(){
-
-  
-
-  //defaults
-
-  $status = [
-
-    'active' => 0,
-
-    'sites' => 0,
-
-    'multisite' => 0,
-
-    'user_level' => 0,
-
-    'price_id' => 0
-
-  ];
-
-
-
-  //if free and in demo than level is agency
-
-
-
-  $lic = abst_get_admin_setting('bt_bb_ab_lic');
-
-  
-
-  if(!empty($lic))
-
-  {
-
-    return (object)$lic;
-
-  }
-
-  
-
-  return (object)$status;
 
 }
 
