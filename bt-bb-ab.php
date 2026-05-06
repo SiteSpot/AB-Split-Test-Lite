@@ -3762,7 +3762,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             .collapsed > h3::after {
 
-                content: "â–¸";
+                content: "▸";
 
                 color: #94a3b8;
 
@@ -3820,7 +3820,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             .expanded > h3::after {
 
-                content: "â–¾";
+                content: "▾";
 
                 color: #94a3b8;
 
@@ -4058,7 +4058,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             .conversion-goal h4::before {
 
-                content: "ðŸŽ¯";
+                content: "🎯";
 
                 font-size: 14px;
 
@@ -4126,7 +4126,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             .subgoal h4::before {
 
-                content: "ðŸ“Š";
+                content: "📊";
 
                 font-size: 13px;
 
@@ -4704,25 +4704,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      echo "<div class='show_targeting_options collapsed'><h3>Test Visitor Segmentation</h3><p>Choose which visitors will be tested on. <BR/>Everyone else will see the default.<BR/>Filters apply in the execution order â†“</p>";
+      echo "<div class='show_targeting_options collapsed'><h3>Test Visitor Segmentation</h3><p>Choose which visitors will be tested on. <BR/>Everyone else will see the default.<BR/>Filters apply in the execution order ↓</p>";
 
       $this->show_targeting_options($post);
 
-      echo "<div class='show_autocomplete collapsed'><h3>Autocomplete</h3>";
-
-      if( abst_user_level()  == 'agency'){
-
-        //if its on then show it
-
-        $ac = new Ab_Tests_Autocomplete();
-
-        $ac->show_autocomplete($post);
-
-      } else {
-
-        echo "<div class='subgoal upgrade'><h4>Upgrade to unlock Autocomplete</h4><p>Automatically identify a winner after your chosen confidence and traffic thresholds are met.</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
-
-      }
 
       echo '</div><div class="submit_box"><button class="button button-primary button-large" id="submit_experiment">Save and Start Test</button></div></form></div></body></html>';
 
@@ -6288,9 +6273,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><div class='subgoal upgrade'> <h4>Upgrade to add Subgoals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance</p><p>Agency upgrade also includes support for more sites, Custom Conversion Values (Order Value), Analytics integrations and more!</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade Plan</a></p></div>";
+        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so m uch more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Try pro free for 7 days</a></p></div>";
 
-        echo "<button class='button button-small add-goal'>+ Add Sub Goal</button></div>";
 
       }
 
@@ -6342,21 +6326,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      echo "<div class='show_targeting_options collapsed'><h3>Test Visitor Segmentation</h3><p>Choose which visitors will be tested on. <BR/>Everyone else will see the default.<BR/>Filters apply in the execution order â†“</p>";
+      echo "<div class='show_targeting_options collapsed'><h3>Test Visitor Segmentation</h3><p>Choose which visitors will be tested on. <BR/>Everyone else will see the default.<BR/>Filters apply in the execution order ↓</p>";
 
       $this->show_targeting_options($post);
 
-      echo "<div class='show_autocomplete collapsed'><h3>Autocomplete</h3>";
 
-      //if its on then show it
-
-      $ac = new Ab_Tests_Autocomplete();
-
-      $ac->show_autocomplete($post);
-
-
-
-      echo "</div>";
 
       //webhook stuff
 
@@ -6538,15 +6512,15 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "<div class='abst-idea-score-grid'>";
 
-        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Impact</label><select name='abst_idea_impact' class='abst-idea-score-select' style='font-weight:600;'><option value=''>â€”</option><option value='1'" . selected($idea_impact, '1', false) . ">1 - Low</option><option value='2'" . selected($idea_impact, '2', false) . ">2 - Limited</option><option value='3'" . selected($idea_impact, '3', false) . ">3 - Moderate</option><option value='4'" . selected($idea_impact, '4', false) . ">4 - High</option><option value='5'" . selected($idea_impact, '5', false) . ">5 - Very high</option></select></div>";
+        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Impact</label><select name='abst_idea_impact' class='abst-idea-score-select' style='font-weight:600;'><option value=''>—</option><option value='1'" . selected($idea_impact, '1', false) . ">1 - Low</option><option value='2'" . selected($idea_impact, '2', false) . ">2 - Limited</option><option value='3'" . selected($idea_impact, '3', false) . ">3 - Moderate</option><option value='4'" . selected($idea_impact, '4', false) . ">4 - High</option><option value='5'" . selected($idea_impact, '5', false) . ">5 - Very high</option></select></div>";
 
-        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Reach</label><select name='abst_idea_reach' class='abst-idea-score-select' style='font-weight:600;'><option value=''>â€”</option><option value='1'" . selected($idea_reach, '1', false) . ">1 - Few users</option><option value='2'" . selected($idea_reach, '2', false) . ">2 - Small segment</option><option value='3'" . selected($idea_reach, '3', false) . ">3 - Good segment</option><option value='4'" . selected($idea_reach, '4', false) . ">4 - Broad reach</option><option value='5'" . selected($idea_reach, '5', false) . ">5 - Most users</option></select></div>";
+        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Reach</label><select name='abst_idea_reach' class='abst-idea-score-select' style='font-weight:600;'><option value=''>—</option><option value='1'" . selected($idea_reach, '1', false) . ">1 - Few users</option><option value='2'" . selected($idea_reach, '2', false) . ">2 - Small segment</option><option value='3'" . selected($idea_reach, '3', false) . ">3 - Good segment</option><option value='4'" . selected($idea_reach, '4', false) . ">4 - Broad reach</option><option value='5'" . selected($idea_reach, '5', false) . ">5 - Most users</option></select></div>";
 
-        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Confidence</label><select name='abst_idea_confidence' class='abst-idea-score-select' style='font-weight:600;'><option value=''>â€”</option><option value='1'" . selected($idea_confidence, '1', false) . ">1 - Low proof</option><option value='2'" . selected($idea_confidence, '2', false) . ">2 - Light signal</option><option value='3'" . selected($idea_confidence, '3', false) . ">3 - Moderate</option><option value='4'" . selected($idea_confidence, '4', false) . ">4 - Good signal</option><option value='5'" . selected($idea_confidence, '5', false) . ">5 - Strong proof</option></select></div>";
+        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Confidence</label><select name='abst_idea_confidence' class='abst-idea-score-select' style='font-weight:600;'><option value=''>—</option><option value='1'" . selected($idea_confidence, '1', false) . ">1 - Low proof</option><option value='2'" . selected($idea_confidence, '2', false) . ">2 - Light signal</option><option value='3'" . selected($idea_confidence, '3', false) . ">3 - Moderate</option><option value='4'" . selected($idea_confidence, '4', false) . ">4 - Good signal</option><option value='5'" . selected($idea_confidence, '5', false) . ">5 - Strong proof</option></select></div>";
 
-        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Effort</label><select name='abst_idea_effort' class='abst-idea-score-select' style='font-weight:600;'><option value=''>â€”</option><option value='1'" . selected($idea_effort, '1', false) . ">1 - Very easy</option><option value='2'" . selected($idea_effort, '2', false) . ">2 - Easy</option><option value='3'" . selected($idea_effort, '3', false) . ">3 - Moderate</option><option value='4'" . selected($idea_effort, '4', false) . ">4 - Some setup</option><option value='5'" . selected($idea_effort, '5', false) . ">5 - Complex</option></select></div>";
+        echo "<div class='abst-idea-score-card' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Effort</label><select name='abst_idea_effort' class='abst-idea-score-select' style='font-weight:600;'><option value=''>—</option><option value='1'" . selected($idea_effort, '1', false) . ">1 - Very easy</option><option value='2'" . selected($idea_effort, '2', false) . ">2 - Easy</option><option value='3'" . selected($idea_effort, '3', false) . ">3 - Moderate</option><option value='4'" . selected($idea_effort, '4', false) . ">4 - Some setup</option><option value='5'" . selected($idea_effort, '5', false) . ">5 - Complex</option></select></div>";
 
-        echo "<div class='abst-idea-score-card abst-idea-score-total' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Total</label><input type='text' readonly class='abst-idea-total-field' value='" . esc_attr($idea_total !== null ? $idea_total : 'â€”') . "' style='text-align:center;font-weight:700;'></div>";
+        echo "<div class='abst-idea-score-card abst-idea-score-total' style='display:grid;gap:6px;'><label style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;'>Total</label><input type='text' readonly class='abst-idea-total-field' value='" . esc_attr($idea_total !== null ? $idea_total : '—') . "' style='text-align:center;font-weight:700;'></div>";
 
         echo "</div>";
 
@@ -6652,7 +6626,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo '<select name="bt_experiments_full_page_default_page" id="bt_experiments_full_page_default_page">';
 
-      echo '<option value="" disabled ' . (empty($selected_page) ? 'selected' : '') . '>Select a pageâ€¦</option>';
+      echo '<option value="" disabled ' . (empty($selected_page) ? 'selected' : '') . '>Select a page…</option>';
 
       if(!empty($selected_page))
 
@@ -6694,7 +6668,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $lastPostType = '';
 
-      echo "<a href='' id='full-page-test-page-preview' target='_blank' style='display:none;'>view page Â»</a>";
+      echo "<a href='' id='full-page-test-page-preview' target='_blank' style='display:none;'>view page →</a>";
 
 
 
@@ -7022,7 +6996,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       <h5>Magic - Point & Click</h5>
 
-      <p>Click anything on your site to test it, and let the magic AI guide you. âœ¨</p>
+      <p>Click anything on your site to test it, and let the magic AI guide you. ✨</p>
 
     </label>  
 
@@ -8208,7 +8182,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
         echo '<div class="notice notice-success" style="padding: 12px; margin: 10px 0; border-left: 4px solid #46b450;">';
 
-        echo '<strong>âœ… Cleanup Complete!</strong> Removed ' . count($cleanup_result['removed']) . ' invalid variation keys: <code>' . esc_html(implode(', ', $cleanup_result['removed'])) . '</code>';
+        echo '<strong>✅ Cleanup Complete!</strong> Removed ' . count($cleanup_result['removed']) . ' invalid variation keys: <code>' . esc_html(implode(', ', $cleanup_result['removed'])) . '</code>';
 
         echo '<br><em>Please refresh the page to see updated results.</em>';
 
@@ -8232,13 +8206,13 @@ function abst_show_experiment_results($test,$asTable = false){
 
       echo '<div class="notice notice-warning" style="padding: 12px; margin: 10px 0; border-left: 4px solid #ffb900;">';
 
-      echo '<strong>âš ï¸ Invalid Variation Data Detected</strong><br>';
+      echo '<strong>⚠️ Invalid Variation Data Detected</strong><br>';
 
       echo 'Found <strong>' . esc_html( $invalid_count ) . '</strong> observation key(s) that don\'t match any configured page in this test.<br>';
 
       echo '<small style="color: #666;">Valid page IDs: <code>' . esc_html($valid_ids) . '</code> | Invalid keys: <code>' . esc_html($invalid_ids) . '</code></small><br><br>';
 
-      echo '<a href="' . esc_attr( $cleanupHref ) . '" class="button button-secondary" onclick="return confirm(\'This will remove data for variation keys: ' . esc_attr($invalid_ids) . '. This cannot be undone. Continue?\');">ðŸ§¹ Remove Invalid Data</a>';
+      echo '<a href="' . esc_attr( $cleanupHref ) . '" class="button button-secondary" onclick="return confirm(\'This will remove data for variation keys: ' . esc_attr($invalid_ids) . '. This cannot be undone. Continue?\');">🧹 Remove Invalid Data</a>';
 
       echo '</div>';
 
@@ -8446,7 +8420,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
   if ($test_age < 2) {
 
-    $experiment_status = "<p class='experiment-status'>ðŸ§ª Your test is just getting started. Give it a day or so to collect more data and check back soon for insights!</p>";
+    $experiment_status = "<p class='experiment-status'>🧪 Your test is just getting started. Give it a day or so to collect more data and check back soon for insights!</p>";
 
   } else {
 
@@ -8814,7 +8788,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
           $experiment_status = "<div class='bt_ab_success'>"
 
-            . "ðŸŽ‰ <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
+            . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
 
             . "</div>";
 
@@ -8876,9 +8850,9 @@ function abst_show_experiment_results($test,$asTable = false){
 
                 $uplift_message = sprintf(
 
-                  '<br/>ðŸ“ˆ <strong>%.1f%% increase</strong> in revenue per visit <em>(%.1fx better performance)</em><br/>'
+                  '<br/>📈 <strong>%.1f%% increase</strong> in revenue per visit <em>(%.1fx better performance)</em><br/>'
 
-                  . 'ðŸ’° <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
+                  . '💰 <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
 
                   $uplift_percent,
 
@@ -8916,7 +8890,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
                 $uplift_message = sprintf(
 
-                  '<br/>ðŸ“ˆ <strong>%.1f%% increase in %s</strong> <em>(%.1fx better performance)</em>',
+                  '<br/>📈 <strong>%.1f%% increase in %s</strong> <em>(%.1fx better performance)</em>',
 
                   $uplift_percent,
 
@@ -8932,7 +8906,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $annual_impact_message = sprintf(
 
-                '<br/>ðŸŽ¯ <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
+                '<br/>🎯 <strong>Projected annual impact:</strong> Extra <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
 
                 $formatted_conversions
 
@@ -8970,7 +8944,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
                   $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
 
-                  $icon = $conversion_use_order_value ? 'ðŸ›¡ï¸' : 'ðŸ›¡ï¸';
+                  $icon = $conversion_use_order_value ? '🛡️' : '🛡️';
 
                   $avoided_loss_message = "<br/>$icon <span class='variation-loss' style='color:#0073aa;font-weight:bold;'>You avoided losing " . round($loss, 1) . "% $context_label</span>";
 
@@ -8988,7 +8962,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
                     $annual_impact_message = sprintf(
 
-                      '<br/>ðŸ’° <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
+                      '<br/>💰 <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s%s per year</span>',
 
                       $currency_symbol,
 
@@ -9004,7 +8978,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
                     $annual_impact_message = sprintf(
 
-                      '<br/>ðŸŽ¯ <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
+                      '<br/>🎯 <strong>Projected annual impact:</strong> You avoided losing <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">%s conversions per year</span>',
 
                       $formatted_avoided_loss
 
@@ -9068,7 +9042,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
                 $context_label = $conversion_use_order_value ? 'revenue per visit' : 'conversions';
 
-                $icon = 'âœ”ï¸';
+                $icon = '✔️';
 
                 $annual_loss_str = '';
 
@@ -9098,9 +9072,9 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $experiment_status = "<div class='bt_ab_success'>"
 
-                . "ðŸŽ‰ <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong><br>"
+                . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong><br>"
 
-                . "âŒ No improvement from this test<br>"
+                . "❌ No improvement from this test<br>"
 
                 . ($avoided_loss_combined ? $avoided_loss_combined : '')
 
@@ -9112,7 +9086,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $experiment_status = "<div class='bt_ab_success'>"
 
-                . "ðŸŽ‰ <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
+                . "🎉 <strong>{$winner_label}</strong> is the winner with <strong>{$likelywinnerpercentage}% confidence</strong>"
 
                 . "$uplift_message"
 
@@ -9412,7 +9386,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $formatted_uplift = number_format($annual_uplift, 0);
 
-              $projection_message = "<br/>ðŸ’¡ <strong>Potential uplift:</strong> {$currency_symbol}{$formatted_uplift} additional revenue per year vs original.";
+              $projection_message = "<br/>💡 <strong>Potential uplift:</strong> {$currency_symbol}{$formatted_uplift} additional revenue per year vs original.";
 
             } elseif ($annual_saved > 0 && $leading_variation === $control_variation_key && $second_best_rate > 0) {
 
@@ -9420,7 +9394,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $formatted_avoided_loss = number_format($annual_saved, 0);
 
-              $projection_message = "<br/>ðŸ’° <strong>Amount saved by not switching:</strong> {$currency_symbol}{$formatted_avoided_loss} per year vs alternatives.";
+              $projection_message = "<br/>💰 <strong>Amount saved by not switching:</strong> {$currency_symbol}{$formatted_avoided_loss} per year vs alternatives.";
 
             }
 
@@ -9454,7 +9428,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $formatted_uplift = number_format(round($annual_uplift));
 
-              $projection_message = "<br/>ðŸ’¡ <strong>Potential uplift:</strong> {$formatted_uplift} extra conversions per year vs original.";
+              $projection_message = "<br/>💡 <strong>Potential uplift:</strong> {$formatted_uplift} extra conversions per year vs original.";
 
             } elseif ($annual_saved > 0 && $leading_variation === $control_variation_key && $second_best_rate > 0) {
 
@@ -9462,7 +9436,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
               $formatted_avoided_loss = number_format(round($annual_saved));
 
-              $projection_message = "<br/>ðŸ’° <strong>Amount saved by not switching:</strong> {$formatted_avoided_loss} conversions per year vs alternatives.";
+              $projection_message = "<br/>💰 <strong>Amount saved by not switching:</strong> {$formatted_avoided_loss} conversions per year vs alternatives.";
 
             }
 
@@ -9482,7 +9456,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
           $experiment_status = sprintf(
 
-            '<h4 class="bt_ab_warning">ðŸ§ª %s is leading%s%s%s</h4>',
+            '<h4 class="bt_ab_warning">🧪 %s is leading%s%s%s</h4>',
 
             $leading_label,
 
@@ -9958,7 +9932,7 @@ $titles = array();
 
         echo "<div class='results_variation " . esc_attr( $class ) . "'><div class='title'>" . esc_html( $mk ) . "" . wp_kses_post( $uplift_html ) . "</div>";
 
-        echo "<div class='results-visits'>" . esc_html( $mv['visit'] ) . "<span> â–¾</span></div>";
+        echo "<div class='results-visits'>" . esc_html( $mv['visit'] ) . "<span> ▾</span></div>";
 
         if(!empty($mv['goals'])){
 
@@ -10006,7 +9980,7 @@ $titles = array();
 
         }
 
-        echo "<div class='results-conversions'>", esc_html( $mv['conversion'] ), "<span> â–¾</span></div>";
+        echo "<div class='results-conversions'>", esc_html( $mv['conversion'] ), "<span> ▾</span></div>";
 
 
 
@@ -10112,7 +10086,7 @@ $titles = array();
 
           if(!intval($mv['visit'])) {
 
-            $chance_of_winning = "âœ•";
+            $chance_of_winning = "✕";
 
           } else if($conversion_use_order_value && isset($aovobs[$okey]['probability'])) {
 
@@ -10640,7 +10614,7 @@ $titles = array();
 
             if($link_url) {
 
-              $observations['observations'][$var_key]['variation_meta']['link'] = '<a target="_blank" title="View this variation in a a new tab" href="'.$link_url."?abtv=".$var_key."&abtid=".$pid.'">ðŸ”—</a>';
+              $observations['observations'][$var_key]['variation_meta']['link'] = '<a target="_blank" title="View this variation in a a new tab" href="'.$link_url."?abtv=".$var_key."&abtid=".$pid.'">🔗</a>';
 
             }
 
@@ -10710,7 +10684,7 @@ $titles = array();
 
     { // give em a guide for getting going
 
-      $empty_state_heading = 'â³ Waiting for visitors...';
+      $empty_state_heading = '🟢 Waiting for visitors...';
 
       $empty_state_message = 'Your test is live! Data will appear here within 15 seconds of your first visitor. Refresh this page to check for updates.';
 
@@ -10718,7 +10692,7 @@ $titles = array();
 
       if($test->post_status !== 'publish') {
 
-        $empty_state_heading = 'â¸ï¸ This test is paused';
+        $empty_state_heading = '⏸️ This test is paused';
 
         $empty_state_message = 'Publish the test to start collecting visitors and showing results here.';
 
@@ -10858,35 +10832,37 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
+      $conversion_type_options = array(
+        ''           => 'Select Conversion Trigger...',
+        'page'       => 'Page or Post Visit',
+        'text'       => 'Text on Page',
+        'selector'   => 'Element Click',
+        'link'       => 'Link Click',
+        'time'       => 'Time Active',
+        'scroll'     => 'Scroll Depth',
+        'url'        => 'URL',
+        'block'      => 'Conversion Block / Module / Element Class',
+        'javascript' => 'JavaScript',
+      );
+
+      if(abst_get_admin_setting('ab_use_fingerprint') == 1) {
+        $conversion_type_options['fingerprint'] = 'Fingerprint Pixel';
+      }
+
+      if(abst_get_admin_setting('ab_use_uuid') == 1) {
+        $conversion_type_options['advanced'] = 'Advanced Mode (PHP/AJAX)';
+      }
+
       $select = "<select id='bt_experiments_conversion_page' name='bt_experiments_conversion_page' class=''>";
 
-      $select .= "<option value=''>Select Conversion Trigger...</option>";
+      foreach ($conversion_type_options as $option_value => $option_label) {
+        $select .= sprintf(
+          "<option value='%s'>%s</option>",
+          esc_attr($option_value),
+          esc_html($option_label)
+        );
+      }
 
-      $select .="<option value='page'>Page or Post Visit</option>";
-
-      $select .="<option value='text'>Text on Page</option>";
-
-      $select .="<option value='selector'>Element Click</option>";
-
-      $select .="<option value='link'>Link Click</option>";
-
-      $select .="<option value='time'>Time Active</option>";
-
-      $select .="<option value='scroll'>Scroll Depth</option>";
-
-      $select .="<option value='url'>URL</option>";
-
-      $select .="<option value='block'>Conversion Block / Module / Element Class</option>";
-
-      $select .="<option value='javascript'>JavaScript</option>";
-
-      if(abst_get_admin_setting('ab_use_fingerprint') == 1)
-
-        $select .="<option value='fingerprint'>Fingerprint Pixel</option>"; 
-
-      if(abst_get_admin_setting('ab_use_uuid') == 1)
-
-        $select .="<option value='advanced'>Advanced Mode (PHP/AJAX)<option/>"; 
 
 
 
@@ -10914,7 +10890,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       esc_html_e( "Define a successful conversion. Something like a thank-you page, or a checkout complete page.", 'ab-split-test-lite' );
 
-      echo '</label><p/>';
+      echo '</label></p>';
 
 
 
@@ -10922,7 +10898,23 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-      echo wp_kses_post( $select );
+      echo wp_kses(
+        $select,
+        array(
+          'select' => array(
+            'id'    => true,
+            'name'  => true,
+            'class' => true,
+          ),
+          'option' => array(
+            'value'    => true,
+            'selected' => true,
+          ),
+          'optgroup' => array(
+            'label' => true,
+          ),
+        )
+      );
 
 
 
@@ -10984,7 +10976,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       echo '</select></label>';
 
-      echo '<a href="" id="bt_experiments_conversion_page_preview" target="_blank">view page Â»</a>';
+      echo '<a href="" id="bt_experiments_conversion_page_preview" target="_blank">view page →</a>';
 
 
 
@@ -11031,49 +11023,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         echo '<label class="conversion_text_input" for="bt_experiments_conversion_text">Will convert when this text is visible on the page. Case sensitive.</label><input class="conversion_text_input" type="text" id="bt_experiments_conversion_text" name="bt_experiments_conversion_text" placeholder="" value="' . esc_attr( $conversion_text ) . '"  />';
 
      
-
-       // ------------------- conversion value from woo --------------------------_______
-
-        // since in 1.3.2
-
-        //agency only 
-
-      echo '<div id="conversion_order_value_default_slot">';
-
-      echo '<div id="conversion_order_value" class="conversion_order_value">';
-
-      echo '<div class="conversion_order_value_row">';
-
-      echo '<label class="conversion_order_value_label" for="bt_experiments_conversion_order_value"><input class="ab-toggle" type="checkbox" id="bt_experiments_conversion_order_value" name="bt_experiments_conversion_order_value" value="1"' . checked(1, $conversion_use_order_value, false) . ' /><span>Use Order Value</span></label>';
-
-      echo '<button type="button" class="conversion_order_value_info" aria-expanded="false" aria-label="How order value works" title="How order value works">?</button>';
-
-      echo '</div>';
-
-      echo '<div class="conversion_order_value_help_panel">';
-
-      echo '<p>Turn this on when revenue matters more than raw conversion count.</p>';
-
-      echo '<p>Instead of treating every conversion the same, the test will weigh results by order value so you can see which variation earns more revenue per visitor.</p>';
-
-      echo '<p>To find the value for each conversion, we check in this order:</p>';
-
-      echo '<ol>';
-
-      echo '<li>If <code>window.abst.abConversionValue</code> is already set, that exact value is used first. WooCommerce,  Easy Digital Downloads, FluentCart and more set this automatically</li>';
-
-      echo '<li>If not, it checks common URL parameters like <code>total_paid</code>, <code>amount_paid</code>, <code>payment_total</code>, <code>grand_total</code>, <code>order_total</code>, <code>ordertotal</code>, and <code>total</code>.</li>';
-
-      echo '<li>If not, it looks for known order total elements used by WooCommerce, Easy Digital Downloads, SureCart, FluentCart, and generic <code>data-order-total</code> markup.</li>';
-
-      echo '<li>If not, it scans visible page text for labels like <code>Order Total</code>, <code>Grand Total</code>, <code>Amount Paid</code>, <code>Total Paid</code>, and <code>Payment Total</code>.</li>';
-
-      echo '</ol>';
-
-      echo '<p>If none of those are found, the conversion falls back to a value of <code>1</code>.</p>';
-
-      echo '</div></div></div>';
-
 
 
       // ------------------- conversion javascript snippet --------------------------_______
@@ -11146,7 +11095,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
 
-      $fingerprint_script_html = '<' . 'script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></' . 'script>';
+      $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></script>';
 
       echo "<input type='text' readonly='readonly' onclick='this.select()' value='" . esc_attr($fingerprint_script_html) . "'>";
 
@@ -11206,11 +11155,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-        var selectval = " . wp_json_encode( (string) $conversion_page ) . ";
+        var selectval = '". esc_js($conversion_page) ."';
 
-        jQuery('#bt_experiments_conversion_page option').filter(function(){
-          return jQuery(this).val() === selectval;
-        }).first().attr('selected', 'selected');";
+        jQuery('#bt_experiments_conversion_page option[value=\'". esc_js($conversion_page) ."\']').first().attr('selected', 'selected');";
 
         if(is_numeric($conversion_page))
 
@@ -12292,7 +12239,6 @@ function abst_fluent_cart_order_paid($eventData) {
 
         'show_in_inline_dropdown'   => true,
 
-        /* translators: %s: number of test ideas. */
         'label_count'               => _n_noop( 'Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
@@ -12315,7 +12261,6 @@ function abst_fluent_cart_order_paid($eventData) {
 
         'show_in_inline_dropdown'   => true,
 
-        /* translators: %s: number of completed tests. */
         'label_count'               => _n_noop( 'Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
@@ -13046,9 +12991,9 @@ function abst_fluent_cart_order_paid($eventData) {
 
       // Enqueue Shepherd PRODUCT TOUR
 
-      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('shepherd-css', '//cdn.jsdelivr.net/npm/shepherd.js/dist/css/shepherd.css');
 
-      wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('shepherd-js', '//cdn.jsdelivr.net/npm/shepherd.js/dist/js/shepherd.min.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
       wp_enqueue_script('shepherd-tour', plugins_url('js/plugin-tour.js', __FILE__), array('shepherd-js'), BT_AB_TEST_VERSION, true);
 
@@ -15679,7 +15624,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-        // Call existing perâ€‘event handler.
+        // Call existing per‑event handler.
 
         // Set $from_api = true so it knows this is programmatic.
 
@@ -16870,7 +16815,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if ($default_page <= 0 && empty($page_variations)) {
 
-          $output[] = "âš ï¸ Test {$test->ID} ({$test->post_title}): Skipped - no valid default page or variations configured";
+          $output[] = "⚠️ Test {$test->ID} ({$test->post_title}): Skipped - no valid default page or variations configured";
 
           continue;
 
@@ -16908,7 +16853,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if (empty($valid_variations)) {
 
-          $output[] = "âš ï¸ Test {$test->ID} ({$test->post_title}): Skipped - could not determine valid variation IDs";
+          $output[] = "⚠️ Test {$test->ID} ({$test->post_title}): Skipped - could not determine valid variation IDs";
 
           continue;
 
@@ -16944,7 +16889,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if (!empty($invalid_keys)) {
 
-          $output[] = "ðŸ§¹ Test {$test->ID} ({$test->post_title}): " . 
+          $output[] = "🧹 Test {$test->ID} ({$test->post_title}): " . 
 
                       "Valid IDs: [" . implode(', ', $valid_variations) . "] | " .
 
@@ -16988,7 +16933,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       } else {
 
-        $summary .= "<p>âœ… No invalid variation keys found.</p>";
+        $summary .= "<p>✅ No invalid variation keys found.</p>";
 
       }
 
@@ -17076,13 +17021,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $conversion_type_description =
 
-        'Conversion goal type. Only use values listed in the enum â€” they reflect integrations active on this site. ' .
+        'Conversion goal type. Only use values listed in the enum — they reflect integrations active on this site. ' .
 
         'IMPORTANT: always ask the user what their conversion goal is before creating a test. ' .
 
-        'Common mappings: "button click" â†’ selector; "thank-you page" â†’ url or page; ' .
+        'Common mappings: "button click" → selector; "thank-you page" → url or page; ' .
 
-        '"form submission" â†’ form-[plugin]; "purchase" â†’ woo-order-received or edd-purchase if available, otherwise url/page.';
+        '"form submission" → form-[plugin]; "purchase" → woo-order-received or edd-purchase if available, otherwise url/page.';
 
 
 
@@ -17094,7 +17039,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      // â”€â”€ Create A/B Test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ┄┄ Create A/B Test ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       wp_register_ability('absplittest/create-test', [
 
@@ -17108,11 +17053,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                          'Supports magic (visual element), ab_test (on-page variations), css_test, and full_page (split URL) types. ' .
 
-                         'Conversion type options are generated from integrations active on this site â€” do not assume any ecommerce or form plugin is installed. ' .
+                         'Conversion type options are generated from integrations active on this site — do not assume any ecommerce or form plugin is installed. ' .
 
-                         'The response includes preview_urls for magic, css_test, and full_page tests â€” visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (variations are defined in page content). ' .
+                         'The response includes preview_urls for magic, css_test, and full_page tests — visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (variations are defined in page content). ' .
 
-                         'For magic tests: before choosing selectors, browse the target page with ?abhash=1 appended to the URL (use &abhash=1 if the URL already has query params) â€” a table will appear at the bottom of the page listing every visible text element and its unique CSS selector; use those selector values in magic_definition.',
+                         'For magic tests: before choosing selectors, browse the target page with ?abhash=1 appended to the URL (use &abhash=1 if the URL already has query params) — a table will appear at the bottom of the page listing every visible text element and its unique CSS selector; use those selector values in magic_definition.',
 
         'input_schema' => [
 
@@ -17152,9 +17097,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                                'scope examples: {"page_id": 42}, {"url": "pricing"}, {"page_id": "*"} or {"url": "*"} for all pages. ' .
 
-                               'variations must be a plain array of strings â€” NOT objects. ' .
+                               'variations must be a plain array of strings — NOT objects. ' .
 
-                               'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array â€” each visitor sees the same variation slot across all elements, keeping them in sync. ' .
+                               'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array — each visitor sees the same variation slot across all elements, keeping them in sync. ' .
 
                                'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"variations":["Original headline","Variation B headline","Variation C headline"]},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"variations":["Original subtitle","Variation B subtitle","Variation C subtitle"]}]',
 
@@ -17164,7 +17109,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                 'properties' => [
 
-                  'selector'   => ['type' => 'string', 'description' => 'CSS selector for the element. To find reliable selectors, browse the page with ?abhash=1 appended to the URL â€” a table appears at the bottom listing each visible element\'s unique selector.'],
+                  'selector'   => ['type' => 'string', 'description' => 'CSS selector for the element. To find reliable selectors, browse the page with ?abhash=1 appended to the URL — a table appears at the bottom listing each visible element\'s unique selector.'],
 
                   'type'       => ['type' => 'string', 'enum' => ['text', 'html', 'image'], 'description' => 'Element content type'],
 
@@ -17200,7 +17145,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             'conversion_time'         => ['type' => 'integer', 'description' => 'Seconds on page for time conversion type'],
 
-            'conversion_scroll'       => ['type' => 'integer', 'description' => 'Scroll depth percentage (0â€“100) for scroll conversion type'],
+            'conversion_scroll'       => ['type' => 'integer', 'description' => 'Scroll depth percentage (0–100) for scroll conversion type'],
 
             'conversion_text'         => ['type' => 'string', 'description' => 'Text to detect on page for text conversion type'],
 
@@ -17250,7 +17195,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                   'type'  => ['type' => 'string', 'description' => 'Goal trigger type (same options as conversion_type)'],
 
-                  'value' => ['type' => 'string', 'description' => 'Goal value â€” scroll %, URL path, page ID, CSS selector, seconds, etc.'],
+                  'value' => ['type' => 'string', 'description' => 'Goal value — scroll %, URL path, page ID, CSS selector, seconds, etc.'],
 
                 ],
 
@@ -17300,7 +17245,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      // â”€â”€ List A/B Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ┄┄ List A/B Tests ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       wp_register_ability('absplittest/list-tests', [
 
@@ -17350,7 +17295,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      // â”€â”€ Get Test Results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ┄┄ Get Test Results ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       wp_register_ability('absplittest/get-test-results', [
 
@@ -17402,7 +17347,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      // â”€â”€ Update Test Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ┄┄ Update Test Status ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       wp_register_ability('absplittest/get-test-details', [
 
@@ -17502,7 +17447,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      // â”€â”€ Update Test Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ┄┄ Update Test Settings ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       wp_register_ability('absplittest/update-test-settings', [
 
@@ -17660,7 +17605,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
      *   full_page: each variation page's own permalink (no query params needed)
 
-     *   ab_test:   skipped â€” variation keys come from shortcode attributes, unknown at creation time
+     *   ab_test:   skipped — variation keys come from shortcode attributes, unknown at creation time
 
      *
 
@@ -17772,7 +17717,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       } elseif ($test_type === 'full_page') {
 
-        // Control page â€” just visit it directly (no forced-variation param needed)
+        // Control page — just visit it directly (no forced-variation param needed)
 
         $default = get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
@@ -17786,7 +17731,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-        // Variation pages â€” each is its own standalone page
+        // Variation pages — each is its own standalone page
 
         $page_variations = get_post_meta($test_id, 'page_variations', true);
 
@@ -17806,7 +17751,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // ab_test: variation keys come from [bt-variation="..."] shortcode attributes in page
 
-      // content, which are set by the user in the editor â€” not knowable at API creation time.
+      // content, which are set by the user in the editor — not knowable at API creation time.
 
 
 
@@ -18766,7 +18711,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      // Use the same stats computation the admin UI uses â€” this gives time remaining,
+      // Use the same stats computation the admin UI uses — this gives time remaining,
 
       // confidence, uplift vs control, per-variation conversion rates, etc.
 
@@ -19948,7 +19893,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         if (isset($newPluginMetadata->upgrade_notice) && strlen(trim($newPluginMetadata->upgrade_notice)) > 0 && $message !== ''){
 
-            echo '<span style="display:block; font-weight:600; margin-top:10px;">' . wp_kses_post($message) . '</span>';
+            echo '<span style="display:block; font-weight:600; margin-top:10px;">'.$message.'</span>';
 
         }
 
@@ -20874,11 +20819,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             // Look for winner announcements or test progress messages
 
-            if (preg_match('/ðŸŽ‰.*?winner.*?<\/div>/s', $full_output, $winner_match)) {
+            if (preg_match('/🎉.*?winner.*?<\/div>/s', $full_output, $winner_match)) {
 
                 $experiment_status = $winner_match[0];
 
-            } elseif (preg_match('/ðŸ§ª.*?Test in Progress.*?<\/div>/s', $full_output, $progress_match)) {
+            } elseif (preg_match('/🧪.*?Test in Progress.*?<\/div>/s', $full_output, $progress_match)) {
 
                 $experiment_status = $progress_match[0];
 
@@ -21310,22 +21255,31 @@ function abst_append_post_status_list(){
 
       }
 
-        $abst_is_idea = ($post->post_status === 'idea');
-        $abst_status_display = $abst_is_idea ? 'Idea' : 'Test Complete';
-        $abst_publish_text = $abst_is_idea ? 'Save Idea' : 'Start ' . BT_AB_TEST_WL_ABTEST;
-        $abst_label_bool = ($label === 'true') ? 'true' : 'false';
+        echo '
 
-        echo '<script>
+        <script>
+
         jQuery(document).ready(function($){
-             $("select#post_status").append("<option value=\"idea\" ' . esc_js($idea) . '>Idea</option>");
-             $("select#post_status").append("<option value=\"complete\" ' . esc_js($complete) . '>Test Complete</option>");
-             if(' . esc_attr($abst_label_bool) . ')
+
+             $("select#post_status").append("<option value=\"idea\" '.$idea.'>Idea</option>");
+
+             $("select#post_status").append("<option value=\"complete\" '.$complete.'>Test Complete</option>");
+
+             if('.$label.')
+
              {
-               $("#post-status-display").text(' . wp_json_encode($abst_status_display) . ');
+
+             $("#post-status-display").text("'.($post->post_status == 'idea' ? 'Idea' : 'Test Complete').'");
+
              }
-             $("#publishing-action #publish").text(' . wp_json_encode($abst_publish_text) . ');
+
+             $("#publishing-action #publish").text("'.($post->post_status == 'idea' ? 'Save Idea' : 'Start ' . BT_AB_TEST_WL_ABTEST).'");
+
         });
-        </script>';
+
+        </script>
+
+        ';
 
       //post-status-display
 
@@ -21361,7 +21315,7 @@ function abst_send_request_to_openai($text,$type,$screenshot = false, $context =
 
 
 
-// Old abst_send_request_to_openai body removed â€” lite version uses stub above
+// Old abst_send_request_to_openai body removed — lite version uses stub above
 
 //add modal for ai popup 
 
@@ -21756,8 +21710,6 @@ function abst_add_logs_page() {
 
 
 
-
-
   if (abst_get_admin_setting('abst_enable_logging') == '1') {
 
     add_submenu_page(
@@ -22075,7 +22027,7 @@ function abst_heatmaps_page_content() {
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>' . esc_html(BT_AB_TEST_WL_ABTEST) . ' Heatmaps & Scrollmaps</h1>';
+  echo '<h1>'.BT_AB_TEST_WL_ABTEST.' Heatmaps & Scrollmaps</h1>';
 
   echo '<span class="abst-beta-badge">Beta <a href="https://absplittest.com/support" target="_blank">Report issues</a></span>';
 
@@ -22753,7 +22705,7 @@ function abst_heatmaps_page_content() {
 
         if ($has_issues) {
 
-          echo '<p style="margin-bottom:12px; color:#dc2626;"><strong>âš ï¸ Issues detected:</strong></p>';
+          echo '<p style="margin-bottom:12px; color:#dc2626;"><strong>⚠️ Issues detected:</strong></p>';
 
           echo '<ul style="color:#475569; margin:0 0 16px 20px; line-height:1.8;">';
 
@@ -22761,11 +22713,11 @@ function abst_heatmaps_page_content() {
 
           if (!$journeys_enabled) {
 
-            echo '<li style="color:#dc2626;">âŒ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_admin#heatmaps')) . '">Enable it in Settings</a></li>';
+            echo '<li style="color:#dc2626;">❌ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_admin#heatmaps')) . '">Enable it in Settings</a></li>';
 
           } else {
 
-            echo '<li style="color:#16a34a;">âœ“ Heatmaps & Journeys is enabled</li>';
+            echo '<li style="color:#16a34a;">✓ Heatmaps & Journeys is enabled</li>';
 
           }
 
@@ -22773,11 +22725,11 @@ function abst_heatmaps_page_content() {
 
           if (!$page_tracked) {
 
-            echo '<li style="color:#dc2626;">âŒ This page is <strong>not being tracked</strong> - add it to your tracked pages or enable "All Pages"</li>';
+            echo '<li style="color:#dc2626;">❌ This page is <strong>not being tracked</strong> - add it to your tracked pages or enable "All Pages"</li>';
 
           } else {
 
-            echo '<li style="color:#16a34a;">âœ“ This page is being tracked' . ($heatmap_all_pages ? ' (All Pages enabled)' : '') . '</li>';
+            echo '<li style="color:#16a34a;">✓ This page is being tracked' . ($heatmap_all_pages ? ' (All Pages enabled)' : '') . '</li>';
 
           }
 
@@ -22787,7 +22739,7 @@ function abst_heatmaps_page_content() {
 
         } else {
 
-          echo '<p style="margin-bottom:12px; color:#16a34a;"><strong>âœ“ Settings look good!</strong></p>';
+          echo '<p style="margin-bottom:12px; color:#16a34a;"><strong>✓ Settings look good!</strong></p>';
 
           echo '<p style="margin-bottom:8px;"><strong>Other things to check:</strong></p>';
 
@@ -22807,7 +22759,7 @@ function abst_heatmaps_page_content() {
 
         
 
-        echo '<p style="font-size:13px; color:#64748b;"><a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test#heatmaps')) . '">Check your Settings â†’</a></p>';
+        echo '<p style="font-size:13px; color:#64748b;"><a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test#heatmaps')) . '">Check your Settings →</a></p>';
 
         echo '</div>';
 
@@ -22941,7 +22893,7 @@ function abst_heatmaps_page_content() {
 
       else
 
-        echo '<p class="previewwiderthan">This preview is wider than your viewport. Don\'t forget to scroll â† â†’</p>';
+        echo '<p class="previewwiderthan">This preview is wider than your viewport. Don\'t forget to scroll ← →</p>';
 
       
 
@@ -27190,4 +27142,3 @@ if (!function_exists('abst_get_current_post_id')) {
     function abst_get_current_post_id() { return abst_get_current_post_id(); }
 
 }
-
