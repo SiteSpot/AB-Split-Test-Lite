@@ -19837,6 +19837,19 @@ function abst_heatmaps_page_content() {
 
   }
 
+  // Lite: only one heatmap page, auto-select it so the heatmap loads immediately
+  if (empty($selected_post)) {
+    $saved_pages = abst_get_admin_setting('abst_heatmap_pages');
+    if (!empty($saved_pages) && is_array($saved_pages)) {
+      $selected_post = intval($saved_pages[0]);
+    } else {
+      $front_page_id = get_option('page_on_front');
+      if ($front_page_id) {
+        $selected_post = intval($front_page_id);
+      }
+    }
+  }
+
 
 
   $selected_eid = isset($_GET['eid']) ? intval($_GET['eid']) : 0;
@@ -19871,23 +19884,19 @@ function abst_heatmaps_page_content() {
 
   // Page selector (static for lite version)
 
-  $heatmap_page_url = abst_get_admin_setting('heatmap_page_url');
-
-  if (empty($heatmap_page_url)) {
-
-    $heatmap_page_url = home_url('/');
-
-  }
-
   $heatmap_page_title = 'Homepage';
 
-  // Try to resolve URL to page title
+  $saved_pages = abst_get_admin_setting('abst_heatmap_pages');
 
-  $heatmap_page_id = url_to_postid($heatmap_page_url);
+  if (!empty($saved_pages) && is_array($saved_pages)) {
 
-  if ($heatmap_page_id) {
+    $title = get_the_title(intval($saved_pages[0]));
 
-    $heatmap_page_title = get_the_title($heatmap_page_id);
+    if ($title) {
+
+      $heatmap_page_title = $title;
+
+    }
 
   }
 
@@ -19905,7 +19914,7 @@ function abst_heatmaps_page_content() {
 
   echo '<span style="margin-right: 10px;">' . esc_html($heatmap_page_title) . '</span>';
 
-  echo '<a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to track multiple pages</a>';
+  echo '<a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=' . Starter_Plugin_Admin::$page_slug . '#tab-heatmaps')) . '" class="button button-secondary">Change page</a>';
 
   echo '</div></div>';
 
@@ -19965,7 +19974,7 @@ function abst_heatmaps_page_content() {
 
   
 
-  if (isset($_GET['post']) && $_GET['post']) {
+  if ($selected_post) {
 
     // Display filter context
 

@@ -847,9 +847,46 @@ if ($license_status !== 'valid') {
 
               <p>1 page <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to track multiple pages</a></p>
 
-              <p><input type="text" id="heatmap_page_url" name="heatmap_page_url" value="<?php echo esc_url(home_url('/')); ?>" /></p>
+              <p><select id="heatmap_page_select" name="heatmap_pages[]" style="width: 25rem;"></select></p>
 
               <p>By default this is your homepage.</p>
+
+              <script>
+              jQuery(document).ready(function($) {
+                $('#heatmap_page_select').select2({
+                  ajax: {
+                    url: '<?php echo esc_url(admin_url('admin-ajax.php')); ?>',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                      return { q: params.term || '', action: 'ab_page_selector' };
+                    },
+                    processResults: function(data) {
+                      return {
+                        results: $.map(data, function(page) {
+                          return { id: page[0], text: page[1] };
+                        })
+                      };
+                    },
+                    cache: true
+                  },
+                  minimumInputLength: 0,
+                  placeholder: 'Search for a page…',
+                  allowClear: true
+                });
+                <?php
+                $saved_heatmap_pages = abst_get_admin_setting('abst_heatmap_pages');
+                if (!empty($saved_heatmap_pages) && is_array($saved_heatmap_pages)) {
+                  $page_id = intval($saved_heatmap_pages[0]);
+                  $page_title = get_the_title($page_id);
+                  if ($page_title) {
+                    echo "var opt = new Option(" . wp_json_encode($page_title) . ", " . wp_json_encode((string)$page_id) . ", true, true);";
+                    echo "$('#heatmap_page_select').append(opt).trigger('change');";
+                  }
+                }
+                ?>
+              });
+              </script>
 
 
 
