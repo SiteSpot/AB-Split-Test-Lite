@@ -79,29 +79,15 @@ $abst_test_ideas_checked = ($abst_test_ideas_enabled === '0') ? '' : 'checked';
 
 $abst_remote_access_enabled = abst_get_admin_setting('abst_remote_access_enabled') ?: 0;
 
-// Agency hub settings
-
-if ( $abst_remote_access_enabled ) {
-
-	$abst_remote_access_enabled = 'checked';
-
-} else {
-
 	$abst_remote_access_enabled = '';
 
-}
 
 
 
-if ( $abst_agency_mode_enabled ) {
-
-	$abst_agency_mode_enabled = 'checked';
-
-} else {
 
 	$abst_agency_mode_enabled = '';
 
-}
+
 
 
 
@@ -115,30 +101,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
 // Compute shareable site key if helper exists
 
-$abst_agency_site_key = '';
+$upgrade_link = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade</a></p>';
 
-if ( class_exists( 'BT_BB_AB_Agency_Hub' ) ) {
-
-	$abst_agency_site_key = BT_BB_AB_Agency_Hub::get_shareable_key();
-
-}
-
-
-
-$upgrade_link = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to Pro</a></p>';
-
-$upgrade_link_teams = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to Pro</a></p>';
-
-
-
-
-
-// Lite version: heatmaps are available but limited to 1 page + 3-day retention
-
-$heatmap_upgrade = '';
-
-
-
+$upgrade_link_teams = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade</a></p>';
 
 
 if($abst_server_convert_woo == true) {
@@ -147,46 +112,10 @@ if($abst_server_convert_woo == true) {
 
 }
 
-
-
-
-if($abst_enable_logging !== '0') {
-
   $abst_enable_logging = 'checked'; 
-
-} else {
-
-  $abst_enable_logging = ''; 
-
-}
-
-
-
-if($abst_enable_heatmaps !== '0') {
-
   $abst_enable_heatmaps = 'checked'; 
-
-} else {
-
-  $abst_enable_heatmaps = ''; 
-
-}
-
-
-
-// Invert display logic: stored value 1 = disabled, so we show checked when NOT disabled
-
-$dont_clear_cache_setting = abst_get_admin_setting('ab_dont_clear_cache_on_update');
-
-if($dont_clear_cache_setting == true) {
-
-  $enable_clear_cache = ''; // If disabled in DB, show unchecked
-
-} else {
-
   $enable_clear_cache = 'checked'; // Default to checked (cache clearing enabled)
 
-}
 
 
 
@@ -260,42 +189,8 @@ if (!is_array($heatmap_pages)) {
 
 }
 
-
-
-$heatmap_all_pages = abst_get_admin_setting('abst_heatmap_all_pages');
-
-if(empty($heatmap_all_pages)) {
-
-  if(empty($heatmap_pages)) {
-
-    $heatmap_all_pages = 'all';
-
-  } else {
-
-    $heatmap_all_pages = 'chosen';
-
-  }
-
-}
-
-
-
-if ($license_status !== 'valid') {
-
-  // if file exists plugin root/includes/config.php
-
-  if (file_exists(BT_AB_TEST_PLUGIN_PATH . 'includes/config.php'))
-
-    $user_level = 'free';
-
-}
-
-
-
-// Lite version notice
-
-
-  echo "<div class='free-notice'><h2>You are using the free version of AB Split Test.</h2><h4>Free version is limited to 1 active test with 1 variation. Heatmaps and session replays are limited to 1 page and 3 days of data.</h4><p><a href='https://absplittest.com/pricing?utm_source=uglite' target='_blank' class='button button-primary'>Upgrade for unlimited tests, variations, AI, and more.</a></p></div>";
+  $heatmap_all_pages = 'chosen';
+  $user_level = 'free';
 
 
 ?>
@@ -311,16 +206,6 @@ if ($license_status !== 'valid') {
     <?php wp_nonce_field('bt-bb-ab-nonce', 'bt-bb-ab-nonce'); ?>
 
 
-
-    <?php if(!is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php') || is_network_admin()){ // dont show if network activated ?>
-
-      <?php $licence_level_nice = $user_level == 'agency' ? 'Agency' : $user_level; ?>
-
-      <?php if($this->is_abst_teams()) $licence_level_nice = 'Teams - Unlimited'; ?>
-
-      <?php 
-
-      ?>
 
 
 
@@ -416,7 +301,6 @@ if ($license_status !== 'valid') {
 
       </div>
 
-    <?php } ?>
 
 
 
@@ -433,14 +317,6 @@ if ($license_status !== 'valid') {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
 
           Welcome
-
-        </button>
-
-        <button type="button" class="abst-tab-btn" data-tab="license">
-
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-
-          License
 
         </button>
 
@@ -582,24 +458,6 @@ if ($license_status !== 'valid') {
 
 
 
-        <!-- LICENSE TAB -->
-
-        <div class="abst-tab-panel" id="tab-license">
-
-              <h2>License</h2>
-
-          <div class="ab-settings-subsection">
-
-            <p>You are using the <strong>free version</strong> of AB Split Test.</p>
-
-            <p><a href="https://absplittest.com/pricing?utm_source=uglite" target="_blank" class="button button-primary">Upgrade to Pro</a></p>
-
-          </div>
-
-        </div>
-
-
-
         <!-- GENERAL TAB -->
 
         <div class="abst-tab-panel" id="tab-general">
@@ -650,21 +508,11 @@ if ($license_status !== 'valid') {
 
             <p>To avoid SEO duplicate content issues. Adds the default page from your split test as a canonical link to each variation page.</p>
 
-            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to enable canonical override</a></p>
+            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to enable canonical override for full page tests</a></p>
 
           </div>
 
 
-
-          <div class="ab-settings-subsection ab-test-enable-logging">
-
-            <label><strong>Debug Logging</strong></label>
-
-            <p>Enable detailed logging for debugging purposes. Logs are stored in the WordPress uploads directory and can be viewed in the Logs section when enabled.</p>
-
-            <p>Debug logging is enabled by default. <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to disable logging</a></p>
-
-          </div>
 
 
 
@@ -672,9 +520,9 @@ if ($license_status !== 'valid') {
 
             <label><strong>Cache Clearing</strong></label>
 
-            <p>AB Split Test can automatically clear caches when a post or test is updated. If you have a large website or complex caching strategy, you may want to disable this. We recommend leaving this on.</p>
+            <p>AB Split Test can automatically clear caches when a post or test is updated.</p>
 
-            <p>Cache clearing is enabled by default. <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade for advanced cache controls</a></p>
+            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade</a> for advanced cache controls</p>
 
             <p>Detected caches: <?php echo esc_html($detected_caches); ?></p>
 
@@ -845,11 +693,9 @@ if ($license_status !== 'valid') {
 
               <label><strong>Page Selection</strong></label>
 
-              <p>1 page <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to track multiple pages</a></p>
-
+              <p>Choose the page you want to generate heatmaps for. Defaults to homepage.</p>
               <p><select id="heatmap_page_select" name="heatmap_pages[]" style="width: 25rem;"></select></p>
-
-              <p>By default this is your homepage.</p>
+              <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to track heatmaps & session replays on any page.</a></p>
 
               <script>
               jQuery(document).ready(function($) {
@@ -896,7 +742,7 @@ if ($license_status !== 'valid') {
 
               <label for="heatmap_retention_length"><strong>Data Retention</strong></label>
 
-              <p>3 days <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to choose any data retention</a></p>
+              <p>3 days <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to choose any data retention</a></p>
 
 
 

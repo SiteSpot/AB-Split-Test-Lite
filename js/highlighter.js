@@ -2280,6 +2280,11 @@ function selectorDetection(){
         if (jQuery(element).hasClass('abst-ai-suggest-inline') || jQuery(element).closest('.abst-ai-suggest-inline').length > 0) {
             return false;
         }
+
+        // Skip variation marker controls. These live in the body overlay so they work for images.
+        if (jQuery(element).hasClass('abst-variation-marker') || jQuery(element).closest('.abst-variation-marker').length > 0) {
+            return false;
+        }
         
         // Skip AI suggested elements (green box) - let them handle their own clicks
         if (jQuery(element).hasClass('abst-ai-suggested') || jQuery(element).closest('.abst-ai-suggested').length > 0) {
@@ -3196,7 +3201,15 @@ function abst_magic_bar(options = {}) {
         </div>
         <div class="abst-settings-column" id="variation-editor-container">
             <div class="abst-goals-title" style="display: flex; align-items: center; justify-content: center; gap: 8px;">Element <input id="abst-selector-input" type="text" value="Select an item" placeholder="CSS Selector" style="background: transparent; color: #999; font-size: 13px; padding: 0; flex: 1; text-align: center; margin: 0 !important; height: 30px;"></div>
-            <p id="version-value">Editing the B Version of the test</p>
+            <p id="version-value" class="abst-version-value">
+                <span class="abst-version-prefix">Editing</span>
+                <button type="button" id="abst-version-toggle" class="abst-version-toggle" aria-label="Click to swap between variations" title="Click to swap between variations">B version</button>
+                <button type="button" id="abst-version-swap" class="abst-version-swap" aria-label="Click to swap between variations" title="Click to swap between variations">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3"></path>
+                    </svg>
+                </button>
+            </p>
             <div id="abst-variation-editor"></div>
                 <div id="ai-suggestions" style="display: none;">
                 <button class="abst-ai-suggestions-toggle" aria-expanded="false">
@@ -3960,16 +3973,47 @@ function adjustFixedElementsForMagicBar(activate) {
 
 
 
+        function getCurrentVariationIndex() {
+            var variationValue = jQuery("#variation-picker").val();
+            if (variationValue === 'addAnother') {
+                return 1;
+            }
+            return parseInt(variationValue, 10) || 0;
+        }
+
+        function getVariationVersionName(variationIndex) {
+            var optionText = jQuery('#variation-picker option[value="' + variationIndex + '"]').text();
+            optionText = optionText.replace(/\s*-\s*Control\s*$/i, '').trim();
+
+            if (!optionText) {
+                optionText = getVariationLabel(variationIndex) + ' Version';
+            }
+
+            return optionText.replace(/\bVersion\b/g, 'version');
+        }
+
+        function updateVersionValue() {
+            var variationIndex = getCurrentVariationIndex();
+            var versionName = getVariationVersionName(variationIndex);
+            var actionText = variationIndex === 0 ? 'Viewing' : 'Editing';
+
+            jQuery("#version-value .abst-version-prefix").text(actionText);
+            jQuery("#abst-version-toggle").text(versionName).attr('aria-label', 'Click to swap between variations').attr('title', 'Click to swap between variations');
+            jQuery("#abst-version-swap").attr('aria-label', 'Click to swap between variations').attr('title', 'Click to swap between variations');
+        }
+
+        function cycleMagicVariation() {
+            var variationCount = Math.max(1, getMagicVariationCount());
+            var currentIndex = getCurrentVariationIndex();
+            var nextIndex = (currentIndex + 1) % variationCount;
+
+            jQuery("#variation-picker").val(String(nextIndex)).trigger('change');
+        }
+
         jQuery('body').on('change', "#variation-picker", function() {
-            //get variation
-            if(jQuery("#variation-picker :selected").text().includes('Control')){
-                jQuery("#version-value").text("View the original text.");
-            }
-            else{
-                jQuery("#version-value").text("Edit the " + jQuery("#variation-picker :selected").text() + " of the test");
-            }
             var variationIndexRaw = jQuery("#variation-picker").val();
             var variationIndex = (variationIndexRaw === 'addAnother') ? 'addAnother' : (parseInt(variationIndexRaw) || 0);
+            updateVersionValue();
 
             // if its 0 then make editor read-only
             if (window.abstEditor) {
@@ -4058,6 +4102,11 @@ function adjustFixedElementsForMagicBar(activate) {
                 const event = new Event('input', { bubbles: true });
                 window.abstEditor.dispatchEvent(event);
             }
+        });
+
+        jQuery('body').on('click', "#abst-version-toggle, #abst-version-swap", function(e) {
+            e.preventDefault();
+            cycleMagicVariation();
         });
 
         jQuery('body').on('click', ".abst-variation-remove", function(e) {
@@ -4603,6 +4652,7 @@ function addVariationMarker($element, definition, defIndex) {
     // Remove existing marker if any
     $element.find('.abst-variation-marker').remove();
     $element.siblings('.abst-variation-marker').remove();
+    jQuery('.abst-variation-marker[data-def-index="' + defIndex + '"]').remove();
     
     // Ensure element has position relative for absolute positioning
     if ($element.css('position') === 'static') {
@@ -4627,8 +4677,9 @@ function addVariationMarker($element, definition, defIndex) {
     // Add remove button
     buttonsHtml += '<button class="abst-marker-remove" data-def="' + defIndex + '" title="Remove element from test">×</button>';
     
-    var $marker = jQuery('<div class="abst-variation-marker">' + buttonsHtml + '</div>');
-    $element.append($marker);
+    var $marker = jQuery('<div class="abst-variation-marker" data-def-index="' + defIndex + '">' + buttonsHtml + '</div>');
+    $marker.data('abstTargetElement', $element[0]);
+    jQuery('body').append($marker);
     positionVariationMarker($marker, $element);
 }
 
@@ -4637,9 +4688,15 @@ function positionVariationMarker($marker, $element) {
         return;
     }
 
+    var targetElement = $element[0] || $marker.data('abstTargetElement');
+    if (!targetElement || !document.documentElement.contains(targetElement)) {
+        $marker.remove();
+        return;
+    }
+
     var markerWidth = $marker.outerWidth() || 0;
     var markerHeight = $marker.outerHeight() || 0;
-    var elementRect = $element[0].getBoundingClientRect();
+    var elementRect = targetElement.getBoundingClientRect();
     var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     var margin = 8;
     var adminBarHeight = 0;
@@ -4659,9 +4716,10 @@ function positionVariationMarker($marker, $element) {
     viewportLeft = Math.max(margin, Math.min(viewportLeft, viewportWidth - markerWidth - margin));
 
     $marker.css({
-        left: (viewportLeft - elementRect.left) + 'px',
+        position: 'fixed',
+        left: viewportLeft + 'px',
         right: 'auto',
-        top: (viewportTop - elementRect.top) + 'px',
+        top: viewportTop + 'px',
         display: 'inline-flex'
     });
 }
@@ -4669,7 +4727,10 @@ function positionVariationMarker($marker, $element) {
 function repositionVariationMarkers() {
     jQuery('.abst-variation-marker').each(function() {
         var $marker = jQuery(this);
-        positionVariationMarker($marker, $marker.parent());
+        var targetElement = $marker.data('abstTargetElement');
+        if (targetElement) {
+            positionVariationMarker($marker, jQuery(targetElement));
+        }
     });
 }
 
@@ -4680,7 +4741,7 @@ jQuery(window).on('resize scroll', function() {
 // Handle variation marker button clicks - swap variation
 jQuery('body').on('click', '.abst-marker-var', function(e) {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     
     console.log('Marker var button clicked');
     var varIndex = jQuery(this).data('var');
@@ -4713,7 +4774,7 @@ jQuery('body').on('click', '.abst-marker-var', function(e) {
 // Handle right-click on a variation label - remove that variation across the test
 jQuery('body').on('contextmenu', '.abst-marker-var', function(e) {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
 
     var varIndex = parseInt(jQuery(this).data('var'), 10);
     removeMagicVariation(varIndex);
@@ -4722,7 +4783,7 @@ jQuery('body').on('contextmenu', '.abst-marker-var', function(e) {
 // Handle add variation button clicks
 jQuery('body').on('click', '.abst-marker-add', function(e) {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     
     console.log('Add variation button clicked');
     var defIndex = jQuery(this).data('def');
@@ -4743,7 +4804,7 @@ jQuery('body').on('click', '.abst-marker-add', function(e) {
 // Handle remove button clicks
 jQuery('body').on('click', '.abst-marker-remove', function(e) {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     
     console.log('Remove button clicked');
     
