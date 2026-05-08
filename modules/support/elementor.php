@@ -44,7 +44,6 @@ class BT_BB_AB_Elementor
     $widgets_manager->register( new \BT_Elementor_Conversion() );
 
     // Register ab test redirect widget
-   // $widgets_manager->register( new \BT_Elementor_AB_Redirect() ); //OLD RETIRED WIDGET
 	}
 
   public function enqueue_custom_script()
@@ -251,7 +250,7 @@ if(class_exists('\Elementor\Widget_Base'))
 add_action( 'elementor/frontend/before_render', 'ab_add_attributes_to_element',9999 );
 function ab_add_attributes_to_element( $element ) {
 
-  if( $element->get_name() === 'bt_ab_redirect' ||  $element->get_name() === 'bt_conversion' )
+  if( $element->get_name() === 'bt_conversion' )
     return;
 
   // Get the settings
@@ -270,130 +269,3 @@ function ab_add_attributes_to_element( $element ) {
 }
 
 
-/**
- * AB Test redirect widget.
- */
-if(class_exists('\Elementor\Widget_Base'))
-{
-
-  class BT_Elementor_AB_Redirect extends \Elementor\Widget_Base 
-  {
-    /**
-     * Get widget name.
-     */
-	public function get_name(): string {
-      return 'bt_ab_redirect';
-    }
-
-    /**
-     * Get widget title.
-     */
-    public function get_title() 
-    {
-      return __( 'LEGACY: AB Test Page Redirect', 'ab-split-test-lite' );
-    }
-
-    /**
-     * Get widget icon.
-     */
-    public function get_icon() 
-    {
-      return 'eicon-plus';
-    }
-
-    /**
-     * Get widget categories.
-     */
-    public function get_categories() 
-    {
-      return [ 'general' ];
-    }
-
-    protected function register_control_elements()  // redirect element RETIRED
-    {
-      $experiments = apply_filters( 'bt_experiments_get_items', 'select' );
-      $fields      = BtConversionModule::get_fields();
-      $options     = BT_BB_AB_PageRedirect::abst_get_all_posts_grouped();
-
-      $opt_group = [];
-
-      if( !empty($options) ) {
-        foreach ($options as $key => $option) {
-
-          $items = [];
-
-          foreach ($option as $i => $item) {
-            $items[$item['id']] = $item['post_title'];
-          }
-
-          $opt_group[] = [
-            'label' => $key,
-            'options' => $items
-          ];
-        }
-      }
-
-      
-      $this->add_control(
-        'bt_experiment',
-        [
-          'label' => 'Split Test',
-          'type' => \Elementor\Controls_Manager::SELECT2,
-          'multiple' => false,
-          'options' => $experiments, 
-          'default' => 0,
-          'description' => $fields['bt_experiment']['description']
-        ]
-      );
-      $this->add_control(
-        'bt_variation',
-        [
-          'label' => __( 'Variation', 'ab-split-test-lite' ),
-          'type' => \Elementor\Controls_Manager::TEXT,
-          'default' => '',
-          'description' => 'Using "default" will cause this version to run first, unless otherwise targeted. <a href="#">more info <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window"></a>'
-          ]
-        );
-      
-      $this->add_control(
-        'redirect_url',
-        [
-          'label' => __( 'Redirect URL', 'ab-split-test-lite' ),
-          'type' => \Elementor\Controls_Manager::SELECT,
-          'groups' => $opt_group,
-          'default' => '',
-        ]
-      );
-    }
-
-    /**
-     * Register redirect widget controls.
-     */
-    protected function _register_controls() 
-    {
-      $this->start_controls_section(
-        'general_section',
-        [
-          'label' => 'Split Test' . ' ' . __( 'Page Redirect', 'ab-split-test-lite' ),
-          'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
-        ]
-      );
-      $this->register_control_elements();
-      $this->end_controls_section();
-    }
-
-    /**
-     * Render redirect widget output on the frontend.
-     */
-    protected function render() 
-    {
-      $settings = $this->get_settings_for_display();
-
-      $attr = ' bt_experiment='. $settings['bt_experiment'] .' bt_variation='. $settings['bt_variation'] .' redirect_url='. $settings['redirect_url'];
-
-      echo do_shortcode('['. BT_BB_AB_Supports::$shortcode_ab_test_redirect . $attr .']');
-    } 
-
-  }
-
-}

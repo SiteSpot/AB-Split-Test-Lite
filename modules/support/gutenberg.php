@@ -111,36 +111,6 @@ class BT_BB_AB_Gutenberg
 
 		wp_enqueue_script( 'bt-gutenberg' );
 
-		wp_enqueue_script( 'bt-gutenberg-ab-redirect', 
-			plugins_url('js/gutenberg-ab-redirect.js', dirname(dirname(__FILE__)) ),
-			[
-				'wp-blocks',
-				'wp-block-editor',
-				'wp-components',
-				'wp-compose',
-				'wp-dom-ready',
-				'wp-editor',
-				'wp-element',
-				'wp-hooks'
-			],			
-			BT_AB_TEST_VERSION
-		);
-
-    	wp_localize_script( 'bt-gutenberg-ab-redirect', 'bt_gutenberg_ab_redirect', [
-			'experiments' 		=> json_encode(apply_filters( 'bt_experiments_get_items', 'all' )),
-			'editor_html' 		=> apply_filters( 'bt_experiments_ab_page_redirect_html', '' ),
-			'conversion_fields' => json_encode( BtConversionModule::get_fields() ),
-			'nonce' 			=> wp_create_nonce('bt_gutenberg_ab_test_redirect_html'),
-			'redirect_list'		=> BT_BB_AB_PageRedirect::abst_get_all_posts_grouped(),
-			'shortcode_name'	=> BT_BB_AB_Supports::$shortcode_ab_test_redirect,
-			'actions' 			=> [
-				'render_html' => 'render_ab_test_redirect_html'
-			],
-			'ajax_url'			=> admin_url( "admin-ajax.php" ),
-			'admin_url'			=> get_admin_url(),
-			'option_html'		=> ''
-		]);
-
 	}
 
 } // end class

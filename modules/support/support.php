@@ -4,24 +4,18 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class BT_BB_AB_Supports
 {
 	public static $shortcode_name = 'abtest_conversion';
-	public static $shortcode_ab_test_redirect = 'abtest_redirect';
 	public static $shortcode_abtest_variation = 'test';
 
 	public function __construct()
 	{
 		add_shortcode( self::$shortcode_name, [$this, 'support_conversion_shortcode'] );
-		add_shortcode( self::$shortcode_ab_test_redirect, [$this, 'support_ab_redirect_shortcode'] );
 		add_shortcode( self::$shortcode_abtest_variation, [$this, 'support_ab_redirect_variation'] );
 
 		add_filter( 'bt_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
 		add_filter( 'bt_experiments_conversion_html', [$this, 'get_conversion_html'], 10, 1 );
-		add_filter( 'bt_experiments_ab_page_redirect_html', [$this, 'get_ab_page_redirect_html'], 10, 1 );
 
 		add_action( 'wp_ajax_render_ab_test_html', [$this, 'render_ab_test_html'] );
 		add_action( 'wp_ajax_nopriv_render_ab_test_html', [$this, 'render_ab_test_html'] );
-
-		add_action( 'wp_ajax_render_ab_test_redirect_html', [$this, 'render_ab_test_redirect_html'] );
-		add_action( 'wp_ajax_nopriv_render_ab_test_redirect_html', [$this, 'render_ab_test_redirect_html'] );
 
 		$this->load_supports();
 	}
@@ -47,21 +41,6 @@ class BT_BB_AB_Supports
 		return ob_get_clean();
 	}
 
-	public function get_ab_page_redirect_html( $param = [] )
-	{
-		$settings = [];
-
-		if( !empty($param) ) {
-			$settings = (object) $param;
-		}
-
-		ob_start();
-
-		include plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/page-redirect/includes/frontend.php';
-
-		return ob_get_clean();
-	}
-
 	public function render_ab_test_html()
 	{
 		if( ! wp_verify_nonce( $_POST['nonce'], 'bt_gutenberg_ab_test_html' ) ) { wp_die('sorry..'); }
@@ -77,23 +56,6 @@ class BT_BB_AB_Supports
 		echo do_shortcode('['. self::$shortcode_name .' '. $attr .']');
 
 		wp_die();		
-	}
-
-	public function render_ab_test_redirect_html()
-	{
-		if( ! wp_verify_nonce( $_POST['nonce'], 'bt_gutenberg_ab_test_redirect_html' ) ) { wp_die('sorry..'); }
-
-		$attr = '';
-
-		foreach ($_POST['data'] as $key => $value) {
-			if( $value != '' ) {
-				$attr .= ' '. $key .'='. sanitize_text_field( $value );
-			}			
-		}
-
-		echo do_shortcode('['. self::$shortcode_ab_test_redirect .' '. $attr .']');
-
-		wp_die();			
 	}
 
 	public static function get_shortcode_args()
@@ -117,23 +79,6 @@ class BT_BB_AB_Supports
 		return $this->get_conversion_html( $attr );
 	}
 
-	public function support_ab_redirect_shortcode( $atts )
-	{
-		$attr = shortcode_atts([
-			'bt_experiment' => '',
-			'bt_variation' => '',
-			'redirect_url' => ''
-		], $atts);
-
-		$attr['experiment'] = $attr['bt_experiment'];
-		$attr['variation']  = $attr['bt_variation'];
-
-		return $this->get_ab_page_redirect_html( $attr );		
-    }
-
-
-
-	
 	public function support_ab_redirect_variation( $atts,$content )
 	{
 
