@@ -339,8 +339,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         add_action('admin_enqueue_scripts', array($this,'render_admin_scripts_styles'));
 
-        add_filter( 'all_plugins', 'abst_filter_all_plugins', 10, 1 ); 
-
       }
 
 

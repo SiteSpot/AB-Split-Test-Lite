@@ -2904,6 +2904,7 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
         jQuery(selector).attr('src', selectorText).removeAttr('srcset');
         
         // Add image selector button if it doesn't exist
+        var isControl = parseInt(jQuery("#variation-picker").val(), 10) === 0;
         if(jQuery("#imageSelector").length < 1) {
             jQuery("#abst-variation-editor-container").after('<button type="button" id="imageSelector">Choose from Media Library</button>');
             jQuery("#imageSelector").on('click', function(){
@@ -2913,6 +2914,7 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
         else{
             jQuery("#imageSelector").show();
         }
+        jQuery("#imageSelector").prop('disabled', isControl).css('opacity', isControl ? '0.5' : '1');
         
         // Check if we have a file frame already
         if (typeof file_frame === 'undefined') {
@@ -4025,6 +4027,12 @@ function adjustFixedElementsForMagicBar(activate) {
                     window.abstEditor.style.backgroundColor = '#fff';
                 }
             }
+
+            if (variationIndex === 0) {
+                jQuery("#imageSelector").prop('disabled', true).css('opacity', '0.5');
+            } else {
+                jQuery("#imageSelector").prop('disabled', false).css('opacity', '1');
+            }
             
             //if the variation index is the last one, then change the label to Variation C/d/e/f/g etc and add another option below with label " Add Variation"
             
@@ -4791,14 +4799,20 @@ jQuery('body').on('click', '.abst-marker-add', function(e) {
     // Get the definition for this element and set it as current
     if (window.abmagic && window.abmagic.definition && window.abmagic.definition[defIndex]) {
         var def = window.abmagic.definition[defIndex];
-        
+
         // Update selector input to this element
         jQuery('#abst-selector-input').val(def.selector);
-        showAISuggestionsForSelector(def.selector, def.variations[1] || def.variations[0] || '', def.type);
+
+        // Trigger the "Add Version" option in the picker
+        jQuery('#variation-picker').val('addAnother').trigger('change');
+
+        // Refresh the magic bar UI so correct tabs show (text toolbar vs image button)
+        var currentVar = parseInt(jQuery('#variation-picker').val(), 10) || 0;
+        var content = def.variations[currentVar] || def.variations[0] || '';
+        setMagicBar(def.selector, content, false, def.type || 'text');
+    } else {
+        jQuery('#variation-picker').val('addAnother').trigger('change');
     }
-    
-    // Trigger the "Add Version" option in the picker
-    jQuery('#variation-picker').val('addAnother').trigger('change');
 });
 
 // Handle remove button clicks
