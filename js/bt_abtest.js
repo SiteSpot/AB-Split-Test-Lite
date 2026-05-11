@@ -1,5 +1,35 @@
 // js called in iframes
 
+(function() {
+	if (window.abstConsoleGateLoaded) return;
+	window.abstConsoleGateLoaded = true;
+
+	try {
+		var params = new URLSearchParams(window.location.search);
+		if (params.get('abstdebug') === '1') {
+			localStorage.setItem('debug', 'true');
+		}
+	} catch (e) {}
+
+	var originalLog = console.log ? console.log.bind(console) : function() {};
+	console.log = function() {
+		try {
+			if (localStorage.getItem('debug') !== 'true') return;
+		} catch (e) {
+			return;
+		}
+
+		var args = Array.prototype.slice.call(arguments);
+		if (typeof args[0] === 'string') {
+			args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+			args[0] = 'ABST: ' + args[0];
+		} else {
+			args.unshift('ABST:');
+		}
+		originalLog.apply(console, args);
+	};
+})();
+
 (function(a,b,c,d) {
 	"use strict";
 

@@ -10,7 +10,7 @@ class Element_AB_Conversion extends \Bricks\Element {
   // public $scripts      = []; // Enqueue registered scripts
 
   public function get_label() {
-    return esc_html( AB Split Test Lite ) . ' ' . esc_html__( 'Conversion', 'ab-split-test-lite' );
+    return esc_html__( 'AB Split Test Lite', 'ab-split-test-lite' ) . ' ' . esc_html__( 'Conversion', 'ab-split-test-lite' );
   }
 
   // Set builder control groups

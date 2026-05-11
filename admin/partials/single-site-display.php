@@ -243,7 +243,9 @@ if (!is_array($heatmap_pages)) {
 
                   q: params.term || '',
 
-                  action: 'ab_page_selector'
+                  action: 'ab_page_selector',
+
+                  nonce: bt_exturl.page_selector_nonce
 
                 };
 
@@ -705,7 +707,7 @@ if (!is_array($heatmap_pages)) {
                     dataType: 'json',
                     delay: 250,
                     data: function(params) {
-                      return { q: params.term || '', action: 'ab_page_selector' };
+                      return { q: params.term || '', action: 'ab_page_selector', nonce: bt_exturl.page_selector_nonce };
                     },
                     processResults: function(data) {
                       return {
@@ -856,10 +858,6 @@ if (!is_array($heatmap_pages)) {
           $mcp_adapter_installed = class_exists('WP\\MCP\\Core\\McpAdapter');
 
           
-
-          // Check if WP-CLI is available
-
-          $wp_cli_available = defined('WP_CLI') && WP_CLI;
 
           ?>
 
@@ -1085,73 +1083,6 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
 
 
-          <div class="ab-settings-subsection">
-
-            <h3>WP-CLI Commands</h3>
-
-            
-
-            <?php if ($wp_cli_available): ?>
-
-            <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin-bottom: 20px;">
-
-              <p style="margin: 0;"><strong>✅ WP-CLI Detected</strong></p>
-
-              <p style="margin: 5px 0 0 0;">WP-CLI is available on this server. You can use the commands below to manage your A/B tests from the command line.</p>
-
-            </div>
-
-            <?php else: ?>
-
-            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px;">
-
-              <p style="margin: 0;"><strong>⚠️ WP-CLI Not Detected</strong></p>
-
-              <p style="margin: 5px 0 0 0;">WP-CLI is not currently available. Install WP-CLI to use command-line access. <a href="https://wp-cli.org/#installing" target="_blank">Learn how to install WP-CLI</a></p>
-
-            </div>
-
-            <?php endif; ?>
-
-            
-
-            <p>Access AB Split Test via command line with WP-CLI:</p>
-
-            
-
-            <h4 style="margin-top: 15px;">Create a Test</h4>
-
-            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>wp absplittest create-test --name="My Test" --type=magic --status=draft</code></pre>
-
-            
-
-            <h4 style="margin-top: 15px;">List All Tests</h4>
-
-            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>wp absplittest list-tests --format=table</code></pre>
-
-            
-
-            <h4 style="margin-top: 15px;">Get Test Results</h4>
-
-            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>wp absplittest get-results 123</code></pre>
-
-            
-
-            <h4 style="margin-top: 15px;">Update Test Status</h4>
-
-            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>wp absplittest update-status 123 publish</code></pre>
-
-
-
-            <h4 style="margin-top: 15px;">Update Test Settings</h4>
-
-            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>wp absplittest update-settings 123 --conversion_type=selector --conversion_selector=".buy-btn"</code></pre>
-
-
-
-            <p style="margin-top: 15px;"><small>Run <code>wp absplittest &lt;command&gt; --help</code> for detailed options and examples.</small></p>
-
-          </div>
 
 
 

@@ -59,6 +59,7 @@ class BT_BB_AB_Admin {
       $abst_enable_logging = (isset($_POST['abst_enable_logging']) && $_POST['abst_enable_logging'] == 1) ? 1 : 0;
       $abst_enable_heatmaps = (isset($_POST['abst_enable_heatmaps']) && $_POST['abst_enable_heatmaps'] == 1) ? 1 : 0;
       $uuid_length = isset($_POST['uuid_length']) ? intval($_POST['uuid_length']) : 30;
+      $ab_fingerprint_length = isset($_POST['ab_fingerprint_length']) ? intval($_POST['ab_fingerprint_length']) : 30;
       $wait_for_approval = (isset($_POST['wait_for_approval']) && $_POST['wait_for_approval'] == 1) ? 1 : 0;
       $heatmap_retention_length = isset($_POST['heatmap_retention_length']) ? min(3, intval($_POST['heatmap_retention_length'])) : 3; // free: max 3 days
       // Lite version ignores premium-only toggles (MAB, agency, weekly reports, AI, webhooks, fingerprint, UUID)
@@ -100,32 +101,32 @@ class BT_BB_AB_Admin {
       }
       $heatmap_all_pages = 'chosen'; // free always uses chosen pages (max 1)
 
-      abst_update_admin_setting( 'fathom_api_key', $fathom_api_key );
-      abst_update_admin_setting( 'webhook_global', $webhook_global );
-      abst_update_admin_setting( 'selected_post_types', $selected_post_types );
-      abst_update_admin_setting( 'ab_change_canonicals', $change_canonicals );
-      abst_update_admin_setting( 'ab_use_fingerprint', $use_fingerprint );
-      abst_update_admin_setting( 'ab_fingerprint_length', $ab_fingerprint_length );
-      abst_update_admin_setting( 'ab_use_uuid', $use_uuid );
-      abst_update_admin_setting( 'ab_uuid_length', $uuid_length );
-      abst_update_admin_setting( 'abst_enable_user_journeys', $enable_user_journeys );
-      abst_update_admin_setting( 'abst_enable_session_replays', $enable_session_replays );
-      abst_update_admin_setting( 'abst_heatmap_pages', $heatmap_pages );
-      abst_update_admin_setting( 'abst_heatmap_all_pages', $heatmap_all_pages );
-      abst_update_admin_setting( 'ab_dont_clear_cache_on_update', $dont_clear_cache );
-      abst_update_admin_setting( 'abst_server_convert_woo', $abst_server_convert_woo );
-      abst_update_admin_setting( 'abst_server_convert_woo_status', $woo_server_convert_status );
-      abst_update_admin_setting( 'abst_enable_logging', $abst_enable_logging );
-      abst_update_admin_setting( 'abst_enable_heatmaps', $abst_enable_heatmaps );
-      abst_update_admin_setting( 'abst_send_weekly_reports', $abst_send_weekly_reports );
-      abst_update_admin_setting( 'abst_weekly_report_emails', $abst_weekly_report_emails );
-      abst_update_admin_setting( 'abst_notification_emails', $abst_notification_emails );
-      abst_update_admin_setting( 'abst_thompson_sampling_enabled', $abst_thompson_sampling_enabled );
-      abst_update_admin_setting( 'abst_test_ideas_enabled', $abst_test_ideas_enabled );
-      abst_update_admin_setting( 'abst_wait_for_approval', $wait_for_approval );
-      abst_update_admin_setting( 'abst_heatmap_retention_length', $heatmap_retention_length );
-      abst_update_admin_setting( 'abst_remote_access_enabled', $abst_remote_access_enabled );
-      abst_update_admin_setting( 'abst_agency_mode_enabled', $abst_agency_mode_enabled );
+      $this->abst_update_admin_setting( 'fathom_api_key', $fathom_api_key );
+      $this->abst_update_admin_setting( 'webhook_global', $webhook_global );
+      $this->abst_update_admin_setting( 'selected_post_types', $selected_post_types );
+      $this->abst_update_admin_setting( 'ab_change_canonicals', $change_canonicals );
+      $this->abst_update_admin_setting( 'ab_use_fingerprint', $use_fingerprint );
+      $this->abst_update_admin_setting( 'ab_fingerprint_length', $ab_fingerprint_length );
+      $this->abst_update_admin_setting( 'ab_use_uuid', $use_uuid );
+      $this->abst_update_admin_setting( 'ab_uuid_length', $uuid_length );
+      $this->abst_update_admin_setting( 'abst_enable_user_journeys', $enable_user_journeys );
+      $this->abst_update_admin_setting( 'abst_enable_session_replays', $enable_session_replays );
+      $this->abst_update_admin_setting( 'abst_heatmap_pages', $heatmap_pages );
+      $this->abst_update_admin_setting( 'abst_heatmap_all_pages', $heatmap_all_pages );
+      $this->abst_update_admin_setting( 'ab_dont_clear_cache_on_update', $dont_clear_cache );
+      $this->abst_update_admin_setting( 'abst_server_convert_woo', $abst_server_convert_woo );
+      $this->abst_update_admin_setting( 'abst_server_convert_woo_status', $woo_server_convert_status );
+      $this->abst_update_admin_setting( 'abst_enable_logging', $abst_enable_logging );
+      $this->abst_update_admin_setting( 'abst_enable_heatmaps', $abst_enable_heatmaps );
+      $this->abst_update_admin_setting( 'abst_send_weekly_reports', $abst_send_weekly_reports );
+      $this->abst_update_admin_setting( 'abst_weekly_report_emails', $abst_weekly_report_emails );
+      $this->abst_update_admin_setting( 'abst_notification_emails', $abst_notification_emails );
+      $this->abst_update_admin_setting( 'abst_thompson_sampling_enabled', $abst_thompson_sampling_enabled );
+      $this->abst_update_admin_setting( 'abst_test_ideas_enabled', $abst_test_ideas_enabled );
+      $this->abst_update_admin_setting( 'abst_wait_for_approval', $wait_for_approval );
+      $this->abst_update_admin_setting( 'abst_heatmap_retention_length', $heatmap_retention_length );
+      $this->abst_update_admin_setting( 'abst_remote_access_enabled', $abst_remote_access_enabled );
+      $this->abst_update_admin_setting( 'abst_agency_mode_enabled', $abst_agency_mode_enabled );
       delete_option('all_testable_posts');// refresh it
     }
   }
@@ -158,17 +159,15 @@ class BT_BB_AB_Admin {
 
   public function settings_menu() 
   {
-    if( true)//;is_multisite() )
-    {
-      add_submenu_page(
-        'options-general.php',
-        self::$page_title,
-        self::$menu_name,
-        'administrator',
-        self::$page_slug,
-        [$this, 'settings_page'] 
-      );
-    }
+    add_submenu_page(
+      'options-general.php',
+      self::$page_title,
+      self::$menu_name,
+      'administrator',
+      self::$page_slug,
+      [$this, 'settings_page'] 
+    );
+    
   }
 
   /**

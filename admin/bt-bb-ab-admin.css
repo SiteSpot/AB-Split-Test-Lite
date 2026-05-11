@@ -3206,6 +3206,39 @@ div#wpfooter {
     color: #1e293b;
 }
 
+.abst-heatmap-toolbar {
+    position: sticky;
+    top: 20px;
+    z-index: 1001;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin: 0 auto 0;
+    padding: 8px 0;
+    pointer-events: none;
+}
+
+.abst-rerender-floating-btn {
+    padding: 7px 13px;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: pointer;
+    pointer-events: auto;
+    border: 1px solid #d0d5dd;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+    margin-bottom:-56px;
+}
+
+.abst-rerender-floating-btn:hover,
+.abst-rerender-floating-btn:focus {
+    border-color: #94a3b8;
+    color: #1e293b;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+}
+
 /* Select2 overrides for heatmaps */
 .abst-heatmaps-wrap .select2-container {
     min-width: 180px !important;

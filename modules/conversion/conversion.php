@@ -31,7 +31,7 @@ if(! class_exists ( 'BtConversionModule'))
       register_rest_route( 'bt_bb_ab_conversion/v1', '/add', [
         'methods' => 'POST',
         'callback'  => [$this, 'add_conversion'],
-        'permission_callback' => '__return_true',
+        'permission_callback' => '__return_true', // Intentional: anonymous visitors must be able to log conversions. Input is validated in add_conversion().
       ]);
     }
 
@@ -97,38 +97,6 @@ if(! class_exists ( 'BtConversionModule'))
           'bt_gutenberg_type' => 'string', // set type for gutenberg support field mapping
         ),
       );
-    }
-
-    public static function encode($id) 
-    {
-      $key = self::key();
-      $iv = self::_getIv();
-      $ciphertext = openssl_encrypt($id, 'aes-128-cbc', $key, $options = OPENSSL_RAW_DATA, $iv);
-      $encryptedSessionId = base64_encode($ciphertext);
-
-      return $encryptedSessionId;
-    }
-
-    public static function decode($encryptedSessionId) 
-    {
-      $key = self::key();
-      $iv = self::_getIv();
-      $decoded = base64_decode($encryptedSessionId, TRUE);
-      $decryptedSessionId = openssl_decrypt($decoded, 'aes-128-cbc', $key, $options = OPENSSL_RAW_DATA, $iv);
-      $id = rtrim($decryptedSessionId);
-
-      return $id;
-    }
-
-    public static function _getIv() 
-    {
-      $ivlen = openssl_cipher_iv_length('aes-128-cbc');
-      return substr(md5(self::key()), 0, $ivlen);
-    } 
-
-    private static function key()
-    {
-      return ' -Z#GJX11`v*q.0}eI{ky~=~u6jAm+&f~{WG9H2Xi%^4w=,4*GAi0)P7Kl6Ki7|2';
     }
 
   } // end class

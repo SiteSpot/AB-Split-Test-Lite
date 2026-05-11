@@ -3093,6 +3093,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         wp_die('You do not have the correct permissions to create a test.');
 
+      $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+      if (!$nonce || !wp_verify_nonce($nonce, 'abst_create_new_on_page_test')) {
+        wp_die('Security check failed');
+      }
 
 
       //recieve form data
@@ -3274,6 +3278,12 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       if (!current_user_can('edit_posts'))
 
         wp_die('You do not have the correct permissions to edit this label.');
+
+      if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_save_variation_label')) {
+
+        wp_die('Security check failed');
+
+      }
 
 
 
@@ -4385,7 +4395,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo '<input type="hidden"  name="bt_experiments_full_page_default_page" value="false"/>';
 
-      echo '<input type="hidden" name="action" value="create_new_on_page_test" /></div><div class="experiment_box">';
+      echo '<input type="hidden" name="action" value="create_new_on_page_test" />';
+      echo '<input type="hidden" name="nonce" value="' . esc_attr(wp_create_nonce('abst_create_new_on_page_test')) . '" /></div><div class="experiment_box">';
 
       // Create a new draft bt_experiment and get the post
 
@@ -6968,6 +6979,12 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       }
 
+      if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_delete_variation')) {
+
+        wp_die('Security check failed');
+
+      }
+
       //get data
 
       $eid = isset( $_POST['pid'] ) ? intval( wp_unslash( $_POST['pid'] ) ) : 0;
@@ -9068,7 +9085,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
             // 999 = very long time - difference too small to detect (only show after 1+ days of data)
 
-            $remaining_message = "<br/>â±ï¸ The variations are very close. This test may take a long time to reach {$conf_target}% confidence, or consider increasing traffic.";
+            $remaining_message = "<br/>The variations are very close. This test may take a long time to reach {$conf_target}% confidence, or consider increasing traffic.";
 
           } elseif($likelyDuration < 999) {
 
@@ -9076,11 +9093,11 @@ function abst_show_experiment_results($test,$asTable = false){
 
             if($days_remaining > 1) {
 
-              $remaining_message = "<br/>â±ï¸ Time remaining: About {$days_remaining} days to reach {$conf_target}% confidence.";
+              $remaining_message = "<br/>Time remaining: About {$days_remaining} days to reach {$conf_target}% confidence.";
 
             } else {
 
-              $remaining_message = "<br/>â±ï¸ Nearly complete! Results expected soon ({$conf_target}% confidence).";
+              $remaining_message = "<br/>Nearly complete! Results expected soon ({$conf_target}% confidence).";
 
             }
 
@@ -12010,7 +12027,9 @@ echo "    if( selectval !== 'url' )
 
         'ajax_url' => admin_url('admin-ajax.php'),
 
-        'is_agency' => $agency
+        'is_agency' => $agency,
+
+        'page_selector_nonce' => wp_create_nonce('abst_page_selector')
 
       ));
 
@@ -12354,6 +12373,14 @@ echo "    if( selectval !== 'url' )
 
         'export_nonce' => wp_create_nonce('abst_export_data_nonce'),
 
+        'delete_variation_nonce' => wp_create_nonce('abst_delete_variation'),
+
+        'clear_results_nonce' => wp_create_nonce('abst_clear_results'),
+
+        'save_label_nonce' => wp_create_nonce('abst_save_variation_label'),
+
+        'page_selector_nonce' => wp_create_nonce('abst_page_selector'),
+
         'eid'       => $eid
 
       ]);
@@ -12383,6 +12410,14 @@ echo "    if( selectval !== 'url' )
       {
 
         wp_reset_postdata();
+
+        echo json_encode( [] );
+
+        die;
+
+      }
+
+      if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'abst_page_selector')) {
 
         echo json_encode( [] );
 
@@ -12721,6 +12756,12 @@ echo "    if( selectval !== 'url' )
         if (!current_user_can('edit_posts'))
 
           wp_send_json_error(array('error' => 'You do not have the correct permissions to get test data.'));
+
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_blocks_experiment_list')) {
+
+          wp_send_json_error(array('error' => 'Security check failed'));
+
+        }
 
 
 
@@ -13416,6 +13457,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'abst_disable_ai' => '1',
+        'magic_nonce' => wp_create_nonce('abst_create_new_on_page_test'),
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
         'domain' => get_home_url(),
         'v' => BT_AB_TEST_VERSION,
@@ -13897,6 +13939,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'abst_enable_user_journeys' => $abst_enable_user_journeys ? '1' : '0',
 
         'abst_disable_ai' => '1',
+        'magic_nonce' => wp_create_nonce('abst_create_new_on_page_test'),
 
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
 
@@ -16811,6 +16854,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       }
 
+      $active_limit = abst_lite_validate_active_test_limit($status, $test_id);
+      if (is_wp_error($active_limit)) {
+        return $active_limit;
+      }
+
       
 
       // Update the post status
@@ -17190,6 +17238,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
       $params = abst_normalize_api_input_params($request->get_json_params());
+      $params = abst_lite_apply_test_limits($params);
 
       $guard_result = abst_apply_conversion_order_value_guard($params);
 
@@ -17205,6 +17254,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         return $validation_error;
 
+      }
+
+      $active_limit = abst_lite_validate_active_test_limit($params['status'] ?? 'draft');
+      if (is_wp_error($active_limit)) {
+        return $active_limit;
       }
 
 
@@ -17451,7 +17505,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if (!empty($params['magic_definition'])) {
 
-        $magic_def = $params['magic_definition'];
+        $magic_def = abst_lite_limit_magic_definition($params['magic_definition']);
 
 
 
@@ -17527,15 +17581,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
     private function configure_css_test($test_id, $params) {
 
-      if (!empty($params['css_variations'])) {
-
-        update_post_meta($test_id, 'css_test_variations', intval($params['css_variations']));
-
-      } else {
-
-        update_post_meta($test_id, 'css_test_variations', 2); // Default 2 variations
-
-      }
+      update_post_meta($test_id, 'css_test_variations', 1);
 
 
 
@@ -17585,7 +17631,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       
 
-      foreach ($params['variations'] as $index => $variation) {
+      $variations = array_slice(array_values($params['variations']), 0, 1);
+
+      foreach ($variations as $index => $variation) {
 
         $var_id = is_numeric($variation) ? intval($variation) : sanitize_text_field($variation);
 
@@ -17632,6 +17680,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
       $params = abst_normalize_api_input_params($params);
+      $params = abst_lite_apply_test_limits($params);
 
       $guard_result = abst_apply_conversion_order_value_guard($params);
 
@@ -17805,51 +17854,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       
 
-      // Set subgoals (new API format takes priority; fall back to legacy 'goals' param)
-
-      if (array_key_exists('subgoals', $params)) {
-
-        $validation = abst_validate_subgoals($params['subgoals']);
-
-        if (is_wp_error($validation)) {
-
-          return $validation;
-
-        }
-
-        update_post_meta($test_id, 'goals', abst_normalize_subgoals_to_storage($params['subgoals']));
-
-      } elseif (!empty($params['goals']) && is_array($params['goals'])) {
-
-        // Legacy internal-format goals (backward compatibility)
-
-        $sanitized_goals = [];
-
-        foreach ($params['goals'] as $key => $goal) {
-
-          if (is_array($goal)) {
-
-            $sanitized_goal = [];
-
-            foreach ($goal as $goal_key => $goal_value) {
-
-              $sanitized_goal[$goal_key] = sanitize_text_field($goal_value);
-
-            }
-
-            $sanitized_goals[$key] = $sanitized_goal;
-
-          } else {
-
-            $sanitized_goals[$key] = sanitize_text_field($goal);
-
-          }
-
-        }
-
-        update_post_meta($test_id, 'goals', $sanitized_goals);
-
-      }
+      // Lite supports one primary conversion only.
+      delete_post_meta($test_id, 'goals');
 
       
 
@@ -17892,6 +17898,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         }
 
       }
+
+      return true;
 
     }
 
@@ -18013,7 +18021,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
     function wp_ajax_bt_clear_results(){
 
-      
+      if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_clear_results')) {
+
+        wp_die('Security check failed');
+
+      }
 
       $post = $_POST;
 
@@ -19014,7 +19026,7 @@ function abst_heatmaps_page_content() {
 
   $selected_mode = isset($_GET['mode']) ? sanitize_text_field($_GET['mode']) : 'clicks';
 
-  $selected_days = isset($_GET['days']) ? sanitize_text_field($_GET['days']) : '7';
+  $selected_days = '3';
 
   $show_conversion_traffic_only = isset($_GET['cto']) ? sanitize_text_field($_GET['cto']) : '0';
 
@@ -19068,27 +19080,13 @@ function abst_heatmaps_page_content() {
 
   echo '<span style="margin-right: 10px;">' . esc_html($heatmap_page_title) . '</span>';
 
-  echo '<a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=' . Starter_Plugin_Admin::$page_slug . '#tab-heatmaps')) . '" class="button button-secondary">Change page</a>';
+  $settings_page_slug = class_exists('BT_BB_AB_Admin') ? BT_BB_AB_Admin::$page_slug : 'bt_bb_ab_test';
+  echo '<a href="' . esc_url(admin_url('options-general.php?page=' . $settings_page_slug . '#tab-heatmaps')) . '" class="button button-secondary">Change page</a>';
 
   echo '</div></div>';
 
   
 
-  echo '<div class="abst-filter-group"><label>Mode</label><div class="abst-filter-row"><select id="abst-heatmaps-mode-selector">';
-
-  echo '<option value="clicks">Heatmap</option>';
-
-  echo '<option value="confetti" disabled>Click Map (Upgrade to enable)</option>';
-
-  echo '<option value="scroll" disabled>Scroll Map (Upgrade to enable)</option>';
-
-  echo '<option value="rage" disabled>Rage Click Map (Upgrade to enable)</option>';
-
-  echo '<option value="dead" disabled>Dead Click Map (Upgrade to enable)</option>';
-
-  echo '</select>';
-
-  echo '</div></div>';
 
   echo '</div>';
 
@@ -19112,13 +19110,6 @@ function abst_heatmaps_page_content() {
 
   
 
-  echo '<div class="abst-filter-group"><label>Days</label><div class="abst-filter-row" style="display: flex; align-items: center;">';
-
-  echo '<span style="margin-right: 10px;">3 days</span>';
-
-  echo '<a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade to extend</a>';
-
-  echo '</div></div>';
 
   echo '</div>';
 
@@ -19814,7 +19805,8 @@ function abst_heatmaps_page_content() {
 
       echo '<div class="abst-heatmap-context"><div><span class="abst-context-icon">📊</span><strong>'. esc_html($modeNice) . ':</strong> ' . esc_html($context_parts['page']) . ' <span class="abst-context-sep">›</span> Size: '  . esc_html($context_parts['size']) . wp_kses_post($context_eid) . wp_kses_post($context_variation) . '</div>';
 
-      echo '<p class="abst-heatmap-description">' . wp_kses_post($description) . '</p></div>';
+      echo '<p class="abst-heatmap-description">' . wp_kses_post($description) . '</p>';
+      echo '</div>';
 
       
 
@@ -19850,7 +19842,13 @@ function abst_heatmaps_page_content() {
 
       
 
-      echo '<div class="abst-heatmap-wrapper" style="position: relative; max-width: '.intval($screenWidth).'px; width:calc(100% - 20px); margin: 40px auto; border: 10px solid #d9d9d9; box-shadow: 0 1px 10px -4px black;">';
+      echo '<div class="abst-heatmap-toolbar" style="max-width: '.intval($screenWidth).'px; width:calc(100% - 20px);">';
+
+      echo '<button id="abst-rerender-btn" class="abst-rerender-floating-btn" type="button" title="Re-render heatmap after resizing or animated elements move">&#8635; Re-render</button>';
+
+      echo '</div>';
+
+      echo '<div class="abst-heatmap-wrapper" style="position: relative; max-width: '.intval($screenWidth).'px; width:calc(100% - 20px); margin: 0 auto 40px; border: 10px solid #d9d9d9; box-shadow: 0 1px 10px -4px black;">';
 
       echo '<iframe id="abst-heatmaps-iframe" src="' . esc_url($iframe_url) . '" style="display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; z-index: 0; pointer-events: none;"></iframe>';
 

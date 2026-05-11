@@ -7,6 +7,7 @@ jQuery(document).ready(function(){
         'action': 'bt_clear_experiment_results',
         'eid': eid,
         'bt_action': 'clear',
+        'nonce': bt_exturl.clear_results_nonce,
       };
 
       // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php

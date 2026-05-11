@@ -1,3 +1,33 @@
+(function() {
+    if (window.abstConsoleGateLoaded) return;
+    window.abstConsoleGateLoaded = true;
+
+    try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('abstdebug') === '1') {
+            localStorage.setItem('debug', 'true');
+        }
+    } catch (e) {}
+
+    var originalLog = console.log ? console.log.bind(console) : function() {};
+    console.log = function() {
+        try {
+            if (localStorage.getItem('debug') !== 'true') return;
+        } catch (e) {
+            return;
+        }
+
+        var args = Array.prototype.slice.call(arguments);
+        if (typeof args[0] === 'string') {
+            args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+            args[0] = 'ABST: ' + args[0];
+        } else {
+            args.unshift('ABST:');
+        }
+        originalLog.apply(console, args);
+    };
+})();
+
 window.acattrs = {
 
   dropdownAutoWidth:true,
@@ -24,7 +54,9 @@ window.acattrs = {
 
           type:'control', // or 'variations'
 
-          action: 'ab_page_selector' // AJAX action for admin-ajax.php
+          action: 'ab_page_selector', // AJAX action for admin-ajax.php
+
+          nonce: bt_exturl.page_selector_nonce
 
         };
 
@@ -269,7 +301,9 @@ jQuery(document).ready(function() {
 
             type:'variations', // 'control' or 'variations'
 
-            action: 'ab_page_selector' // AJAX action for admin-ajax.php
+            action: 'ab_page_selector', // AJAX action for admin-ajax.php
+
+            nonce: bt_exturl.page_selector_nonce
 
           };
 
@@ -887,6 +921,8 @@ jQuery(document).ready(function() {
 
           'bt_action': 'clear',
 
+          'nonce': bt_exturl.clear_results_nonce,
+
         };
 
         jQuery.post(bt_ajaxurl, data, function(response) {
@@ -1053,7 +1089,7 @@ jQuery(document).ready(function() {
 
         magicElement.textContent = fixed;
 
-        console.log("✅ Fixed and updated #magic_definition content refreshing real quick.");
+        console.log("Fixed and updated #magic_definition content refreshing real quick.");
 
         //click save #starttest
 
@@ -1073,7 +1109,7 @@ jQuery(document).ready(function() {
 
     } catch (e) {
 
-        console.error("❌ Error parsing JSON after fix:", e.message);
+        console.error("Error parsing JSON after fix:", e.message);
 
     }
 
@@ -1509,6 +1545,8 @@ jQuery(document).ready(function() {
           'pid': abstpid,
 
           'variation': jQuery(this).find('[tabulator-field="id"]').text(),
+
+          'nonce': bt_exturl.delete_variation_nonce,
 
         },
 
@@ -2343,6 +2381,8 @@ var table = new Tabulator("#abst-results-table", {
             'variation_name': cell.getValue(),
 
             'variation_id': cell.getRow().getData().id,
+
+            'nonce': bt_exturl.save_label_nonce,
 
           },
 

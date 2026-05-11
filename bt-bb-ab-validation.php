@@ -406,6 +406,95 @@ function abst_validate_magic_definition($magic_definition) {
     return true;
 }
 
+function abst_lite_limit_magic_definition($magic_definition) {
+    if (is_string($magic_definition)) {
+        $decoded = json_decode($magic_definition, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $magic_definition = $decoded;
+        } else {
+            return $magic_definition;
+        }
+    }
+
+    if (!is_array($magic_definition)) {
+        return $magic_definition;
+    }
+
+    foreach ($magic_definition as $index => $definition) {
+        if (!is_array($definition)) {
+            continue;
+        }
+
+        if (!empty($definition['variations']) && is_array($definition['variations']) && count($definition['variations']) > 2) {
+            $definition['variations'] = array_slice($definition['variations'], 0, 2);
+        }
+
+        $magic_definition[$index] = $definition;
+    }
+
+    return $magic_definition;
+}
+
+function abst_lite_apply_test_limits($params) {
+    if (!is_array($params)) {
+        return $params;
+    }
+
+    if (isset($params['magic_definition'])) {
+        $params['magic_definition'] = abst_lite_limit_magic_definition($params['magic_definition']);
+    }
+
+    if (isset($params['css_variations'])) {
+        $params['css_variations'] = 1;
+    }
+
+    if (isset($params['variations']) && is_array($params['variations'])) {
+        $params['variations'] = array_slice(array_values($params['variations']), 0, 1);
+    }
+
+    if (isset($params['variation_labels']) && is_array($params['variation_labels'])) {
+        $params['variation_labels'] = array_slice(array_values($params['variation_labels']), 0, 1);
+    }
+
+    if (isset($params['variation_images']) && is_array($params['variation_images'])) {
+        $params['variation_images'] = array_slice(array_values($params['variation_images']), 0, 1);
+    }
+
+    unset($params['subgoals'], $params['goals']);
+    $params['autocomplete_on'] = false;
+
+    return $params;
+}
+
+function abst_lite_active_test_count($exclude_test_id = 0) {
+    $args = [
+        'post_type' => 'bt_experiments',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'suppress_filters' => false,
+    ];
+
+    if ($exclude_test_id) {
+        $args['post__not_in'] = [intval($exclude_test_id)];
+    }
+
+    $posts = get_posts($args);
+    return is_array($posts) ? count($posts) : 0;
+}
+
+function abst_lite_validate_active_test_limit($status = 'draft', $exclude_test_id = 0) {
+    if ($status !== 'publish') {
+        return true;
+    }
+
+    if (abst_lite_active_test_count($exclude_test_id) >= 1) {
+        return new WP_Error('lite_active_test_limit', 'AB Split Test Lite is limited to one active test. Save this test as draft or pause the existing active test first.', ['status' => 403]);
+    }
+
+    return true;
+}
+
 function abst_validate_test_payload($params, $mode = 'create') {
     $params = abst_normalize_api_input_params($params);
     $requested_status = $params['status'] ?? 'draft';
@@ -459,8 +548,8 @@ function abst_validate_test_payload($params, $mode = 'create') {
         return new WP_Error('invalid_optimization_type', 'optimization_type must be one of: bayesian, thompson.', ['status' => 400, 'field' => 'optimization_type']);
     }
 
-    if (isset($params['css_variations']) && $params['css_variations'] < 2) {
-        return new WP_Error('invalid_css_variations', 'css_variations must be 2 or greater.', ['status' => 400, 'field' => 'css_variations']);
+    if (isset($params['css_variations']) && $params['css_variations'] < 1) {
+        return new WP_Error('invalid_css_variations', 'css_variations must be 1 or greater.', ['status' => 400, 'field' => 'css_variations']);
     }
 
     if (($params['test_type'] ?? '') === 'magic') {

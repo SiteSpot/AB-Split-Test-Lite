@@ -106,7 +106,8 @@ class BT_BB_AB_Gutenberg
 				'render_ab_test_html' => 'render_ab_test_html'
 			],
 			'ajax_url'			=> admin_url( "admin-ajax.php" ),
-			'admin_url'			=> get_admin_url()
+			'admin_url'			=> get_admin_url(),
+			'blocks_list_nonce'	=> wp_create_nonce('abst_blocks_experiment_list')
 		]);
 
 		wp_enqueue_script( 'bt-gutenberg' );

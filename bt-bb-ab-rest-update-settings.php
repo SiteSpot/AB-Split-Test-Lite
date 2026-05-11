@@ -15,6 +15,7 @@ function abst_rest_update_test_settings($request) {
     global $btab;
 
     $params = abst_normalize_api_input_params($request->get_json_params());
+    $params = abst_lite_apply_test_limits($params);
     $guard_result = abst_apply_conversion_order_value_guard($params);
     $params = $guard_result['params'];
     $validation_warnings = $guard_result['warnings'];
@@ -130,8 +131,8 @@ function abst_rest_update_test_settings($request) {
         }
     }
 
-    if ($has_param('css_variations') && intval($params['css_variations']) < 2) {
-        return new WP_Error('invalid_css_variations', 'css_variations must be 2 or greater.', ['status' => 400, 'field' => 'css_variations']);
+    if ($has_param('css_variations') && intval($params['css_variations']) < 1) {
+        return new WP_Error('invalid_css_variations', 'css_variations must be 1 or greater.', ['status' => 400, 'field' => 'css_variations']);
     }
 
     $general_validation = abst_validate_test_payload(array_intersect_key($params, array_flip([
@@ -251,14 +252,8 @@ function abst_rest_update_test_settings($request) {
         update_post_meta($test_id, 'log_on_visible', !empty($params['log_on_visible']) ? '1' : '0');
     }
     
-    // Update subgoals if provided
-    if (array_key_exists('subgoals', $params)) {
-        $subgoal_validation = abst_validate_subgoals($params['subgoals']);
-        if (is_wp_error($subgoal_validation)) {
-            return $subgoal_validation;
-        }
-        update_post_meta($test_id, 'goals', abst_normalize_subgoals_to_storage($params['subgoals']));
-    }
+    // Lite supports one primary conversion only.
+    delete_post_meta($test_id, 'goals');
 
     if ($has_param('autocomplete_on')) {
         update_post_meta($test_id, 'autocomplete_on', !empty($params['autocomplete_on']) ? 1 : 0);

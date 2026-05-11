@@ -4,6 +4,36 @@ var abstOrderPages = [ 'woo-order-received', 'javascript', 'edd-purchase', 'sure
 // Form submission conversions are prefixed with 'form-' and handled dynamically
 var abstFormConversionPrefix = 'form-';
 
+(function() {
+    if (window.abstConsoleGateLoaded) return;
+    window.abstConsoleGateLoaded = true;
+
+    try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('abstdebug') === '1') {
+            localStorage.setItem('debug', 'true');
+        }
+    } catch (e) {}
+
+    var originalLog = console.log ? console.log.bind(console) : function() {};
+    console.log = function() {
+        try {
+            if (localStorage.getItem('debug') !== 'true') return;
+        } catch (e) {
+            return;
+        }
+
+        var args = Array.prototype.slice.call(arguments);
+        if (typeof args[0] === 'string') {
+            args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+            args[0] = 'ABST: ' + args[0];
+        } else {
+            args.unshift('ABST:');
+        }
+        originalLog.apply(console, args);
+    };
+})();
+
 // ============================================
 // AI SUGGESTION CACHING SYSTEM
 // ============================================
@@ -1107,156 +1137,13 @@ function getAbPageContent(){
  * @param {string} outputSelector - The selector for the output element.
  */
 function sendToOpenAI(query,abAiType,outputSelector, selectorContext) {
-    if(btab_vars.abst_disable_ai == '1'){
-        console.log('ABST AI is disabled');
-        return;
+    console.log('AI request skipped; Lite endpoint unavailable.');
+    jQuery('.ai-loading').hide();
+    if (typeof renderAiUpgradeState === 'function') {
+        renderAiUpgradeState();
+    } else if (outputSelector) {
+        jQuery(outputSelector).html('<p>AI suggestions are a Pro feature.</p>');
     }
-
-    showAILoadingState();
-
-    // Use enhanced context if available, fallback to legacy
-    var markdown;
-    if (window.abstAI && window.abstAI.buildContext) {
-        var aiContext = window.abstAI.buildContext({ maxContentChars: 30000 });
-        markdown = window.abstAI.formatContext(aiContext);
-        console.log('ABST AI: Using enhanced context (' + markdown.length + ' chars)');
-    } else {
-        // Fallback to legacy method
-        var context = getAbPageContent();
-        var turndownService = new TurndownService();
-        markdown = turndownService.turndown(context);
-    }
-    query = query.trim();
-
-    if (!window.abmagic) window.abmagic = {};
-    if (!window.abmagic.aicache) window.abmagic.aicache = {};
-
-    var requestSelector = selectorContext || jQuery('#abst-selector-input').val() || '';
-    var aicachekey = abAiType + '_' + query;
-
-    //check for magic cache
-    if( window.abmagic.aicache[aicachekey])
-    {
-        show_magic_ai(window.abmagic.aicache[aicachekey], requestSelector);
-        return;
-    }
-    aidata = {
-        'action': 'send_to_openai',
-        'input_text': query,
-        'type': abAiType,
-        'title': abAiType,
-        'context':markdown,
-        'domain': btab_vars.domain,
-    };
-    if(window.abaiScreenshot)
-        aidata['screenshot'] = window.abaiScreenshot;
-
-    //otherwise get it
-    jQuery.ajax({
-        url: bt_ajaxurl,
-        type : 'post',
-        data : aidata,
-        error: function(xhr, status, error) {
-            console.error('ABST AI: AJAX request failed', status, error);
-            jQuery('.ai-loading').hide();
-            jQuery('#ai-suggestions').html('<p style="color: red;">AI request failed: ' + (error || status) + '</p>');
-        },
-        success: function( response ) {
-            console.log('ABST AI: Response received', response);
-            if(response && typeof response.error !== 'undefined')
-            {
-                jQuery('.ai-loading').hide();
-                if(typeof response.error.message !== 'undefined')
-                {
-                    jQuery(outputSelector).parent().empty().html('<small><strong>' + response.error.message + '</strong></small>');
-                }
-                else
-                {
-                    jQuery(outputSelector).parent().empty().html('<small><strong>' + response.error + '</strong></small>');
-                }
-            }
-            else
-            {
-                console.log(response.choices[0]['message']['content']);
-                var outt = '';
-                if(abAiType == 'suggestions')
-                {
-                    //trim the content before the first square bracket and after the last square bracket
-                    respo = response.choices[0]['message']['content'];
-                    // remove ```json
-                    respo = respo.replace(/```json/g, '');
-                    // remove ```
-                    respo = respo.replace(/```/g, '');
-
-                    var ideas = JSON.parse(respo);
-
-                    //console.log(ideas);
-                    //remove ```json and ``` from response
-                    outt += "<h3>CRO Page Score: " + ideas.overall_page_rating + "%</h3><h4> You should consider adding:</h4><p> " + ideas.missing_content +"</p>";
-                    jQuery.each(ideas.suggestions,function(index, content){
-        
-                        outt += "<div class='ai-option'><h4>" +  content.test_name + "</h4><p> " + content.reason_why +"</p><p>Original text:<BR><strong>" + content.original_string + "</strong></p><p>Suggestions:</p>";
-                        jQuery.each(content.suggestions,function(index, suggestion){
-                            console.log(suggestion);
-        
-                            outt += "<p class='ai-suggestion-item'>" + suggestion + "</p>";
-                        });
-                        outt += "</div>";
-                    });
-                }
-                else if(abAiType == 'magic')
-                {
-                    // Check if response has the expected structure
-                    if (!response.choices || !response.choices[0] || !response.choices[0]['message'] || !response.choices[0]['message']['content']) {
-                        console.error('ABST AI: Invalid response structure', response);
-                        jQuery('.ai-loading').hide();
-                        jQuery('#ai-suggestions').html('<p style="color: red;">AI response format error. Please try again.</p>');
-                        return;
-                    }
-                    window.abmagic.aicache[aicachekey] = response.choices[0]['message']['content'];
-                    //console.log('allcache',window.abmagic.aicache);
-                    //dont do if #imageSelector is visible
-                    if(!jQuery('#imageSelector').is(':visible'))
-                    {
-                        show_magic_ai(response.choices[0]['message']['content'], requestSelector);
-                    }
-                }
-                else
-                {
-                    suggestions = JSON.parse(response.choices[0]['message']['content']);
-                    jQuery.each(suggestions.suggestions,function(index, choice){
-                        outt += "<div class='ai-option'>" + choice.text +" <small style='text-transform: uppercase; color: #8a8a8aff; display: block;'>" + choice.style + "</small></div>";
-                    });                  
-                }
-
-                if(abAiType == 'test-idea')
-                {
-                    testIdeaResponse = JSON.parse(response.choices[0]['message']['content']);
-                    testIdeasOut  = '<p>Generating ideas that will: ' + query + '</p>';
-                    testIdeasOut += '<p><strong>' + testIdeaResponse.response + '</strong></p>';
-                    jQuery.each(testIdeaResponse.ideas,function(index, choice){
-                        testIdeasOut += '<div class="test-ideas-suggestion">';
-                        testIdeasOut += "<h4>" + choice.testtitle +"</h4>";
-                        testIdeasOut += "<p><strong>" + choice.theorytitle +" </strong> " + choice.theory +"</p>";
-                        jQuery.each(choice.elements,function(index, element){
-                            testIdeasOut += "<div class='test-element'>";
-                            testIdeasOut += "<p>" + element.original +"</p>";
-                            testIdeasOut += "<p>" + element.variations.join(', ') +"</p>";
-                            testIdeasOut += "</div>";   
-                        });
-                        testIdeasOut += "<button class='ai-create-test'>Create Test</button></div>";
-                    });
-                    jQuery(outputSelector).html(testIdeasOut);
-                    
-                }
-                else if(abAiType != 'magic')
-                {
-                    jQuery(outputSelector).html(outt);
-                }
-                jQuery('.ai-loading').hide();
-            }
-        }
-    });
 }
 
 function show_magic_ai(response, selectorContext){
@@ -1501,7 +1388,8 @@ function applyMagicGoalToContainer($goalContainer, goal) {
             dataType: 'json',
             data: {
                 q: goalValue,
-                action: 'ab_page_selector'
+                action: 'ab_page_selector',
+                nonce: abst_magic_data.page_selector_nonce
             },
             success: function(pages) {
                 if (!Array.isArray(pages) || !pages.length) {
@@ -1613,71 +1501,8 @@ function loadMagicTestFromUrl() {
  * @param {function} callback - Callback function(suggestions)
  */
 function generateMoreSuggestions(text, excludeList, callback) {
-    if (btab_vars.abst_disable_ai == '1') {
-        console.log('ABST AI is disabled');
-        callback([]);
-        return;
-    }
-    
-    // Use enhanced context if available
-    var markdown = '';
-    if (window.abstAI && window.abstAI.buildContext) {
-        var aiContext = window.abstAI.buildContext({ maxContentChars: 15000 });
-        markdown = window.abstAI.formatContext(aiContext);
-    }
-    
-    var aidata = {
-        'action': 'send_to_openai',
-        'input_text': text,
-        'type': 'magic',
-        'title': 'magic',
-        'context': markdown,
-        'domain': btab_vars.domain,
-        'exclude_suggestions': excludeList
-    };
-    
-    if (window.abaiScreenshot) {
-        aidata['screenshot'] = window.abaiScreenshot;
-    }
-    
-    jQuery.ajax({
-        url: bt_ajaxurl,
-        type: 'post',
-        data: aidata,
-        success: function(response) {
-            if (response && typeof response.error !== 'undefined') {
-                console.log('AI Error:', response.error);
-                callback([]);
-                return;
-            }
-            
-            try {
-                var content = response.choices[0]['message']['content'];
-                // Clean up response
-                content = content.replace(/```json/g, '').replace(/```/g, '');
-                var parsed = JSON.parse(content);
-                var suggestions = parsed.suggestions || [];
-                
-                // Filter out any that are still in the exclude list (AI sometimes repeats)
-                if (excludeList) {
-                    var excludeArray = excludeList.split('|||');
-                    suggestions = suggestions.filter(function(s) {
-                        var text = typeof s === 'object' ? s.text : s;
-                        return excludeArray.indexOf(text) === -1;
-                    });
-                }
-                
-                callback(suggestions);
-            } catch (e) {
-                console.log('Error parsing AI response:', e);
-                callback([]);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log('AI request failed:', error);
-            callback([]);
-        }
-    });
+    console.log('AI request skipped; Lite endpoint unavailable.');
+    callback([]);
 }
 
 // ============================================
@@ -1706,56 +1531,7 @@ function sendCroChatMessage(userMessage, callback) {
         return;
     }
 
-    // Build context on first message
-    if (!window.abstCroChat.pageContext && window.abstAI) {
-        window.abstCroChat.pageContext = window.abstAI.formatContext(
-            window.abstAI.buildContext({ maxContentChars: 30000 })
-        );
-    }
-
-    var aidata = {
-        'action': 'send_to_openai',
-        'type': 'cro-chat',
-        'input_text': window.abstCroChat.history.length ? '' : (window.abstCroChat.pageContext || ''),
-        'user_question': userMessage.trim(),
-        'conversation_history': JSON.stringify(window.abstCroChat.history),
-        'domain': btab_vars.domain
-    };
-
-    if (window.abaiScreenshot && !window.abstCroChat.history.length) {
-        aidata['screenshot'] = window.abaiScreenshot;
-    }
-
-    jQuery.ajax({
-        url: bt_ajaxurl,
-        type: 'post',
-        data: aidata,
-        success: function(response) {
-            if (response && response.error) {
-                callback(response.error.message || response.error, null);
-                return;
-            }
-
-            var aiResponse = '';
-            if (response && response.choices && response.choices[0]) {
-                aiResponse = response.choices[0].message.content;
-            }
-
-            // Add to conversation history
-            window.abstCroChat.history.push({ role: 'user', content: userMessage });
-            window.abstCroChat.history.push({ role: 'assistant', content: aiResponse });
-
-            // Keep history manageable (last 10 exchanges)
-            if (window.abstCroChat.history.length > 20) {
-                window.abstCroChat.history = window.abstCroChat.history.slice(-20);
-            }
-
-            callback(null, aiResponse);
-        },
-        error: function(xhr, status, error) {
-            callback('Request failed: ' + error, null);
-        }
-    });
+    callback('AI suggestions are a Pro feature.', null);
 }
 
 /**
@@ -1780,50 +1556,7 @@ function requestFullPageOptimize(optimizationGoal, callback) {
         optimizationGoal = 'Improve overall conversion rate';
     }
 
-    // Build context
-    var pageContext = '';
-    if (window.abstAI) {
-        pageContext = window.abstAI.formatContext(
-            window.abstAI.buildContext({ maxContentChars: 30000 })
-        );
-    }
-
-    var aidata = {
-        'action': 'send_to_openai',
-        'type': 'fullpage-optimize',
-        'input_text': pageContext,
-        'optimization_goal': optimizationGoal.trim(),
-        'domain': btab_vars.domain
-    };
-
-    if (window.abaiScreenshot) {
-        aidata['screenshot'] = window.abaiScreenshot;
-    }
-
-    jQuery.ajax({
-        url: bt_ajaxurl,
-        type: 'post',
-        data: aidata,
-        success: function(response) {
-            if (response && response.error) {
-                callback(response.error.message || response.error, null);
-                return;
-            }
-
-            try {
-                var content = response.choices[0].message.content;
-                // Clean up JSON if wrapped in markdown
-                content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-                var parsed = JSON.parse(content);
-                callback(null, parsed);
-            } catch (e) {
-                callback('Failed to parse AI response: ' + e.message, null);
-            }
-        },
-        error: function(xhr, status, error) {
-            callback('Request failed: ' + error, null);
-        }
-    });
+    callback('AI suggestions are a Pro feature.', null);
 }
 
 /**
@@ -4217,7 +3950,8 @@ function adjustFixedElementsForMagicBar(activate) {
                             dataType: 'json',
                             data: {
                                 q: 'recent',
-                                action: 'ab_page_selector'
+                                action: 'ab_page_selector',
+                                nonce: abst_magic_data.page_selector_nonce
                             },
                             success: function(pages) {
                                 if (pages && pages.length) {
@@ -4259,7 +3993,8 @@ function adjustFixedElementsForMagicBar(activate) {
                             dataType: 'json',
                             data: {
                                 q: query,
-                                action: 'ab_page_selector'
+                                action: 'ab_page_selector',
+                                nonce: abst_magic_data.page_selector_nonce
                             },
                             beforeSend: function() {
                                 $(input).addClass('loading');
@@ -4322,7 +4057,8 @@ function adjustFixedElementsForMagicBar(activate) {
                         dataType: 'json',
                         data: {
                             q: existingValue,
-                            action: 'ab_page_selector'
+                            action: 'ab_page_selector',
+                            nonce: abst_magic_data.page_selector_nonce
                         },
                         success: function(pages) {
                             if (pages.length > 0 && Array.isArray(pages[0]) && pages[0].length >= 2) {
@@ -4482,6 +4218,7 @@ function adjustFixedElementsForMagicBar(activate) {
             
             var newTestData = {
                 action: 'create_new_on_page_test',
+                nonce: (typeof btab_vars !== 'undefined' ? btab_vars.magic_nonce : ''),
                 abst_magic_mode: 1,
                 post_title: test.title,
                 post_id: (window.abmagic && window.abmagic.editingTestId) ? window.abmagic.editingTestId : 'new',
@@ -4602,7 +4339,8 @@ function get_abst_pageselector() {
         url: bt_ajaxurl,
         type: 'GET',
         data: {
-            action: 'ab_page_selector'
+            action: 'ab_page_selector',
+            nonce: (typeof abst_magic_data !== 'undefined') ? abst_magic_data.page_selector_nonce : ''
         },
         success: function(response) {
         response = JSON.parse(response);

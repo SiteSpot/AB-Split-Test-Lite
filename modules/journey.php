@@ -326,6 +326,12 @@ class ABST_Journeys {
 
         );
 
+        wp_localize_script('abst-journeys', 'abst_journey_data', array(
+
+            'page_selector_nonce' => wp_create_nonce('abst_page_selector')
+
+        ));
+
     }
 
 

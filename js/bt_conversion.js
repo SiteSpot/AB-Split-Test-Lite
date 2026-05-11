@@ -1,3 +1,32 @@
+(function() {
+  if (window.abstConsoleGateLoaded) return;
+  window.abstConsoleGateLoaded = true;
+
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('abstdebug') === '1') {
+      localStorage.setItem('debug', 'true');
+    }
+  } catch (e) {}
+
+  var originalLog = console.log ? console.log.bind(console) : function() {};
+  console.log = function() {
+    try {
+      if (localStorage.getItem('debug') !== 'true') return;
+    } catch (e) {
+      return;
+    }
+
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === 'string') {
+      args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+      args[0] = 'ABST: ' + args[0];
+    } else {
+      args.unshift('ABST:');
+    }
+    originalLog.apply(console, args);
+  };
+})();
 
 // Mark first variation of each experiment to prevent CLS (Cumulative Layout Shift)
 // This runs immediately during parse, before DOMContentLoaded
@@ -4873,60 +4902,54 @@ function getActiveExperiments() {
 }
 
 var enable_click_tracking = true;
+var abstHeatmapGateLogged = false;
+var abstJourneyDisabledLogged = false;
+var abstJourneyAdminLogged = false;
+var abstJourneyConsentLogged = false;
   
 function check_heatmap_tracking() {
 
   if(typeof btab_vars !== 'undefined' && typeof btab_vars.abst_enable_user_journeys !== 'undefined' && btab_vars.abst_enable_user_journeys === '0') {
     enable_click_tracking = false;
+    if (!abstHeatmapGateLogged) {
+      console.log('ABST: Heatmap tracking disabled because user journeys are disabled.', {
+        abst_enable_user_journeys: btab_vars.abst_enable_user_journeys
+      });
+      abstHeatmapGateLogged = true;
+    }
   }
 
-  // Check if current page should have heatmap tracking
+  // Check if current page is the selected heatmap page from settings.
   var should_track_heatmap = false;
   if(enable_click_tracking && typeof btab_vars !== 'undefined') {
     var heatmap_pages = btab_vars.heatmap_pages;
-    var heatmap_all_pages = btab_vars.heatmap_all_pages || false;
     var current_post_id = window.current_page; //array of post id's or tags if archives 404 etc
-    var has_active_test = false;
-    
-    // Check if user is in any active test (has test variation cookie with valid variation)
-    if (typeof bt_experiments === 'object' && bt_experiments) {
-      for (var eid in bt_experiments) {
-        var btab_cookie = abstGetCookie('btab_' + eid);
-        if (btab_cookie) {
-          try {
-            var cookie_data = JSON.parse(btab_cookie);
-            // Only count as active if has a variation and not skipped
-            if (cookie_data.variation && cookie_data.variation !== 'undefined' && !cookie_data.skipped) {
-              has_active_test = true;
-              break;
-            }
-          } catch (e) {
-            // Skip invalid cookie data
-          }
-        }
-      }
-    }
-    
-    // Track heatmap if:
-    // 1. User is in an active test, OR
-    // 2. Current page is in the heatmap_pages list
-    if (has_active_test) {
-      // User is in a test - track all pages for session replay
-      should_track_heatmap = true;
-    } else if (btab_vars.is_admin) {
+
+    if (btab_vars.is_admin) {
       should_track_heatmap = false;
-    }else if (heatmap_all_pages && heatmap_all_pages === 'all') {
-      should_track_heatmap = true;
+      console.log('ABST: Heatmap tracking skipped for admin user.', {
+        current_page: current_post_id,
+        heatmap_pages: heatmap_pages
+      });
     } else if (typeof heatmap_pages !== 'undefined' && Array.isArray(heatmap_pages) && heatmap_pages.length > 0 ) {
-      console.log('heatmap_pages', heatmap_pages);
-      console.log('current_post_id', current_post_id);
-      // User is not in a test - only track if page is in heatmap_pages list
       var idsToCheck = Array.isArray(current_post_id) ? current_post_id : [current_post_id];
       should_track_heatmap = idsToCheck.some(function(id) {
         if (id === null || typeof id === 'undefined') {
           return false;
         }
         return heatmap_pages.includes(id) || heatmap_pages.includes(String(id));
+      });
+      console.log('ABST: Heatmap selected-page gate checked.', {
+        url: window.location.href,
+        current_page: current_post_id,
+        heatmap_pages: heatmap_pages,
+        matched: should_track_heatmap
+      });
+    } else {
+      console.log('ABST: Heatmap tracking skipped because no selected heatmap page was output in settings.', {
+        url: window.location.href,
+        current_page: current_post_id,
+        heatmap_pages: heatmap_pages
       });
     }
   }
@@ -4936,6 +4959,18 @@ function check_heatmap_tracking() {
       setAbCrypto(); // Create UUID for heatmap tracking
     }
     enableClickTracking();
+    console.log('ABST: Heatmap tracking enabled for selected page.', {
+      url: window.location.href,
+      current_page: window.current_page,
+      heatmap_pages: btab_vars.heatmap_pages,
+      has_approval: window.abst.hasApproval
+    });
+  } else if (enable_click_tracking && typeof btab_vars !== 'undefined' && !btab_vars.is_admin) {
+    console.log('ABST: Heatmap tracking not enabled on this page.', {
+      url: window.location.href,
+      current_page: window.current_page,
+      heatmap_pages: btab_vars.heatmap_pages
+    });
   }
 
 }
@@ -4944,10 +4979,20 @@ function check_heatmap_tracking() {
 function flushJourneyData(includeScrollMax) {
   // Don't send journey data if feature is disabled
   if(typeof btab_vars !== 'undefined' && btab_vars.abst_enable_user_journeys !== '1') {
+    if (!abstJourneyDisabledLogged) {
+      console.log('ABST: Journey data not sent because user journeys are disabled.', {
+        abst_enable_user_journeys: btab_vars.abst_enable_user_journeys
+      });
+      abstJourneyDisabledLogged = true;
+    }
     return;
   }
   
   if(btab_vars.is_admin){
+    if (!abstJourneyAdminLogged) {
+      console.log('ABST: Journey data not sent for admin user.');
+      abstJourneyAdminLogged = true;
+    }
     return;
   }
   
@@ -4976,6 +5021,12 @@ function flushJourneyData(includeScrollMax) {
 
   // Check if we have approval to send data
   if (!window.abst.hasApproval) {
+    if (!abstJourneyConsentLogged) {
+      console.log('ABST: Journey data queued but not sent because consent approval is pending.', {
+        wait_for_approval: btab_vars.wait_for_approval
+      });
+      abstJourneyConsentLogged = true;
+    }
     return;
   }
 
@@ -5010,6 +5061,11 @@ function flushJourneyData(includeScrollMax) {
     // nonce: btab_vars.journeyNonce // include if you add one
   });
   navigator.sendBeacon(bt_ajaxurl, payload);
+  console.log('ABST: Journey data sent.', {
+    event_count: Object.keys(batchToSend).length,
+    include_scroll_max: includeScrollMax,
+    ajaxurl: bt_ajaxurl
+  });
   window.abst.clickRegister = {}; //reset register
 }
 

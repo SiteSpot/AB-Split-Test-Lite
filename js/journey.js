@@ -1,3 +1,33 @@
+(function() {
+    if (window.abstConsoleGateLoaded) return;
+    window.abstConsoleGateLoaded = true;
+
+    try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('abstdebug') === '1') {
+            localStorage.setItem('debug', 'true');
+        }
+    } catch (e) {}
+
+    var originalLog = console.log ? console.log.bind(console) : function() {};
+    console.log = function() {
+        try {
+            if (localStorage.getItem('debug') !== 'true') return;
+        } catch (e) {
+            return;
+        }
+
+        var args = Array.prototype.slice.call(arguments);
+        if (typeof args[0] === 'string') {
+            args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+            args[0] = 'ABST: ' + args[0];
+        } else {
+            args.unshift('ABST:');
+        }
+        originalLog.apply(console, args);
+    };
+})();
+
 jQuery(document).ready(function($) {
     // Initialize Select2 for page selector with AJAX search (same as full page test selector)
     const heatmapPageAttrs = {
@@ -13,7 +43,8 @@ jQuery(document).ready(function($) {
                 return {
                     q: params.term, // search query
                     type: 'control', // 'control' or 'variations'
-                    action: 'ab_page_selector' // AJAX action for admin-ajax.php
+                    action: 'ab_page_selector', // AJAX action for admin-ajax.php
+                    nonce: abst_journey_data.page_selector_nonce
                 };
             },
             processResults: function( data ) {
@@ -271,6 +302,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Smooth scroll to bottom - triggers all scroll-based animations
     iframeWin.scrollTo({ top: scrollTarget, behavior: 'smooth' });
     await new Promise(r => setTimeout(r, scrollTime));
+
+    try {
+      const scrollTrigger = iframeWin.ScrollTrigger;
+      const triggers = scrollTrigger && typeof scrollTrigger.getAll === 'function'
+        ? scrollTrigger.getAll()
+        : [];
+      if (Array.isArray(triggers) && triggers.length > 0) {
+        triggers.forEach(trigger => {
+          if (trigger && typeof trigger.disable === 'function') {
+            trigger.disable(false);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not freeze GSAP ScrollTrigger state for heatmap preview:', e);
+    }
     
     // Back to top
     iframeWin.scrollTo({ top: 0, behavior: 'smooth' });
@@ -363,22 +410,37 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Force reflow to apply styles
     void html.offsetHeight;
-    
-    // For click-based heatmaps, trigger animations FIRST to get accurate height
-    // This ensures GSAP, Elementor, Beaver Builder, etc. animations have completed
-    let height;
-    if (!isScrollMode) {
-      height = await triggerAnimations(win, doc);
-      console.log('Post-animation height:', height);
-    } else {
-      height = Math.max(
-        body.scrollHeight,
-        body.offsetHeight,
-        html.clientHeight,
-        html.scrollHeight,
-        html.offsetHeight
-      );
-    }
+
+    let cleanupRender = null;
+    let renderPromise = null;
+    let animationsPrimed = false;
+    let mutationTimer = null;
+
+    const measurePageHeight = () => Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.clientHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    );
+
+    const doRender = async (options = {}) => {
+      const skipAnimations = typeof options === 'boolean' ? options : !!options.skipAnimations;
+
+      if (cleanupRender) {
+        cleanupRender();
+        cleanupRender = null;
+      }
+
+      // For click-based heatmaps, trigger animations once before measuring.
+      let height;
+      if (!isScrollMode && !skipAnimations && !animationsPrimed) {
+        height = await triggerAnimations(win, doc);
+        animationsPrimed = true;
+        console.log('Post-animation height:', height);
+      } else {
+        height = measurePageHeight();
+      }
 
     iframe.style.height = height + 'px';
     wrapper.style.height = height + 'px';
@@ -836,6 +898,72 @@ document.addEventListener('DOMContentLoaded', () => {
       lastHoveredEl = null;
       lastHighlightedEl = null;
     });
+
+    cleanupRender = () => {
+      interactionLayer.remove();
+      tooltip.remove();
+      try { if (highlightEl) highlightEl.remove(); } catch (e) {}
+    };
+    }; // end doRender
+
+    const requestRender = (options = {}) => {
+      if (renderPromise) {
+        return renderPromise;
+      }
+
+      renderPromise = doRender(options).finally(() => {
+        renderPromise = null;
+      });
+
+      return renderPromise;
+    };
+
+    window.abstRerenderHeatmap = requestRender;
+
+    const rerenderBtn = document.getElementById('abst-rerender-btn');
+    if (rerenderBtn) {
+      rerenderBtn.addEventListener('click', async () => {
+        rerenderBtn.disabled = true;
+        rerenderBtn.textContent = 'Re-rendering...';
+        try {
+          await requestRender({ skipAnimations: true });
+        } finally {
+          rerenderBtn.disabled = false;
+          rerenderBtn.textContent = '\u21ba Re-render';
+        }
+      });
+    }
+
+    await requestRender();
+
+    // Fallback for non-GSAP animations: debounce late style/class changes on
+    // tracked elements and redraw after the layout has settled.
+    const scheduleMutationRender = () => {
+      clearTimeout(mutationTimer);
+      mutationTimer = setTimeout(async () => {
+        heatmapContainer.style.transition = 'opacity 0.2s';
+        heatmapContainer.style.opacity = '0';
+        await new Promise(resolve => setTimeout(resolve, 200));
+        try {
+          await requestRender({ skipAnimations: true });
+        } finally {
+          heatmapContainer.style.opacity = '1';
+        }
+      }, 800);
+    };
+
+    if (!isScrollMode && heatmapRecords.length > 0) {
+      const mutationObserver = new MutationObserver(scheduleMutationRender);
+      const seenSelectors = new Set();
+      heatmapRecords.forEach(record => {
+        if (!record.selector || seenSelectors.has(record.selector)) return;
+        seenSelectors.add(record.selector);
+        try {
+          const el = doc.querySelector(record.selector);
+          if (el) mutationObserver.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+        } catch (e) {}
+      });
+    }
 
   }, { once: true });
 });

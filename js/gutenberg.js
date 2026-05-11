@@ -1,3 +1,33 @@
+(function() {
+  if (window.abstConsoleGateLoaded) return;
+  window.abstConsoleGateLoaded = true;
+
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('abstdebug') === '1') {
+      localStorage.setItem('debug', 'true');
+    }
+  } catch (e) {}
+
+  var originalLog = console.log ? console.log.bind(console) : function() {};
+  console.log = function() {
+    try {
+      if (localStorage.getItem('debug') !== 'true') return;
+    } catch (e) {
+      return;
+    }
+
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === 'string') {
+      args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+      args[0] = 'ABST: ' + args[0];
+    } else {
+      args.unshift('ABST:');
+    }
+    originalLog.apply(console, args);
+  };
+})();
+
 (function (blocks, editor, element, components) {
 
   const el = element.createElement;
@@ -194,7 +224,8 @@
             url: ajaxurl,
             data: {
               action: 'blocks_experiment_list',
-              search: search
+              search: search,
+              nonce: bt_gutenberg.blocks_list_nonce
             },
             success: function (response) {
               console.log('ABST: fetchExperiments AJAX success for:', cacheKey, 'results:', response.length);
@@ -254,7 +285,8 @@
             url: ajaxurl,
             data: {
               action: 'blocks_experiment_list',
-              exact_id: id
+              exact_id: id,
+              nonce: bt_gutenberg.blocks_list_nonce
             },
             success: function (response) {
               fetchingRef.current = false;
@@ -415,6 +447,7 @@
           data: {
             action: 'blocks_experiment_list',
             search: search,
+            nonce: bt_gutenberg.blocks_list_nonce,
           },
           success: function (response) {
             saveExperimentsToCache(cacheKey, response);
@@ -444,6 +477,7 @@
           data: {
             action: 'blocks_experiment_list',
             exact_id: id,
+            nonce: bt_gutenberg.blocks_list_nonce,
           },
           success: function (response) {
             saveExperimentsToCache(cacheKey, response);
