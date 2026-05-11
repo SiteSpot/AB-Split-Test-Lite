@@ -19841,6 +19841,8 @@ function abst_heatmaps_page_content() {
 
       echo '<button id="abst-rerender-btn" class="abst-rerender-floating-btn" type="button" title="Re-render heatmap after resizing or animated elements move">&#8635; Re-render</button>';
 
+      echo '<label class="abst-rerender-auto-label" title="Automatically re-render after scrolling stops or the window is resized">[ <input id="abst-rerender-auto" type="checkbox" /> Auto ]</label>';
+
       echo '</div>';
 
       echo '<div class="abst-heatmap-wrapper" style="position: relative; max-width: '.intval($screenWidth).'px; width:calc(100% - 20px); margin: 0 auto 40px; border: 10px solid #d9d9d9; box-shadow: 0 1px 10px -4px black;">';

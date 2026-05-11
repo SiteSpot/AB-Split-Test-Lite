@@ -921,12 +921,23 @@ document.addEventListener('DOMContentLoaded', () => {
     window.abstRerenderHeatmap = requestRender;
 
     const rerenderBtn = document.getElementById('abst-rerender-btn');
+    const autoRerenderToggle = document.getElementById('abst-rerender-auto');
+    let autoRerenderTimer = null;
+    let lastAutoRenderSize = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+
     if (rerenderBtn) {
       rerenderBtn.addEventListener('click', async () => {
         rerenderBtn.disabled = true;
         rerenderBtn.textContent = 'Re-rendering...';
         try {
           await requestRender({ skipAnimations: true });
+          lastAutoRenderSize = {
+            width: window.innerWidth,
+            height: window.innerHeight
+          };
         } finally {
           rerenderBtn.disabled = false;
           rerenderBtn.textContent = '\u21ba Re-render';
@@ -934,7 +945,36 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    const scheduleAutoRerender = (reason) => {
+      if (!autoRerenderToggle || !autoRerenderToggle.checked) return;
+
+      if (reason === 'resize') {
+        const sizeChanged = window.innerWidth !== lastAutoRenderSize.width || window.innerHeight !== lastAutoRenderSize.height;
+        if (!sizeChanged) return;
+      }
+
+      clearTimeout(autoRerenderTimer);
+      autoRerenderTimer = setTimeout(async () => {
+        if (!autoRerenderToggle.checked) return;
+
+        await requestRender({ skipAnimations: true });
+        lastAutoRenderSize = {
+          width: window.innerWidth,
+          height: window.innerHeight
+        };
+      }, 1000);
+    };
+
+    if (autoRerenderToggle) {
+      window.addEventListener('scroll', () => scheduleAutoRerender('scroll'), { passive: true });
+      window.addEventListener('resize', () => scheduleAutoRerender('resize'), { passive: true });
+    }
+
     await requestRender();
+    lastAutoRenderSize = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
 
     // Fallback for non-GSAP animations: debounce late style/class changes on
     // tracked elements and redraw after the layout has settled.

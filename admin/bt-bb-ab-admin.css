@@ -3213,6 +3213,7 @@ div#wpfooter {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    gap: 8px;
     margin: 0 auto 0;
     padding: 8px 0;
     pointer-events: none;
@@ -3237,6 +3238,26 @@ div#wpfooter {
     border-color: #94a3b8;
     color: #1e293b;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+}
+
+.abst-rerender-auto-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 9px;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: pointer;
+    pointer-events: auto;
+    border: 1px solid #d0d5dd;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+}
+
+.abst-rerender-auto-label input {
+    margin: 0;
 }
 
 /* Select2 overrides for heatmaps */
