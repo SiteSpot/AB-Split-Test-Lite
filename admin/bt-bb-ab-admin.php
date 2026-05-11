@@ -317,8 +317,7 @@ class BT_BB_AB_Admin {
 
   public function view( $file, $data = [] ) 
   {
-    extract($data);
-
+    // $data available to the included template via the local scope
     include plugin_dir_path( dirname( __FILE__ ) ) .'admin/partials/'. $file .'.php';
   }
 

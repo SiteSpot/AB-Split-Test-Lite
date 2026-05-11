@@ -96,7 +96,8 @@ jQuery(function ($) {
                 url: bt_adminurl + 'admin-ajax.php',
                 type: 'POST',
                 data: {
-                    action: 'abst_remove_heatmap_data'
+                    action: 'abst_remove_heatmap_data',
+                    nonce: abstAgencyHubVars.clearHeatmapNonce
                 },
                 success: function(response) {
                     alert(response.data);

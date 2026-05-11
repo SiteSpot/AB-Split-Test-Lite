@@ -43,7 +43,7 @@ class BT_BB_AB_Supports
 
 	public function render_ab_test_html()
 	{
-		if( ! wp_verify_nonce( $_POST['nonce'], 'bt_gutenberg_ab_test_html' ) ) { wp_die('sorry..'); }
+		if( ! isset($_POST['nonce']) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'bt_gutenberg_ab_test_html' ) ) { wp_die('sorry..'); }
 
 		$attr = '';
 
@@ -82,14 +82,19 @@ class BT_BB_AB_Supports
 	public function support_ab_redirect_variation( $atts,$content )
 	{
 
-		$attr = extract(shortcode_atts([
+		$attr = shortcode_atts([
         'eid' => -1,
 		'id' => -1,
         'variation' => '',
         'class' => ''
-      ], $atts));
+      ], $atts);
 
-		if(empty($eid))
+		$eid = $attr['eid'];
+		$id = $attr['id'];
+		$variation = $attr['variation'];
+		$class = $attr['class'];
+
+		if(empty($eid) || $eid == -1)
 			$eid = $id;
 
       ob_start();

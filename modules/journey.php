@@ -200,11 +200,11 @@ class ABST_Journeys {
                 abst_log('Created journey directory');
 
                 // Prevent directory listing
-                file_put_contents(ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>');
+                abst_put_contents(ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>');
 
                 // Block direct file access (Apache/LiteSpeed). Nginx sites require a
                 // server-level rule: location ~* /abst-journeys/ { deny all; }
-                file_put_contents(ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all');
+                abst_put_contents(ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all');
 
             }
 
@@ -346,6 +346,14 @@ class ABST_Journeys {
 
         }
 
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_clear_heatmap_data')) {
+
+            wp_send_json_error('Security check failed');
+
+            return;
+
+        }
+
         
 
         abst_log('Clearing all heatmap data');
@@ -470,7 +478,7 @@ class ABST_Journeys {
 
                     // Write compressed file with exclusive lock
 
-                    $written = @file_put_contents($gz_file, $gz_data, LOCK_EX);
+                    $written = abst_put_contents($gz_file, $gz_data);
 
                     if ($written === false) {
 
@@ -1032,7 +1040,7 @@ class ABST_Journeys {
 
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
 
-            $written = file_put_contents($journey_file, $journey_data_string, FILE_APPEND | LOCK_EX);
+            $written = abst_put_contents($journey_file, $journey_data_string, true);
 
             if ($written !== false) {
 

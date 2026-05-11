@@ -182,7 +182,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       // AI insight hooks removed in lite version (no calls home to absplittest.com)
 
-      add_action( 'wp_ajax_abst_export_data', [$this, 'abst_export_data'] ); // export test data to csv logge
+      // Export data is a Pro feature — handler removed in Lite
 
       //save_variation_label 
 
@@ -1089,7 +1089,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $magic_def = abst_normalize_magic_definition($magic_def);
 
-        update_post_meta($test->ID, 'magic_definition', wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        update_post_meta($test->ID, 'magic_definition', wp_wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $updated++;
 
@@ -1332,13 +1332,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
         'class' => ''
       ], $atts);
       
-      extract($attr);
-
       ob_start();
 
 
 
-      echo '<div class="bt-abtest-wrap '. esc_attr($class) .'" bt-eid="'. intval($eid) .'" bt-variation="'. esc_attr($variation) .'">';
+      echo '<div class="bt-abtest-wrap '. esc_attr($attr['class']) .'" bt-eid="'. intval($attr['eid']) .'" bt-variation="'. esc_attr($attr['variation']) .'">';
 
         echo wp_kses_post($content);
 
@@ -1740,9 +1738,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<script ".esc_attr(ABST_CACHE_EXCLUDES)." id='abst_conv_details'>
 
-          var conversion_details = ".json_encode($conversion_pages).";
+          var conversion_details = ".wp_json_encode($conversion_pages).";
 
-          var current_page = ".json_encode($target_post_id).";
+          var current_page = ".wp_json_encode($target_post_id).";
 
         </script>";
 
@@ -1881,7 +1879,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           }
 
-          $data['magic_definition'] = json_encode($magic_def);
+          $data['magic_definition'] = wp_json_encode($magic_def);
 
         }
 
@@ -2039,7 +2037,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           // Re-encode as JSON
 
-          $magic_definition = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+          $magic_definition = wp_json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
       } else {
 
@@ -2083,7 +2081,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     }
 
-    $page_variations = array_map( 'esc_attr', $page_variations );
+    $page_variations = array_map( 'sanitize_text_field', $page_variations );
 
 
 
@@ -2133,7 +2131,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     //css test
 
-    $css_test_variations = intval($data['css_test_variations']);
+    $css_test_variations = intval($data['css_test_variations'] ?? 0);
 
     update_post_meta( $post_id, 'css_test_variations', $css_test_variations );
 
@@ -2159,7 +2157,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     //url query
 
-    $url_query = sanitize_textarea_field($data['bt_experiments_url_query']);
+    $url_query = sanitize_textarea_field($data['bt_experiments_url_query'] ?? '');
 
     update_post_meta( $post_id, 'url_query', $url_query );
 
@@ -2175,13 +2173,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     $allowed_roles = isset( $data['bt_allowed_roles'] ) ? (array) $data['bt_allowed_roles'] : [];
 
-    $allowed_roles = array_map( 'esc_attr', $allowed_roles );
+    $allowed_roles = array_map( 'sanitize_text_field', $allowed_roles );
 
     update_post_meta( $post_id, 'bt_allowed_roles', $allowed_roles );
 
 
 
-    $target_percentage = sanitize_text_field($data['bt_experiments_target_percentage']);
+    $target_percentage = sanitize_text_field($data['bt_experiments_target_percentage'] ?? '100');
 
     if($target_percentage == '')
 
@@ -2207,7 +2205,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    $conversion_page = sanitize_text_field($data['bt_experiments_conversion_page']);
+    $conversion_page = sanitize_text_field($data['bt_experiments_conversion_page'] ?? '');
 
     $conversion_time = isset($data['bt_experiments_conversion_time']) ? intval($data['bt_experiments_conversion_time']) : 0;
 
@@ -2227,7 +2225,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     if($conversion_page == 'page') // if its a page the get the page int for back compat its one field
 
-      $conversion_page = intval($data['bt_experiments_conversion_page_selector']);
+      $conversion_page = intval($data['bt_experiments_conversion_page_selector'] ?? 0);
 
 
 
@@ -2247,7 +2245,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     if( $conversion_page == 'url' ){
 
-      $conversion_url = sanitize_text_field( $data['bt_experiments_conversion_url'] );
+      $conversion_url = sanitize_text_field( $data['bt_experiments_conversion_url'] ?? '' );
 
       $conversion_url = str_replace(site_url(),"",$conversion_url); // remove the site URL if entered in error
 
@@ -2275,7 +2273,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     if( $conversion_page == 'selector' )
 
-      $conversion_selector = sanitize_text_field( $data['bt_experiments_conversion_selector'] );
+      $conversion_selector = sanitize_text_field( $data['bt_experiments_conversion_selector'] ?? '' );
 
     else
 
@@ -3187,7 +3185,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo json_encode($data);
+        echo wp_wp_json_encode($data);
 
       }
 
@@ -3235,7 +3233,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             "name":"'.esc_html($data['post_title']).'"
 
-        },"*");
+        }, window.location.origin);
 
 
 
@@ -3245,7 +3243,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           if (event.key === "Escape") {
 
-            window.parent.postMessage("abclosemodal","*");
+            window.parent.postMessage("abclosemodal", window.location.origin);
 
           }
 
@@ -3337,7 +3335,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         abst_log('variation label saved: ' . $variation_name . ' for variation id ' . $variation_id . ' for test id ' . $pid);
 
-        echo json_encode(array('success' => true, 'variation_meta' => $variation_meta));
+        wp_send_json(array('success' => true, 'variation_meta' => $variation_meta));
 
       }
 
@@ -3345,11 +3343,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo json_encode(array('success' => false, 'error' => 'Invalid post type'));
+        wp_send_json(array('success' => false, 'error' => 'Invalid post type'));
 
       }
-
-      wp_die();
 
     }
 
@@ -5511,7 +5507,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           // If valid JSON, pretty print it for better readability
 
-          $formatted_json = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+          $formatted_json = wp_json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
           echo "<div class='abst-magic-summary'>";
 
@@ -6301,7 +6297,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         );
 
-        echo '<code><pre>' . esc_html(wp_json_encode($webhook_sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre></code></div>';
+        echo '<code><pre>' . esc_html(wp_wp_json_encode($webhook_sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre></code></div>';
 
       }
 
@@ -7051,7 +7047,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         abst_log("Error deleting variation. Could not find variation.");
 
-        abst_log(json_encode($obs));
+        abst_log(wp_json_encode($obs));
 
         echo "Error deleting variation. Could not find variation."; //print_r($obs, true);
 
@@ -10534,7 +10530,7 @@ $titles = array();
 
     if(!empty($observations)) {
 
-      echo "<script>var abtestChartData = " . json_encode($observations) . ";</script>";
+      echo "<script>var abtestChartData = " . wp_json_encode($observations) . ";</script>";
 
 
 
@@ -11231,7 +11227,7 @@ echo "    if( selectval !== 'url' )
 
       // Use fallback strategy for server events cookie (2 days expiry)
 
-      abst_set_cookie_with_fallback('abst_server_events', json_encode($events), 2);
+      abst_set_cookie_with_fallback('abst_server_events', wp_json_encode($events), 2);
 
       abst_log('set server event cookie for ' . $eid . ' with variation ' . $variation . ' and type ' . $type);
 
@@ -12319,6 +12315,8 @@ echo "    if( selectval !== 'url' )
 
         'syncNonce'       => wp_create_nonce( 'abst_agency_sync_site' ),
 
+        'clearHeatmapNonce' => wp_create_nonce( 'abst_clear_heatmap_data' ),
+
       ] );
 
       //dropdowns      
@@ -12411,17 +12409,13 @@ echo "    if( selectval !== 'url' )
 
         wp_reset_postdata();
 
-        echo json_encode( [] );
-
-        die;
+        wp_send_json( [] );
 
       }
 
       if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'abst_page_selector')) {
 
-        echo json_encode( [] );
-
-        die;
+        wp_send_json( [] );
 
       }
 
@@ -12563,9 +12557,7 @@ echo "    if( selectval !== 'url' )
 
           wp_reset_postdata();
 
-          echo json_encode( array_values($results)  );
-
-          die;
+          wp_send_json( array_values($results) );
 
         }
 
@@ -12577,9 +12569,7 @@ echo "    if( selectval !== 'url' )
 
           wp_reset_postdata();
 
-          echo json_encode( [] );
-
-          die;
+          wp_send_json( [] );
 
         }
 
@@ -12705,9 +12695,7 @@ echo "    if( selectval !== 'url' )
 
         // Convert associative array to indexed array for JSON output
 
-        echo json_encode( array_values($results) );
-
-        die;
+        wp_send_json( array_values($results) );
 
       }
 
@@ -12877,7 +12865,9 @@ echo "    if( selectval !== 'url' )
 
     function bt_generate_embed_code(){ // iframe embed code. make sure your server has x frame options to allow remote domain, or 'all' if you are feeling frisky
 
-    if( ! wp_verify_nonce( $_POST['nonce'], 'btexperimentexturlnonce' ) ) { wp_die('sorry...'); }
+    if (!current_user_can('edit_posts')) { wp_die('Unauthorized'); }
+
+    if( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'btexperimentexturlnonce' ) ) { wp_die('sorry...'); }
 
     
 
@@ -13357,7 +13347,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           $js.='
 
-            bt_experiments["'.$k.'"] = '.json_encode($v).';
+            bt_experiments["'.$k.'"] = '.wp_json_encode($v).';
 
           ';
 
@@ -14181,7 +14171,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       echo "var bt_homeurl = '" . esc_js( home_url() ) . "';";
 
-      echo "window.btab_vars = Object.assign(window.btab_vars || {}, " . json_encode($btab_vars) . ");";
+      echo "window.btab_vars = Object.assign(window.btab_vars || {}, " . wp_json_encode($btab_vars) . ");";
 
       $js = "var bt_experiments = {};
 
@@ -14195,7 +14185,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         {
 
-          $js.='bt_experiments["'.$k.'"] = '.json_encode($v).';';
+          $js.='bt_experiments["'.$k.'"] = '.wp_json_encode($v).';';
 
         }
 
@@ -14944,7 +14934,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               abst_log( 'Log  ERROR: ' . $error );
 
-              echo( json_encode(array('error'=>$error)) );
+              echo( wp_json_encode(array('error'=>$error)) );
 
               die();
 
@@ -15002,7 +14992,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           } else {
 
-            echo( json_encode(array('error'=>$error)) );
+            echo( wp_json_encode(array('error'=>$error)) );
 
             die();
 
@@ -15102,7 +15092,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         } else {
 
-          echo( json_encode(['success' => true]) );
+          echo( wp_json_encode(['success' => true]) );
 
           die();
 
@@ -16450,7 +16440,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $request->set_header('Content-Type', 'application/json');
 
-      $request->set_body(json_encode($input));
+      $request->set_body(wp_json_encode($input));
 
       $response = $this->rest_create_test($request);
 
@@ -16518,7 +16508,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $request->set_header('Content-Type', 'application/json');
 
-      $request->set_body(json_encode($input));
+      $request->set_body(wp_json_encode($input));
 
       $response = $this->rest_update_test_status($request);
 
@@ -16542,7 +16532,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $request->set_header('Content-Type', 'application/json');
 
-      $request->set_body(json_encode($input));
+      $request->set_body(wp_json_encode($input));
 
       $response = $this->rest_update_test_settings($request);
 
@@ -17527,7 +17517,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           if (json_last_error() === JSON_ERROR_NONE) {
 
-            $magic_def = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $magic_def = wp_json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
           }
 
@@ -17535,7 +17525,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           // If it's an array, encode it
 
-          $magic_def = json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+          $magic_def = wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         }
 
@@ -17804,7 +17794,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if (!empty($params['allowed_roles']) && is_array($params['allowed_roles'])) {
 
-        $allowed_roles = array_map('esc_attr', $params['allowed_roles']);
+        $allowed_roles = array_map('sanitize_text_field', $params['allowed_roles']);
 
         update_post_meta($test_id, 'bt_allowed_roles', $allowed_roles);
 
@@ -18051,19 +18041,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           $response['text'] = 'You do not have permission to reset these results.';
 
-          echo json_encode($response);
-
-          wp_die();
+          wp_send_json($response);
 
         }
 
-        
+
 
         //query for an experiment that this user can edit
 
         $experiment = get_post($eid);
 
-        
+
 
         if(!$experiment)
 
@@ -18071,13 +18059,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           $response['text'] = 'Not found.';
 
-          echo json_encode($response);
-
-          wp_die();
+          wp_send_json($response);
 
         }
 
-        
+
 
           //clear meta
 
@@ -18087,7 +18073,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           update_post_meta($eid,'ab-test-winner',false);
 
-          
+
 
           //update published date
 
@@ -18095,7 +18081,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               'ID' => $eid,
 
-              'post_date' => current_time( 'Y-m-d H:i:s' ), // UPDATE 
+              'post_date' => current_time( 'Y-m-d H:i:s' ), // UPDATE
 
               'post_status' => 'publish', // make active again if necess
 
@@ -18103,15 +18089,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           wp_update_post( $post );
 
-        
+
 
           $response['text'] = 'Results reset. Reloading page.';
 
           $response['success'] = true;
 
-          echo json_encode($response);
-
-          wp_die();
+          wp_send_json($response);
 
       }
 
@@ -18121,11 +18105,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           $response['text'] = 'Try again later.';
 
-          echo json_encode($response);
+          wp_send_json($response);
 
-          wp_die();
-
-      }      
+      }
 
     }
 
@@ -18583,7 +18565,7 @@ function abst_log($message, $level = 'info') {
 
   if (is_array($message) || is_object($message)) {
 
-    $message = json_encode($message);
+    $message = wp_json_encode($message);
 
   }
 
@@ -18597,10 +18579,23 @@ function abst_log($message, $level = 'info') {
 
   // Write to log file
 
-  file_put_contents($log_file, $log_entry, FILE_APPEND);
+  abst_put_contents($log_file, $log_entry, true);
 
-  
 
+
+}
+
+function abst_put_contents($file, $content, $append = false) {
+  global $wp_filesystem;
+  if (empty($wp_filesystem)) {
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    WP_Filesystem();
+  }
+  if ($append && $wp_filesystem->exists($file)) {
+    $existing = $wp_filesystem->get_contents($file);
+    $content = $existing . $content;
+  }
+  return $wp_filesystem->put_contents($file, $content, FS_CHMOD_FILE);
 }
 
 
@@ -19081,7 +19076,7 @@ function abst_heatmaps_page_content() {
   echo '<span style="margin-right: 10px;">' . esc_html($heatmap_page_title) . '</span>';
 
   $settings_page_slug = class_exists('BT_BB_AB_Admin') ? BT_BB_AB_Admin::$page_slug : 'bt_bb_ab_test';
-  echo '<a href="' . esc_url(admin_url('options-general.php?page=' . $settings_page_slug . '#tab-heatmaps')) . '" class="button button-secondary">Change page</a>';
+  echo '<a href="' . esc_url(admin_url('options-general.php?page=' . $settings_page_slug . '#heatmaps')) . '" class="button button-secondary">Change page</a>';
 
   echo '</div></div>';
 
@@ -19860,7 +19855,7 @@ function abst_heatmaps_page_content() {
 
     echo '<script>';
 
-    echo 'window.heatmapRecords = ' . wp_json_encode($data) . ';';
+    echo 'window.heatmapRecords = ' . wp_wp_json_encode($data) . ';';
 
     // Aggregate click counts per selector for hover tooltip
 
@@ -19882,11 +19877,11 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo 'window.heatmapClickCounts = ' . wp_json_encode($click_counts) . ';';
+    echo 'window.heatmapClickCounts = ' . wp_wp_json_encode($click_counts) . ';';
 
-    echo 'window.variations = ' . wp_json_encode($variations) . ';';
+    echo 'window.variations = ' . wp_wp_json_encode($variations) . ';';
 
-    echo 'window.scrollMap = ' . wp_json_encode([
+    echo 'window.scrollMap = ' . wp_wp_json_encode([
 
       'distribution' => $scroll_distribution,
 
@@ -19896,7 +19891,7 @@ function abst_heatmaps_page_content() {
 
     ]) . ';';
 
-    echo 'window.abstHeatmapMode = ' . wp_json_encode($selected_mode) . ';';
+    echo 'window.abstHeatmapMode = ' . wp_wp_json_encode($selected_mode) . ';';
 
     echo '
 
@@ -21262,7 +21257,7 @@ function abst_logs_page_content() {
 
   if (isset($_POST['clear_logs']) && current_user_can('manage_options')) {
 
-    file_put_contents($log_file, '');
+    abst_put_contents($log_file, '');
 
     echo '<div class="notice notice-success"><p>Logs cleared successfully.</p></div>';
 
@@ -21580,7 +21575,7 @@ function abst_trim_abst_log() {
 
         $lines = array_slice($lines, -500);
 
-        file_put_contents($log_file, implode('', $lines));
+        abst_put_contents($log_file, implode('', $lines));
 
         abst_log('Log trimmed from ' . $line_count . ' to 500 lines');
 
@@ -22044,13 +22039,13 @@ function abst_create_test_from_results_data($filename, $data) {
 
     $magic_definition = abst_create_sample_magic_definition($filename);
 
-    update_post_meta($test_id, 'magic_definition', json_encode($magic_definition));
+    update_post_meta($test_id, 'magic_definition', wp_json_encode($magic_definition));
 
     
 
     // Store the sample results data
 
-    update_post_meta($test_id, 'sample_results', json_encode($data));
+    update_post_meta($test_id, 'sample_results', wp_json_encode($data));
 
     
 
@@ -22186,7 +22181,7 @@ function abst_create_test_from_structured_data($data) {
 
         if ($key === 'magic_definition') {
 
-          $value = json_encode($value);
+          $value = wp_json_encode($value);
 
         } elseif ($key === 'observations' && is_array($value)) {
 
@@ -22194,7 +22189,7 @@ function abst_create_test_from_structured_data($data) {
 
         } elseif ($key === 'bt_allowed_roles' && is_array($value)) {
 
-          $value = array_map('esc_attr', $value);
+          $value = array_map('sanitize_text_field', $value);
 
         } elseif ($key === 'goals' && is_array($value)) {
 

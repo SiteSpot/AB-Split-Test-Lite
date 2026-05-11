@@ -221,7 +221,7 @@ if (!is_array($heatmap_pages)) {
 
         jQuery(document).ready(function($) {
 
-          var savedPages = <?php echo json_encode($heatmap_pages); ?>;
+          var savedPages = <?php echo wp_json_encode($heatmap_pages); ?>;
 
           
 
@@ -695,7 +695,7 @@ if (!is_array($heatmap_pages)) {
 
               <label><strong>Page Selection</strong></label>
 
-              <p>Choose the page you want to generate heatmaps for. Defaults to homepage.</p>
+              <p>Choose the page you want to track users anonymously and generate click heatmaps for.</p>
               <p><select id="heatmap_page_select" name="heatmap_pages[]" style="width: 25rem;"></select></p>
               <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to track heatmaps & session replays on any page.</a></p>
 

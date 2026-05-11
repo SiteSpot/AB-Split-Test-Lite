@@ -22,6 +22,9 @@ class BT_BB_AB_Bricks
 	}
 
 function all_ab_tests_json( ) {
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error('Unauthorized');
+    }
     wp_send_json($this->tests_with_id());
 }
 
