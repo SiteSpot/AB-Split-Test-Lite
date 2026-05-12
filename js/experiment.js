@@ -275,7 +275,16 @@ jQuery(document).ready(function() {
 
     
 
-    jQuery( '#bt_experiments_full_page_default_page, #bt_experiments_conversion_page_selector' ).select2(acattrs);
+    jQuery( '#bt_experiments_full_page_default_page' ).select2(window.acattrs);
+
+    // Initialize conversion page selector separately with its own config (no AJAX, uses server-rendered options)
+    var conversionPageAttrs = {
+        width: '25rem',
+        dropdownAutoWidth: true,
+        placeholder: 'Choose Page',
+        allowClear: true
+    };
+    jQuery( '#bt_experiments_conversion_page_selector' ).select2(conversionPageAttrs);
 
 
 
@@ -283,9 +292,9 @@ jQuery(document).ready(function() {
 
 
 
-    acattrs.multiple=true;
+    window.acattrs.multiple=true;
 
-    acattrs['ajax'] = {
+    window.acattrs['ajax'] = {
 
       url: ajaxurl, // AJAX URL is predefined in WordPress admin
 
@@ -341,7 +350,7 @@ jQuery(document).ready(function() {
 
 
 
-  jQuery( '#page_variations' ).select2(acattrs);
+  jQuery( '#page_variations' ).select2(window.acattrs);
 
 
 
@@ -405,9 +414,9 @@ jQuery(document).ready(function() {
 
 
 
-  acattrs.multiple=false;
+  window.acattrs.multiple=false;
 
-  jQuery( '.goal-page' ).select2(acattrs);
+  jQuery( '.goal-page' ).select2(window.acattrs);
 
 
 

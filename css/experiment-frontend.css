@@ -1038,11 +1038,29 @@ margin: 0 -13px -13px -13px;
     transition: background 0.15s, border-color 0.15s;
 }
 #abst-magic-bar button#abst-magic-bar-save-draft:hover {
-    background: #e4e4e7 !important;
+    background: #e8eaed !important;
     border-color: #c3c4c7 !important;
 }
 #abst-magic-bar button#abst-magic-bar-save-draft:active {
     background: #dcdcde !important;
+}
+.click-to-start-help #abst-magic-bar-show-tour {
+    margin-top: 20px;
+    color: #9e9e9e !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.01em;
+    border-radius: 9px !important;
+    padding: 8px 16px !important;
+    background: transparent !important;
+    border: 1px solid #dcdcde !important;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.click-to-start-help #abst-magic-bar-show-tour:hover {
+    background: #f0f0f1 !important;
+    color: #646970 !important;
+    border-color: #c3c4c7 !important;
 }
 
 #abst-magic-bar .abst-add-goal-button, #imageSelector{

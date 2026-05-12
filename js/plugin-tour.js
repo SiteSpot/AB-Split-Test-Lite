@@ -131,29 +131,7 @@ function wizard1(){
             }
         ]
     });
-    if(jQuery('.licence-key-activated').length == 0) {
-        tour.addStep({
-            title: 'Settings and Licence',
-            text: 'Your licence key is pre filled. Click to activate remote updates and your included features.',
-            attachTo: {
-                element: '.licence-key-input',
-                on: 'top'
-            },
-            buttons: [
-                {
-                    action: tour.back,
-                    text: 'Back'
-                },
-                {
-                    action: tour.next,
-                    text: 'Next'
-                }
-            ]
-        });
-        window.localStorage.wiz = 1;
-        }
-    
-    
+
     tour.addStep({
         title: 'Post Types',
         text: 'You can test on Pages and posts by default, but choose anything you want here.',
@@ -172,7 +150,6 @@ function wizard1(){
             }
         ]
     });
-
 
     if(jQuery('.ab-settings-open-ai').length > 0) {
         tour.addStep({

@@ -406,8 +406,8 @@ function findBestMatchingElement(searchText) {
     var bestMatch = null;
     var bestMatchScore = 0;
     
-    jQuery('h1, h2, h3, h4, h5, h6, p, a, button, span, li, div').not('#wpadminbar *, #abst-magic-bar *, .cro-chat-test-bubble, .abst-cro-chat-message *').each(function() {
-        if (jQuery(this).is(':hidden') || jQuery(this).closest('#wpadminbar, #abst-magic-bar').length) return;
+    jQuery('h1, h2, h3, h4, h5, h6, p, a, button, span, li, div').not('#wpadminbar *, #abst-magic-bar *, .shepherd-element *, .shepherd-modal-overlay-container *, .cro-chat-test-bubble, .abst-cro-chat-message *').each(function() {
+        if (jQuery(this).is(':hidden') || jQuery(this).closest('#wpadminbar, #abst-magic-bar, .shepherd-element, .shepherd-modal-overlay-container').length) return;
         
         // Get text content - replace <br> with space
         var $clone = jQuery(this).clone();
@@ -593,7 +593,7 @@ jQuery(function(){
 
   jQuery(document).on('mousedown', function(e) {
     var target = e.target;
-    var keepActive = jQuery(target).closest('#variation-editor-container, #ai-suggestions').length > 0 || isWithinSelectedMagicElement(target);
+    var keepActive = jQuery(target).closest('#variation-editor-container, #ai-suggestions, .shepherd-element, .shepherd-modal-overlay-container').length > 0 || isWithinSelectedMagicElement(target);
     if (!keepActive) {
         setVariationEditorActive(false);
     }
@@ -605,7 +605,7 @@ jQuery(function(){
 
   jQuery(document).on('mousedown', function(e) {
     var target = e.target;
-    var keepActive = jQuery(target).closest('.abst-goals-container').length > 0;
+    var keepActive = jQuery(target).closest('.abst-goals-container, .shepherd-element, .shepherd-modal-overlay-container').length > 0;
     if (!keepActive) {
         jQuery('.abst-goals-container').removeClass('is-active');
     }
@@ -2040,7 +2040,7 @@ function selectorDetection(){
             return false;
 
         // dont do for #wpadminbar parent or .mce-panel
-        if (jQuery(element).parents('.mce-panel').length > 0 || jQuery(element).parents('#wpadminbar').length > 0 || jQuery(element).parents('.abst-variation').length > 0) {
+        if (jQuery(element).parents('.mce-panel').length > 0 || jQuery(element).parents('#wpadminbar').length > 0 || jQuery(element).parents('.abst-variation').length > 0 || jQuery(element).parents('.shepherd-element').length > 0 || jQuery(element).parents('.shepherd-modal-overlay-container').length > 0) {
             return false;
         }
 
@@ -2158,7 +2158,7 @@ function selectorDetection(){
 
 
         // Allow normal interaction inside the magic bar and admin bar UI
-        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar'))) {
+        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.shepherd-element') || e.target.closest('.shepherd-modal-overlay-container'))) {
             return;
         }
 
@@ -2240,7 +2240,9 @@ function selectorDetection(){
         // Allow clicks on #wpadminbar and #abst-magic-bar (and their children)
         if (
             (target.closest && target.closest('#wpadminbar')) ||
-            (target.closest && target.closest('#abst-magic-bar'))
+            (target.closest && target.closest('#abst-magic-bar')) ||
+            (target.closest && target.closest('.shepherd-element')) ||
+            (target.closest && target.closest('.shepherd-modal-overlay-container'))
         ) {
             return; // Allow normal behavior
         }
@@ -2925,6 +2927,7 @@ function abst_magic_bar(options = {}) {
             <h3 style="color: #9e9e9e;">Create a Split Test.</h3>
             <p style="font-size: 24px; line-height: 1.25; margin: 40px 0 8px;">To start: Click the element you want to change.</p>
             <p style="font-size: 12px; line-height: 1.6; margin: 40px 0 20px 0; color: #9e9e9e;">Not sure what to test? Upgrade to unlock AI agent suggestions and ChatCRO guidance.</p>
+            <button id="abst-magic-bar-show-tour" class="abst-magic-bar-show-tour" onclick="window.restartMagicTour()">Show Tour</button>
         </div>
         <!-- Test Name - Hidden until test starts -->
         <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">
@@ -4338,14 +4341,14 @@ function get_abst_pageselector() {
     jQuery.ajax({
         url: bt_ajaxurl,
         type: 'GET',
+        dataType: 'json',
         data: {
             action: 'ab_page_selector',
             nonce: (typeof abst_magic_data !== 'undefined') ? abst_magic_data.page_selector_nonce : ''
         },
         success: function(response) {
-        response = JSON.parse(response);
-        response.unshift(['', "Choose a Page"]);
-        window.abst_magic_data.pages = response;
+            response.unshift(['', "Choose a Page"]);
+            window.abst_magic_data.pages = response;
         }
     });
 }

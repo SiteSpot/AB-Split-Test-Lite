@@ -10639,13 +10639,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $foundConversion = false;
 
-      foreach($allPublicPosts as $post)
+      foreach($allPublicPosts as $publicPost)
 
       {
 
         $selected = '';
 
-        if($post->ID == $conversion_page){
+        if($publicPost->ID == $conversion_page){
 
           $selected = 'selected';
 
@@ -10653,7 +10653,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         }
 
-        $select .="<option value='" . esc_attr($post->ID) . "' " . $selected . ">" . esc_html($post->post_title) . ": " . esc_html($post->post_type) . ' ' . esc_html($post->post_name) . "</option>";
+        $select .="<option value='" . esc_attr($publicPost->ID) . "' " . $selected . ">" . esc_html($publicPost->post_title) . ": " . esc_html($publicPost->post_type) . ' ' . esc_html($publicPost->post_name) . "</option>";
 
       }
 
@@ -11945,6 +11945,13 @@ echo "    if( selectval !== 'url' )
     if(current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
 
       wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
+
+    // Enqueue Shepherd for Magic Bar tour when ?abmagic is active
+    if (isset($_GET['abmagic'])) {
+      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__));
+      wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('ab-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('shepherd-js', 'ab_test_highlighter'), BT_AB_TEST_VERSION, true);
+    }
 
     }
 
