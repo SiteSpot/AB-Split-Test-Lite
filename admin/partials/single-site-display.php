@@ -201,7 +201,7 @@ if (!is_array($heatmap_pages)) {
 
   
 
-  <form id="bt-bb-ab-form" action="<?php echo esc_html(BT_BB_AB_Admin::get_current_settings_url()); ?>" method="post">
+  <form id="bt-bb-ab-form" action="<?php echo esc_url(BT_BB_AB_Admin::get_current_settings_url()); ?>" method="post">
 
     <?php wp_nonce_field('bt-bb-ab-nonce', 'bt-bb-ab-nonce'); ?>
 
@@ -209,7 +209,7 @@ if (!is_array($heatmap_pages)) {
 
 
 
-      <p>Need a hand? Watch the <a href="<?php echo esc_html(admin_url()) ?>options-general.php?page=bt_bb_ab_test&wizard=1">walkthrough video</a>  or check out the <a href="https://absplittest.com/documentation/" target="_blank">documentation</a>.</p>
+      <p>Need a hand? Watch the <a href="<?php echo esc_url(admin_url('options-general.php?page=bt_bb_ab_test&wizard=1')); ?>">walkthrough video</a>  or check out the <a href="https://absplittest.com/documentation/" target="_blank">documentation</a>.</p>
 
 
 
@@ -332,7 +332,7 @@ if (!is_array($heatmap_pages)) {
 
             <div class="video-container">
 
-              <iframe src="https://share.descript.com/embed/Vbz3Q3aJu05" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+              <a href="https://share.descript.com/view/Vbz3Q3aJu05" target="_blank" class="button button-secondary">▶ Watch Video</a>
 
             </div>
 
@@ -348,7 +348,7 @@ if (!is_array($heatmap_pages)) {
 
             <h3>Quick Start</h3>
 
-            <p>1. <a href="#license">Activate your license</a></p>
+            <p>1. Install and activate the plugin</p>
 
             <p>2. Create your first test from any post or page</p>
 
@@ -541,25 +541,7 @@ if (!is_array($heatmap_pages)) {
 
             </ul>
 
-            <?php if ($user_level == 'free') { echo wp_kses_post($upgrade_link); } else { ?>
-
-            <p><input type="checkbox" class="ab-toggle" id="use_uuid" name="use_uuid" value="1" <?php echo esc_attr($use_uuid); ?> /> <strong>Enable advanced tracking</strong></p>
-
-            <div id="uuid_settings_area" style="<?php echo empty($use_uuid) ? 'display:none;' : ''; ?>">
-
-              <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-
-              
-
-              <label for="uuid_length"><strong>Visitor Tracking Duration</strong></label>
-
-              <p>The number of days to remember the visitor: <input type="number" id="uuid_length" name="uuid_length" style="width:60px;" value="<?php echo esc_attr($uuid_length); ?>" /> days</p>
-
-
-
-            </div>
-
-            <?php } ?>
+            <?php echo wp_kses_post($upgrade_link); ?>
 
           </div>
 

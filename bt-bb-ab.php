@@ -2045,15 +2045,15 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           // Admin is trying to save something, even if malformed
 
-          abst_log('WARNING: magic_definition JSON decode failed, saving as-is. Has not been sanitized. Error: ' . json_last_error_msg());
+          abst_log('WARNING: magic_definition JSON decode failed. Error: ' . json_last_error_msg());
 
-          // Keep the submitted value - admin may be fixing it
+          $magic_definition = wp_kses_post($magic_definition);
 
       }
 
   }
 
-  
+
 
     update_post_meta( $post_id, 'magic_definition', $magic_definition );
 
@@ -2063,7 +2063,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     // bt_experiments_full_page_default_page
 
-    $url_query = $data['bt_experiments_full_page_default_page'] ?? '';
+    $url_query = absint($data['bt_experiments_full_page_default_page'] ?? 0);
 
     update_post_meta( $post_id, 'bt_experiments_full_page_default_page', $url_query );
 
@@ -2305,99 +2305,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     
 
-    if($data['test_type'] == 'magic' && isset($data['goal']) && (isset($_POST['action']) && $_POST['action'] != 'editpost'))
-
-    {
-
-      // Sanitize magic test goals before saving
-
-      $sanitized_goals = array();
-
-      if(is_array($data['goal'])) {
-
-        foreach($data['goal'] as $key => $goal_data) {
-
-          if(is_array($goal_data)) {
-
-            $sanitized_goal = array();
-
-            foreach($goal_data as $goal_key => $goal_value) {
-
-              $sanitized_goal[$goal_key] = sanitize_text_field($goal_value);
-
-            }
-
-            $sanitized_goals[$key] = $sanitized_goal;
-
-          } else {
-
-            $sanitized_goals[$key] = sanitize_text_field($goal_data);
-
-          }
-
-        }
-
-      }
-
-      update_post_meta($post_id,'goals',$sanitized_goals);
-
-    }
-
-    else
-
-    {
-
-      $goals = [];
-
-      $max_goals = 20; // Set a maximum number of goals to avoid infinite loops
-
-      for ($i = 1; $i <= $max_goals; $i++) {
-
-          if(isset($data['goal'][$i]) ) {
-
-              // Check if goal_page is set, if so, set goal_page_id, otherwise set goal_value
-
-              if($data['goal'][$i] == 'page' && isset($data['goal_page'][$i])) {
-
-                  $goals[$i] = [
-
-                    $data['goal'][$i] => $data['goal_page'][$i]
-
-                  ];
-
-              }
-
-             else if (is_numeric($data['goal'][$i])) { // if the key is an integer, then its a page
-
-                  $goals[$i] = [
-
-                    'page' => $data['goal'][$i]
-
-                  ];
-
-            }else {
-
-                  $goals[$i] = [
-
-                    $data['goal'][$i] => sanitize_text_field($data['goal_value'][$i])
-
-                  ];
-
-              }
-
-          } 
-
-      }
-
-      update_post_meta($post_id,'goals',$goals);
-
-    }
-
-  
-
-
-
-    // Lite: disable subgoals and autocomplete
+    // Lite: subgoals disabled
 
     delete_post_meta($post_id, 'goals');
 
@@ -3227,13 +3135,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           // }
 
-          window.parent.postMessage({
+          window.parent.postMessage(
 
-            "id":"'.esc_html($data['post_id']).'",
+            '.wp_json_encode(array('id' => $data['post_id'], 'name' => $data['post_title'])).',
 
-            "name":"'.esc_html($data['post_title']).'"
+            window.location.origin
 
-        }, window.location.origin);
+        );
 
 
 
@@ -6103,7 +6011,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so m uch more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Try pro free for 7 days</a></p></div>";
+        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so much more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Try pro free for 7 days</a></p></div>";
 
 
       }
@@ -7002,7 +6910,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         echo "variation deleted";
 
-        die();
+        wp_die();
 
       }
 
@@ -7032,7 +6940,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
               //end ajax response
 
-              die();
+              wp_die();
 
             }
 
@@ -10912,7 +10820,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       //if conversion page is an integer
 
-      echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . ">
+      echo "<script " . esc_attr( ABST_CACHE_EXCLUDES ) . ">
 
       jQuery(document).ready(function() {  
 
@@ -11536,7 +11444,7 @@ echo "    if( selectval !== 'url' )
 
     register_post_status( 'idea', array(
 
-        'label'                     => 'Idea (Pro)',
+        'label'                     => 'Idea',
 
         'public'                    => false,
 
@@ -12898,7 +12806,7 @@ echo "    if( selectval !== 'url' )
 
       if( $btab_reset > 0 ) {
 
-        echo '<script ' . wp_kses_post( ABST_CACHE_EXCLUDES ) . '>
+        echo '<script ' . esc_attr( ABST_CACHE_EXCLUDES ) . '>
 
           (function(){
 
@@ -13442,13 +13350,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'is_admin' => current_user_can('manage_options'),
         'post_id' => $post_id,
         'is_preview' => $is_preview,
-        'is_agency' => ($user_level  == 'agency'),
+        'is_agency' => false,
         'is_free' => '1',
         'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
         'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'abst_disable_ai' => '1',
-        'magic_nonce' => wp_create_nonce('abst_create_new_on_page_test'),
+        'magic_nonce' => current_user_can('edit_posts') ? wp_create_nonce('abst_create_new_on_page_test') : '',
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
         'domain' => get_home_url(),
         'v' => BT_AB_TEST_VERSION,
@@ -13930,7 +13838,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'abst_enable_user_journeys' => $abst_enable_user_journeys ? '1' : '0',
 
         'abst_disable_ai' => '1',
-        'magic_nonce' => wp_create_nonce('abst_create_new_on_page_test'),
+        'magic_nonce' => current_user_can('edit_posts') ? wp_create_nonce('abst_create_new_on_page_test') : '',
 
         'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
 
@@ -14162,7 +14070,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      echo "<script " . wp_kses_post( ABST_CACHE_EXCLUDES ) . " id='abst_variables'>";
+      echo "<script " . esc_attr( ABST_CACHE_EXCLUDES ) . " id='abst_variables'>";
 
       echo "var bt_ajaxurl = '".esc_url(admin_url( 'admin-ajax.php' ))."';";
 
@@ -14305,6 +14213,15 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
+    // Rate limit by IP: max 60 batch requests per minute
+    $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+    $rate_key = 'abst_rate_' . md5($ip);
+    $rate_count = (int) get_transient($rate_key);
+    if ($rate_count > 60) {
+        wp_send_json_error('Rate limit exceeded', 429);
+    }
+    set_transient($rate_key, $rate_count + 1, MINUTE_IN_SECONDS);
+
     // Read raw JSON body
 
     $raw = file_get_contents('php://input');
@@ -14315,7 +14232,10 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
     }
 
-
+    // Limit payload size to 50KB
+    if (strlen($raw) > 51200) {
+        wp_send_json_error('Payload too large', 413);
+    }
 
     $events = json_decode($raw, true);
 
@@ -14323,6 +14243,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         wp_send_json_error('Invalid JSON payload', 400);
 
+    }
+
+    // Limit number of events per batch
+    if (count($events) > 50) {
+        $events = array_slice($events, 0, 50);
     }
 
 
@@ -14455,7 +14380,16 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       function abst_log_experiment_activity($bt_eid = null, $bt_variation = null, $bt_type = null, $from_api = false, $bt_location = false, $abConversionValue = false,$uuid = false,$size = false, $advancedId = false){
 
-      
+        // Rate limit direct AJAX calls (batch path has its own limiter)
+        if (!$from_api) {
+            $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+            $rate_key = 'abst_ev_' . md5($ip);
+            $rate_count = (int) get_transient($rate_key);
+            if ($rate_count > 120) {
+                wp_send_json_error('Rate limit exceeded');
+            }
+            set_transient($rate_key, $rate_count + 1, MINUTE_IN_SECONDS);
+        }
 
         $error = false;
 
@@ -14995,7 +14929,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             echo( wp_json_encode(array('error'=>$error)) );
 
-            die();
+            wp_die();
 
           }
 
@@ -15095,7 +15029,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           echo( wp_json_encode(['success' => true]) );
 
-          die();
+          wp_die();
 
         }
 
@@ -17910,7 +17844,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // Verify nonce
 
-      if (!isset($_POST['absplittest_mcp_nonce']) || !wp_verify_nonce($_POST['absplittest_mcp_nonce'], 'absplittest_install_mcp')) {
+      if (!isset($_POST['absplittest_mcp_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['absplittest_mcp_nonce'])), 'absplittest_install_mcp')) {
 
         wp_die('Security check failed');
 
@@ -18237,13 +18171,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         
 
-        // Debug: log what we found (remove in production)
-
         if (empty($experiment_status)) {
-
-            abst_log('ABST Debug: No experiment status found in output. Output length: ' . strlen($full_output));
-
-            abst_log('ABST Debug: First 500 chars: ' . substr($full_output, 0, 500));
 
         }
 
@@ -18558,7 +18486,8 @@ function abst_log($message, $level = 'info') {
 
   $log_dir = $upload_dir['basedir'];
 
-  $log_file = $log_dir . '/abst_log.txt';
+  $hash = substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
+  $log_file = $log_dir . '/abst_log_' . $hash . '.log';
 
   
 
@@ -21246,7 +21175,8 @@ function abst_logs_page_content() {
 
   $log_dir = $upload_dir['basedir'];
 
-  $log_file = $log_dir . '/abst_log.txt';
+  $hash = substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
+  $log_file = $log_dir . '/abst_log_' . $hash . '.log';
 
   
 
@@ -21558,7 +21488,8 @@ function abst_trim_abst_log() {
 
   $log_dir = $upload_dir['basedir'];
 
-  $log_file = $log_dir . '/abst_log.txt';
+  $hash = substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
+  $log_file = $log_dir . '/abst_log_' . $hash . '.log';
 
 
 

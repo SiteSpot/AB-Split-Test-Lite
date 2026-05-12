@@ -39,7 +39,7 @@ class BT_BB_AB_Admin {
     if(!current_user_can( 'manage_options' ))
       return false;
           
-    if ( isset( $_POST['bt-bb-ab-nonce'] ) && wp_verify_nonce( $_POST['bt-bb-ab-nonce'], 'bt-bb-ab-nonce' ) )
+    if ( isset( $_POST['bt-bb-ab-nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bt-bb-ab-nonce'] ) ), 'bt-bb-ab-nonce' ) )
     {
 
 
@@ -150,20 +150,20 @@ class BT_BB_AB_Admin {
         'settings.php',
         self::$page_title,
         self::$menu_name,
-        'administrator',
+        'manage_options',
         self::$page_slug,
-        [$this, 'settings_page'] 
-      );  
-    }        
+        [$this, 'settings_page']
+      );
+    }
   }
 
-  public function settings_menu() 
+  public function settings_menu()
   {
     add_submenu_page(
       'options-general.php',
       self::$page_title,
       self::$menu_name,
-      'administrator',
+      'manage_options',
       self::$page_slug,
       [$this, 'settings_page'] 
     );

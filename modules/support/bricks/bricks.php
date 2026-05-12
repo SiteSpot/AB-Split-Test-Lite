@@ -22,6 +22,7 @@ class BT_BB_AB_Bricks
 	}
 
 function all_ab_tests_json( ) {
+    check_ajax_referer('abst_bricks_nonce', 'nonce');
     if (!current_user_can('edit_posts')) {
         wp_send_json_error('Unauthorized');
     }
@@ -70,9 +71,11 @@ function add_bricks_attributes($attributes, $key, $element){
 
 
   function bricks_filter_builder_elements( $elements ) {
-    
-    //todo turn way down
-    update_option('ab_bricks_elements',$elements);
+
+    $stored = get_option('ab_bricks_elements');
+    if ($stored !== $elements) {
+        update_option('ab_bricks_elements', $elements);
+    }
     return $elements;
 
   }

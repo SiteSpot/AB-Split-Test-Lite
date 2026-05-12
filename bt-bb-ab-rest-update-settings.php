@@ -226,7 +226,7 @@ function abst_rest_update_test_settings($request) {
     }
 
     if ($has_param('allowed_roles')) {
-        $allowed_roles = array_values(array_map('esc_attr', (array) $params['allowed_roles']));
+        $allowed_roles = array_values(array_map('sanitize_text_field', (array) $params['allowed_roles']));
         update_post_meta($test_id, 'bt_allowed_roles', $allowed_roles);
     }
 

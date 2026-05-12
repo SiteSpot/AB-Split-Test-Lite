@@ -754,22 +754,16 @@ class ABST_Journeys {
 
     public function receive_journey_data() {
 
-
-
-        //check referrer
-
-        //abst_log('Journey data received');
-
-        //if (!isset($_SERVER['HTTP_REFERER']) || !preg_match('/^https?:\/\/[^/]+\//', $_SERVER['HTTP_REFERER'])) {
-
-        //    abst_log('Invalid referrer');
-
-        //    wp_send_json_error('Invalid referrer');
-
-        //}
+        // Rate limit: max 120 requests per minute per IP
+        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+        $rate_key = 'abst_jr_' . md5($ip);
+        $rate_count = (int) get_transient($rate_key);
+        if ($rate_count > 120) {
+            wp_send_json_error('Rate limit exceeded', 429);
+        }
+        set_transient($rate_key, $rate_count + 1, MINUTE_IN_SECONDS);
 
         if ( ! isset( $_POST['data'] ) ) {
-            abst_log('Missing data payload');
             wp_send_json_error('Invalid data');
             return;
         }

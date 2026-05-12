@@ -333,19 +333,20 @@
             const deviceIcon = session.device === 'l' ? 'desktop' : 
                               session.device === 'm' ? 'tablet' : 'mobile';
 
+            const esc = str => { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; };
             html += `
-                <div class="abst-session-card" data-uuid="${session.uuid}" data-dates='${JSON.stringify(session.dates)}'>
+                <div class="abst-session-card" data-uuid="${esc(session.uuid)}" data-dates='${esc(JSON.stringify(session.dates))}'>
                     <div class="abst-session-card-header">
-                        <span class="abst-session-time">${dateStr} ${timeStr}</span>
-                        <span class="abst-session-duration">${duration}</span>
+                        <span class="abst-session-time">${esc(dateStr)} ${esc(timeStr)}</span>
+                        <span class="abst-session-duration">${esc(duration)}</span>
                     </div>
-                    <div class="abst-session-pages">${pages}${morePages}</div>
+                    <div class="abst-session-pages">${esc(pages)}${esc(morePages)}</div>
                     <div class="abst-session-meta">
-                        <span class="device-icon ${deviceIcon}"></span>
-                        <span>${session.page_count} pages</span>
-                        <span>${session.click_count} clicks</span>
+                        <span class="device-icon ${esc(deviceIcon)}"></span>
+                        <span>${esc(String(session.page_count))} pages</span>
+                        <span>${esc(String(session.click_count))} clicks</span>
                         ${session.tests_converted.length > 0 ? '<span class="converted">✓ Converted</span>' : ''}
-                        ${session.rage_click_count > 0 ? '<span class="rage">🔥 ' + session.rage_click_count + ' rage</span>' : ''}
+                        ${session.rage_click_count > 0 ? '<span class="rage">🔥 ' + esc(String(session.rage_click_count)) + ' rage</span>' : ''}
                     </div>
                 </div>
             `;

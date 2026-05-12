@@ -1848,13 +1848,18 @@ jQuery(document).ready(function() {
 
     if(magicVars && magicVars[0] && magicVars[0].variations && magicVars[0].variations[index] !== undefined){
 
-      if(magicVars[0].variations[index] !== '')
+      if(magicVars[0].variations[index] !== '') {
 
-        jQuery(el).next('.seen-on').prepend('<p class="seen-on-text">"'+magicVars[0].variations[index]+'"</p>');
+        var varText = document.createElement('p');
+        varText.className = 'seen-on-text';
+        varText.textContent = '"' + magicVars[0].variations[index] + '"';
+        jQuery(el).next('.seen-on').prepend(varText);
 
-      else
+      } else {
 
         jQuery(el).next('.seen-on').prepend('<p class="seen-on-text">Empty / None</p>');
+
+      }
 
     }
 

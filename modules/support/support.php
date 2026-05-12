@@ -45,12 +45,16 @@ class BT_BB_AB_Supports
 	{
 		if( ! isset($_POST['nonce']) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'bt_gutenberg_ab_test_html' ) ) { wp_die('sorry..'); }
 
+		if ( ! current_user_can('edit_posts') ) { wp_die('Unauthorized'); }
+
 		$attr = '';
 
-		foreach ($_POST['data'] as $key => $value) {
+		$data = isset($_POST['data']) ? (array) wp_unslash($_POST['data']) : array();
+		foreach ($data as $key => $value) {
+			$key = sanitize_key($key);
 			if( $value != '' ) {
 				$attr .= ' '. $key .'='. sanitize_text_field( $value );
-			}			
+			}
 		}
 
 		echo do_shortcode('['. self::$shortcode_name .' '. $attr .']');
