@@ -179,6 +179,54 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeMode = typeof window.abstHeatmapMode === 'string' ? window.abstHeatmapMode : (modeSelectEl ? modeSelectEl.value : '');
   const isScrollMode = activeMode === 'scroll';
   const hasHeatmapLibrary = typeof h337 !== 'undefined';
+  const autoRerenderToggle = document.getElementById('abst-rerender-auto');
+  let autoRerenderTimer = null;
+  let lastAutoRenderSize = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+
+  const updateAutoRenderSize = () => {
+    lastAutoRenderSize = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+  };
+
+  const isAutoRerenderEnabled = () => {
+    return autoRerenderToggle && autoRerenderToggle.getAttribute('aria-pressed') === 'true';
+  };
+
+  const runAutoRerender = async () => {
+    if (typeof window.abstRerenderHeatmap !== 'function') return;
+    await window.abstRerenderHeatmap({ skipAnimations: true });
+    updateAutoRenderSize();
+  };
+
+  const scheduleAutoRerender = (reason) => {
+    if (!isAutoRerenderEnabled()) return;
+
+    if (reason === 'resize') {
+      const sizeChanged = window.innerWidth !== lastAutoRenderSize.width || window.innerHeight !== lastAutoRenderSize.height;
+      if (!sizeChanged) return;
+    }
+
+    clearTimeout(autoRerenderTimer);
+    autoRerenderTimer = setTimeout(async () => {
+      if (!isAutoRerenderEnabled()) return;
+      await runAutoRerender();
+    }, 1000);
+  };
+
+  if (autoRerenderToggle) {
+    autoRerenderToggle.addEventListener('click', () => {
+      const enabled = !isAutoRerenderEnabled();
+      autoRerenderToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      updateAutoRenderSize();
+    });
+    window.addEventListener('scroll', () => scheduleAutoRerender('scroll'), { passive: true });
+    window.addEventListener('resize', () => scheduleAutoRerender('resize'), { passive: true });
+  }
 
   if (!wrapper || !iframe || !heatmapContainer) {
     console.log('Heatmap init aborted - missing required elements');
@@ -921,12 +969,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.abstRerenderHeatmap = requestRender;
 
     const rerenderBtn = document.getElementById('abst-rerender-btn');
-    const autoRerenderToggle = document.getElementById('abst-rerender-auto');
-    let autoRerenderTimer = null;
-    let lastAutoRenderSize = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
 
     if (rerenderBtn) {
       rerenderBtn.addEventListener('click', async () => {
@@ -934,10 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rerenderBtn.textContent = 'Re-rendering...';
         try {
           await requestRender({ skipAnimations: true });
-          lastAutoRenderSize = {
-            width: window.innerWidth,
-            height: window.innerHeight
-          };
+          updateAutoRenderSize();
         } finally {
           rerenderBtn.disabled = false;
           rerenderBtn.textContent = '\u21ba Re-render';
@@ -945,36 +984,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const scheduleAutoRerender = (reason) => {
-      if (!autoRerenderToggle || !autoRerenderToggle.checked) return;
-
-      if (reason === 'resize') {
-        const sizeChanged = window.innerWidth !== lastAutoRenderSize.width || window.innerHeight !== lastAutoRenderSize.height;
-        if (!sizeChanged) return;
-      }
-
-      clearTimeout(autoRerenderTimer);
-      autoRerenderTimer = setTimeout(async () => {
-        if (!autoRerenderToggle.checked) return;
-
-        await requestRender({ skipAnimations: true });
-        lastAutoRenderSize = {
-          width: window.innerWidth,
-          height: window.innerHeight
-        };
-      }, 1000);
-    };
-
-    if (autoRerenderToggle) {
-      window.addEventListener('scroll', () => scheduleAutoRerender('scroll'), { passive: true });
-      window.addEventListener('resize', () => scheduleAutoRerender('resize'), { passive: true });
-    }
-
     await requestRender();
-    lastAutoRenderSize = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
+    updateAutoRenderSize();
 
     // Fallback for non-GSAP animations: debounce late style/class changes on
     // tracked elements and redraw after the layout has settled.
