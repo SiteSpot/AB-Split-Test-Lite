@@ -55,16 +55,28 @@
         magicTour.addStep({
             name: 'magic-welcome',
             title: 'Create a Test',
-            text: 'Click on any element on the page to begin your test. Try a headline, button, or image. An orange box will appear around the element to help you identify it.',
+            text: '<strong>Click on any element on the page to begin</strong> your test. Try a headline, button, or image. An orange box will appear around the element to help you identify it.',
             attachTo: {
                 element: 'body',
                 on: 'bottom'
             },
- 
+            buttons: [
+                {
+                    action: function() {
+                        dismissMagicTour();
+                        return magicTour.cancel();
+                    },
+                    text: 'Don\'t Show Again',
+                    classes: 'shepherd-button-secondary'
+                }
+            ],
             modalOverlayOpeningPadding: 0,
             when: {
                 show: function() {
                     setupElementSelectionListener();
+                },
+                cancel: function() {
+                    dismissMagicTour();
                 }
             }
         });
@@ -144,9 +156,11 @@
             title: 'Edit Your Variation',
             text: 'Change the text here to create your test variation. This is what visitors will see instead of the original.',
             attachTo: {
-                element: '#abst-variation-editor-container',
+                element: '#variation-editor-container',
                 on: 'left'
             },
+            scrollTo: false,
+            useModalOverlay: false,
             buttons: [
                 {
                     action: function() {
@@ -171,6 +185,7 @@
                 element: '#version-value',
                 on: 'left'
             },
+            useModalOverlay: true,
             buttons: [
                 {
                     action: magicTour.back,
@@ -252,6 +267,11 @@
 
     // Expose restartTour globally
     window.restartMagicTour = restartTour;
+
+    // Add event listener for Show Tour button
+    $(document).on('click', '#abst-magic-bar-show-tour', function() {
+        restartTour();
+    });
 
     // Start when DOM is ready
     $(function() {

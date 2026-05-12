@@ -1798,9 +1798,19 @@
 	  // Replaces focusAfterRender modifier.
 	  .then(step => {
 	    if (step && step.el) {
-	      step.el.focus({
-	        preventScroll: true
-	      });
+	      // Skip focus steal if user is actively in an input or contenteditable
+	      const active = document.activeElement;
+	      const isUserTyping = active && (
+	        active.tagName === 'INPUT' ||
+	        active.tagName === 'TEXTAREA' ||
+	        active.isContentEditable ||
+	        active.closest('[contenteditable="true"]')
+	      );
+	      if (!isUserTyping) {
+	        step.el.focus({
+	          preventScroll: true
+	        });
+	      }
 	    }
 	  });
 	}

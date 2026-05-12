@@ -2643,6 +2643,7 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
         if(jQuery("#imageSelector").length < 1) {
             jQuery("#abst-variation-editor-container").after('<button type="button" id="imageSelector">Choose from Media Library</button>');
             jQuery("#imageSelector").on('click', function(){
+                jQuery('.shepherd-modal-overlay-container').hide();
                 file_frame.open();
             });
         }
@@ -2666,6 +2667,9 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
         file_frame.on('select', function() {
             const attachments = file_frame.state().get('selection').first().toJSON();
             
+            // Show Shepherd overlay again
+            jQuery('.shepherd-modal-overlay-container').show();
+            
             // Update the editor with the image URL
             if (window.abstEditor) {
                 window.abstEditor.textContent = attachments.url;
@@ -2684,6 +2688,12 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
             
             // Update the hidden input
             jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
+        });
+        
+        // Show overlay when media library is closed
+        file_frame.off('close');
+        file_frame.on('close', function() {
+            jQuery('.shepherd-modal-overlay-container').show();
         });
     }
     
@@ -2927,7 +2937,7 @@ function abst_magic_bar(options = {}) {
             <h3 style="color: #9e9e9e;">Create a Split Test.</h3>
             <p style="font-size: 24px; line-height: 1.25; margin: 40px 0 8px;">To start: Click the element you want to change.</p>
             <p style="font-size: 12px; line-height: 1.6; margin: 40px 0 20px 0; color: #9e9e9e;">Not sure what to test? Upgrade to unlock AI agent suggestions and ChatCRO guidance.</p>
-            <button id="abst-magic-bar-show-tour" class="abst-magic-bar-show-tour" onclick="window.restartMagicTour()">Show Tour</button>
+            <button id="abst-magic-bar-show-tour" class="abst-magic-bar-show-tour">Show Tour</button>
         </div>
         <!-- Test Name - Hidden until test starts -->
         <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">

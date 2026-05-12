@@ -11943,15 +11943,12 @@ echo "    if( selectval !== 'url' )
     //if has edit permissions
 
     if(current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
-
       wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
-    // Enqueue Shepherd for Magic Bar tour when ?abmagic is active
-    if (isset($_GET['abmagic'])) {
-      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__));
-      wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
-      wp_enqueue_script('ab-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('shepherd-js', 'ab_test_highlighter'), BT_AB_TEST_VERSION, true);
-    }
+    // Enqueue Shepherd for Magic Bar tour (always load when highlighter loads, since magic bar can be loaded dynamically)
+    wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__));
+    wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+    wp_enqueue_script('ab-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('shepherd-js', 'ab_test_highlighter'), BT_AB_TEST_VERSION, true);
 
     }
 
@@ -11960,47 +11957,30 @@ echo "    if( selectval !== 'url' )
     function allowInOptimizePress($value, $handle) {
 
       $ourScriptHandles = ['bt_experiment_scripts', 'bt_conversion_scripts', 'ab_test_highlighter', 'ab_test_builder_helper'];
-
       if (in_array($handle, $ourScriptHandles)) {
-
           return true; // giv er
-
       }
-
       return $value;
-
     }
 
 
 
     function allowInComplianz($whitelisted_tags) {
-
       $whitelisted_tags[] = 'bt-bb-ab';
-
       $whitelisted_tags[] = 'bt_conversion';
-
       $whitelisted_tags[] = 'ABST_CONFIG';
-
       return $whitelisted_tags;
-
     }
 
 
 
     function get_ab_posts_cache(){
-
       $posts = get_transient('ab_posts_cache');
-
       if (false === $posts) { // not a transient, create
-
         $posts = get_posts([
-
           'post_type' => 'bt_experiments',
-
           'post_status' => 'any',
-
           'numberposts' => -1
-
         ]);
 
         set_transient('ab_posts_cache', $posts, 60 * MINUTE_IN_SECONDS);
@@ -12016,43 +11996,24 @@ echo "    if( selectval !== 'url' )
 
 
       $out = '';
-
       $out .= "<select class='goal-type' name='goal'>";
-
       $out .= "<option value=''>Select Goal Event...</option>";
-
       $out .= "<option value='page'>Page or Post Visit</option>";
-
       $out .= "<option value='text'>Text on Page</option>";
-
       $out .= "<option value='selector'>Element Click</option>";
-
       $out .= "<option value='link'>Link Click</option>";
-
       $out .= "<option value='time'>Time Active</option>";
-
       $out .= "<option value='scroll'>Scroll Depth</option>";
-
       $out .= "<option value='url'>URL</option>";
-
       $out .= "<option value='block'>Conversion Element Class</option>";
-
       $out .= "<option value='javascript'>JavaScript</option>";
-
       if (defined('WC_VERSION')) {
-
         $out .= "<optgroup label='WooCommerce'>";
-
         $woo_pages = $this->get_woo_pages();
-
         foreach($woo_pages as $name => $page) {
-
           if(!empty($page)) {
-
             $out .= "<option value=\"$page\">$name</option>";
-
           }
-
         }
 
         $out .= "<option value=\"woo-order-pay\">Checkout Payment Page</option>";
