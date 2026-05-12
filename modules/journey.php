@@ -300,7 +300,7 @@ class ABST_Journeys {
 
             'abst-heatmap-lib',
 
-            plugins_url('../js/heatmap.min.js', __FILE__),
+            plugins_url('../js/heatmap.src.js', __FILE__),
 
             array(),
 

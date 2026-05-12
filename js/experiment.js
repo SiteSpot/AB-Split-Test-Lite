@@ -727,7 +727,7 @@ jQuery(document).ready(function() {
 
   function showExperimentTab(target){
 
-    jQuery('#configuration_settings, #idea_settings, .show_experiment_results').hide();
+    jQuery('#configuration_settings, #idea_settings, .abst_show_experiment_results').hide();
 
     if(target === '#config'){
 
@@ -735,7 +735,7 @@ jQuery(document).ready(function() {
 
     }else if(target === '#results'){
 
-      jQuery('.show_experiment_results').show();
+      jQuery('.abst_show_experiment_results').show();
 
     }else if(target === '#idea'){
 
@@ -830,6 +830,8 @@ jQuery(document).ready(function() {
   } else if (jQuery('[href="#idea"]').length && hasIdeaContent() && !hasConfiguredTestType()) {
     applyExperimentTab('#idea');
 
+  } else {
+    applyExperimentTab('#config');
   }
 
   var requestedTab = getRequestedFocusTab();

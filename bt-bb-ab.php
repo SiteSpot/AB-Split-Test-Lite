@@ -1089,7 +1089,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $magic_def = abst_normalize_magic_definition($magic_def);
 
-        update_post_meta($test->ID, 'magic_definition', wp_wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        update_post_meta($test->ID, 'magic_definition', wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $updated++;
 
@@ -1824,14 +1824,14 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     }
 
-          // get user level
+      // get user level
 
 
       //count all custom posts bt_experiments
 
-      $count = wp_count_posts('bt_experiments');
+      require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
-      if($count->publish > 1)
+      if(abst_lite_active_test_count($post_id) >= 1)
 
       {
 
@@ -1843,7 +1843,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
 
-        abst_log('Free licence limited to one active test. Upgrade https://absplittest.com/pricing?utm_source=ug');
+        abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/pricing?utm_source=ug');
 
         return;
 
@@ -3185,7 +3185,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo wp_wp_json_encode($data);
+        echo wp_json_encode($data);
 
       }
 
@@ -5415,13 +5415,14 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         //if post status is publish
 
-        $active_tests = wp_count_posts('bt_experiments');
+        require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
+        $active_tests_count = abst_lite_active_test_count($pid);
 
-        if($active_tests->publish > 0 && (get_post_status($pid) !== 'publish'))
+        if($active_tests_count > 0 && (get_post_status($pid) !== 'publish'))
 
           echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p></div>";
 
-        if($active_tests->publish > 1 && (get_post_status($pid) == 'publish'))
+        if($active_tests_count > 0 && (get_post_status($pid) == 'publish') && !abst_lite_is_sample_test($pid))
 
           echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p></div>";
 
@@ -6297,7 +6298,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         );
 
-        echo '<code><pre>' . esc_html(wp_wp_json_encode($webhook_sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre></code></div>';
+        echo '<code><pre>' . esc_html(wp_json_encode($webhook_sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre></code></div>';
 
       }
 
@@ -19841,7 +19842,7 @@ function abst_heatmaps_page_content() {
 
       echo '<button id="abst-rerender-btn" class="abst-rerender-floating-btn" type="button" title="Re-render heatmap after resizing or animated elements move">&#8635; Re-render</button>';
 
-      echo '<label class="abst-rerender-auto-label" title="Automatically re-render after scrolling stops or the window is resized">[ <input id="abst-rerender-auto" type="checkbox" /> Auto ]</label>';
+      echo '<button id="abst-rerender-auto" class="abst-rerender-auto-label" type="button" aria-pressed="false" title="Automatically re-render after scrolling stops or the window is resized"><span class="abst-rerender-auto-box" aria-hidden="true"></span><span>Auto</span></button>';
 
       echo '</div>';
 
@@ -19857,7 +19858,7 @@ function abst_heatmaps_page_content() {
 
     echo '<script>';
 
-    echo 'window.heatmapRecords = ' . wp_wp_json_encode($data) . ';';
+    echo 'window.heatmapRecords = ' . wp_json_encode($data) . ';';
 
     // Aggregate click counts per selector for hover tooltip
 
@@ -19879,11 +19880,11 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo 'window.heatmapClickCounts = ' . wp_wp_json_encode($click_counts) . ';';
+    echo 'window.heatmapClickCounts = ' . wp_json_encode($click_counts) . ';';
 
-    echo 'window.variations = ' . wp_wp_json_encode($variations) . ';';
+    echo 'window.variations = ' . wp_json_encode($variations) . ';';
 
-    echo 'window.scrollMap = ' . wp_wp_json_encode([
+    echo 'window.scrollMap = ' . wp_json_encode([
 
       'distribution' => $scroll_distribution,
 
@@ -19893,7 +19894,7 @@ function abst_heatmaps_page_content() {
 
     ]) . ';';
 
-    echo 'window.abstHeatmapMode = ' . wp_wp_json_encode($selected_mode) . ';';
+    echo 'window.abstHeatmapMode = ' . wp_json_encode($selected_mode) . ';';
 
     echo '
 
@@ -21786,6 +21787,32 @@ function abst_get_detected_caches() {
 
 
 /**
+ * Determine whether a test is bundled demo data and should not consume Lite limits.
+ */
+function abst_lite_is_sample_test($post_id) {
+  $post_id = intval($post_id);
+  if ($post_id <= 0) {
+    return false;
+  }
+
+  if (get_post_meta($post_id, '_abst_is_sample_test', true)) {
+    return true;
+  }
+
+  $post = get_post($post_id);
+  if (!$post || $post->post_type !== 'bt_experiments') {
+    return false;
+  }
+
+  $title = strtolower((string) $post->post_title);
+  $content = strtolower((string) $post->post_content);
+
+  return strpos($title, 'sample test') === 0 || strpos($content, 'this is a sample') !== false;
+}
+
+
+
+/**
 
  * Create sample tests on plugin activation
 
@@ -22025,6 +22052,8 @@ function abst_create_test_from_results_data($filename, $data) {
 
   if ($test_id) {
 
+    update_post_meta($test_id, '_abst_is_sample_test', 1);
+
     // Basic test configuration
 
     update_post_meta($test_id, 'test_type', 'magic');
@@ -22110,6 +22139,8 @@ function abst_create_test_from_structured_data($data) {
   
 
   if ($test_id) {
+
+    update_post_meta($test_id, '_abst_is_sample_test', 1);
 
     // Apply test configuration with proper meta key mapping
 

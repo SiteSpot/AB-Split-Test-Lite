@@ -213,95 +213,7 @@ if (!is_array($heatmap_pages)) {
 
 
 
-      <div class="fl-settings-form-content">
-
-
-
-        <script>
-
-        jQuery(document).ready(function($) {
-
-          var savedPages = <?php echo wp_json_encode($heatmap_pages); ?>;
-
-          
-
-          $('#heatmap_pages').select2({
-
-            multiple: true,
-
-            ajax: {
-
-              url: '<?php echo esc_url(admin_url('admin-ajax.php')); ?>',
-
-              dataType: 'json',
-
-              delay: 250,
-
-              data: function(params) {
-
-                return {
-
-                  q: params.term || '',
-
-                  action: 'ab_page_selector',
-
-                  nonce: bt_exturl.page_selector_nonce
-
-                };
-
-              },
-
-              processResults: function(data) {
-
-                return {
-
-                  results: $.map(data, function(page) {
-
-                    return {
-
-                      id: page[0],
-
-                      text: page[1]
-
-                    };
-
-                  })
-
-                };
-
-              },
-
-              cache: true
-
-            },
-
-            minimumInputLength: 0,
-
-            placeholder: 'Only pages that have interacted with a test',
-
-            allowClear: true,
-
-            tags: false
-
-          });
-
-          
-
-          // Set saved values
-
-          if (savedPages && savedPages.length > 0) {
-
-            $('#heatmap_pages').val(savedPages).trigger('change');
-
-          }
-
-        });
-
-        </script>
-
-
-
-      </div>
+      <div class="fl-settings-form-content"></div>
 
 
 
@@ -701,13 +613,19 @@ if (!is_array($heatmap_pages)) {
 
               <script>
               jQuery(document).ready(function($) {
+                var heatmapPageSelector = $('#heatmap_page_select');
+
                 $('#heatmap_page_select').select2({
                   ajax: {
                     url: '<?php echo esc_url(admin_url('admin-ajax.php')); ?>',
                     dataType: 'json',
                     delay: 250,
                     data: function(params) {
-                      return { q: params.term || '', action: 'ab_page_selector', nonce: bt_exturl.page_selector_nonce };
+                      return {
+                        q: params.term || '',
+                        action: 'ab_page_selector',
+                        nonce: '<?php echo esc_js(wp_create_nonce('abst_page_selector')); ?>'
+                      };
                     },
                     processResults: function(data) {
                       return {
@@ -720,7 +638,8 @@ if (!is_array($heatmap_pages)) {
                   },
                   minimumInputLength: 0,
                   placeholder: 'Search for a page…',
-                  allowClear: true
+                  allowClear: true,
+                  width: '25rem'
                 });
                 <?php
                 $saved_heatmap_pages = abst_get_admin_setting('abst_heatmap_pages');
@@ -729,7 +648,7 @@ if (!is_array($heatmap_pages)) {
                   $page_title = get_the_title($page_id);
                   if ($page_title) {
                     echo "var opt = new Option(" . wp_json_encode($page_title) . ", " . wp_json_encode((string)$page_id) . ", true, true);";
-                    echo "$('#heatmap_page_select').append(opt).trigger('change');";
+                    echo "heatmapPageSelector.append(opt).trigger('change');";
                   }
                 }
                 ?>
@@ -2294,13 +2213,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     
 
-    // Hide save button on license and welcome tabs
+    // Hide save button on the welcome tab only. All settings tabs can now be saved.
 
     const saveBtn = document.querySelector('.floating-save-button-row');
 
     if (saveBtn) {
 
-      saveBtn.style.display = (tabId === 'license' || tabId === 'welcome') ? 'none' : 'block';
+      saveBtn.style.display = (tabId === 'welcome') ? 'none' : 'block';
 
     }
 

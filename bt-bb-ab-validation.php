@@ -480,7 +480,19 @@ function abst_lite_active_test_count($exclude_test_id = 0) {
     }
 
     $posts = get_posts($args);
-    return is_array($posts) ? count($posts) : 0;
+    if (!is_array($posts)) {
+        return 0;
+    }
+
+    $count = 0;
+    foreach ($posts as $post_id) {
+        if (function_exists('abst_lite_is_sample_test') && abst_lite_is_sample_test($post_id)) {
+            continue;
+        }
+        $count++;
+    }
+
+    return $count;
 }
 
 function abst_lite_validate_active_test_limit($status = 'draft', $exclude_test_id = 0) {
