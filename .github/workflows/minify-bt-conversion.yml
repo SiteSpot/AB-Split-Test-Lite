@@ -1,0 +1,30 @@
+name: Minify bt_conversion.js
+
+on:
+  push:
+    paths:
+      - 'js/bt_conversion.js'
+
+jobs:
+  minify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Terser
+        run: npm install -g terser
+
+      - name: Minify bt_conversion.js
+        run: terser js/bt_conversion.js -o js/bt_conversion-min.js --compress --mangle
+
+      - name: Commit minified file
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add js/bt_conversion-min.js
+          git diff --staged --quiet || git commit -m "chore: minify bt_conversion.js [skip ci]"
+          git push
