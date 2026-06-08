@@ -7300,8 +7300,6 @@ public function get_experiment_stats_array( $test ){
   // Backward compatibility: also allow old hook name (new hook takes precedence)
   $min_visits_for_winner     = apply_filters("abst_min_visits_for_winner", $min_visits_for_winner);
 
-  $conversion_use_order_value= get_post_meta($test->ID,'conversion_use_order_value',true);
-
   $conversion_style          = get_post_meta($test->ID,'conversion_style',true);
 
   $test_type                 = get_post_meta($test->ID,'test_type',true);
@@ -7326,23 +7324,9 @@ public function get_experiment_stats_array( $test ){
 
     require_once 'includes/statistics.php';
 
-    if($conversion_use_order_value == '1' && is_array($observations)){
+    $observations = abst_split_test_analyzer($observations,$test_age);
 
-      // Use Welch's T-Test for revenue/order value data (continuous values)
-
-      $observations = abst_revenue_analyzer($observations, $test_age);
-
-      $observations = abst_analyze_device_sizes($observations, $test_age, true);
-
-    } else {
-
-      // Use Bayesian analyzer for binary conversion data
-
-      $observations = abst_split_test_analyzer($observations,$test_age);
-
-      $observations = abst_analyze_device_sizes($observations, $test_age, false);
-
-    }
+    $observations = abst_analyze_device_sizes($observations, $test_age);
 
   }
 
@@ -7488,15 +7472,7 @@ public function get_experiment_stats_array( $test ){
 
     if($visits > 0) {
 
-      if($conversion_use_order_value) {
-
-        $conversion_rate = isset($data['rate']) ? floatval($data['rate'])/100.0 : 0.0;
-
-      } else {
-
-        $conversion_rate = ($conversions / max($visits,1));
-
-      }
+      $conversion_rate = ($conversions / max($visits,1));
 
     }
 
@@ -7544,11 +7520,7 @@ public function get_experiment_stats_array( $test ){
 
         if ($sv > 0) {
 
-          $srate = $conversion_use_order_value
-
-            ? (isset($sb['rate']) ? floatval($sb['rate'])/100.0 : 0.0)
-
-            : ($sc / max($sv, 1));
+          $srate = ($sc / max($sv, 1));
 
         }
 
@@ -7980,7 +7952,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
   $webhook_url = get_post_meta($test->ID,'webhook_url',true);
 
-  $conversion_use_order_value = get_post_meta($test->ID,'conversion_use_order_value',true);
+  $conversion_use_order_value = false;
 
   $autocomplete_on = get_post_meta($test->ID,'autocomplete_on',true);
 
@@ -7994,45 +7966,16 @@ function abst_show_experiment_results($test,$asTable = false){
 
     require_once 'includes/statistics.php';
 
-    if($conversion_use_order_value == '1' && is_array($observations)){
+    $observations = abst_split_test_analyzer($observations,$test_age);
 
-      // Use Welch's T-Test for revenue/order value data (continuous values)
-
-      $observations = abst_revenue_analyzer($observations, $test_age);
-
-      $observations = abst_analyze_device_sizes($observations, $test_age, true);
-
-    } else {
-
-      // Use Bayesian analyzer for binary conversion data
-
-      $observations = abst_split_test_analyzer($observations,$test_age);
-
-      $observations = abst_analyze_device_sizes($observations, $test_age, false);
-
-    }
+    $observations = abst_analyze_device_sizes($observations, $test_age);
 
   }
 
 
+  $conversion_text = 'Conversion Rate';
 
- if($conversion_use_order_value){
-
-    $conversion_text = 'Revenue / visit';
-
-    $conversion_t = 'Test Revenue';
-
-  }
-
-  else
-
-  {
-
-    $conversion_text = 'Conversion Rate';
-
-    $conversion_t = 'Conversions';
-
-  }
+  $conversion_t = 'Conversions';
 
   $foundGoals = [];
 
@@ -8148,11 +8091,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
   $remaining = '';
 
-  if($conversion_use_order_value && !empty($aovobs['bt_bb_ab_stats']['likelyDuration'])){
-
-    $remaining = "</p><p>About " . ($aovobs['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
-
-  } elseif( !empty($observations['bt_bb_ab_stats']['likelyDuration'])){
+  if( !empty($observations['bt_bb_ab_stats']['likelyDuration'])){
 
     $remaining = "</p><p>About " . ($observations['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
 
@@ -8296,23 +8235,9 @@ function abst_show_experiment_results($test,$asTable = false){
 
       require_once 'includes/statistics.php';
 
-      if($conversion_use_order_value == '1' && is_array($observations)){
+      $observations = abst_split_test_analyzer($observations,$test_age);
 
-        // Use Welch's T-Test for revenue/order value data (continuous values)
-
-        $observations = abst_revenue_analyzer($observations, $test_age);
-
-        $observations = abst_analyze_device_sizes($observations, $test_age, true);
-
-      } else {
-
-        // Use Bayesian analyzer for binary conversion data
-
-        $observations = abst_split_test_analyzer($observations,$test_age);
-
-        $observations = abst_analyze_device_sizes($observations, $test_age, false);
-
-      }
+      $observations = abst_analyze_device_sizes($observations, $test_age);
 
     }
 
@@ -8378,23 +8303,11 @@ function abst_show_experiment_results($test,$asTable = false){
 
       }
 
-      if($conversion_use_order_value){
+      $likeylwinner = $observations['bt_bb_ab_stats']['best'] ?? '';
 
-        $likeylwinner = $aovobs['bt_bb_ab_stats']['best'] ?? '';
+      $likelyDuration = $observations['bt_bb_ab_stats']['likelyDuration'] ?? '0';
 
-        $likelyDuration = $aovobs['bt_bb_ab_stats']['likelyDuration'] ?? '0';
-
-        $likelywinnerpercentage = $aovobs['bt_bb_ab_stats']['probability'];
-
-      }else{
-
-        $likeylwinner = $observations['bt_bb_ab_stats']['best'] ?? '';
-
-        $likelyDuration = $observations['bt_bb_ab_stats']['likelyDuration'] ?? '0';
-
-        $likelywinnerpercentage = $observations['bt_bb_ab_stats']['probability'];
-
-      }
+      $likelywinnerpercentage = $observations['bt_bb_ab_stats']['probability'];
 
       
 
@@ -8542,9 +8455,9 @@ function abst_show_experiment_results($test,$asTable = false){
 
         elseif($winner_data && $control_data) {
 
-          $winner_rate = $conversion_use_order_value ? ($winner_data['rate']/100) : $winner_data['rate'];
+          $winner_rate = $winner_data['rate'];
 
-          $control_rate = $conversion_use_order_value ? ($control_data['rate']/100) : $control_data['rate'];
+          $control_rate = $control_data['rate'];
 
           
 
@@ -11403,7 +11316,7 @@ echo "    if( selectval !== 'url' )
 
       'new_item'              => __( 'New Split Test ', 'ab-split-test-lite' ),
 
-      'edit_item'             => __( 'Edit  plit Test ', 'ab-split-test-lite' ),
+      'edit_item'             => __( 'Edit Split Test ', 'ab-split-test-lite' ),
 
       'update_item'           => __( 'Update AB Split Test ', 'ab-split-test-lite' ),
 
@@ -14757,13 +14670,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-        if( isset($test_meta['conversion_use_order_value'][0]) && $test_meta['conversion_use_order_value'][0] != '1' ) // if not using order value
-
-        {
-
-          $abConversionValue = 1; // default to 1
-
-        }
+        $abConversionValue = 1;
 
   
 
@@ -14780,71 +14687,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
             $obs[$variation]['device_size'][$size]['conversion'] = floatval($obs[$variation]['device_size'][$size]['conversion']) + floatval($abConversionValue);
 
           }
-
-
-
-          // Welford's online algorithm for running variance (used by revenue analyzer)
-
-          if( isset($test_meta['conversion_use_order_value'][0]) && $test_meta['conversion_use_order_value'][0] == '1' ) {
-
-            $val = floatval($abConversionValue);
-
-            $n = isset($obs[$variation]['_rv_count']) ? $obs[$variation]['_rv_count'] + 1 : 1;
-
-            $old_mean = isset($obs[$variation]['_rv_mean']) ? (float)$obs[$variation]['_rv_mean'] : 0.0;
-
-            $old_m2 = isset($obs[$variation]['_rv_m2']) ? (float)$obs[$variation]['_rv_m2'] : 0.0;
-
-
-
-            $delta = $val - $old_mean;
-
-            $new_mean = $old_mean + $delta / $n;
-
-            $delta2 = $val - $new_mean;
-
-            $new_m2 = $old_m2 + $delta * $delta2;
-
-
-
-            $obs[$variation]['_rv_count'] = $n;
-
-            $obs[$variation]['_rv_mean'] = $new_mean;
-
-            $obs[$variation]['_rv_m2'] = $new_m2;
-
-
-
-            // Mirror Welford per device size so the revenue analyzer can run on slices
-
-            if($size && isset($obs[$variation]['device_size'][$size])) {
-
-              $ds =& $obs[$variation]['device_size'][$size];
-
-              $ds_n = isset($ds['_rv_count']) ? $ds['_rv_count'] + 1 : 1;
-
-              $ds_old_mean = isset($ds['_rv_mean']) ? (float)$ds['_rv_mean'] : 0.0;
-
-              $ds_old_m2 = isset($ds['_rv_m2']) ? (float)$ds['_rv_m2'] : 0.0;
-
-              $ds_delta = $val - $ds_old_mean;
-
-              $ds_new_mean = $ds_old_mean + $ds_delta / $ds_n;
-
-              $ds_delta2 = $val - $ds_new_mean;
-
-              $ds['_rv_count'] = $ds_n;
-
-              $ds['_rv_mean'] = $ds_new_mean;
-
-              $ds['_rv_m2'] = $ds_old_m2 + $ds_delta * $ds_delta2;
-
-              unset($ds);
-
-            }
-
-          }
-
         }
 
         else if ($type == 'visit')
@@ -22330,21 +22172,7 @@ function abst_create_test_from_structured_data($data) {
 
       require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
 
-      $conversion_use_order_value = isset($test_config['conversion_use_order_value']) ? $test_config['conversion_use_order_value'] : get_post_meta($test_id, 'conversion_use_order_value', true);
-
-      if ($conversion_use_order_value == '1' && is_array($data['observations'])) {
-
-        // Use Welch's T-Test for revenue/order value data (continuous values)
-
-                          $analyzed_observations = abst_revenue_analyzer($data['observations'], $test_age);
-
-      } else {
-
-        // Use Bayesian analyzer for binary conversion data
-
-                          $analyzed_observations = abst_split_test_analyzer($data['observations'], $test_age);
-
-      }
+      $analyzed_observations = abst_split_test_analyzer($data['observations'], $test_age);
 
       
 
@@ -22486,114 +22314,6 @@ register_activation_hook(__FILE__, 'abst_create_sample_tests_on_activation');
 
 /**
 
- * Run a weekly report every Monday at 8am.
-
- */
-
-
-
-function abst_monday_morning_report() {
-
-
-
-  if(!abst_get_admin_setting('abst_send_weekly_reports'))
-
-    return false;
-
-
-
-  abst_send_report_email(abst_get_admin_setting('abst_weekly_report_emails'));
-
-
-
-}
-
-
-
-function abst_send_report_email($emails){
-
-  abst_log('Attempting to send Email Report');
-
-
-
-  //csv to array
-
-  //if contains comma then explode 
-
-  if(strpos($emails, ',') !== false){
-
-    $emails = explode(',', $emails);
-
-  }
-
-  
-
-  $email_subject = 'AB Split Test Lite Weekly Report';
-
-  $email_subject = apply_filters('abst_email_report_subject', $email_subject);
-
-  //send email to admin
-
-  // Get report content - use shortcode function as fallback
-
-  $report_content = do_shortcode('[ab_split_test_report emailreport="true"]');
-
-  if(empty($report_content)) {
-
-    $report_content = 'No active tests.';
-
-  }
-
-
-
-  //replace all h2 elements with h3 in report_content
-
-  $report_content = str_replace('<h1>', '<hr/><h2>', $report_content);
-
-  $report_content = str_replace('</h1>', '</h2>', $report_content);
-
-  
-
-  $email_message = '<html><body style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; padding: 20px;">';
-
-  $email_message .= '<h1 style="font-size: 24px;">Your AB Split Test Lite Weekly Report</h1>';
-
-  $email_message .= '<div>' . $report_content . '</div>';
-
-  $email_message .= '<br><br>';
-
-  $email_message .= '<h2 style="font-size: 20px;">What should you test next?</h2>';
-
-  $email_message .= '<p>Need high impact optimization suggestions? Login to your site to generate your CRO analysis. <a href="' . admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_insights') . '">Click here to generate CRO analysis one-click test ideas</a> that you can run in seconds.</p>';
-
-  $email_message .= '<p>Turn off these emails from your <a href="' . admin_url('options-general.php?page=bt_bb_ab_test') . '">Split Test Settings</a>.</p>';
-
-  $email_message .= '</body></html>';
-
-  $email_message = apply_filters('abst_email_report_message', $email_message);
-
-  
-
-  // Set HTML headers for email
-
-  $headers = array('Content-Type: text/html; charset=UTF-8');
-
- 
-
-  if(wp_mail($emails, $email_subject, $email_message, $headers)) // send email
-
-    abst_log('Email Report Sent to ' . $emails);
-
-  else
-
-    abst_log('Email Report Failed to ' . $emails);    
-
-}
-
-
-
-/**
-
  * Register a two-hour cron schedule for MAB (Thompson Sampling) weight updates.
 
  */
@@ -22699,31 +22419,7 @@ function abst_normal_random() {
 
 
 
-/**
 
- * Add a weekly cron schedule if not already present.
-
- */
-
-function abst_add_weekly_schedule( $schedules ) {
-
-  if ( ! isset( $schedules['ab_weekly'] ) ) {
-
-    $schedules['ab_weekly'] = [
-
-      'interval' => WEEK_IN_SECONDS,
-
-      'display'  => 'Once Weekly',
-
-    ];
-
-  }
-
-  return $schedules;
-
-}
-
-add_filter( 'cron_schedules', 'abst_add_weekly_schedule' );
 
 
 
@@ -22733,31 +22429,6 @@ add_filter( 'cron_schedules', 'abst_add_weekly_schedule' );
 
  */
 
-function abst_schedule_weekly_report_cron() {
-
-  // Lite version: weekly reports disabled
-
-  return;
-
-}
-
-
-
-function abst_clear_weekly_report_cron() {
-
-  // Lite version: weekly reports disabled
-
-  $timestamp = wp_next_scheduled( 'ab_weekly_monday_report' );
-
-  if ( $timestamp ) {
-
-    wp_unschedule_event( $timestamp, 'ab_weekly_monday_report' );
-
-  }
-
-}
-
-add_action( 'ab_weekly_monday_report', 'abst_monday_morning_report' );
 
 /**
 

@@ -62,11 +62,9 @@ class BT_BB_AB_Admin {
       $ab_fingerprint_length = isset($_POST['ab_fingerprint_length']) ? intval($_POST['ab_fingerprint_length']) : 30;
       $wait_for_approval = (isset($_POST['wait_for_approval']) && $_POST['wait_for_approval'] == 1) ? 1 : 0;
       $heatmap_retention_length = isset($_POST['heatmap_retention_length']) ? min(3, intval($_POST['heatmap_retention_length'])) : 3; // free: max 3 days
-      // Lite version ignores premium-only toggles (MAB, agency, weekly reports, AI, webhooks, fingerprint, UUID)
+      // Lite version ignores premium-only toggles (MAB, agency, AI, webhooks, fingerprint, UUID)
       $abst_agency_mode_enabled = 0;
       $abst_remote_access_enabled = 0;
-      $abst_send_weekly_reports = 0;
-      $abst_weekly_report_emails = '';
       $abst_thompson_sampling_enabled = 0;
       $abst_test_ideas_enabled = 0;
       $use_fingerprint = 0;
@@ -119,8 +117,6 @@ class BT_BB_AB_Admin {
       $this->abst_update_admin_setting( 'abst_server_convert_woo_status', $woo_server_convert_status );
       $this->abst_update_admin_setting( 'abst_enable_logging', $abst_enable_logging );
       $this->abst_update_admin_setting( 'abst_enable_heatmaps', $abst_enable_heatmaps );
-      $this->abst_update_admin_setting( 'abst_send_weekly_reports', $abst_send_weekly_reports );
-      $this->abst_update_admin_setting( 'abst_weekly_report_emails', $abst_weekly_report_emails );
       $this->abst_update_admin_setting( 'abst_notification_emails', $abst_notification_emails );
       $this->abst_update_admin_setting( 'abst_thompson_sampling_enabled', $abst_thompson_sampling_enabled );
       $this->abst_update_admin_setting( 'abst_test_ideas_enabled', $abst_test_ideas_enabled );
@@ -266,15 +262,6 @@ class BT_BB_AB_Admin {
       $btab->maybe_handle_plugin_version_change();
     }
 
-    $send_weekly = abst_get_admin_setting( 'abst_send_weekly_reports' );
-    if ( $send_weekly === '' || $send_weekly === false ) {
-      $send_weekly = 1;
-      $this->abst_update_admin_setting( 'abst_send_weekly_reports', 1 );
-    }
-    if ( $send_weekly == 1 && function_exists( 'abst_schedule_weekly_report_cron' ) ) {
-      abst_schedule_weekly_report_cron();
-    }
-
     echo '<div class="wrap">';
       echo '<h1>' . esc_html( get_admin_page_title() ) . '</h1>'; 
 
@@ -380,4 +367,3 @@ function abst_get_main_site_url() {
 
 	return home_url();
 }
-

@@ -1,21 +1,5 @@
 var tour;
 
-function abst_send_test_email() {
-    //get value of #abst_weekly_report_emails
-    var email = jQuery('#abst_weekly_report_emails').val();
-    //send email to email
-    jQuery.ajax({
-        url: bt_adminurl + 'admin-ajax.php',
-        type: 'POST',
-        data: {
-            action: 'abst_send_test_email',
-            email: email
-        },
-        success: function(response) {
-            alert(response.data);
-        }
-    });
-}
 jQuery(function ($) {
     //get url value wizard
     const urlParams = new URLSearchParams(window.location.search);
