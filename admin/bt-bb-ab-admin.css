@@ -3782,3 +3782,62 @@ div#wpfooter {
     color: #dc2626;
     font-weight: 600;
 }
+
+.abst-heatmap-filter-panel {
+    grid-column: 1 / -1;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 0;
+}
+
+.abst-heatmap-filter-panel summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px 14px;
+}
+
+.abst-filter-summary-title {
+    font-weight: 600;
+}
+
+.abst-filter-summary-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.abst-filter-summary-item {
+    background: #f1f5f9;
+    border-radius: 999px;
+    color: #475569;
+    font-size: 12px;
+    padding: 3px 8px;
+}
+
+.abst-filter-summary-label {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.abst-heatmap-filter-panel > .abst-filter-row {
+    border-top: 1px solid #e2e8f0;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    padding: 14px;
+}
+
+.abst-filter-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.abst-filter-field select {
+    width: 100%;
+}

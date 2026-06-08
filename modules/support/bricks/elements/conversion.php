@@ -1,6 +1,7 @@
 <?php 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Bricks discovers element classes by their registered class names.
 class Element_AB_Conversion extends \Bricks\Element {
 
   public $category     = 'content';

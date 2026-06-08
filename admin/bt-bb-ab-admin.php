@@ -85,6 +85,7 @@ class BT_BB_AB_Admin {
       // store heatmap pages selection ( max 1 page)
       $heatmap_pages = array();
       if (isset($_POST['heatmap_pages'])) {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized immediately below for array and scalar inputs.
         $pages = wp_unslash($_POST['heatmap_pages']);
         if (is_array($pages)) {
           $heatmap_pages = array_slice(array_map('sanitize_text_field', $pages), 0, 1);
@@ -260,6 +261,11 @@ class BT_BB_AB_Admin {
 
   public function settings_page()
   {
+    global $btab;
+    if ( $btab instanceof Bt_Ab_Tests ) {
+      $btab->maybe_handle_plugin_version_change();
+    }
+
     $send_weekly = abst_get_admin_setting( 'abst_send_weekly_reports' );
     if ( $send_weekly === '' || $send_weekly === false ) {
       $send_weekly = 1;
@@ -323,10 +329,12 @@ class BT_BB_AB_Admin {
 
   public function get_protocol()
   {
-    if (isset($_SERVER['HTTPS']) &&
-        ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) ||
-        isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
-        $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https') {
+    $abst_https = isset($_SERVER['HTTPS']) ? sanitize_text_field( wp_unslash( $_SERVER['HTTPS'] ) ) : '';
+    $abst_forwarded_proto = isset($_SERVER['HTTP_X_FORWARDED_PROTO']) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) : '';
+    if (
+        ( $abst_https === 'on' || $abst_https === '1' ) ||
+        $abst_forwarded_proto === 'https'
+    ) {
       $protocol = 'https://';
     }
     else {

@@ -297,7 +297,9 @@ function abst_rest_update_test_settings($request) {
         if (is_string($magic_definition)) {
             $magic_definition = json_decode($magic_definition, true);
         }
-        update_post_meta($test_id, 'magic_definition', wp_json_encode($magic_definition, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        // wp_slash() because update_post_meta() runs wp_unslash() and would otherwise
+        // strip the backslashes from JSON-escaped quotes, corrupting the stored JSON.
+        update_post_meta($test_id, 'magic_definition', wp_slash(wp_json_encode($magic_definition, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));
     }
 
     if ($has_param('css_variations')) {

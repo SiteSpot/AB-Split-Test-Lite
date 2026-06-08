@@ -11,7 +11,11 @@ class BT_BB_AB_Supports
 		add_shortcode( self::$shortcode_name, [$this, 'support_conversion_shortcode'] );
 		add_shortcode( self::$shortcode_abtest_variation, [$this, 'support_ab_redirect_variation'] );
 
+		add_filter( 'abst_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
+		add_filter( 'abst_experiments_conversion_html', [$this, 'get_conversion_html'], 10, 1 );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
 		add_filter( 'bt_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
 		add_filter( 'bt_experiments_conversion_html', [$this, 'get_conversion_html'], 10, 1 );
 
 		add_action( 'wp_ajax_render_ab_test_html', [$this, 'render_ab_test_html'] );
@@ -49,7 +53,7 @@ class BT_BB_AB_Supports
 
 		$attr = '';
 
-		$data = isset($_POST['data']) ? (array) wp_unslash($_POST['data']) : array();
+		$data = isset($_POST['data']) && is_array($_POST['data']) ? array_map('sanitize_text_field', wp_unslash($_POST['data'])) : array();
 		foreach ($data as $key => $value) {
 			$key = sanitize_key($key);
 			if( $value != '' ) {
@@ -157,4 +161,4 @@ class BT_BB_AB_Supports
 
 } // end class
 
-$bt_bb_ab_support = new BT_BB_AB_Supports;
+$abst_support = new BT_BB_AB_Supports;

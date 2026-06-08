@@ -2,8 +2,8 @@
 
 Contributors: tomcarless
 Tags: ab testing, split testing, conversion optimization, heatmap, CRO
-Requires at least: 5.6
-Tested up to: 6.9
+Requires at least: 6.9
+Tested up to: 7.0
 Stable tag: 1.0.0
 Requires PHP: 7.4
 License: GPLv2 or later

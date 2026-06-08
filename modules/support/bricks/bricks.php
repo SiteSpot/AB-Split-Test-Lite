@@ -41,6 +41,7 @@ function tests_with_id(){
     'posts_per_page' => -1,
     'orderby' => 'date',
     'order' => 'DESC',
+    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Builder selector query by plugin-owned test type meta.
     'meta_query'     => array(
         array(
             'key'   => 'test_type',
@@ -141,7 +142,7 @@ function add_bricks_attributes($attributes, $key, $element){
   }
 } // end class
 
-$bt_bb_ab_bricks = new BT_BB_AB_Bricks;
+$abst_bricks = new BT_BB_AB_Bricks;
 
 
 add_filter( 'bricks/element/set_root_attributes', function( $attributes, $element ) {

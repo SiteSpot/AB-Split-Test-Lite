@@ -75,6 +75,7 @@ jQuery(document).ready(function($) {
     
     // Initialize Select2 on the page selector
     $('#abst-heatmaps-page-selector').select2(heatmapPageAttrs);
+    $('#abst-heatmaps-exit-url-selector').select2(heatmapPageAttrs);
     
     // Centralized URL builder that preserves ALL parameters
     function buildHeatmapUrl() {
@@ -88,6 +89,7 @@ jQuery(document).ready(function($) {
         const mode = $('#abst-heatmaps-mode-selector').val() || urlParams.get('mode') || '';
         const days = $('#abst-heatmaps-days-selector').val() || urlParams.get('days') || '7';
         const conversionOnly = $('#show-conversion-traffic-only').val() || urlParams.get('cto') || '0';
+        const exitUrl = $('#abst-heatmaps-exit-url-selector').val() || urlParams.get('exit_url') || '';
         const referrer = $('#abst-heatmaps-referrer-selector').val() || urlParams.get('referrer') || '';
         const utmSource = $('#abst-heatmaps-utm-source').val() || '';
         const utmMedium = $('#abst-heatmaps-utm-medium').val() || '';
@@ -106,6 +108,7 @@ jQuery(document).ready(function($) {
         if (mode) url += '&mode=' + encodeURIComponent(mode);
         if (days) url += '&days=' + encodeURIComponent(days);
         if (conversionOnly) url += '&cto=' + encodeURIComponent(conversionOnly);
+        if (exitUrl) url += '&exit_url=' + encodeURIComponent(exitUrl);
         if (referrer) url += '&referrer=' + encodeURIComponent(referrer);
         if (utmSource) url += '&utm_source=' + encodeURIComponent(utmSource);
         if (utmMedium) url += '&utm_medium=' + encodeURIComponent(utmMedium);
@@ -115,7 +118,7 @@ jQuery(document).ready(function($) {
     }
     
     // Attach change handlers to all selectors
-    $('#abst-heatmaps-page-selector, #abst-heatmaps-experiment-selector, #abst-heatmaps-variation-selector, #abst-heatmaps-size-selector, #abst-heatmaps-mode-selector, #abst-heatmaps-days-selector, #show-conversion-traffic-only, #abst-heatmaps-referrer-selector, #abst-heatmaps-utm-source, #abst-heatmaps-utm-medium, #abst-heatmaps-utm-campaign').on('change', function() {
+    $('#abst-heatmaps-page-selector, #abst-heatmaps-experiment-selector, #abst-heatmaps-variation-selector, #abst-heatmaps-size-selector, #abst-heatmaps-mode-selector, #abst-heatmaps-days-selector, #show-conversion-traffic-only, #abst-heatmaps-exit-url-selector, #abst-heatmaps-referrer-selector, #abst-heatmaps-utm-source, #abst-heatmaps-utm-medium, #abst-heatmaps-utm-campaign').on('change', function() {
         const newUrl = buildHeatmapUrl();
         console.log('Heatmap selector changed, navigating to:', newUrl);
         window.location.href = newUrl;
@@ -150,6 +153,11 @@ jQuery(document).ready(function($) {
     const variation = urlParams.get('variation');
     if (variation) {
         $('#abst-heatmaps-variation-selector').val(variation);
+    }
+
+    const exitUrl = urlParams.get('exit_url');
+    if (exitUrl) {
+        $('#abst-heatmaps-exit-url-selector').val(exitUrl).trigger('change.select2');
     }
     
     // Set referrer selector if present

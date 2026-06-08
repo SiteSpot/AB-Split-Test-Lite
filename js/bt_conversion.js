@@ -2626,7 +2626,11 @@ function queueEventData(data, url) {
     console.warn('abst test data queue full');
  
   // Save updated queue
-  sessionStorage.setItem('abstTestDataQueue', JSON.stringify(queue));
+  try {
+    sessionStorage.setItem('abstTestDataQueue', JSON.stringify(queue));
+  } catch (e) {
+    console.warn('ABST: Unable to persist event queue', e);
+  }
 }
  
 /**
@@ -3301,6 +3305,18 @@ function abst_revoke_approval() {
   return true;
 }
 
+function repairMagicDefinitionJson(def) {
+  if (typeof def !== 'string') {
+    return def;
+  }
+
+  return def
+    // Repair stored JSON where update_post_meta stripped escapes from HTML attributes.
+    .replace(/(\s[A-Za-z_:][-A-Za-z0-9_:.]*=)"([^"]*)"/g, '$1\\"$2\\"')
+    // Repair quoted CSS attribute selectors inside JSON strings, e.g. a[href="/x"].
+    .replace(/(\[[^\]"=]+[*^$|~]?=)"([^"]*)"/g, '$1\\"$2\\"');
+}
+
 function parseMagicTestDefinition(def){
   try {
     // First try to parse the JSON directly
@@ -3312,8 +3328,15 @@ function parseMagicTestDefinition(def){
       magic_definition = JSON.parse(fixedJson);
       console.log('ABST: Successfully fixed magic_definition quotes issue. Edit your split test in the WordPress admin to remove this console log.');
     } catch (e2) {
-      console.warn('ABST: Failed to parse magic_definition after fixes. Please recreate this split test.', e2);
-      return null;
+      try {
+        const repairedJson = repairMagicDefinitionJson(def);
+        magic_definition = JSON.parse(repairedJson);
+        console.warn('ABST: Repaired corrupt magic_definition at runtime. Saved test config was not changed; edit and resave the split test to persist clean JSON.');
+        console.log('ABST: Repaired corrupt magic_definition at runtime. Saved test config was not changed; edit and resave the split test to persist clean JSON.');
+      } catch (e3) {
+        console.warn('ABST: Failed to parse magic_definition after runtime repair. Saved test config is corrupt; variation will be skipped.', e3);
+        return null;
+      }
     }
   }
   return magic_definition;
@@ -5202,12 +5225,10 @@ setInterval(function() {
 
 // Inject hidden fields into forms for server-side form conversion tracking
 // Called only when a form- conversion or goal is detected
-function abstInjectFormFields() {
-  if (window.abst && window.abst.formFieldsInjected) return;
-  
+function abstGetFormAttributionData() {
   var cookies = document.cookie.split(';');
   var abstData = {};
-  
+
   for (var i = 0; i < cookies.length; i++) {
     var cookie = cookies[i].trim();
     if (cookie.indexOf('btab_') === 0) {
@@ -5221,22 +5242,61 @@ function abstInjectFormFields() {
       } catch(e) {}
     }
   }
-  
-  if (Object.keys(abstData).length === 0) return;
-  
-  var forms = document.querySelectorAll('form');
-  forms.forEach(function(form) {
-    if (form.querySelector('input[name="abst_data"]')) return;
-    var input = document.createElement('input');
+
+  return abstData;
+}
+
+function abstApplyFormAttributionData(form, abstData) {
+  if (!form || form.nodeType !== Node.ELEMENT_NODE || form.tagName !== 'FORM') return;
+  if (!abstData || Object.keys(abstData).length === 0) return;
+
+  var input = form.querySelector('input[name="abst_data"]');
+  if (!input) {
+    input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'abst_data';
-    input.value = JSON.stringify(abstData);
     form.appendChild(input);
+  }
+
+  input.value = JSON.stringify(abstData);
+}
+
+function abstSetupFormAttributionSubmitListener() {
+  window.abst = window.abst || {};
+  if (window.abst.formAttributionSubmitListener) return;
+
+  document.addEventListener('submit', function(event) {
+    abstInjectFormFields(event.target);
+  }, true);
+
+  if (window.jQuery && window.jQuery.fn && window.jQuery.fn.on) {
+    window.jQuery(document).on('wpformsBeforeFormSubmit', function(event, form) {
+      var formElement = form && form.jquery ? form[0] : form;
+      abstInjectFormFields(formElement);
+    });
+  }
+
+  window.abst.formAttributionSubmitListener = true;
+}
+
+function abstInjectFormFields(targetForm) {
+  abstSetupFormAttributionSubmitListener();
+
+  var abstData = abstGetFormAttributionData();
+
+  if (Object.keys(abstData).length === 0) return;
+
+  var forms = targetForm && targetForm.nodeType === Node.ELEMENT_NODE && targetForm.tagName === 'FORM'
+    ? [targetForm]
+    : document.querySelectorAll('form');
+
+  forms.forEach(function(form) {
+    abstApplyFormAttributionData(form, abstData);
   });
-  
+
   window.abst = window.abst || {};
   window.abst.formFieldsInjected = true;
-  
+
   // Use MutationObserver for dynamic forms instead of polling interval
   // This is more efficient and doesn't run forever
   if (window.MutationObserver && !window.abst.formObserver) {
@@ -5244,25 +5304,17 @@ function abstInjectFormFields() {
       mutations.forEach(function(mutation) {
         mutation.addedNodes.forEach(function(node) {
           if (node.nodeType !== Node.ELEMENT_NODE) return;
-          
+
           // Check if the added node is a form
-          if (node.tagName === 'FORM' && !node.querySelector('input[name="abst_data"]')) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'abst_data';
-            input.value = JSON.stringify(abstData);
-            node.appendChild(input);
+          var latestAbstData = abstGetFormAttributionData();
+          if (node.tagName === 'FORM') {
+            abstApplyFormAttributionData(node, latestAbstData);
           }
-          
+
           // Check for forms inside the added node
           if (node.querySelectorAll) {
             node.querySelectorAll('form').forEach(function(form) {
-              if (form.querySelector('input[name="abst_data"]')) return;
-              var input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = 'abst_data';
-              input.value = JSON.stringify(abstData);
-              form.appendChild(input);
+              abstApplyFormAttributionData(form, latestAbstData);
             });
           }
         });

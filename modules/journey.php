@@ -755,7 +755,7 @@ class ABST_Journeys {
     public function receive_journey_data() {
 
         // Rate limit: max 120 requests per minute per IP
-        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
         $rate_key = 'abst_jr_' . md5($ip);
         $rate_count = (int) get_transient($rate_key);
         if ($rate_count > 120) {
@@ -763,12 +763,15 @@ class ABST_Journeys {
         }
         set_transient($rate_key, $rate_count + 1, MINUTE_IN_SECONDS);
 
+        // Public journey collection endpoint; payload is sanitized below and rate limited by IP.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
         if ( ! isset( $_POST['data'] ) ) {
             wp_send_json_error('Invalid data');
             return;
         }
 
         $raw_payload = sanitize_text_field( wp_unslash( $_POST['data'] ) );
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
 
 
 

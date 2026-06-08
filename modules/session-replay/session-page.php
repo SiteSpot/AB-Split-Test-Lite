@@ -15,30 +15,144 @@ if (!defined('ABSPATH')) {
         <!-- Left Sidebar: Filters + Session List -->
         <div class="abst-session-sidebar">
             <!-- Filters -->
-            <div class="abst-session-filters">
-                <h3><?php esc_html_e('Filters', 'ab-split-test-lite'); ?></h3>
-                
-                <p><strong>Advanced Filters Available:</strong></p>
-                <ul style="margin-left: 20px; list-style-type: disc;">
-                    <li><strong>Min Pages</strong> - Filter sessions by minimum number of pages visited</li>
-                    <li><strong>Visited Page</strong> - Filter sessions that visited a specific page</li>
-                    <li><strong>Saw Test</strong> - Filter sessions that viewed a specific A/B test</li>
-                    <li><strong>Conversion</strong> - Filter by converted or not converted sessions</li>
-                    <li><strong>Device</strong> - Filter by device type (Desktop, Tablet, Mobile)</li>
-                    <li><strong>Has Rage Clicks</strong> - Filter sessions with rage click behavior</li>
-                    <li><strong>Date Range</strong> - Filter sessions by date range</li>
-                    <li><strong>Referrer</strong> - Filter by traffic source/referrer</li>
-                    <li><strong>UTM Source</strong> - Filter by UTM source parameter</li>
-                    <li><strong>UTM Medium</strong> - Filter by UTM medium parameter</li>
-                    <li><strong>UTM Campaign</strong> - Filter by UTM campaign parameter</li>
-                </ul>
-                
-                <p style="margin-top: 15px;">
-                    <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">
-                        <?php esc_html_e('Upgrade to enable advanced filters', 'ab-split-test-lite'); ?>
-                    </a>
-                </p>
-            </div>
+            <details class="abst-session-filters">
+                <summary>
+                    <span class="abst-session-filters-title"><?php esc_html_e('Filters', 'ab-split-test-lite'); ?></span>
+                    <span id="session-filter-summary" class="abst-session-filter-summary"><?php esc_html_e('Min 3 pages, Min 1 click', 'ab-split-test-lite'); ?></span>
+                </summary>
+
+                <div class="abst-session-filter-controls">
+                    <div class="abst-filter-group">
+                        <label for="filter-min-pages"><?php esc_html_e('Min Pages', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-min-pages">
+                            <option value="1">1+</option>
+                            <option value="2">2+</option>
+                            <option value="3" selected>3+</option>
+                            <option value="5">5+</option>
+                            <option value="10">10+</option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-min-clicks"><?php esc_html_e('Min Clicks', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-min-clicks">
+                            <option value="0">0+</option>
+                            <option value="1" selected>1+</option>
+                            <option value="2">2+</option>
+                            <option value="3">3+</option>
+                            <option value="5">5+</option>
+                            <option value="10">10+</option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-page"><?php esc_html_e('Visited Page', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-page">
+                            <option value=""><?php esc_html_e('Any Page', 'ab-split-test-lite'); ?></option>
+                            <?php foreach ($pages as $page): ?>
+                                <option value="<?php echo esc_attr($page->ID); ?>">
+                                    <?php echo esc_html($page->post_title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-exit-page"><?php esc_html_e('Exit Page', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-exit-page">
+                            <option value=""><?php esc_html_e('Any Exit Page', 'ab-split-test-lite'); ?></option>
+                            <?php foreach ($pages as $page): ?>
+                                <option value="<?php echo esc_attr($page->ID); ?>">
+                                    <?php echo esc_html($page->post_title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-test"><?php esc_html_e('Saw Test', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-test">
+                            <option value=""><?php esc_html_e('Any Test', 'ab-split-test-lite'); ?></option>
+                            <?php foreach ($tests as $test): ?>
+                                <option value="<?php echo esc_attr($test->ID); ?>">
+                                    <?php echo esc_html($test->post_title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-converted"><?php esc_html_e('Conversion', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-converted">
+                            <option value=""><?php esc_html_e('Any', 'ab-split-test-lite'); ?></option>
+                            <option value="yes"><?php esc_html_e('Converted', 'ab-split-test-lite'); ?></option>
+                            <option value="no"><?php esc_html_e('Not Converted', 'ab-split-test-lite'); ?></option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-device"><?php esc_html_e('Device', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-device">
+                            <option value=""><?php esc_html_e('All Devices', 'ab-split-test-lite'); ?></option>
+                            <option value="l"><?php esc_html_e('Desktop', 'ab-split-test-lite'); ?></option>
+                            <option value="m"><?php esc_html_e('Tablet', 'ab-split-test-lite'); ?></option>
+                            <option value="s"><?php esc_html_e('Mobile', 'ab-split-test-lite'); ?></option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label>
+                            <input type="checkbox" id="filter-rage-clicks">
+                            <?php esc_html_e('Has Rage Clicks', 'ab-split-test-lite'); ?>
+                        </label>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-date-from"><?php esc_html_e('Date Range', 'ab-split-test-lite'); ?></label>
+                        <div class="abst-date-range">
+                            <input type="date" id="filter-date-from" placeholder="From">
+                            <span><?php esc_html_e('to', 'ab-split-test-lite'); ?></span>
+                            <input type="date" id="filter-date-to" placeholder="To">
+                        </div>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-referrer"><?php esc_html_e('Referrer', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-referrer">
+                            <option value=""><?php esc_html_e('All Referrers', 'ab-split-test-lite'); ?></option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-utm-source"><?php esc_html_e('UTM Source', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-utm-source">
+                            <option value=""><?php esc_html_e('All Sources', 'ab-split-test-lite'); ?></option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-utm-medium"><?php esc_html_e('UTM Medium', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-utm-medium">
+                            <option value=""><?php esc_html_e('All Mediums', 'ab-split-test-lite'); ?></option>
+                        </select>
+                    </div>
+
+                    <div class="abst-filter-group">
+                        <label for="filter-utm-campaign"><?php esc_html_e('UTM Campaign', 'ab-split-test-lite'); ?></label>
+                        <select id="filter-utm-campaign">
+                            <option value=""><?php esc_html_e('All Campaigns', 'ab-split-test-lite'); ?></option>
+                        </select>
+                    </div>
+
+                    <button type="button" id="apply-filters" class="button button-primary">
+                        <?php esc_html_e('Apply Filters', 'ab-split-test-lite'); ?>
+                    </button>
+
+                    <button type="button" id="rebuild-index" class="button">
+                        <?php esc_html_e('Rebuild Index', 'ab-split-test-lite'); ?>
+                    </button>
+                </div>
+            </details>
             
             <!-- Session List -->
             <div class="abst-session-list">

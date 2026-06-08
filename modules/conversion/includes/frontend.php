@@ -10,33 +10,33 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 
-$title = "NONE";
-$eid = -1;
-$type = false;
-$selector = '';
+$abst_title = "NONE";
+$abst_eid = -1;
+$abst_type = false;
+$abst_selector = '';
 
 if(isset($settings->bt_experiment) && $settings->bt_experiment !== '' && $settings->bt_experiment)
-  $experiment = get_post($settings->bt_experiment);
+  $abst_experiment = get_post($settings->bt_experiment);
 
-if(isset($experiment))
+if(isset($abst_experiment))
 {
-  $title = $experiment->post_title;
-  $eid = $settings->bt_experiment;
-  $type = $settings->bt_experiment_type;
-  $selector = $settings->bt_click_conversion_selector;
+  $abst_title = $abst_experiment->post_title;
+  $abst_eid = $settings->bt_experiment;
+  $abst_type = $settings->bt_experiment_type;
+  $abst_selector = $settings->bt_click_conversion_selector;
 ?>
 <div class="conversion-module">
   <h5>
-    <span style="display: none;">{{</span>AB test conversion for experiment: <strong><?php echo esc_html( $title ); ?></strong>
+    <span style="display: none;">{{</span>AB test conversion for experiment: <strong><?php echo esc_html( $abst_title ); ?></strong>
   </h5>
   
   <h6>
-    A conversion will trigger on: <strong><?php echo esc_html( $type ); ?></strong>
+    A conversion will trigger on: <strong><?php echo esc_html( $abst_type ); ?></strong>
   </h6>
   
-  <?php if($type == 'click'){ ?>
+  <?php if($abst_type == 'click'){ ?>
   <h6>
-    Selector: "<?php echo esc_html( $selector ); ?>"
+    Selector: "<?php echo esc_html( $abst_selector ); ?>"
   </h6>
   
   <?php } ?>
@@ -56,15 +56,15 @@ if(isset($experiment))
 
 <?php 
 
-  $bt_conversion_vars = json_encode([
-    'eid'       => $eid,
-    'title'     => esc_html( $title ),
-    'type'      => esc_html( $type ),
-    'selector'  => esc_html( $selector )
+  $abst_conversion_vars = json_encode([
+    'eid'       => $abst_eid,
+    'title'     => esc_html( $abst_title ),
+    'type'      => esc_html( $abst_type ),
+    'selector'  => esc_html( $abst_selector )
   ]);
 
 ?>
 <script <?php echo esc_attr( ABST_CACHE_EXCLUDES ); ?> type="text/javascript">
 if(window.bt_conversion_vars)
-  bt_conversion_vars.push(<?php echo wp_json_encode( json_decode( $bt_conversion_vars ) ); ?>);
+  bt_conversion_vars.push(<?php echo wp_json_encode( json_decode( $abst_conversion_vars ) ); ?>);
 </script>

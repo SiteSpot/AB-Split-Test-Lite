@@ -8,7 +8,7 @@ require_once(__DIR__ . "/vendor/autoload.php");
 use BenTools\SplitTestAnalyzer\SplitTestAnalyzer;
 use BenTools\SplitTestAnalyzer\Variation;
 
-function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
+function abst_split_test_analyzer($data = array(),$test_age = 0){
 
   if(empty($data))
     return $data;
@@ -21,7 +21,8 @@ function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
   $test_age = intval($test_age);
   // Minimum visits per variation before a winner can be declared. Keeps the
   // server-side winner flag in sync with the UI's underpowered gate.
-  $min_visits_for_winner = apply_filters('ab_min_visits_for_winner', 50);
+  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+  $min_visits_for_winner = apply_filters('abst_min_visits_for_winner', apply_filters('ab_min_visits_for_winner', 50));
   $has_min_visits = true;
   foreach ($data as $n => $d){
     if ($n === 'bt_bb_ab_stats') continue;
@@ -36,7 +37,8 @@ function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
   }
 
   $predictor = SplitTestAnalyzer::create()->withVariations(...$variations);
-  $percentage_target = apply_filters('ab_complete_confidence', 95);
+  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+  $percentage_target = apply_filters('abst_complete_confidence', apply_filters('ab_complete_confidence', 95));
   foreach ($predictor->getResult() as $key => $value) {
     $data[$key]['probability'] = $value;
     if($value > $percentage_target && $has_min_visits)
@@ -114,7 +116,7 @@ function bt_bb_ab_split_test_analyzer($data = array(),$test_age = 0){
  * Note: The 'rate' field in observations stores (total_revenue / visits) * 100
  * So rate=664.7 means $6.647 revenue per visit
  */
-function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
+function abst_revenue_analyzer($data = array(), $test_age = 0) {
   if (empty($data) || sizeof($data) < 2) {
     return $data;
   }
@@ -167,7 +169,8 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
 
   // Minimum visits per variation before a winner can be declared. Mirrors the
   // UI's underpowered gate so a freak small-sample win can't trip autocomplete.
-  $min_visits_for_winner = apply_filters('ab_min_visits_for_winner', 50);
+  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+  $min_visits_for_winner = apply_filters('abst_min_visits_for_winner', apply_filters('ab_min_visits_for_winner', 50));
   $has_min_visits = true;
   foreach ($variations as $stats) {
     if ($stats['n'] < $min_visits_for_winner) {
@@ -190,7 +193,7 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
     // Sample from each variation's distribution and find the winner
     foreach ($variations as $key => $stats) {
       // Sample from normal distribution with mean and std
-      $sample = random_normal($stats['mean'], $stats['std'] / sqrt($stats['n']));
+      $sample = abst_random_normal($stats['mean'], $stats['std'] / sqrt($stats['n']));
       if ($sample > $winner_value) {
         $winner_value = $sample;
         $winner_key = $key;
@@ -272,7 +275,7 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
           $winner_value = -PHP_INT_MAX;
           
           foreach ($projected_variations as $key => $stats) {
-            $sample = random_normal($stats['mean'], $stats['std'] / sqrt($stats['n']));
+            $sample = abst_random_normal($stats['mean'], $stats['std'] / sqrt($stats['n']));
             if ($sample > $winner_value) {
               $winner_value = $sample;
               $winner_key = $key;
@@ -307,7 +310,7 @@ function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
  * Generate a random sample from a normal distribution
  * Uses Box-Muller transform
  */
-function random_normal($mean = 0, $std = 1) {
+function abst_random_normal($mean = 0, $std = 1) {
   $u1 = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
   $u2 = wp_rand(0, PHP_INT_MAX) / PHP_INT_MAX;
   
@@ -325,7 +328,7 @@ function random_normal($mean = 0, $std = 1) {
  * Sizes processed: mobile, tablet, desktop.
  * Revenue path is used when $use_revenue is truthy (test has order-value tracking).
  */
-function bt_bb_ab_analyze_device_sizes($data, $test_age = 0, $use_revenue = false) {
+function abst_analyze_device_sizes($data, $test_age = 0, $use_revenue = false) {
   if (!is_array($data) || empty($data)) return $data;
 
   $sizes = array('mobile', 'tablet', 'desktop');
@@ -357,9 +360,9 @@ function bt_bb_ab_analyze_device_sizes($data, $test_age = 0, $use_revenue = fals
     if ($use_revenue) {
       // test_age=0 skips the expensive projection/likelyDuration loop inside the analyzer.
       // Per-size duration estimation would be noisy and ~5-20s per admin render.
-      $analyzed = bt_bb_ab_revenue_analyzer($slice, 0);
+      $analyzed = abst_revenue_analyzer($slice, 0);
     } else {
-      $analyzed = bt_bb_ab_split_test_analyzer($slice, 0);
+      $analyzed = abst_split_test_analyzer($slice, 0);
     }
 
     if (!is_array($analyzed)) continue;
@@ -384,7 +387,7 @@ function bt_bb_ab_analyze_device_sizes($data, $test_age = 0, $use_revenue = fals
 /**
  * Standard normal distribution CDF approximation
  */
-function normal_cdf($x) {
+function abst_normal_cdf($x) {
   // Abramowitz and Stegun approximation
   $sign = $x >= 0 ? 1 : -1;
   $x = abs($x) / sqrt(2);
@@ -403,7 +406,27 @@ function normal_cdf($x) {
   return 0.5 * (1.0 + $sign * $y);
 }
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
+function bt_bb_ab_split_test_analyzer($data = array(), $test_age = 0) {
+  return abst_split_test_analyzer($data, $test_age);
+}
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
+function bt_bb_ab_revenue_analyzer($data = array(), $test_age = 0) {
+  return abst_revenue_analyzer($data, $test_age);
+}
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
+function random_normal($mean = 0, $std = 1) {
+  return abst_random_normal($mean, $std);
+}
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
+function bt_bb_ab_analyze_device_sizes($data, $test_age = 0, $use_revenue = false) {
+  return abst_analyze_device_sizes($data, $test_age, $use_revenue);
+}
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
+function normal_cdf($x) {
+  return abst_normal_cdf($x);
+}

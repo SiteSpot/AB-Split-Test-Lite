@@ -226,27 +226,35 @@ if (!is_array($heatmap_pages)) {
 
       <div class="abst-settings-tabs">
 
-        <button type="button" class="abst-tab-btn active" data-tab="welcome">
+        <button type="button" class="abst-tab-btn active" data-tab="account">
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
 
-          Welcome
+          Account
 
         </button>
 
-        <button type="button" class="abst-tab-btn" data-tab="general">
+        <button type="button" class="abst-tab-btn" data-tab="testing">
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
 
-          General
+          Testing
 
         </button>
 
-        <button type="button" class="abst-tab-btn" data-tab="data">
+        <button type="button" class="abst-tab-btn" data-tab="conversions">
+
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+
+          Conversions
+
+        </button>
+
+        <button type="button" class="abst-tab-btn" data-tab="tracking">
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
 
-          Data Management
+          Tracking & Privacy
 
         </button>
 
@@ -254,23 +262,39 @@ if (!is_array($heatmap_pages)) {
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle></svg>
 
-          Heatmaps
+          Heatmaps & Replays
 
         </button>
 
-        <button type="button" class="abst-tab-btn" data-tab="advanced">
+        <button type="button" class="abst-tab-btn" data-tab="integrations">
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
 
-          Advanced
+          Integrations
 
         </button>
 
-        <button type="button" class="abst-tab-btn" data-tab="mcp">
+        <button type="button" class="abst-tab-btn" data-tab="reports">
+
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+
+          Reports
+
+        </button>
+
+        <button type="button" class="abst-tab-btn" data-tab="developer">
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
 
-          API / MCP / CLI
+          Developer
+
+        </button>
+
+        <button type="button" class="abst-tab-btn" data-tab="danger">
+
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+
+          Danger Zone
 
         </button>
 
@@ -284,9 +308,9 @@ if (!is_array($heatmap_pages)) {
 
         
 
-        <!-- WELCOME TAB -->
+        <!-- ACCOUNT TAB -->
 
-        <div class="abst-tab-panel active" id="tab-welcome">
+        <div class="abst-tab-panel active" id="tab-account">
 
           <h2>Welcome to AB Split Test</h2>
 
@@ -372,11 +396,11 @@ if (!is_array($heatmap_pages)) {
 
 
 
-        <!-- GENERAL TAB -->
+        <!-- TESTING TAB -->
 
-        <div class="abst-tab-panel" id="tab-general">
+        <div class="abst-tab-panel" id="tab-testing">
 
-          <h2>General Settings</h2>
+          <h2>Testing</h2>
 
           
 
@@ -465,15 +489,23 @@ if (!is_array($heatmap_pages)) {
 
 
 
-        </div><!-- end #tab-general -->
+        </div><!-- end #tab-testing -->
 
 
 
-        <!-- DATA MANAGEMENT TAB -->
+        <div class="abst-tab-panel" id="tab-conversions">
 
-        <div class="abst-tab-panel" id="tab-data">
+          <h2>Conversions</h2>
 
-          <h2>Data Management</h2>
+        </div>
+
+
+
+        <!-- TRACKING TAB -->
+
+        <div class="abst-tab-panel" id="tab-tracking">
+
+          <h2>Tracking & Privacy</h2>
 
 
 
@@ -547,7 +579,7 @@ if (!is_array($heatmap_pages)) {
 
 
 
-        </div><!-- end #tab-data -->
+        </div><!-- end #tab-tracking -->
 
 
 
@@ -665,11 +697,19 @@ if (!is_array($heatmap_pages)) {
 
 
 
-        <!-- ADVANCED TAB -->
+        <div class="abst-tab-panel" id="tab-reports">
 
-        <div class="abst-tab-panel" id="tab-advanced">
+          <h2>Reports</h2>
 
-          <h2>Advanced Settings</h2>
+        </div>
+
+
+
+        <!-- INTEGRATIONS TAB -->
+
+        <div class="abst-tab-panel" id="tab-integrations">
+
+          <h2>Integrations</h2>
 
 
 
@@ -740,15 +780,15 @@ if (!is_array($heatmap_pages)) {
 
 
 
-        </div><!-- end #tab-advanced -->
+        </div><!-- end #tab-integrations -->
 
 
 
         <!-- MCP SETTINGS TAB -->
 
-        <div class="abst-tab-panel" id="tab-mcp">
+        <div class="abst-tab-panel" id="tab-developer">
 
-          <h2>API / MCP / CLI</h2>
+          <h2>Developer</h2>
 
           
 
@@ -1013,6 +1053,7 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
             
 
+            <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status flag after redirect. ?>
             <?php if (isset($_GET['mcp_install_success'])): ?>
 
             <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin-bottom: 15px;">
@@ -1025,11 +1066,12 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
 
 
+            <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status flag after redirect. ?>
             <?php if (isset($_GET['mcp_install_error'])): ?>
 
             <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin-bottom: 15px;">
 
-              <strong>❌ Installation failed:</strong> <?php echo esc_html(urldecode(sanitize_text_field(wp_unslash($_GET['mcp_install_error'])))); ?>
+              <strong>❌ Installation failed:</strong> <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status message after redirect. ?><?php echo esc_html(urldecode(sanitize_text_field(wp_unslash($_GET['mcp_install_error'])))); ?>
 
             </div>
 
@@ -1277,7 +1319,13 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
           <?php endif; ?>
 
-        </div><!-- end #tab-mcp -->
+        </div><!-- end #tab-developer -->
+
+        <div class="abst-tab-panel" id="tab-danger">
+
+          <h2>Danger Zone</h2>
+
+        </div>
 
 
 
@@ -2113,6 +2161,30 @@ button.shepherd-button {
 
 <script>
 
+// Settings section organization
+document.addEventListener('DOMContentLoaded', function() {
+  function moveSection(selector, targetTabId) {
+    const section = document.querySelector(selector);
+    const target = document.getElementById(targetTabId);
+    if (section && target) {
+      target.appendChild(section);
+    }
+  }
+
+  moveSection('.ab-test-server-convert-woo', 'tab-conversions');
+  moveSection('.ab-test-uuid', 'tab-conversions');
+  moveSection('.ab-test-wait-for-approval', 'tab-tracking');
+
+  moveSection('.ab-settings-thompson-sampling', 'tab-testing');
+
+  moveSection('.ab-test-agency-hub', 'tab-integrations');
+  moveSection('.ab-test-agency-mode', 'tab-integrations');
+  moveSection('.ab-settings-webhooks', 'tab-integrations');
+
+  moveSection('.ab-settings-notification-emails', 'tab-reports');
+  moveSection('.ab-test-clear-cache', 'tab-danger');
+});
+
 // Tab switching functionality
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -2125,7 +2197,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Check for saved tab in URL hash or localStorage
 
-  const savedTab = window.location.hash.replace('#', '') || localStorage.getItem('abst_settings_tab') || 'welcome';
+  const legacyTabs = {
+    welcome: 'account',
+    license: 'account',
+    general: 'testing',
+    data: 'tracking',
+    advanced: 'integrations',
+    mcp: 'developer'
+  };
+
+  let savedTab = window.location.hash.replace('#', '') || localStorage.getItem('abst_settings_tab') || 'account';
+  savedTab = legacyTabs[savedTab] || savedTab;
 
   
 
@@ -2183,25 +2265,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     } else {
 
-      // Fallback to welcome tab
+      // Fallback to account tab
 
-      document.querySelector('.abst-tab-btn[data-tab="welcome"]').classList.add('active');
+      document.querySelector('.abst-tab-btn[data-tab="account"]').classList.add('active');
 
-      document.getElementById('tab-welcome').classList.add('active');
+      document.getElementById('tab-account').classList.add('active');
 
-      tabId = 'welcome';
+      tabId = 'account';
 
     }
 
     
 
-    // Hide save button on the welcome tab only. All settings tabs can now be saved.
+    // Hide save button on the account-only tab.
 
     const saveBtn = document.querySelector('.floating-save-button-row');
 
     if (saveBtn) {
 
-      saveBtn.style.display = (tabId === 'welcome') ? 'none' : 'block';
+      saveBtn.style.display = (tabId === 'account') ? 'none' : 'block';
 
     }
 

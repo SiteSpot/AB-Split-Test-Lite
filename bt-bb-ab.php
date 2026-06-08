@@ -50,10 +50,11 @@ define('BT_AB_PLUGIN_FOLDER', $abst_folder_path);
 
 
 if (!defined('BT_AB_TEST_WL_ABTEST')) {
-  $wl_ab_test = apply_filters('abst_wl_ab_test', 'Split Test');
+  $abst_wl_ab_test = apply_filters('abst_wl_ab_test', 'Split Test');
   // Backward compatibility: also allow old hook name (new hook takes precedence)
-  $wl_ab_test = apply_filters('ab_wl_ab_test', $wl_ab_test);
-  define('BT_AB_TEST_WL_ABTEST', $wl_ab_test);
+  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+  $abst_wl_ab_test = apply_filters('ab_wl_ab_test', $abst_wl_ab_test);
+  define('BT_AB_TEST_WL_ABTEST', $abst_wl_ab_test);
 }
 
 if (!defined('ABST_JOURNEY_DIR')) define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
@@ -248,6 +249,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
+      add_action( 'abst_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9 );
+      // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public action.
       add_action( 'bt_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9 );
 
       add_action( 'manage_bt_experiments_posts_custom_column', array($this,'manage_bt_experiments_posts_custom_column'),10,2); // add data to admin columns
@@ -335,7 +338,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         include_once( plugin_dir_path(__FILE__) . 'admin/bt-bb-ab-admin.php');
 
-        $bt_bb_ab_admin = new BT_BB_AB_Admin;
+        $abst_admin = new BT_BB_AB_Admin;
 
         add_action('admin_enqueue_scripts', array($this,'render_admin_scripts_styles'));
 
@@ -377,6 +380,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             // Exclude completed tests from default view unless specifically filtered
 
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin list filtering; no state change.
             if (!isset($_GET['post_status'])) {
 
                 $query->set('post_status', array('publish', 'draft', 'pending', 'private'));
@@ -547,6 +551,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'posts_per_page' => 10,
 
+          // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Bounded admin selector query by plugin-owned meta.
           'meta_query'     => array(
 
               array(
@@ -768,6 +773,22 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
     /**
+     * Catch version changes missed by upgrader_process_complete, such as direct
+     * file replacement or deployment tools that do not run the WordPress updater.
+     * Called by the AB Split Test settings page loader.
+     */
+    function maybe_handle_plugin_version_change() {
+      $stored_version = get_option('abst_plugin_version');
+      if ($stored_version === BT_AB_TEST_VERSION) {
+        return;
+      }
+
+      $this->clear_cache_on_update();
+    }
+
+
+
+    /**
 
      * Clear cache and update version number on plugin update
 
@@ -861,6 +882,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         'fields' => 'ids',
 
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- One-time upgrade query for plugin-owned meta.
         'meta_query' => [
 
           [
@@ -925,8 +947,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         'posts_per_page' => -1,
 
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One-time upgrade query for plugin-owned meta.
         'meta_key'       => 'test_type',
 
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- One-time upgrade query for plugin-owned meta.
         'meta_value'     => 'magic'
 
       ));
@@ -1031,8 +1055,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         'post_status'    => 'any',
 
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One-time upgrade query for plugin-owned meta.
         'meta_key'       => 'test_type',
 
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- One-time upgrade query for plugin-owned meta.
         'meta_value'     => 'magic'
 
       ));
@@ -1508,7 +1534,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       if ( current_user_can('edit_posts') ) {
 
-        if ( isset( $_GET['abst_heatmap_view'] ) && $_GET['abst_heatmap_view'] == '1' ) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display mode flag for the heatmap iframe.
+        if ( isset( $_GET['abst_heatmap_view'] ) && sanitize_text_field( wp_unslash( $_GET['abst_heatmap_view'] ) ) == '1' ) {
 
           show_admin_bar( false );
 
@@ -2055,7 +2082,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    update_post_meta( $post_id, 'magic_definition', $magic_definition );
+    update_post_meta( $post_id, 'magic_definition', wp_slash( $magic_definition ) );
 
     
 
@@ -2757,6 +2784,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Third-party Breeze cache action.
         do_action( 'breeze_clear_all_cache' );
 
 
@@ -3289,13 +3317,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       wp_enqueue_script('jquery');
 
       // Enqueue custom scripts
-      wp_enqueue_script('select2-js', plugin_dir_url(__FILE__) . 'js/select2.js', array('jquery'), null, true);
-      wp_enqueue_script('experiment-js', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), null, true);
+      wp_enqueue_script('select2-js', plugin_dir_url(__FILE__) . 'js/select2.js', array('jquery'), '4.1.0', true);
+      wp_enqueue_script('experiment-js', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
       // Enqueue custom styles
-      wp_enqueue_style('select2-css', plugin_dir_url(__FILE__) . 'css/select2.css');
-      wp_enqueue_style('experiment-css', plugin_dir_url(__FILE__) . 'css/experiment.css');
-      wp_enqueue_style('bt-bb-ab-admin-css', plugin_dir_url(__FILE__) . 'admin/bt-bb-ab-admin.css');
+      wp_enqueue_style('select2-css', plugin_dir_url(__FILE__) . 'css/select2.css', array(), '4.1.0');
+      wp_enqueue_style('experiment-css', plugin_dir_url(__FILE__) . 'css/experiment.css', array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('bt-bb-ab-admin-css', plugin_dir_url(__FILE__) . 'admin/bt-bb-ab-admin.css', array(), BT_AB_TEST_VERSION);
 
       // Print enqueued styles and scripts for AJAX context
       wp_print_styles();
@@ -7302,17 +7330,17 @@ public function get_experiment_stats_array( $test ){
 
       // Use Welch's T-Test for revenue/order value data (continuous values)
 
-      $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+      $observations = abst_revenue_analyzer($observations, $test_age);
 
-      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
+      $observations = abst_analyze_device_sizes($observations, $test_age, true);
 
     } else {
 
       // Use Bayesian analyzer for binary conversion data
 
-      $observations = bt_bb_ab_split_test_analyzer($observations,$test_age);
+      $observations = abst_split_test_analyzer($observations,$test_age);
 
-      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+      $observations = abst_analyze_device_sizes($observations, $test_age, false);
 
     }
 
@@ -7832,7 +7860,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
     $dirtyInputs = false;
 
-    $cleanInputs = intval($_GET['abstCleanInputs'] ?? 0);
+    $clean_inputs_nonce_valid = isset( $_GET['abst_cleanup_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['abst_cleanup_nonce'] ) ), 'abst_clean_inputs' );
+    $cleanInputs              = ( isset( $_GET['abstCleanInputs'] ) && $clean_inputs_nonce_valid ) ? intval( wp_unslash( $_GET['abstCleanInputs'] ) ) : 0;
 
     foreach($observations as $key => $value){
 
@@ -7866,7 +7895,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
         //construct clean inputs href
 
-        $cleanHref = esc_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) . "&abstCleanInputs=1" );
+        $current_request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        $cleanHref           = wp_nonce_url( add_query_arg( 'abstCleanInputs', '1', $current_request_uri ), 'abst_clean_inputs', 'abst_cleanup_nonce' );
 
         echo '<h4 class="error">Unsanitized keys found (disallowed characters are: @ # $ % ^ &amp; *). <BR/><a href="' . esc_attr( $cleanHref ) . '">Click here to remove them</a></h4>';
 
@@ -7884,7 +7914,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
   if ($invalid_variations_check['has_invalid']) {
 
-    $cleanupConfirm = intval($_GET['abstCleanupVariations'] ?? 0);
+    $cleanup_variations_nonce_valid = isset( $_GET['abst_cleanup_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['abst_cleanup_nonce'] ) ), 'abst_cleanup_variations' );
+    $cleanupConfirm                 = ( isset( $_GET['abstCleanupVariations'] ) && $cleanup_variations_nonce_valid ) ? intval( wp_unslash( $_GET['abstCleanupVariations'] ) ) : 0;
 
     if ($cleanupConfirm == 1) {
 
@@ -7912,7 +7943,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
       $invalid_ids = implode(', ', $invalid_variations_check['invalid_keys']);
 
-      $cleanupHref = esc_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) . "&abstCleanupVariations=1" );
+      $current_request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+      $cleanupHref         = wp_nonce_url( add_query_arg( 'abstCleanupVariations', '1', $current_request_uri ), 'abst_cleanup_variations', 'abst_cleanup_nonce' );
 
       
 
@@ -7966,17 +7998,17 @@ function abst_show_experiment_results($test,$asTable = false){
 
       // Use Welch's T-Test for revenue/order value data (continuous values)
 
-      $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+      $observations = abst_revenue_analyzer($observations, $test_age);
 
-      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
+      $observations = abst_analyze_device_sizes($observations, $test_age, true);
 
     } else {
 
       // Use Bayesian analyzer for binary conversion data
 
-      $observations = bt_bb_ab_split_test_analyzer($observations,$test_age);
+      $observations = abst_split_test_analyzer($observations,$test_age);
 
-      $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+      $observations = abst_analyze_device_sizes($observations, $test_age, false);
 
     }
 
@@ -8268,17 +8300,17 @@ function abst_show_experiment_results($test,$asTable = false){
 
         // Use Welch's T-Test for revenue/order value data (continuous values)
 
-        $observations = bt_bb_ab_revenue_analyzer($observations, $test_age);
+        $observations = abst_revenue_analyzer($observations, $test_age);
 
-        $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, true);
+        $observations = abst_analyze_device_sizes($observations, $test_age, true);
 
       } else {
 
         // Use Bayesian analyzer for binary conversion data
 
-        $observations = bt_bb_ab_split_test_analyzer($observations,$test_age);
+        $observations = abst_split_test_analyzer($observations,$test_age);
 
-        $observations = bt_bb_ab_analyze_device_sizes($observations, $test_age, false);
+        $observations = abst_analyze_device_sizes($observations, $test_age, false);
 
       }
 
@@ -8827,6 +8859,11 @@ function abst_show_experiment_results($test,$asTable = false){
           wp_update_post(array('ID' => $test->ID, 'post_status' => 'complete')); // upd status
 
           update_post_meta($test->ID,'test_winner',$likeylwinner); // save it!
+
+          $abst_notification_emails = abst_get_admin_setting('abst_notification_emails');
+          $notify_to = !empty($abst_notification_emails) ? array_map('trim', explode(',', $abst_notification_emails)) : get_option('admin_email');
+          require_once plugin_dir_path(__FILE__) . 'includes/email-test-complete.php';
+          abst_send_test_complete_email($notify_to, $test, $observations, $conversion_use_order_value == '1');
 
           abst_send_webhook($test->ID, $likeylwinner, $likelywinnerpercentage); // send it!
 
@@ -10736,6 +10773,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
+      // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- This is sample embed code shown to users, not a script executed by the plugin.
       $conversionScript = '<script>
 
   window.abst.abConversionValue = 1; // optional, change if you are using \'use order value\'
@@ -10794,6 +10832,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
 
+      // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- This is sample embed code shown to users, not a script executed by the plugin.
       $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></script>';
 
       echo "<input type='text' readonly='readonly' onclick='this.select()' value='" . esc_attr($fingerprint_script_html) . "'>";
@@ -11118,7 +11157,7 @@ echo "    if( selectval !== 'url' )
 
       {
 
-        $events = json_decode( wp_unslash( $_COOKIE['abst_server_events'] ), true );
+        $events = json_decode( sanitize_text_field( wp_unslash( $_COOKIE['abst_server_events'] ) ), true );
 
       }
 
@@ -11458,6 +11497,7 @@ echo "    if( selectval !== 'url' )
 
         'show_in_inline_dropdown'   => true,
 
+        /* translators: %s: number of ideas. */
         'label_count'               => _n_noop( 'Idea <span class="count">(%s)</span>', 'Ideas <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
@@ -11480,6 +11520,7 @@ echo "    if( selectval !== 'url' )
 
         'show_in_inline_dropdown'   => true,
 
+        /* translators: %s: number of completed tests. */
         'label_count'               => _n_noop( 'Test Complete <span class="count">(%s)</span>', 'Tests Complete <span class="count">(%s)</span>', 'ab-split-test-lite' ),
 
     ) );
@@ -11850,6 +11891,7 @@ echo "    if( selectval !== 'url' )
 
       
 
+      // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only builder mode flag.
       if (current_user_can('upload_files') && !isset($_GET['fb-edit'])) { 
 
           wp_enqueue_media();
@@ -11946,7 +11988,7 @@ echo "    if( selectval !== 'url' )
       wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
     // Enqueue Shepherd for Magic Bar tour (always load when highlighter loads, since magic bar can be loaded dynamically)
-    wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__));
+    wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
     wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
     wp_enqueue_script('ab-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('shepherd-js', 'ab_test_highlighter'), BT_AB_TEST_VERSION, true);
 
@@ -12180,7 +12222,7 @@ echo "    if( selectval !== 'url' )
 
       // Enqueue Shepherd PRODUCT TOUR
 
-      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__));
+      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
 
       wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
 
@@ -12232,9 +12274,9 @@ echo "    if( selectval !== 'url' )
 
       $eid = (isset($post->ID))? $post->ID : null;
 
-      wp_enqueue_script( 'bt_experiment_scripts', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION );
+      wp_enqueue_script( 'bt_experiment_scripts', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
-      wp_enqueue_script( 'bt_table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION );
+      wp_enqueue_script( 'bt_table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
       wp_enqueue_style( 'bt_table', plugins_url('css/tabulator.css', __FILE__), array(), BT_AB_TEST_VERSION );
 
@@ -12260,11 +12302,11 @@ echo "    if( selectval !== 'url' )
 
       ]);
 
-      wp_enqueue_script( 'bt_ab_chart', plugins_url('js/chart.js', __FILE__), ['bt_experiment_scripts'], BT_AB_TEST_VERSION );
+      wp_enqueue_script( 'bt_ab_chart', plugins_url('js/chart.js', __FILE__), ['bt_experiment_scripts'], BT_AB_TEST_VERSION, true );
 
       wp_enqueue_style( 'bt_experiment_style', plugins_url('css/experiment.css', __FILE__),array(),BT_AB_TEST_VERSION);
 
-      wp_enqueue_script( 'bt_confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION );    
+      wp_enqueue_script( 'bt_confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
       
 
@@ -12670,6 +12712,7 @@ echo "    if( selectval !== 'url' )
 
             'posts_per_page' => 50,
 
+            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Bounded editor selector query by plugin-owned test type meta.
             'meta_query'     => array(
 
                 array(
@@ -12744,11 +12787,11 @@ echo "    if( selectval !== 'url' )
 
     if (!current_user_can('edit_posts')) { wp_die('Unauthorized'); }
 
-    if( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'btexperimentexturlnonce' ) ) { wp_die('sorry...'); }
+    if( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'btexperimentexturlnonce' ) ) { wp_die('sorry...'); }
 
     
 
-      $plugin_url = get_admin_url().'admin-ajax.php?action=abtrk&eid='.intval($_POST['eid']);
+      $plugin_url = get_admin_url().'admin-ajax.php?action=abtrk&eid='.intval( wp_unslash( $_POST['eid'] ?? 0 ) );
 
 
 
@@ -13320,7 +13363,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'is_preview' => $is_preview,
         'is_agency' => false,
         'is_free' => '1',
-        'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+        'tagging' => apply_filters( 'abst_tagging', apply_filters( 'bt_ab_tagging', true ) ) ? '1' : '0',
         'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'abst_disable_ai' => '1',
@@ -13799,7 +13843,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'is_free' => true,
 
-        'tagging' => apply_filters( 'bt_ab_tagging', true ) ? '1' : '0',
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+        'tagging' => apply_filters( 'abst_tagging', apply_filters( 'bt_ab_tagging', true ) ) ? '1' : '0',
 
         'abst_server_convert_woo' => $abst_server_convert_woo ? '1' : '0',
 
@@ -14350,7 +14395,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         // Rate limit direct AJAX calls (batch path has its own limiter)
         if (!$from_api) {
-            $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+            $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
             $rate_key = 'abst_ev_' . md5($ip);
             $rate_count = (int) get_transient($rate_key);
             if ($rate_count > 120) {
@@ -14363,6 +14408,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
   
 
+        // Public conversion tracking endpoint; protected by rate limiting and sanitized payloads instead of user nonces.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
         //is it coming from a js navigator.beacon() call?
 
         if(isset($_GET['method']) && ($_GET['method'] == 'beacon'))
@@ -14416,6 +14463,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $advancedId         = sanitize_text_field(($advancedId)? $advancedId : wp_unslash( $_POST['ab_advanced_id'] ?? null ));
 
         }
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         
 
@@ -15347,6 +15395,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // ┄┄ Create A/B Test ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/create-test', [
 
         'label'       => 'Create A/B Test',
@@ -15553,6 +15602,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // ┄┄ List A/B Tests ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/list-tests', [
 
         'label'       => 'List A/B Tests',
@@ -15603,6 +15653,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // ┄┄ Get Test Results ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/get-test-results', [
 
         'label'       => 'Get Test Results',
@@ -15655,6 +15706,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // ┄┄ Update Test Status ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/get-test-details', [
 
         'label'       => 'Get Test Details',
@@ -15701,6 +15753,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/update-test-status', [
 
         'label'       => 'Update Test Status',
@@ -15755,6 +15808,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       // ┄┄ Update Test Settings ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/update-test-settings', [
 
         'label'       => 'Update Test Settings',
@@ -16860,6 +16914,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         }
 
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- REST list endpoint filters by plugin-owned test type meta when explicitly requested.
         $args['meta_query'] = [[
 
           'key' => 'test_type',
@@ -17138,6 +17193,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       $params = $guard_result['params'];
 
       $validation_warnings = $guard_result['warnings'];
+
+      $requested_status = $params['status'] ?? ($params['post_status'] ?? 'draft');
+      if (!(defined('WP_CLI') && WP_CLI) && $requested_status === 'publish' && !current_user_can('publish_posts')) {
+        return new WP_Error('forbidden', 'You do not have permission to publish this test.', ['status' => 403]);
+      }
 
       
 
@@ -17434,7 +17494,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         
 
-        update_post_meta($test_id, 'magic_definition', $magic_def);
+        // wp_slash() because update_post_meta() runs wp_unslash() and would otherwise
+        // strip the backslashes from JSON-escaped quotes, corrupting the stored JSON.
+        update_post_meta($test_id, 'magic_definition', wp_slash($magic_def));
 
       }
 
@@ -17978,13 +18040,17 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-          //update published date
+          // Reset the test start date when clearing historical results.
+          $reset_date     = current_time('mysql');
+          $reset_date_gmt = current_time('mysql', 1);
 
           $post = array(
 
               'ID' => $eid,
 
-              'post_date' => current_time( 'Y-m-d H:i:s' ), // UPDATE
+              'post_date' => $reset_date,
+
+              'post_date_gmt' => $reset_date_gmt,
 
               'post_status' => 'publish', // make active again if necess
 
@@ -18796,7 +18862,7 @@ function abst_resolve_page_title($page_id) {
 
     $category = get_category_by_slug($category_slug);
 
-    return $category ? $category->name . ' Category' : $page_id;
+    return $category ? esc_html( $category->name ) . ' Category' : esc_html( $page_id );
 
   }
 
@@ -18814,11 +18880,11 @@ function abst_resolve_page_title($page_id) {
 
       $term = get_term_by('slug', $term_slug, $taxonomy);
 
-      return $term ? $term->name . ' (' . $taxonomy . ')' : $page_id;
+      return $term ? esc_html( $term->name ) . ' (' . esc_html( $taxonomy ) . ')' : esc_html( $page_id );
 
     }
 
-    return $page_id;
+    return esc_html( $page_id );
 
   }
 
@@ -18844,7 +18910,7 @@ function abst_resolve_page_title($page_id) {
 
     }
 
-    return $term ? $term->name : $page_id;
+    return $term ? esc_html( $term->name ) : esc_html( $page_id );
 
   }
 
@@ -18856,13 +18922,13 @@ function abst_resolve_page_title($page_id) {
 
     $author = get_user_by('login', $author_login);
 
-    return $author ? 'Author: ' . $author->display_name : $page_id;
+    return $author ? 'Author: ' . esc_html( $author->display_name ) : esc_html( $page_id );
 
   }
 
   
 
-  return get_the_title($page_id);
+  return esc_html( get_the_title($page_id) );
 
 }
 
@@ -18876,7 +18942,7 @@ function abst_heatmaps_page_content() {
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>'.BT_AB_TEST_WL_ABTEST.' Heatmaps & Scrollmaps</h1>';
+  echo '<h1>' . esc_html( BT_AB_TEST_WL_ABTEST ) . ' Heatmaps & Scrollmaps</h1>';
 
   echo '<span class="abst-beta-badge">Beta <a href="https://absplittest.com/support" target="_blank">Report issues</a></span>';
 
@@ -18886,7 +18952,8 @@ function abst_heatmaps_page_content() {
 
   // Handle both numeric post IDs and string identifiers (post-type-archive-product, category-news, etc.)
 
-  $selected_post = isset($_GET['post']) ? sanitize_text_field($_GET['post']) : 0;
+  // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only heatmap filter parameters.
+  $selected_post = isset($_GET['post']) ? sanitize_text_field( wp_unslash( $_GET['post'] ) ) : 0;
 
   // Convert to int only if it's a numeric string
 
@@ -18911,25 +18978,31 @@ function abst_heatmaps_page_content() {
 
 
 
-  $selected_eid = isset($_GET['eid']) ? intval($_GET['eid']) : 0;
+  $selected_eid = isset($_GET['eid']) ? intval( wp_unslash( $_GET['eid'] ) ) : 0;
 
-  $selected_variation = isset($_GET['variation']) ? sanitize_text_field($_GET['variation']) : '';
+  $selected_variation = isset($_GET['variation']) ? sanitize_text_field( wp_unslash( $_GET['variation'] ) ) : '';
 
-  $selected_size = isset($_GET['size']) ? sanitize_text_field($_GET['size']) : 'large';
+  $selected_size = isset($_GET['size']) ? sanitize_text_field( wp_unslash( $_GET['size'] ) ) : 'large';
 
-  $selected_mode = isset($_GET['mode']) ? sanitize_text_field($_GET['mode']) : 'clicks';
+  $selected_mode = isset($_GET['mode']) ? sanitize_text_field( wp_unslash( $_GET['mode'] ) ) : 'clicks';
 
   $selected_days = '3';
 
-  $show_conversion_traffic_only = isset($_GET['cto']) ? sanitize_text_field($_GET['cto']) : '0';
+  $show_conversion_traffic_only = isset($_GET['cto']) ? sanitize_text_field( wp_unslash( $_GET['cto'] ) ) : '0';
 
-  $selected_referrer = isset($_GET['referrer']) ? sanitize_text_field($_GET['referrer']) : '';
+  $selected_exit_url = isset($_GET['exit_url']) ? sanitize_text_field( wp_unslash( $_GET['exit_url'] ) ) : '';
+  if (is_numeric($selected_exit_url)) {
+    $selected_exit_url = intval($selected_exit_url);
+  }
 
-  $selected_utm_source = isset($_GET['utm_source']) ? sanitize_text_field($_GET['utm_source']) : '';
+  $selected_referrer = isset($_GET['referrer']) ? sanitize_text_field( wp_unslash( $_GET['referrer'] ) ) : '';
 
-  $selected_utm_medium = isset($_GET['utm_medium']) ? sanitize_text_field($_GET['utm_medium']) : '';
+  $selected_utm_source = isset($_GET['utm_source']) ? sanitize_text_field( wp_unslash( $_GET['utm_source'] ) ) : '';
 
-  $selected_utm_campaign = isset($_GET['utm_campaign']) ? sanitize_text_field($_GET['utm_campaign']) : '';
+  $selected_utm_medium = isset($_GET['utm_medium']) ? sanitize_text_field( wp_unslash( $_GET['utm_medium'] ) ) : '';
+
+  $selected_utm_campaign = isset($_GET['utm_campaign']) ? sanitize_text_field( wp_unslash( $_GET['utm_campaign'] ) ) : '';
+  // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 
 
@@ -19095,6 +19168,7 @@ function abst_heatmaps_page_content() {
 
 
     $filters['cto'] = $show_conversion_traffic_only;
+    $filters['exit_url'] = $selected_exit_url;
 
     $filters['screen'] = $screenSize;
 
@@ -19280,11 +19354,47 @@ function abst_heatmaps_page_content() {
 
 
 
+      $active_filter_summary = [];
+      if (!empty($selected_eid)) {
+        $active_filter_summary[] = ['label' => 'Test', 'value' => get_the_title($selected_eid)];
+      }
+      if (!empty($selected_variation)) {
+        $active_filter_summary[] = ['label' => 'Variation', 'value' => abst_resolve_variation_name($selected_eid, $selected_variation)];
+      }
+      if ($show_conversion_traffic_only === '1') {
+        $active_filter_summary[] = ['label' => 'Traffic', 'value' => 'Converted only'];
+      }
+      if (!empty($selected_exit_url)) {
+        $active_filter_summary[] = ['label' => 'Exit page', 'value' => abst_resolve_page_title($selected_exit_url)];
+      }
+      if (!empty($selected_referrer)) {
+        $active_filter_summary[] = ['label' => 'Referrer', 'value' => $selected_referrer];
+      }
+      if (!empty($selected_utm_source)) {
+        $active_filter_summary[] = ['label' => 'Source', 'value' => $selected_utm_source];
+      }
+      if (!empty($selected_utm_medium)) {
+        $active_filter_summary[] = ['label' => 'Medium', 'value' => $selected_utm_medium];
+      }
+      if (!empty($selected_utm_campaign)) {
+        $active_filter_summary[] = ['label' => 'Campaign', 'value' => $selected_utm_campaign];
+      }
+
+  echo '<details class="abst-filter-group abst-heatmap-filter-panel"><summary><span class="abst-filter-summary-title">Filters</span>';
+  if (!empty($active_filter_summary)) {
+    echo '<span class="abst-filter-summary-items">';
+    foreach ($active_filter_summary as $summary_item) {
+      echo '<span class="abst-filter-summary-item"><span class="abst-filter-summary-label">' . esc_html($summary_item['label']) . ':</span> ' . esc_html($summary_item['value']) . '</span>';
+    }
+    echo '</span>';
+  }
+  echo '</summary><div class="abst-filter-row">';
+
       // Experiment selector (only show if page is selected)
 
   if($selected_post && !empty($variations)) {
 
-    echo '<div class="abst-filter-group"><label>Test</label><div class="abst-filter-row"><select id="abst-heatmaps-experiment-selector">';
+    echo '<div class="abst-filter-field"><label>Test</label><select id="abst-heatmaps-experiment-selector">';
 
     echo '<option value="">No Test Filter</option>';
 
@@ -19340,7 +19450,7 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo '</div></div>';
+    echo '</div>';
 
   }
 
@@ -19350,7 +19460,21 @@ function abst_heatmaps_page_content() {
 
   if ($selected_post) {
 
-    echo '<div class="abst-filter-group"><label>Traffic Source</label><div class="abst-filter-row">';
+    echo '<div class="abst-filter-field"><label for="show-conversion-traffic-only">Test traffic</label>';
+    echo '<select id="show-conversion-traffic-only" aria-label="Test traffic">';
+    echo '<option value="0"' . ($show_conversion_traffic_only !== '1' ? ' selected' : '') . '>All Test Traffic</option>';
+    echo '<option value="1"' . ($show_conversion_traffic_only === '1' ? ' selected' : '') . '>Converted Test Traffic Only</option>';
+    echo '</select></div>';
+
+    echo '<div class="abst-filter-field"><label for="abst-heatmaps-exit-url-selector">Exit Page</label>';
+    echo '<select id="abst-heatmaps-exit-url-selector" aria-label="Exit Page">';
+    echo '<option value="">Any Exit Page</option>';
+    if (!empty($selected_exit_url)) {
+      echo '<option value="' . esc_attr($selected_exit_url) . '" selected="selected">' . esc_html(abst_resolve_page_title($selected_exit_url)) . '</option>';
+    }
+    echo '</select></div>';
+
+    echo '<div class="abst-filter-field"><label>Referrer</label>';
 
     echo '<select id="abst-heatmaps-referrer-selector">';
 
@@ -19370,13 +19494,13 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo '</select>';
+    echo '</select></div>';
 
 
 
     // UTM Source dropdown
 
-    echo '<select id="abst-heatmaps-utm-source">';
+    echo '<div class="abst-filter-field"><label>Source</label><select id="abst-heatmaps-utm-source">';
 
     echo '<option value="">All Sources</option>';
 
@@ -19390,13 +19514,13 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo '</select>';
+    echo '</select></div>';
 
 
 
     // UTM Medium dropdown
 
-    echo '<select id="abst-heatmaps-utm-medium">';
+    echo '<div class="abst-filter-field"><label>Medium</label><select id="abst-heatmaps-utm-medium">';
 
     echo '<option value="">All Mediums</option>';
 
@@ -19410,13 +19534,13 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo '</select>';
+    echo '</select></div>';
 
 
 
     // UTM Campaign dropdown
 
-    echo '<select id="abst-heatmaps-utm-campaign">';
+    echo '<div class="abst-filter-field"><label>Campaign</label><select id="abst-heatmaps-utm-campaign">';
 
     echo '<option value="">All Campaigns</option>';
 
@@ -19430,11 +19554,11 @@ function abst_heatmaps_page_content() {
 
     }
 
-    echo '</select>';
+    echo '</select></div>';
 
 
 
-    echo '</div></div>';
+    echo '</div></details>';
 
   }
 
@@ -19997,6 +20121,8 @@ function abst_get_scroll_data($post_id, $filters) {
 
     }
 
+    $exit_pages = abst_build_journey_exit_pages_from_lines($lines);
+
 
 
     $current_metadata = null;
@@ -20393,6 +20519,26 @@ function abst_resolve_variation_name($eid, $variation) {
 
 
 
+function abst_build_journey_exit_pages_from_lines($lines) {
+  $exit_pages = [];
+  $current_uuid = '';
+
+  foreach ($lines as $line) {
+    $parts = array_map('trim', explode('|', $line));
+
+    if (!empty($parts[0]) && $parts[0] === 'meta') {
+      $current_uuid = isset($parts[1]) ? $parts[1] : '';
+      continue;
+    }
+
+    if ($current_uuid && count($parts) >= 3 && isset($parts[1]) && $parts[1] === 'pv') {
+      $exit_pages[$current_uuid] = is_numeric($parts[2]) ? (int) $parts[2] : trim($parts[2]);
+    }
+  }
+
+  return $exit_pages;
+}
+
 function abst_search_all_journey_logs($post_id, $filters = []) {
 
 
@@ -20532,6 +20678,13 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
         // Check if this metadata matches our filters
 
         $metadata_matches_filter = true;
+
+        if (!empty($filters['exit_url'])) {
+          $exit_filter = is_numeric($filters['exit_url']) ? (int) $filters['exit_url'] : trim($filters['exit_url']);
+          if (($exit_pages[$current_metadata['uuid']] ?? '') !== $exit_filter) {
+            $metadata_matches_filter = false;
+          }
+        }
 
         
 
@@ -20833,6 +20986,8 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
     }
 
+    $exit_pages = abst_build_journey_exit_pages_from_lines($lines);
+
 
 
     $current_metadata = null;
@@ -20878,6 +21033,13 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
         // Check if this metadata matches our filters
 
         $metadata_matches_filter = true;
+
+        if (!empty($filters['exit_url'])) {
+          $exit_filter = is_numeric($filters['exit_url']) ? (int) $filters['exit_url'] : trim($filters['exit_url']);
+          if (($exit_pages[$current_metadata['uuid']] ?? '') !== $exit_filter) {
+            $metadata_matches_filter = false;
+          }
+        }
 
         
 
@@ -21156,7 +21318,12 @@ function abst_logs_page_content() {
 
   // Clear logs button
 
-  if (isset($_POST['clear_logs']) && current_user_can('manage_options')) {
+  if (
+    isset($_POST['clear_logs']) &&
+    current_user_can('manage_options') &&
+    isset($_POST['abst_clear_logs_nonce']) &&
+    wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['abst_clear_logs_nonce'])), 'abst_clear_logs')
+  ) {
 
     abst_put_contents($log_file, '');
 
@@ -21187,6 +21354,7 @@ function abst_logs_page_content() {
   echo '<div class="abst-logs-actions">';
 
   echo '<form method="post" style="display:inline;">';
+  wp_nonce_field('abst_clear_logs', 'abst_clear_logs_nonce');
 
   echo '<input type="submit" name="clear_logs" value="Clear Logs" class="button button-secondary" onclick="return confirm(\'Are you sure you want to clear all logs?\');">';
 
@@ -21575,6 +21743,7 @@ function abst_get_detected_caches() {
 
 
 
+  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Third-party Breeze cache action.
   if (has_action('breeze_clear_all_cache')) 
 
     $detected_caches[] = 'Breeze Cache';
@@ -22167,13 +22336,13 @@ function abst_create_test_from_structured_data($data) {
 
         // Use Welch's T-Test for revenue/order value data (continuous values)
 
-        $analyzed_observations = bt_bb_ab_revenue_analyzer($data['observations'], $test_age);
+                          $analyzed_observations = abst_revenue_analyzer($data['observations'], $test_age);
 
       } else {
 
         // Use Bayesian analyzer for binary conversion data
 
-        $analyzed_observations = bt_bb_ab_split_test_analyzer($data['observations'], $test_age);
+                          $analyzed_observations = abst_split_test_analyzer($data['observations'], $test_age);
 
       }
 
@@ -22602,7 +22771,7 @@ function abst_set_cookie_with_fallback($name, $value, $days, $host = null) {
 
     if ($host === null) {
 
-        $host = sanitize_text_field($_SERVER['HTTP_HOST'] ?? '');
+        $host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
 
     }
 

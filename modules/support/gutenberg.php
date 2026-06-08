@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Main class for gutenberg support
  */
-class BT_BB_AB_Gutenberg
+class ABST_Gutenberg
 {
 	public function __construct()
 	{
@@ -93,12 +93,15 @@ class BT_BB_AB_Gutenberg
 				'wp-element',
 				'wp-hooks'
 			],
-			BT_AB_TEST_VERSION
+			BT_AB_TEST_VERSION,
+			true
 		);
     
     	wp_localize_script( 'bt-gutenberg', 'bt_gutenberg', [
-			'experiments' 		=> json_encode(apply_filters( 'bt_experiments_get_items', 'all' )),
-			'editor_html' 		=> apply_filters( 'bt_experiments_conversion_html', '' ),
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+			'experiments' 		=> json_encode(apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'all' ) )),
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+			'editor_html' 		=> apply_filters( 'abst_experiments_conversion_html', apply_filters( 'bt_experiments_conversion_html', '' ) ),
 			'conversion_fields' => json_encode( BtConversionModule::get_fields() ),
 			'nonce' 			=> wp_create_nonce('bt_gutenberg_ab_test_html'),
 			'shortcode_name'	=> BT_BB_AB_Supports::$shortcode_name,
@@ -116,4 +119,4 @@ class BT_BB_AB_Gutenberg
 
 } // end class
 
-$bt_bb_ab_gutenberg = new BT_BB_AB_Gutenberg;
+$abst_gutenberg = new ABST_Gutenberg;

@@ -52,6 +52,8 @@
     function init() {
         cacheElements();
         bindEvents();
+        applyFiltersFromUrl();
+        updateFilterSummary();
         loadSessions();
         
         // Check for UUID in URL parameter to auto-load a session
@@ -184,10 +186,14 @@
         // Filters
         $('#apply-filters').on('click', function() {
             state.currentPage = 1;
+            updateFilterSummary();
+            updateFilterUrl();
+            $('.abst-session-filters').prop('open', false);
             loadSessions();
         });
 
         $('#rebuild-index').on('click', rebuildIndex);
+        $('.abst-session-filter-controls').on('change', 'select, input', updateFilterSummary);
 
         // Session list click
         $sessionList.on('click', '.abst-session-card', function() {
@@ -201,6 +207,7 @@
             const page = $(this).data('page');
             if (page && page !== state.currentPage) {
                 state.currentPage = page;
+                updateFilterUrl();
                 loadSessions();
             }
         });
@@ -258,6 +265,180 @@
                 $el.val(currentVal);
             }
         });
+
+        updateFilterSummary();
+    }
+
+    /**
+     * Apply supported filters from the current URL so shared links restore state.
+     */
+    function applyFiltersFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const filters = getUrlFilterMap();
+
+        Object.keys(filters).forEach(function(param) {
+            if (!urlParams.has(param)) {
+                return;
+            }
+
+            const filter = filters[param];
+            const value = urlParams.get(param);
+            const $field = $(filter.selector);
+
+            if (!$field.length) {
+                return;
+            }
+
+            if (filter.type === 'checkbox') {
+                $field.prop('checked', value === '1' || value === 'true');
+                return;
+            }
+
+            if ($field.is('select') && value && !selectHasValue($field, value)) {
+                $field.append($('<option>', { value: value, text: value }));
+            }
+
+            $field.val(value);
+        });
+
+        const replayPage = parseInt(urlParams.get('replay_page'), 10);
+        if (replayPage > 1) {
+            state.currentPage = replayPage;
+        }
+    }
+
+    /**
+     * Push the current filters into the browser URL without reloading the page.
+     */
+    function updateFilterUrl() {
+        if (!window.history || !window.history.replaceState) {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        const filters = getUrlFilterMap();
+
+        Object.keys(filters).forEach(function(param) {
+            const filter = filters[param];
+            const $field = $(filter.selector);
+            let value = '';
+
+            if (!$field.length) {
+                return;
+            }
+
+            if (filter.type === 'checkbox') {
+                value = $field.is(':checked') ? '1' : '';
+            } else {
+                value = $field.val() || '';
+            }
+
+            if (value && value !== String(filter.defaultValue)) {
+                url.searchParams.set(param, value);
+            } else {
+                url.searchParams.delete(param);
+            }
+        });
+
+        if (state.currentPage > 1) {
+            url.searchParams.set('replay_page', state.currentPage);
+        } else {
+            url.searchParams.delete('replay_page');
+        }
+
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    /**
+     * URL parameter names for filters that can be shared.
+     */
+    function getUrlFilterMap() {
+        return {
+            min_pages: { selector: '#filter-min-pages', defaultValue: '3' },
+            min_clicks: { selector: '#filter-min-clicks', defaultValue: '1' },
+            page_id: { selector: '#filter-page', defaultValue: '' },
+            exit_page_id: { selector: '#filter-exit-page', defaultValue: '' },
+            test_id: { selector: '#filter-test', defaultValue: '' },
+            converted: { selector: '#filter-converted', defaultValue: '' },
+            has_rage_clicks: { selector: '#filter-rage-clicks', defaultValue: '', type: 'checkbox' },
+            device: { selector: '#filter-device', defaultValue: '' },
+            date_from: { selector: '#filter-date-from', defaultValue: '' },
+            date_to: { selector: '#filter-date-to', defaultValue: '' },
+            referrer: { selector: '#filter-referrer', defaultValue: '' },
+            utm_source: { selector: '#filter-utm-source', defaultValue: '' },
+            utm_medium: { selector: '#filter-utm-medium', defaultValue: '' },
+            utm_campaign: { selector: '#filter-utm-campaign', defaultValue: '' }
+        };
+    }
+
+    /**
+     * Check option values without building a CSS selector from user-controlled text.
+     */
+    function selectHasValue($field, value) {
+        let hasValue = false;
+
+        $field.find('option').each(function() {
+            if ($(this).val() === value) {
+                hasValue = true;
+                return false;
+            }
+        });
+
+        return hasValue;
+    }
+
+    /**
+     * Keep the collapsed filter header useful without duplicating the full form.
+     */
+    function updateFilterSummary() {
+        const summary = [];
+        const minPages = parseInt($('#filter-min-pages').val(), 10);
+        const minClicks = parseInt($('#filter-min-clicks').val(), 10);
+
+        if (minPages > 1) {
+            summary.push('Min ' + minPages + ' pages');
+        }
+
+        if (minClicks > 0) {
+            summary.push('Min ' + minClicks + ' clicks');
+        }
+
+        addSelectSummary(summary, '#filter-page', 'Visited');
+        addSelectSummary(summary, '#filter-exit-page', 'Exit');
+        addSelectSummary(summary, '#filter-test', 'Test');
+        addSelectSummary(summary, '#filter-converted', 'Conversion');
+        addSelectSummary(summary, '#filter-device', 'Device');
+
+        if ($('#filter-rage-clicks').is(':checked')) {
+            summary.push('Rage clicks');
+        }
+
+        const dateFrom = $('#filter-date-from').val();
+        const dateTo = $('#filter-date-to').val();
+        if (dateFrom || dateTo) {
+            summary.push('Date ' + (dateFrom || 'Any') + ' to ' + (dateTo || 'Any'));
+        }
+
+        addSelectSummary(summary, '#filter-referrer', 'Referrer');
+        addSelectSummary(summary, '#filter-utm-source', 'Source');
+        addSelectSummary(summary, '#filter-utm-medium', 'Medium');
+        addSelectSummary(summary, '#filter-utm-campaign', 'Campaign');
+
+        $('#session-filter-summary').text(summary.length ? summary.join(', ') : 'No filters');
+    }
+
+    /**
+     * Append a selected filter value if it is more specific than "Any".
+     */
+    function addSelectSummary(summary, selector, label) {
+        const $field = $(selector);
+        const value = $field.val();
+
+        if (!value) {
+            return;
+        }
+
+        summary.push(label + ': ' + $field.find('option:selected').text());
     }
 
     /**
@@ -266,7 +447,9 @@
     function loadSessions() {
         const filters = {
             min_pages: $('#filter-min-pages').val(),
+            min_clicks: $('#filter-min-clicks').val(),
             page_id: $('#filter-page').val(),
+            exit_page_id: $('#filter-exit-page').val(),
             test_id: $('#filter-test').val(),
             converted: $('#filter-converted').val(),
             has_rage_clicks: $('#filter-rage-clicks').is(':checked'),
@@ -498,6 +681,7 @@
         // Track page segments
         const pageSegments = [];
         let currentPageId = null;
+        let currentPageTitle = null;
         let segmentStart = 0;
 
         state.events.forEach((event, index) => {
@@ -508,20 +692,23 @@
             let eventClass = 'click';
             if (event.type === 'pv') {
                 eventClass = 'pv';
-                
-                // Track page segment
+
+                // Close previous page segment
                 if (currentPageId !== null) {
                     pageSegments.push({
                         post_id: currentPageId,
-                        title: event.page_title || 'Page',
+                        title: currentPageTitle,
                         start: segmentStart,
                         end: percent
                     });
+                    segmentStart = percent;
                 }
                 currentPageId = event.post_id;
-                segmentStart = percent;
+                currentPageTitle = event.page_title || 'Page';
             } else if (event.type === 'rc') {
                 eventClass = 'rage';
+            } else if (event.type.startsWith('tv-')) {
+                eventClass = 'test-visit';
             } else if (event.type.startsWith('tc-')) {
                 eventClass = 'conversion';
             }
@@ -536,7 +723,7 @@
         if (currentPageId !== null) {
             pageSegments.push({
                 post_id: currentPageId,
-                title: state.events.find(e => e.post_id === currentPageId)?.page_title || 'Page',
+                title: currentPageTitle,
                 start: segmentStart,
                 end: 100
             });

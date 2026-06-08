@@ -1,7 +1,7 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-class BT_BB_AB_Elementor
+class ABST_Elementor
 {
 	public function __construct() 
 	{	
@@ -41,14 +41,14 @@ class BT_BB_AB_Elementor
 	public function init_widgets( $widgets_manager) 
 	{
 		// Register conversion widget
-    $widgets_manager->register( new \BT_Elementor_Conversion() );
+    $widgets_manager->register( new \ABST_Elementor_Conversion() );
 
     // Register ab test redirect widget
 	}
 
   public function enqueue_custom_script()
   {
-    wp_enqueue_style( 'bt_elementor', BT_AB_TEST_PLUGIN_URI .'css/elementor.css' );
+    wp_enqueue_style( 'bt_elementor', BT_AB_TEST_PLUGIN_URI .'css/elementor.css', array(), BT_AB_TEST_VERSION );
   }
 
 
@@ -73,7 +73,8 @@ class BT_BB_AB_Elementor
         ]
       );
 
-      $experiments = apply_filters( 'bt_experiments_get_items', 'select' );
+      // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+      $experiments = apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'select' ) );
 
       $element->add_control(
         'bt_experiment',
@@ -112,7 +113,7 @@ class BT_BB_AB_Elementor
 
 } // end class
 
-$bt_bb_ab_elementor = new BT_BB_AB_Elementor;
+$abst_elementor = new ABST_Elementor;
 
 
 /**
@@ -121,7 +122,7 @@ $bt_bb_ab_elementor = new BT_BB_AB_Elementor;
 if(class_exists('\Elementor\Widget_Base'))
 {
 
-  class BT_Elementor_Conversion extends \Elementor\Widget_Base 
+  class ABST_Elementor_Conversion extends \Elementor\Widget_Base
   {
     /**
      * Get conversion widget name.
@@ -156,7 +157,8 @@ if(class_exists('\Elementor\Widget_Base'))
 
     protected function register_control_elements()
     {
-      $experiments = apply_filters( 'bt_experiments_get_items', 'select' );
+      // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
+      $experiments = apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'select' ) );
       $fields      = BtConversionModule::get_fields();
 
 
@@ -247,8 +249,8 @@ if(class_exists('\Elementor\Widget_Base'))
 }
 
 
-add_action( 'elementor/frontend/before_render', 'ab_add_attributes_to_element',9999 );
-function ab_add_attributes_to_element( $element ) {
+add_action( 'elementor/frontend/before_render', 'abst_add_attributes_to_element',9999 );
+function abst_add_attributes_to_element( $element ) {
 
   if( $element->get_name() === 'bt_conversion' )
     return;
