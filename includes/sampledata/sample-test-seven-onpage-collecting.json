@@ -1,0 +1,198 @@
+{
+  "post_data": {
+    "title": "Sample Test 7 - On-Page Elements Collecting Data",
+    "content": "This is an On-Page Elements Test that hasn't collected enough data yet. Each button variation is still below the minimum views required before statistical significance can be reached.",
+    "status": "publish"
+  },
+  "test_config": {
+    "test_type": "ab_test",
+    "variation_meta": {
+      "original": {
+        "label": "Original - Sign Up"
+      },
+      "variation-b": {
+        "label": "Start My Free Trial"
+      },
+      "variation-c": {
+        "label": "Get Started Now"
+      }
+    },
+    "target_percentage": "50",
+    "target_option_device_size": "all",
+    "conversion_page": "selector",
+    "conversion_selector": "button, .btn, input[type=\"submit\"], .wp-block-button__link",
+    "conversion_time": "0",
+    "conversion_text": "",
+    "conversion_use_order_value": false,
+    "conversion_url": "",
+    "conversion_link_pattern": "",
+    "url_query": "",
+    "webhook_url": "",
+    "bt_allowed_roles": [],
+    "css_test_variations": "0",
+    "conversion_style": "bayesian",
+    "goals": {
+      "1": {
+        "selector": ".signup"
+      },
+      "2": {
+        "url": "*pricing"
+      },
+      "3": {
+        "": ""
+      },
+      "4": {
+        "": ""
+      },
+      "5": {
+        "": ""
+      },
+      "6": {
+        "": ""
+      },
+      "7": {
+        "": ""
+      },
+      "8": {
+        "": ""
+      },
+      "9": {
+        "": ""
+      },
+      "10": {
+        "": ""
+      }
+    },
+    "autocomplete_on": "0",
+    "ac_min_days": "14",
+    "ac_min_views": "500"
+  },
+  "observations": {
+    "original": {
+      "visit": 64,
+      "conversion": 3,
+      "goals": {
+        "1": 2,
+        "2": 1
+      },
+      "rate": 4.69,
+      "variation_meta": {
+        "label": "Original - Sign Up"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 33,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 6.06
+        },
+        "mobile": {
+          "visit": 23,
+          "conversion": 1,
+          "goals": {
+            "1": 1,
+            "2": 0
+          },
+          "rate": 4.35
+        },
+        "tablet": {
+          "visit": 8,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    },
+    "variation-b": {
+      "visit": 58,
+      "conversion": 5,
+      "goals": {
+        "1": 3,
+        "2": 2
+      },
+      "rate": 8.62,
+      "variation_meta": {
+        "label": "Start My Free Trial"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup", "purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 30,
+          "conversion": 3,
+          "goals": {
+            "1": 2,
+            "2": 1
+          },
+          "rate": 10.00
+        },
+        "mobile": {
+          "visit": 21,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 9.52
+        },
+        "tablet": {
+          "visit": 7,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    },
+    "variation-c": {
+      "visit": 61,
+      "conversion": 3,
+      "goals": {
+        "1": 2,
+        "2": 1
+      },
+      "rate": 4.92,
+      "variation_meta": {
+        "label": "Get Started Now"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup", "contact"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 31,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 6.45
+        },
+        "mobile": {
+          "visit": 22,
+          "conversion": 1,
+          "goals": {
+            "1": 1,
+            "2": 0
+          },
+          "rate": 4.55
+        },
+        "tablet": {
+          "visit": 8,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    }
+  }
+}

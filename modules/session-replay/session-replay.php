@@ -76,7 +76,6 @@ class ABST_Session_Replay {
         // AJAX endpoints
         add_action('wp_ajax_abst_get_sessions', [$this, 'ajax_get_sessions']);
         add_action('wp_ajax_abst_get_session_events', [$this, 'ajax_get_session_events']);
-        add_action('wp_ajax_abst_rebuild_session_index', [$this, 'ajax_rebuild_index']);
     }
 
     /**
@@ -108,7 +107,7 @@ class ABST_Session_Replay {
             'homeUrl' => home_url(),
             'strings' => [
                 'loading' => __('Loading...', 'ab-split-test-lite'),
-                'noSessions' => __('No sessions found matching your filters.', 'ab-split-test-lite'),
+                'noSessions' => __('No sessions found.', 'ab-split-test-lite'),
                 'loadingSession' => __('Loading session data...', 'ab-split-test-lite'),
                 'pageView' => __('Page View', 'ab-split-test-lite'),
                 'click' => __('Click', 'ab-split-test-lite'),
@@ -122,23 +121,6 @@ class ABST_Session_Replay {
      * Render the admin page
      */
     public function render_admin_page() {
-        // Get available tests for filter dropdown
-        $tests = get_posts([
-            'post_type' => 'bt_experiments',
-            'posts_per_page' => -1,
-            'post_status' => ['publish', 'draft', 'complete'],
-            'orderby' => 'title',
-            'order' => 'ASC'
-        ]);
-
-        // Get all pages for filter dropdown
-        $pages = get_posts([
-            'post_type' => ['page', 'post'],
-            'posts_per_page' => 100,
-            'orderby' => 'title',
-            'order' => 'ASC'
-        ]);
-
         include plugin_dir_path(__FILE__) . 'session-page.php';
     }
 
@@ -152,49 +134,16 @@ class ABST_Session_Replay {
             wp_send_json_error('Unauthorized');
         }
 
-        $filters = [
-            'min_pages' => isset($_POST['min_pages']) ? intval($_POST['min_pages']) : 1,
-            'min_clicks' => isset($_POST['min_clicks']) ? intval($_POST['min_clicks']) : 0,
-            'page_id' => isset($_POST['page_id']) ? intval($_POST['page_id']) : 0,
-            'exit_page_id' => isset($_POST['exit_page_id']) ? intval($_POST['exit_page_id']) : 0,
-            'test_id' => isset($_POST['test_id']) ? intval($_POST['test_id']) : 0,
-            'converted' => isset($_POST['converted']) ? sanitize_text_field(wp_unslash($_POST['converted'])) : '',
-            'has_rage_clicks' => isset($_POST['has_rage_clicks']) && sanitize_text_field(wp_unslash($_POST['has_rage_clicks'])) === 'true',
-            'device' => isset($_POST['device']) ? sanitize_text_field(wp_unslash($_POST['device'])) : '',
-            'date_from' => isset($_POST['date_from']) ? sanitize_text_field(wp_unslash($_POST['date_from'])) : '',
-            'date_to' => isset($_POST['date_to']) ? sanitize_text_field(wp_unslash($_POST['date_to'])) : '',
-            'referrer' => isset($_POST['referrer']) ? sanitize_text_field(wp_unslash($_POST['referrer'])) : '',
-            'utm_source' => isset($_POST['utm_source']) ? sanitize_text_field(wp_unslash($_POST['utm_source'])) : '',
-            'utm_medium' => isset($_POST['utm_medium']) ? sanitize_text_field(wp_unslash($_POST['utm_medium'])) : '',
-            'utm_campaign' => isset($_POST['utm_campaign']) ? sanitize_text_field(wp_unslash($_POST['utm_campaign'])) : '',
-        ];
-        
         $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
-        
+
         $index = $this->get_session_index();
 
-        // Collect unique referrer/UTM values from full index (before filtering) for dynamic dropdowns
-        $available_referrers = [];
-        $available_utm_sources = [];
-        $available_utm_mediums = [];
-        $available_utm_campaigns = [];
-        foreach ($index as $s) {
-            if (!empty($s['referrer'])) $available_referrers[$s['referrer']] = ($available_referrers[$s['referrer']] ?? 0) + 1;
-            if (!empty($s['utm_source'])) $available_utm_sources[$s['utm_source']] = ($available_utm_sources[$s['utm_source']] ?? 0) + 1;
-            if (!empty($s['utm_medium'])) $available_utm_mediums[$s['utm_medium']] = ($available_utm_mediums[$s['utm_medium']] ?? 0) + 1;
-            if (!empty($s['utm_campaign'])) $available_utm_campaigns[$s['utm_campaign']] = ($available_utm_campaigns[$s['utm_campaign']] ?? 0) + 1;
-        }
-        arsort($available_referrers);
-        arsort($available_utm_sources);
-        arsort($available_utm_mediums);
-        arsort($available_utm_campaigns);
-
-        $filtered = $this->filter_sessions($index, $filters);
-        
         // Sort by start time descending (most recent first)
-        usort($filtered, function($a, $b) {
+        usort($index, function($a, $b) {
             return strcmp($b['start_time'], $a['start_time']);
         });
+
+        $filtered = $index;
         
         // Paginate
         $total = count($filtered);
@@ -216,12 +165,6 @@ class ABST_Session_Replay {
             'total' => $total,
             'total_pages' => $total_pages,
             'current_page' => $page,
-            'available_filters' => [
-                'referrers' => $available_referrers,
-                'utm_sources' => $available_utm_sources,
-                'utm_mediums' => $available_utm_mediums,
-                'utm_campaigns' => $available_utm_campaigns,
-            ]
         ]);
     }
 
@@ -237,9 +180,11 @@ class ABST_Session_Replay {
 
         $uuid = isset($_POST['uuid']) ? sanitize_text_field(wp_unslash($_POST['uuid'])) : '';
         $dates_raw = isset($_POST['dates']) && is_array($_POST['dates']) ? wp_unslash($_POST['dates']) : [];
-        $dates = array_map(function($date) {
-            return sanitize_text_field($date);
-        }, $dates_raw);
+        $dates = array_values(array_filter(array_map(function($date) {
+            $date = sanitize_text_field($date);
+            // Only accept an 8-digit Ymd string; reject anything that could traverse the path.
+            return preg_match('/^\d{8}$/', $date) ? $date : null;
+        }, $dates_raw)));
         
         if (empty($uuid) || empty($dates)) {
             wp_send_json_error('Missing required parameters');
@@ -272,26 +217,6 @@ class ABST_Session_Replay {
         }
         
         wp_send_json_success($events);
-    }
-
-    /**
-     * AJAX: Force rebuild session index
-     */
-    public function ajax_rebuild_index() {
-        check_ajax_referer('abst_session_replay', 'nonce');
-        
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-
-        delete_transient(self::INDEX_TRANSIENT_KEY);
-        $index = $this->build_session_index();
-        
-        wp_send_json_success([
-            'session_count' => count($index),
-            /* translators: %d is the number of sessions */
-            'message' => sprintf(__('Index rebuilt with %d sessions', 'ab-split-test-lite'), count($index))
-        ]);
     }
 
     /**
@@ -444,92 +369,6 @@ class ABST_Session_Replay {
         return array_values($sessions);
     }
 
-    /**
-     * Filter sessions based on criteria
-     */
-    private function filter_sessions($sessions, $filters) {
-        return array_filter($sessions, function($session) use ($filters) {
-            // Min pages filter
-            if ($filters['min_pages'] > 1 && $session['page_count'] < $filters['min_pages']) {
-                return false;
-            }
-
-            if (!empty($filters['min_clicks']) && $session['click_count'] < $filters['min_clicks']) {
-                return false;
-            }
-            
-            // Specific page filter
-            if ($filters['page_id'] > 0) {
-                $page_ids = array_column($session['pages'], 'post_id');
-                if (!in_array($filters['page_id'], $page_ids)) {
-                    return false;
-                }
-            }
-
-            if ($filters['exit_page_id'] > 0 && intval($session['exit_page_id'] ?? 0) !== $filters['exit_page_id']) {
-                return false;
-            }
-            
-            // Test ID filter (seen)
-            if ($filters['test_id'] > 0) {
-                if (!in_array($filters['test_id'], $session['tests_seen'])) {
-                    return false;
-                }
-            }
-            
-            // Conversion filter
-            if ($filters['converted'] === 'yes' && empty($session['tests_converted'])) {
-                return false;
-            }
-            if ($filters['converted'] === 'no' && !empty($session['tests_converted'])) {
-                return false;
-            }
-            
-            // Rage clicks filter
-            if ($filters['has_rage_clicks'] && $session['rage_click_count'] === 0) {
-                return false;
-            }
-            
-            // Device filter
-            if (!empty($filters['device']) && $session['device'] !== $filters['device']) {
-                return false;
-            }
-            
-            // Date range filter
-            if (!empty($filters['date_from'])) {
-                $from = strtotime($filters['date_from']);
-                $session_start = strtotime($session['start_time']);
-                if ($session_start < $from) {
-                    return false;
-                }
-            }
-            if (!empty($filters['date_to'])) {
-                $to = strtotime($filters['date_to'] . ' 23:59:59');
-                $session_start = strtotime($session['start_time']);
-                if ($session_start > $to) {
-                    return false;
-                }
-            }
-
-            // Referrer filter
-            if (!empty($filters['referrer']) && (empty($session['referrer']) || stripos($session['referrer'], $filters['referrer']) === false)) {
-                return false;
-            }
-
-            // UTM filters
-            if (!empty($filters['utm_source']) && strtolower($session['utm_source'] ?? '') !== strtolower($filters['utm_source'])) {
-                return false;
-            }
-            if (!empty($filters['utm_medium']) && strtolower($session['utm_medium'] ?? '') !== strtolower($filters['utm_medium'])) {
-                return false;
-            }
-            if (!empty($filters['utm_campaign']) && strtolower($session['utm_campaign'] ?? '') !== strtolower($filters['utm_campaign'])) {
-                return false;
-            }
-            
-            return true;
-        });
-    }
 }
 
 // Initialize

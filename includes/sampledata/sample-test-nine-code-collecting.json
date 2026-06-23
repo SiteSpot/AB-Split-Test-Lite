@@ -1,0 +1,153 @@
+{
+  "post_data": {
+    "title": "Sample Test 9 - Code Test Collecting Data",
+    "content": "This is a Code Test that hasn't collected enough data yet. Both CSS variations are still below the minimum views required before a winner can be declared.",
+    "status": "publish"
+  },
+  "test_config": {
+    "test_type": "css_test",
+    "css_test_variations": "2",
+    "variation_meta": {
+      "test-css-1": {
+        "label": "Original Styles"
+      },
+      "test-css-2": {
+        "label": "Sticky Add-to-Cart Bar"
+      }
+    },
+    "target_percentage": "50",
+    "target_option_device_size": "all",
+    "conversion_page": "time",
+    "conversion_selector": "",
+    "conversion_time": "60",
+    "conversion_text": "",
+    "conversion_use_order_value": false,
+    "conversion_url": "thank-you",
+    "conversion_link_pattern": "",
+    "url_query": "",
+    "webhook_url": "",
+    "bt_allowed_roles": [],
+    "conversion_style": "bayesian",
+    "goals": {
+      "1": {
+        "selector": ".signup"
+      },
+      "2": {
+        "url": "*pricing"
+      },
+      "3": {
+        "": ""
+      },
+      "4": {
+        "": ""
+      },
+      "5": {
+        "": ""
+      },
+      "6": {
+        "": ""
+      },
+      "7": {
+        "": ""
+      },
+      "8": {
+        "": ""
+      },
+      "9": {
+        "": ""
+      },
+      "10": {
+        "": ""
+      }
+    },
+    "autocomplete_on": "0",
+    "ac_min_days": "14",
+    "ac_min_views": "500"
+  },
+  "observations": {
+    "test-css-1": {
+      "visit": 47,
+      "conversion": 2,
+      "goals": {
+        "1": 1,
+        "2": 1
+      },
+      "rate": 4.26,
+      "variation_meta": {
+        "label": "Original Styles"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 24,
+          "conversion": 1,
+          "goals": {
+            "1": 1,
+            "2": 0
+          },
+          "rate": 4.17
+        },
+        "mobile": {
+          "visit": 17,
+          "conversion": 1,
+          "goals": {
+            "1": 0,
+            "2": 1
+          },
+          "rate": 5.88
+        },
+        "tablet": {
+          "visit": 6,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    },
+    "test-css-2": {
+      "visit": 52,
+      "conversion": 4,
+      "goals": {
+        "1": 2,
+        "2": 2
+      },
+      "rate": 7.69,
+      "variation_meta": {
+        "label": "Sticky Add-to-Cart Bar"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup", "purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 27,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 7.41
+        },
+        "mobile": {
+          "visit": 18,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 11.11
+        },
+        "tablet": {
+          "visit": 7,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    }
+  }
+}

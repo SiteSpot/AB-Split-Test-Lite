@@ -1,0 +1,195 @@
+{
+  "post_data": {
+    "title": "Sample Test 4 - Full Page Complete",
+    "content": "This is a completed Full Page Test comparing three landing page designs. The redesigned long-form page (Variation B) is the clear winner with an 11.00% conversion rate vs 5.50% for the original.",
+    "status": "complete"
+  },
+  "test_config": {
+    "test_type": "full_page",
+    "bt_experiments_full_page_default_page": "home-v1",
+    "page_variations": {
+      "home-v2": "landing-long-form",
+      "home-v3": "landing-video-hero"
+    },
+    "variation_meta": {
+      "home-v1": {
+        "label": "Original Landing Page"
+      },
+      "home-v2": {
+        "label": "Long-Form Redesign"
+      },
+      "home-v3": {
+        "label": "Video Hero"
+      }
+    },
+    "target_percentage": "75",
+    "target_option_device_size": "desktop",
+    "conversion_page": "url",
+    "conversion_selector": "",
+    "conversion_time": "0",
+    "conversion_text": "",
+    "conversion_use_order_value": true,
+    "conversion_url": "thank-you",
+    "conversion_link_pattern": "",
+    "url_query": "",
+    "webhook_url": "",
+    "bt_allowed_roles": ["subscriber", "customer"],
+    "css_test_variations": "0",
+    "conversion_style": "bayesian",
+    "test_winner": "home-v2",
+    "goals": {
+      "1": {
+        "link": "absplittest.com"
+      },
+      "2": {
+        "url": "pricing"
+      },
+      "3": {
+        "": ""
+      },
+      "4": {
+        "": ""
+      },
+      "5": {
+        "": ""
+      },
+      "6": {
+        "": ""
+      },
+      "7": {
+        "": ""
+      },
+      "8": {
+        "": ""
+      },
+      "9": {
+        "": ""
+      },
+      "10": {
+        "": ""
+      }
+    },
+    "autocomplete_on": "0",
+    "ac_min_days": "7",
+    "ac_min_views": "500"
+  },
+  "observations": {
+    "home-v1": {
+      "visit": 8200,
+      "conversion": 451,
+      "goals": {
+        "1": 225,
+        "2": 226
+      },
+      "rate": 5.50,
+      "variation_meta": {
+        "label": "Original Landing Page"
+      },
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 8200,
+          "conversion": 451,
+          "goals": {
+            "1": 225,
+            "2": 226
+          },
+          "rate": 5.50
+        },
+        "mobile": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        },
+        "tablet": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        }
+      }
+    },
+    "home-v2": {
+      "visit": 8120,
+      "conversion": 893,
+      "goals": {
+        "1": 446,
+        "2": 447
+      },
+      "rate": 11.00,
+      "variation_meta": {
+        "label": "Long-Form Redesign"
+      },
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 8120,
+          "conversion": 893,
+          "goals": {
+            "1": 446,
+            "2": 447
+          },
+          "rate": 11.00
+        },
+        "mobile": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        },
+        "tablet": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        }
+      }
+    },
+    "home-v3": {
+      "visit": 8050,
+      "conversion": 515,
+      "goals": {
+        "1": 257,
+        "2": 258
+      },
+      "rate": 6.40,
+      "variation_meta": {
+        "label": "Video Hero"
+      },
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 8050,
+          "conversion": 515,
+          "goals": {
+            "1": 257,
+            "2": 258
+          },
+          "rate": 6.40
+        },
+        "mobile": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        },
+        "tablet": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        }
+      }
+    }
+  }
+}

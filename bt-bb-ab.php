@@ -1847,7 +1847,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     // wl('no data');
 
-      $data = $_POST;
+      $data = wp_unslash( $_POST );
 
     }
 
@@ -2352,7 +2352,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    if (isset($_POST['original_post_status']) && $_POST['original_post_status'] === 'auto-draft') {
+    if (isset($_POST['original_post_status']) && sanitize_text_field(wp_unslash($_POST['original_post_status'])) === 'auto-draft') {
 
         update_post_meta($post_id, '_abst_is_new', 'true');
 
@@ -2396,7 +2396,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       /* OK, its safe for us to save the data now. */
 
-      $this->save_test_config( $post_id, $_POST );
+      // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Individual fields sanitized inside save_test_config().
+      $this->save_test_config( $post_id, wp_unslash( $_POST ) );
 
 
 
@@ -3035,7 +3036,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       //recieve form data
 
-      $data = $_POST;
+      $data = wp_unslash( $_POST );
 
       //sanitize it!
 
@@ -6986,7 +6987,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         abst_log(wp_json_encode($obs));
 
-        echo "Error deleting variation. Could not find variation."; //print_r($obs, true);
+        echo "Error deleting variation. Could not find variation.";
 
       }
 
@@ -13240,6 +13241,32 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
     }
 
+    private function winner_is_variation($test_type, $test_winner, $full_page_default_page) {
+
+      if ($test_winner === '' || $test_winner === null) {
+
+        return false;
+
+      }
+
+      switch ($test_type) {
+
+        case 'magic':
+
+          return $test_winner !== 'magic-0';
+
+        case 'full_page':
+
+          return (string) $test_winner !== (string) $full_page_default_page;
+
+        default:
+
+          return true;
+
+      }
+
+    }
+
 
 
     /**
@@ -13327,6 +13354,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       foreach($posts as $val) {
 
+        // Never expose bundled sample/demo tests in the front-end config.
+        if (abst_lite_is_sample_test($val->ID)) {
+          continue;
+        }
+
         $meta = get_post_meta($val->ID);
 
         $test_type = $meta['test_type'][0] ?? '';
@@ -13334,6 +13366,14 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         $full_page_default_page = $meta['bt_experiments_full_page_default_page'][0] ?? '';
 
         $test_winner = $meta['test_winner'][0] ?? '';
+
+        $autocomplete_on = (($meta['autocomplete_on'][0] ?? '') === '1') ? '1' : '0';
+
+        if ($val->post_status === 'complete' && ($autocomplete_on !== '1' || !$this->winner_is_variation($test_type, $test_winner, $full_page_default_page))) {
+
+          continue;
+
+        }
 
         
 
@@ -13385,6 +13425,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           'test_winner' => $test_winner,
 
+          'autocomplete_on' => $autocomplete_on,
+
           'target_option_device_size' => ($meta['target_option_device_size'][0] ?? '') ?: 'all',
 
           'log_on_visible' => ($meta['log_on_visible'][0] ?? '0') === '1',
@@ -13399,7 +13441,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         // test_winner is non-empty, so those pages need hiding regardless of status.
 
-        $is_complete_with_winner = ($val->post_status === 'complete' && $test_type === 'full_page' && !empty($test_winner));
+        $is_complete_with_winner = ($val->post_status === 'complete' && $test_type === 'full_page' && $autocomplete_on === '1' && $this->winner_is_variation($test_type, $test_winner, $full_page_default_page));
 
         if($val->post_status !== 'publish' && !$is_complete_with_winner) continue;
 
@@ -13431,7 +13473,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         // revert = browser default for element type (block for div, inline for span, etc.)
 
-        if($test_winner && $test_type == 'ab_test') {
+        if($test_winner && $autocomplete_on === '1' && $test_type == 'ab_test') {
 
           $hide_css .= '[bt-variation="'.$test_winner.'"][bt-eid="'.$val->ID.'"]{display:revert !important;}';
 
@@ -15238,6 +15280,80 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       // ┄┄ Create A/B Test ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
+      wp_register_ability('absplittest/get-heatmap-data', [
+        'label'       => 'Get Heatmap Data',
+        'category'    => 'site',
+        'description' => 'Get aggregated heatmap, click-map and scroll-map data for a page: ' .
+                         'per-element click counts (including rage and dead clicks), raw click ' .
+                         'points for overlay rendering, screen-size distribution, scroll-depth ' .
+                         'distribution and average fold, plus deep links to view the rendered ' .
+                         'heatmap and the session replays in wp-admin. Filterable by device, ' .
+                         'test variation, date range, referrer and UTM. Call list-heatmap-pages ' .
+                         'first to discover valid page_id values.',
+        'input_schema' => [
+          'type' => 'object',
+          'properties' => [
+            'page_id'      => ['type' => 'string',  'description' => 'Page to analyze: a numeric post ID or an archive key (e.g. "post-type-archive-product").'],
+            'days'         => ['type' => 'integer', 'description' => 'How many days back to analyze (1-90, default 30).'],
+            'device'       => ['type' => 'string',  'description' => 'Filter by device bucket: s (mobile), m (tablet), l (desktop).'],
+            'eid'          => ['type' => 'integer', 'description' => 'Filter to sessions that saw this test (experiment) ID.'],
+            'variation'    => ['type' => 'string',  'description' => 'With eid, filter to a specific variation (e.g. "magic-1").'],
+            'referrer'     => ['type' => 'string',  'description' => 'Filter by referrer domain (substring match).'],
+            'utm_source'   => ['type' => 'string'],
+            'utm_medium'   => ['type' => 'string'],
+            'utm_campaign' => ['type' => 'string'],
+            'limit'        => ['type' => 'integer', 'description' => 'Max raw click points to return (default 5000).'],
+          ],
+          'required' => ['page_id'],
+        ],
+        'output_schema' => [
+          'type' => 'object',
+          'properties' => [
+            'success'             => ['type' => 'boolean'],
+            'page_id'             => ['type' => ['integer', 'string']],
+            'page_url'            => ['type' => 'string'],
+            'page_title'          => ['type' => 'string'],
+            'totals'              => ['type' => 'object'],
+            'screen_distribution' => ['type' => 'object'],
+            'elements'            => ['type' => 'array'],
+            'points'              => ['type' => 'array'],
+            'scroll'              => ['type' => 'object'],
+            'available_filters'   => ['type' => 'object'],
+            'view_urls'           => ['type' => 'object'],
+          ],
+        ],
+        'permission_callback' => $permission,
+        'execute_callback'    => [$this, 'ability_get_heatmap_data'],
+        'meta'                => $meta,
+      ]);
+
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
+      wp_register_ability('absplittest/list-heatmap-pages', [
+        'label'       => 'List Heatmap Pages',
+        'category'    => 'site',
+        'description' => 'List the pages that have recorded heatmap/journey data, with session ' .
+                         'and click counts and the first/last dates seen. Use this to discover ' .
+                         'valid page_id values for get-heatmap-data.',
+        'input_schema' => [
+          'type' => 'object',
+          'properties' => [
+            'days' => ['type' => 'integer', 'description' => 'How many days back to scan (1-90, default 30).'],
+          ],
+        ],
+        'output_schema' => [
+          'type' => 'object',
+          'properties' => [
+            'success'    => ['type' => 'boolean'],
+            'page_count' => ['type' => 'integer'],
+            'pages'      => ['type' => 'array'],
+          ],
+        ],
+        'permission_callback' => $permission,
+        'execute_callback'    => [$this, 'ability_list_heatmap_pages'],
+        'meta'                => $meta,
+      ]);
+
+      // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
       wp_register_ability('absplittest/create-test', [
 
         'label'       => 'Create A/B Test',
@@ -16257,6 +16373,102 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
+    /**
+     * GET /bt-bb-ab/v1/heatmap-data — aggregated heatmap/click/scroll data for a
+     * page, plus deep links to view the rendered heatmap and session replays.
+     */
+    function rest_get_heatmap_data($request) {
+      $page_id_raw = $request->get_param('page_id');
+      if ($page_id_raw === null || $page_id_raw === '') {
+        return new WP_Error('missing_page_id', 'A page_id is required.', ['status' => 400]);
+      }
+      $page_id = is_numeric($page_id_raw) ? (int) $page_id_raw : trim($page_id_raw);
+
+      $days = $request->get_param('days');
+      $days = ($days !== null) ? intval($days) : 30;
+      $days = max(1, min($days, 90));
+
+      $limit = $request->get_param('limit');
+      $limit = ($limit !== null) ? intval($limit) : 5000;
+
+      // Filter array in the shape abst_search_all_journey_logs() expects (device is
+      // keyed 'screen'; it accepts s|m|l or small|medium|large).
+      $filters = ['days' => $days];
+      $device = $request->get_param('device');
+      if (!empty($device)) { $filters['screen'] = sanitize_text_field($device); }
+      if ($request->get_param('eid')) { $filters['eid'] = intval($request->get_param('eid')); }
+      $variation = $request->get_param('variation');
+      if ($variation !== null && $variation !== '') { $filters['variation'] = (string) $variation; }
+      $referrer = $request->get_param('referrer');
+      if (!empty($referrer)) { $filters['referrer'] = sanitize_text_field($referrer); }
+      foreach (['utm_source', 'utm_medium', 'utm_campaign'] as $k) {
+        $v = $request->get_param($k);
+        if (!empty($v)) { $filters[$k] = sanitize_text_field($v); }
+      }
+
+      $payload = abst_build_heatmap_payload($page_id, $filters, $limit);
+
+      $response = array_merge([
+        'success'         => true,
+        'page_id'         => $page_id,
+        'page_url'        => abst_resolve_page_url($page_id),
+        'page_title'      => abst_resolve_page_title($page_id),
+        'days_analyzed'   => $days,
+        'filters_applied' => $filters,
+      ], $payload, [
+        'view_urls' => abst_heatmap_view_urls($page_id, $filters),
+      ]);
+
+      return new WP_REST_Response($response, 200);
+    }
+
+    /**
+     * GET /bt-bb-ab/v1/heatmap-pages — list pages that have recorded heatmap data
+     * so clients can discover valid page_id values for /heatmap-data.
+     */
+    function rest_list_heatmap_pages($request) {
+      $days = $request->get_param('days');
+      $days = ($days !== null) ? intval($days) : 30;
+      $days = max(1, min($days, 90));
+
+      $pages = abst_heatmap_pages_data($days);
+
+      return new WP_REST_Response([
+        'success'       => true,
+        'days_analyzed' => $days,
+        'page_count'    => count($pages),
+        'pages'         => $pages,
+      ], 200);
+    }
+
+    function ability_get_heatmap_data($input) {
+      $request = new WP_REST_Request('GET', '/bt-bb-ab/v1/heatmap-data');
+      foreach (['page_id', 'days', 'device', 'eid', 'variation', 'referrer', 'utm_source', 'utm_medium', 'utm_campaign', 'limit'] as $k) {
+        if (isset($input[$k]) && $input[$k] !== '') {
+          $request->set_param($k, $input[$k]);
+        }
+      }
+      $response = $this->rest_get_heatmap_data($request);
+
+      if (is_wp_error($response)) {
+        return $response;
+      }
+      return $response->get_data();
+    }
+
+    function ability_list_heatmap_pages($input) {
+      $request = new WP_REST_Request('GET', '/bt-bb-ab/v1/heatmap-pages');
+      if (isset($input['days']) && $input['days'] !== '') {
+        $request->set_param('days', $input['days']);
+      }
+      $response = $this->rest_list_heatmap_pages($request);
+
+      if (is_wp_error($response)) {
+        return $response;
+      }
+      return $response->get_data();
+    }
+
     function ability_get_test_results($input) {
 
       $request = new WP_REST_Request('GET', '/bt-bb-ab/v1/test-results/' . ($input['test_id'] ?? 0));
@@ -16366,6 +16578,39 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
      */
 
     function register_rest_routes() {
+
+      // Aggregated heatmap / click / scroll data for one page (read; edit_posts).
+      register_rest_route('bt-bb-ab/v1', '/heatmap-data', [
+        'methods' => 'GET',
+        'callback' => [$this, 'rest_get_heatmap_data'],
+        'permission_callback' => function() {
+          return current_user_can('edit_posts');
+        },
+        'args' => [
+          'page_id'      => ['type' => 'string',  'required' => true,  'sanitize_callback' => 'sanitize_text_field'],
+          'days'         => ['type' => 'integer', 'required' => false, 'default' => 30],
+          'device'       => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+          'eid'          => ['type' => 'integer', 'required' => false],
+          'variation'    => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+          'referrer'     => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+          'utm_source'   => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+          'utm_medium'   => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+          'utm_campaign' => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+          'limit'        => ['type' => 'integer', 'required' => false, 'default' => 5000],
+        ],
+      ]);
+
+      // Discovery: pages that have recorded heatmap data (valid page_id values).
+      register_rest_route('bt-bb-ab/v1', '/heatmap-pages', [
+        'methods' => 'GET',
+        'callback' => [$this, 'rest_list_heatmap_pages'],
+        'permission_callback' => function() {
+          return current_user_can('edit_posts');
+        },
+        'args' => [
+          'days' => ['type' => 'integer', 'required' => false, 'default' => 30],
+        ],
+      ]);
 
       // Generic endpoint for all test types
 
@@ -18286,17 +18531,37 @@ add_action( 'admin_bar_menu', 'abst_split_test_admin_bar_menu', 199 );
 
 
 
-function abst_get_admin_setting($setting){ 
+function abst_get_admin_setting($setting){
 
-  if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php'))
+  if ($setting === 'abst_enable_logging') {
+    return '1';
+  }
 
-    return get_site_option($setting);
+  // Free features that ship ON by default. We return '1' only when the option
+  // has never been saved (get_option/get_site_option === false); an explicit
+  // '0' written by the settings form is preserved so users can still opt out.
+  $default_on = array(
+    'abst_enable_user_journeys'   => '1', // powers journey tracking + heatmaps
+    'abst_enable_session_replays' => '1',
+    'abst_enable_heatmaps'        => '1',
+  );
+
+  $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+
+  if (isset($default_on[$setting])) {
+    $value = $network ? get_site_option($setting, false) : get_option($setting, false);
+    return ($value === false) ? $default_on[$setting] : $value;
+  }
+
+  if($network)
+
+    return get_site_option($setting, false);
 
   else // single site or not network activated
 
-    return get_option($setting); 
+    return get_option($setting, false);
 
-} 
+}
 
 
 
@@ -18345,15 +18610,6 @@ function abst_sanitize($value) {
  */
 
 function abst_log($message, $level = 'info') {
-
-  // Check if logging is enabled in settings
-
-  if (abst_get_admin_setting('abst_enable_logging') != '1') {
-
-    return; // Exit if logging is disabled
-
-  }
-
   
 
   // Get WordPress uploads directory
@@ -18410,13 +18666,11 @@ function abst_put_contents($file, $content, $append = false) {
 
  * Add AB Split Test Logs page to admin menu
 
- * Only added if logging is enabled in settings
+ * Add AB Split Test Logs page to admin menu.
 
  */
 
 function abst_add_logs_page() {
-
-  // Only add logs menu if logging is enabled
 
   //add heatmaps
 
@@ -18466,26 +18720,14 @@ function abst_add_logs_page() {
 
 
 
-
-  if (abst_get_admin_setting('abst_enable_logging') == '1') {
-
-    add_submenu_page(
-
-      'edit.php?post_type=bt_experiments',
-
-      'Test Logs',
-
-      'Logs',
-
-      'manage_options',
-
-      'abst-logs',
-
-      'abst_logs_page_content'
-
-    );
-
-  }
+  add_submenu_page(
+    'edit.php?post_type=bt_experiments',
+    'Test Logs',
+    'Logs',
+    'manage_options',
+    'abst-logs',
+    'abst_logs_page_content'
+  );
 
 
 
@@ -19034,6 +19276,8 @@ function abst_heatmaps_page_content() {
 
     $scroll_total_sessions = 0;
 
+    $scroll_avg_viewport = 0;
+
 
 
     if ($selected_mode === 'scroll') {
@@ -19047,6 +19291,8 @@ function abst_heatmaps_page_content() {
       $scroll_distribution = isset($scroll_result['distribution']) ? $scroll_result['distribution'] : [];
 
       $scroll_total_sessions = isset($scroll_result['totalSessions']) ? (int) $scroll_result['totalSessions'] : 0;
+
+      $scroll_avg_viewport = isset($scroll_result['avgViewportHeight']) ? (int) $scroll_result['avgViewportHeight'] : 0;
 
     } else {
 
@@ -19677,7 +19923,7 @@ function abst_heatmaps_page_content() {
 
         echo '<div style="font-weight: 600; color: #333; font-size: 14px;">Scroll Depth:</div>';
 
-        echo '<div style="flex: 1; height: 40px; background: linear-gradient(to right, #6B8DD6 0%, #4FC3DC 25%, #5FD38D 50%, #F9E65C 75%, #FF9A56 87.5%, #FF6B6B 100%); border-radius: 4px; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">';
+        echo '<div style="flex: 1; height: 40px; background: linear-gradient(to right, #FF3B30 0%, #FF9500 25%, #FFD60A 50%, #34C759 75%, #32ADE6 90%, #005BEA 100%); border-radius: 4px; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">';
 
         echo '<div style="position: absolute; left: 0; top: -16px; font-size: 11px; color: #666;">100%<br><span style="font-size: 9px; color: black; padding:3px;">Always seen</span></div>';
 
@@ -19752,6 +19998,8 @@ function abst_heatmaps_page_content() {
       'distribution' => $scroll_distribution,
 
       'totalSessions' => $scroll_total_sessions,
+
+      'avgViewportHeight' => $scroll_avg_viewport,
 
       'bucketSize' => 5,
 
@@ -19917,6 +20165,10 @@ function abst_get_scroll_data($post_id, $filters) {
 
   $scrollEvents = [];
 
+  $sessionScrollMax = [];
+
+  $sessionViewport = [];
+
   $foundExperiments = [];
 
   $cutoff = time() - ($days * DAY_IN_SECONDS);
@@ -19998,6 +20250,20 @@ function abst_get_scroll_data($post_id, $filters) {
             $candidate = max(0, min(100, $candidate));
 
             $scroll_depth = (string) round($candidate);
+
+          }
+
+        }
+
+        $viewport_height = '';
+
+        if (isset($parts[7]) && $parts[7] !== '') {
+
+          $vh_candidate = floatval($parts[7]);
+
+          if (is_finite($vh_candidate) && $vh_candidate > 0) {
+
+            $viewport_height = (string) round($vh_candidate);
 
           }
 
@@ -20123,7 +20389,11 @@ function abst_get_scroll_data($post_id, $filters) {
 
         $current_metadata = [
 
+          'uuid' => isset($parts[1]) ? (string) $parts[1] : '',
+
           'scroll_depth' => $scroll_depth,
+
+          'viewport_height' => $viewport_height,
 
         ];
 
@@ -20175,13 +20445,45 @@ function abst_get_scroll_data($post_id, $filters) {
 
       $scroll_value = max(0, min(100, $scroll_value));
 
-      $scrollEvents[] = (int) round($scroll_value);
+      $session_key = !empty($current_metadata['uuid']) ? $current_metadata['uuid'] : md5($journey_file . '|' . $line);
+
+      if (!isset($sessionScrollMax[$session_key]) || $scroll_value > $sessionScrollMax[$session_key]) {
+
+        $sessionScrollMax[$session_key] = $scroll_value;
+
+      }
+
+      if (!empty($current_metadata['viewport_height'])) {
+
+        $vh_value = floatval($current_metadata['viewport_height']);
+
+        if ($vh_value > 0) {
+
+          $sessionViewport[$session_key] = $vh_value;
+
+        }
+
+      }
 
       $current_metadata['scroll_depth'] = '';
 
     }
 
   }
+
+
+
+  foreach ($sessionScrollMax as $scroll_value) {
+
+    $scrollEvents[] = (int) round($scroll_value);
+
+  }
+
+  $viewportSum = array_sum($sessionViewport);
+
+  $viewportCount = count($sessionViewport);
+
+  $avgViewportHeight = ($viewportCount > 0) ? (int) round($viewportSum / $viewportCount) : 0;
 
 
 
@@ -20192,6 +20494,10 @@ function abst_get_scroll_data($post_id, $filters) {
       'distribution' => [],
 
       'totalSessions' => 0,
+
+      'avgViewportHeight' => 0,
+
+      'foldSampleCount' => 0,
 
       'experiments' => $foundExperiments,
 
@@ -20260,6 +20566,10 @@ function abst_get_scroll_data($post_id, $filters) {
     'distribution' => $distribution,
 
     'totalSessions' => $totalSessions,
+
+    'avgViewportHeight' => $avgViewportHeight,
+
+    'foldSampleCount' => $viewportCount,
 
     'experiments' => $foundExperiments,
 
@@ -20379,6 +20689,245 @@ function abst_build_journey_exit_pages_from_lines($lines) {
   }
 
   return $exit_pages;
+}
+
+/**
+ * Build the aggregated heatmap / click-map / scroll-map payload for one page.
+ *
+ * Single source of truth for the JSON exposed over REST and MCP. Reuses the same
+ * getters the admin heatmap UI uses (abst_search_all_journey_logs for filter-aware
+ * click/rage/dead events, abst_get_scroll_data for scroll depth) so the API and
+ * the on-screen overlay agree. Normal clicks are type 'c', rage clicks type 'rc'
+ * (or meta 'rage_click'), dead clicks type 'c' with meta 'dead_click'. click_x /
+ * click_y are the stored normalized 0-1 coordinates.
+ *
+ * @param int|string $page_id     Numeric post ID or archive key.
+ * @param array      $filters     Filter array (days, screen, eid, variation,
+ *                                referrer, utm_source/medium/campaign, exit_url).
+ * @param int        $point_limit Max raw click points to return (<=0 = unlimited).
+ * @return array
+ */
+function abst_build_heatmap_payload($page_id, $filters = [], $point_limit = 5000) {
+  $page_id = is_numeric($page_id) ? (int) $page_id : (is_string($page_id) ? trim($page_id) : $page_id);
+  $days = isset($filters['days']) ? intval($filters['days']) : 30;
+
+  $result = abst_search_all_journey_logs($page_id, $filters);
+  $logs = isset($result['logs']) ? $result['logs'] : [];
+
+  $elements = [];
+  $screen_distribution = ['s' => 0, 'm' => 0, 'l' => 0];
+  $points = [];
+  $uuids = [];
+  $total_clicks = 0;
+  $rage_clicks = 0;
+  $dead_clicks = 0;
+  $points_total = 0;
+
+  foreach ($logs as $row) {
+    // Row shape from abst_search_all_journey_logs():
+    // 0=ts 1=type 2=post_id 3=uuid 4=url 5=selector 6=x 7=y 8=screen 9=meta
+    $uuid = isset($row[3]) ? $row[3] : '';
+    if ($uuid !== '') {
+      $uuids[$uuid] = true;
+    }
+
+    $type = isset($row[1]) ? $row[1] : '';
+    if ($type !== 'c' && $type !== 'rc') {
+      continue;
+    }
+
+    $selector = isset($row[5]) ? $row[5] : '';
+    $x        = isset($row[6]) ? $row[6] : null;
+    $y        = isset($row[7]) ? $row[7] : null;
+    $screen   = isset($row[8]) ? $row[8] : '';
+    $meta     = isset($row[9]) ? $row[9] : '';
+
+    $total_clicks++;
+    if (isset($screen_distribution[$screen])) {
+      $screen_distribution[$screen]++;
+    }
+
+    $is_rage = ($type === 'rc' || $meta === 'rage_click');
+    $is_dead = ($meta === 'dead_click');
+    if ($is_rage) { $rage_clicks++; }
+    if ($is_dead) { $dead_clicks++; }
+
+    if ($selector !== '') {
+      if (!isset($elements[$selector])) {
+        $elements[$selector] = ['clicks' => 0, 'rage_clicks' => 0, 'dead_clicks' => 0];
+      }
+      $elements[$selector]['clicks']++;
+      if ($is_rage) { $elements[$selector]['rage_clicks']++; }
+      if ($is_dead) { $elements[$selector]['dead_clicks']++; }
+    }
+
+    $points_total++;
+    if ($point_limit <= 0 || count($points) < $point_limit) {
+      $points[] = [
+        'x'        => is_numeric($x) ? (float) $x : null,
+        'y'        => is_numeric($y) ? (float) $y : null,
+        'type'     => $is_dead ? 'dc' : $type,
+        'device'   => $screen,
+        'selector' => $selector,
+      ];
+    }
+  }
+
+  $elements_out = [];
+  foreach ($elements as $selector => $data) {
+    $elements_out[] = [
+      'selector'     => $selector,
+      'clicks'       => $data['clicks'],
+      'pct_of_total' => $total_clicks > 0 ? round(($data['clicks'] / $total_clicks) * 100, 2) : 0,
+      'rage_clicks'  => $data['rage_clicks'],
+      'dead_clicks'  => $data['dead_clicks'],
+    ];
+  }
+  usort($elements_out, function ($a, $b) { return $b['clicks'] - $a['clicks']; });
+
+  $scroll = abst_get_scroll_data($page_id, $filters);
+
+  return [
+    'totals' => [
+      'total_clicks'    => $total_clicks,
+      'rage_clicks'     => $rage_clicks,
+      'dead_clicks'     => $dead_clicks,
+      'unique_sessions' => count($uuids),
+      'days_analyzed'   => $days,
+    ],
+    'screen_distribution' => $screen_distribution,
+    'elements'            => $elements_out,
+    'points'              => $points,
+    'points_total'        => $points_total,
+    'points_truncated'    => ($point_limit > 0 && $points_total > $point_limit),
+    'scroll' => [
+      'distribution'      => isset($scroll['distribution']) ? $scroll['distribution'] : [],
+      'totalSessions'     => isset($scroll['totalSessions']) ? $scroll['totalSessions'] : 0,
+      'avgViewportHeight' => isset($scroll['avgViewportHeight']) ? $scroll['avgViewportHeight'] : 0,
+      'foldSampleCount'   => isset($scroll['foldSampleCount']) ? $scroll['foldSampleCount'] : 0,
+    ],
+    'available_filters' => [
+      'experiments'   => isset($result['experiments']) ? $result['experiments'] : [],
+      'referrers'     => isset($result['referrers']) ? $result['referrers'] : [],
+      'utm_sources'   => isset($result['utm_sources']) ? $result['utm_sources'] : [],
+      'utm_mediums'   => isset($result['utm_mediums']) ? $result['utm_mediums'] : [],
+      'utm_campaigns' => isset($result['utm_campaigns']) ? $result['utm_campaigns'] : [],
+    ],
+  ];
+}
+
+/**
+ * Build authenticated wp-admin deep links to view the rendered heatmap and the
+ * session replays for a page, pre-applying the given filters. No public surface
+ * is created — both admin screens restore filter state from these URL params.
+ *
+ * @param int|string $page_id Numeric post ID or archive key.
+ * @param array      $filters Same filter array passed to abst_build_heatmap_payload().
+ * @return array{heatmap:string,session_replay:string}
+ */
+function abst_heatmap_view_urls($page_id, $filters = []) {
+  $page_id = is_numeric($page_id) ? (int) $page_id : (is_string($page_id) ? trim($page_id) : $page_id);
+
+  $size_map = ['s' => 'small', 'm' => 'medium', 'l' => 'large'];
+  $hm = ['post_type' => 'bt_experiments', 'page' => 'abst-heatmaps', 'post' => $page_id];
+  if (!empty($filters['days']))         { $hm['days'] = intval($filters['days']); }
+  if (!empty($filters['screen']))       { $hm['size'] = isset($size_map[$filters['screen']]) ? $size_map[$filters['screen']] : $filters['screen']; }
+  if (!empty($filters['eid']))          { $hm['eid'] = intval($filters['eid']); }
+  if (!empty($filters['variation']))    { $hm['variation'] = $filters['variation']; }
+  if (!empty($filters['exit_url']))     { $hm['exit_url'] = $filters['exit_url']; }
+  if (!empty($filters['referrer']))     { $hm['referrer'] = $filters['referrer']; }
+  if (!empty($filters['utm_source']))   { $hm['utm_source'] = $filters['utm_source']; }
+  if (!empty($filters['utm_medium']))   { $hm['utm_medium'] = $filters['utm_medium']; }
+  if (!empty($filters['utm_campaign'])) { $hm['utm_campaign'] = $filters['utm_campaign']; }
+
+  $sr = ['post_type' => 'bt_experiments', 'page' => 'abst-session-replay'];
+  if (is_int($page_id))                 { $sr['page_id'] = $page_id; }
+  if (!empty($filters['screen']))       { $sr['device'] = $filters['screen']; }
+  if (!empty($filters['eid']))          { $sr['test_id'] = intval($filters['eid']); }
+  if (!empty($filters['referrer']))     { $sr['referrer'] = $filters['referrer']; }
+  if (!empty($filters['utm_source']))   { $sr['utm_source'] = $filters['utm_source']; }
+  if (!empty($filters['utm_medium']))   { $sr['utm_medium'] = $filters['utm_medium']; }
+  if (!empty($filters['utm_campaign'])) { $sr['utm_campaign'] = $filters['utm_campaign']; }
+
+  return [
+    'heatmap'        => admin_url('edit.php?' . http_build_query($hm)),
+    'session_replay' => admin_url('edit.php?' . http_build_query($sr)),
+  ];
+}
+
+/**
+ * Discovery for the heatmap-pages endpoint: scan journey files directly (lite has
+ * no session index) and tally, per page, unique visitors, click volume and the
+ * first/last timestamps seen within the window.
+ *
+ * @param int $days How many days back to scan (clamped 1-90).
+ * @return array
+ */
+function abst_heatmap_pages_data($days = 30) {
+  $days = max(1, min(intval($days), 90));
+  $cutoff = time() - ($days * 24 * 60 * 60);
+
+  $txt = glob(ABST_JOURNEY_DIR . '/*.txt');
+  $gz  = glob(ABST_JOURNEY_DIR . '/*.gz');
+  $files = array_merge(is_array($txt) ? $txt : [], is_array($gz) ? $gz : []);
+
+  $pages = [];
+  foreach ($files as $file) {
+    $base = basename($file);
+    if (!preg_match('/(\d{8})/', $base, $m)) {
+      continue;
+    }
+    $file_date = strtotime(substr($m[1], 0, 4) . '-' . substr($m[1], 4, 2) . '-' . substr($m[1], 6, 2));
+    if ($file_date === false || $file_date < $cutoff) {
+      continue;
+    }
+
+    $uuid = '';
+    foreach (abst_read_journey_file_lines($file) as $line) {
+      $parts = array_map('trim', explode('|', $line));
+      if (!empty($parts[0]) && $parts[0] === 'meta') {
+        $uuid = isset($parts[1]) ? $parts[1] : '';
+        continue;
+      }
+      // Event line: ts|type|post_id|url|element|x|y|meta
+      if (count($parts) >= 8) {
+        $pid = is_numeric($parts[2]) ? (int) $parts[2] : trim($parts[2]);
+        if ($pid === '' || $pid === null) {
+          continue;
+        }
+        $key = (string) $pid;
+        if (!isset($pages[$key])) {
+          $pages[$key] = ['page_id' => $pid, 'sessions' => [], 'clicks' => 0, 'first' => null, 'last' => null];
+        }
+        if ($uuid !== '') {
+          $pages[$key]['sessions'][$uuid] = true;
+        }
+        if ($parts[1] === 'c' || $parts[1] === 'rc') {
+          $pages[$key]['clicks']++;
+        }
+        $ts = is_numeric($parts[0]) ? (int) $parts[0] : (int) strtotime($parts[0]);
+        if ($ts > 0) {
+          if ($pages[$key]['first'] === null || $ts < $pages[$key]['first']) { $pages[$key]['first'] = $ts; }
+          if ($pages[$key]['last']  === null || $ts > $pages[$key]['last'])  { $pages[$key]['last']  = $ts; }
+        }
+      }
+    }
+  }
+
+  $out = [];
+  foreach ($pages as $info) {
+    $out[] = [
+      'page_id'       => $info['page_id'],
+      'page_title'    => abst_resolve_page_title($info['page_id']),
+      'page_url'      => abst_resolve_page_url($info['page_id']),
+      'session_count' => count($info['sessions']),
+      'click_count'   => $info['clicks'],
+      'first_seen'    => $info['first'] ? gmdate('c', $info['first']) : null,
+      'last_seen'     => $info['last'] ? gmdate('c', $info['last']) : null,
+    ];
+  }
+  usort($out, function ($a, $b) { return $b['session_count'] - $a['session_count']; });
+  return $out;
 }
 
 function abst_search_all_journey_logs($post_id, $filters = []) {
@@ -21240,7 +21789,7 @@ function abst_logs_page_content() {
 
   } else {
 
-    echo '<p class="abst-logs-empty">Log file does not exist yet. Enable logging in Settings to start capturing debug information.</p>';
+    echo '<p class="abst-logs-empty">Log file does not exist yet. Logs will appear here once debug logging captures activity.</p>';
 
   }
 

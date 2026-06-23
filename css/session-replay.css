@@ -23,86 +23,31 @@
     gap: 20px;
 }
 
-/* Filters */
-.abst-session-filters {
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    padding: 0;
-}
-
-.abst-session-filters summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 15px;
-    cursor: pointer;
-}
-
-.abst-session-filters-title {
-    font-weight: 600;
-}
-
-.abst-session-filter-summary {
-    color: #646970;
-    font-size: 12px;
-    line-height: 1.4;
-    text-align: right;
-}
-
-.abst-session-filter-controls {
-    border-top: 1px solid #eee;
-    padding: 15px;
-}
-
-.abst-filter-group {
-    margin-bottom: 12px;
-}
-
-.abst-filter-group label {
-    display: block;
-    margin-bottom: 4px;
-    font-weight: 500;
-    font-size: 13px;
-}
-
-.abst-filter-group select,
-.abst-filter-group input[type="date"] {
-    width: 100%;
-    padding: 6px 8px;
-}
-
-.abst-filter-group input[type="checkbox"] {
-    margin-right: 6px;
-}
-
-.abst-date-range {
+/* Upgrade Nudge */
+.abst-session-upgrade-nudge {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 10px 14px;
+    background: #f0f6fc;
+    border: 1px solid #c3d4e7;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #1d2327;
+    line-height: 1.4;
 }
 
-.abst-session-filter-controls #rebuild-index {
-    margin-top: 10px;
+.abst-session-upgrade-nudge a {
+    flex-shrink: 0;
+    margin-left: auto;
+    color: #2271b1;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
-.abst-date-range input {
-    flex: 1;
-}
-
-.abst-date-range span {
-    color: #666;
-    font-size: 12px;
-}
-
-#apply-filters {
-    width: 100%;
-    margin-top: 10px;
-}
-
-#rebuild-index {
-    width: 100%;
+.abst-session-upgrade-nudge a:hover {
+    color: #135e96;
 }
 
 /* Session List */
@@ -653,13 +598,5 @@
     
     .abst-session-sidebar {
         width: 100%;
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
-    
-    .abst-session-filters,
-    .abst-session-list {
-        flex: 1;
-        min-width: 280px;
     }
 }

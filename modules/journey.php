@@ -552,6 +552,13 @@ class ABST_Journeys {
 
     public function read_journey_file($date) {
 
+        // Guard against path traversal: the date must be an 8-digit Ymd string.
+        if ( ! preg_match( '/^\d{8}$/', (string) $date ) ) {
+
+            return [];
+
+        }
+
         $file_txt = trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . $date . '.txt';
 
         $file_gz = trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . $date . '.txt.gz';
@@ -765,12 +772,11 @@ class ABST_Journeys {
 
         // Public journey collection endpoint; payload is sanitized below and rate limited by IP.
         // phpcs:disable WordPress.Security.NonceVerification.Missing
-        if ( ! isset( $_POST['data'] ) ) {
+        $raw_payload = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : file_get_contents('php://input');
+        if ( ! is_string( $raw_payload ) || $raw_payload === '' ) {
             wp_send_json_error('Invalid data');
             return;
         }
-
-        $raw_payload = sanitize_text_field( wp_unslash( $_POST['data'] ) );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
 
@@ -853,7 +859,9 @@ class ABST_Journeys {
 
                         'written'      => false,
 
-                        'scroll_depth' => ''
+                        'scroll_depth' => '',
+
+                        'viewport_height' => ''
 
                     ];
 
@@ -889,9 +897,33 @@ class ABST_Journeys {
 
 
 
+                $viewport_height = '';
+
+                if (isset($record['viewport_height']) && $record['viewport_height'] !== '') {
+
+                    $vh_candidate = floatval($record['viewport_height']);
+
+                    if (is_finite($vh_candidate) && $vh_candidate > 0) {
+
+                        $viewport_height = (string) round($vh_candidate);
+
+                    }
+
+                }
+
+
+
                 $existing_scroll = $uuid_metadata_written[$uuid]['scroll_depth'];
 
                 $has_written = $uuid_metadata_written[$uuid]['written'];
+
+                $existing_viewport = isset($uuid_metadata_written[$uuid]['viewport_height']) ? $uuid_metadata_written[$uuid]['viewport_height'] : '';
+
+                if ($viewport_height === '' && $existing_viewport !== '') {
+
+                    $viewport_height = $existing_viewport;
+
+                }
 
 
 
@@ -925,7 +957,9 @@ class ABST_Journeys {
 
                         $scroll_depth,
 
-                        $referrer
+                        $referrer,
+
+                        $viewport_height
 
                     ];
 
@@ -936,6 +970,8 @@ class ABST_Journeys {
                     $uuid_metadata_written[$uuid]['written'] = true;
 
                     $uuid_metadata_written[$uuid]['scroll_depth'] = $scroll_depth;
+
+                    $uuid_metadata_written[$uuid]['viewport_height'] = $viewport_height;
 
                 } elseif ($scroll_depth !== '' && ($existing_scroll === '' || floatval($scroll_depth) > floatval($existing_scroll))) {
 

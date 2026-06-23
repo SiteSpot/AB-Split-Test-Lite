@@ -256,13 +256,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (heatmapContainer._abstScrollMoveHandler) {
+      heatmapContainer.removeEventListener('mousemove', heatmapContainer._abstScrollMoveHandler);
+    }
+    if (heatmapContainer._abstScrollLeaveHandler) {
+      heatmapContainer.removeEventListener('mouseleave', heatmapContainer._abstScrollLeaveHandler);
+    }
+
     heatmapContainer.innerHTML = '';
-    
-    // Calculate viewport offset with pixel constraints (400px min, 1000px max)
-    const minOffsetPx = 400;
-    const maxOffsetPx = 1000;
-    const targetOffsetPx = Math.max(minOffsetPx, Math.min(maxOffsetPx, pageHeight * 0.10));
-    const viewportOffsetPercent = (targetOffsetPx / pageHeight) * 100;
     
     // Build lookup map from distribution buckets
     const viewerMap = new Map();
@@ -280,14 +281,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Helper function to interpolate between color stops
     const getColorForViewers = (viewers) => {
-      // Color scale: 100% (blue) → 75% (cyan) → 50% (green) → 25% (yellow) → 12.5% (orange) → 0% (red)
       const colorStops = [
-        { viewers: 1.00, r: 107, g: 141, b: 214 }, // #6B8DD6 - Blue (100%)
-        { viewers: 0.75, r: 79,  g: 195, b: 220 }, // #4FC3DC - Cyan (75%)
-        { viewers: 0.50, r: 95,  g: 211, b: 141 }, // #5FD38D - Green (50%)
-        { viewers: 0.25, r: 249, g: 230, b: 92  }, // #F9E65C - Yellow (25%)
-        { viewers: 0.125, r: 255, g: 154, b: 86 }, // #FF9A56 - Orange (12.5%)
-        { viewers: 0.00, r: 255, g: 107, b: 107 }  // #FF6B6B - Red (0%)
+        { viewers: 1.00, r: 255, g: 59,  b: 48  },
+        { viewers: 0.75, r: 255, g: 149, b: 0   },
+        { viewers: 0.50, r: 255, g: 214, b: 10  },
+        { viewers: 0.25, r: 52,  g: 199, b: 89  },
+        { viewers: 0.10, r: 50,  g: 173, b: 230 },
+        { viewers: 0.00, r: 0,   g: 91,  b: 234 }
       ];
       
       // Find the two color stops to interpolate between
@@ -310,37 +310,64 @@ document.addEventListener('DOMContentLoaded', () => {
       const g = Math.round(lower.g + (upper.g - lower.g) * t);
       const b = Math.round(lower.b + (upper.b - lower.b) * t);
       
-      return `rgba(${r}, ${g}, ${b}, 0.7)`;
+      return `rgba(${r}, ${g}, ${b}, 0.85)`;
     };
-    
-    // Sample at 3% intervals for smooth gradient
-    // Offset the gradient start to account for initial viewport (0% scroll = page load)
-    // Viewport offset is calculated with 400px min, 1000px max constraints
-    const gradientStops = [];
-    
-    // Add solid color from top to viewport offset (representing 0% scroll position)
-    const zeroScrollViewers = viewerMap.get(0) !== undefined ? viewerMap.get(0) : 1.0;
-    const zeroScrollColor = getColorForViewers(zeroScrollViewers);
-    gradientStops.push(`${zeroScrollColor} 0%`);
-    gradientStops.push(`${zeroScrollColor} ${viewportOffsetPercent}%`);
-    
-    for (let pos = 0; pos <= 100; pos += 3) {
-      // Find closest viewer percentage
-      let viewers = viewerMap.get(pos);
 
-      if (viewers !== undefined) {
-        const color = getColorForViewers(viewers);
-        // Shift all positions down by viewport offset
-        const adjustedPos = viewportOffsetPercent + (pos * (100 - viewportOffsetPercent) / 100);
-        gradientStops.push(`${color} ${adjustedPos}%`);
+    const viewersAt = (scrollPct) => {
+      let pos = Math.max(0, Math.min(100, Math.round(scrollPct)));
+      if (viewerMap.has(pos)) return viewerMap.get(pos);
+      for (let d = 1; d <= 100; d++) {
+        if (viewerMap.has(pos - d)) return viewerMap.get(pos - d);
+        if (viewerMap.has(pos + d)) return viewerMap.get(pos + d);
       }
-    }
-    
-    // Apply CSS gradient to container
+      return 0;
+    };
+
+    const gradientStops = [];
+    distribution.forEach((bucket) => {
+      const start = Number.isFinite(bucket.start) ? bucket.start : 0;
+      const end = Number.isFinite(bucket.end) ? bucket.end : start;
+      const color = getColorForViewers(Number(bucket.percent));
+      gradientStops.push(`${color} ${start}%`);
+      gradientStops.push(`${color} ${end}%`);
+    });
+
     if (gradientStops.length > 0) {
       heatmapContainer.style.background = `linear-gradient(to bottom, ${gradientStops.join(', ')})`;
-      heatmapContainer.style.pointerEvents = 'none';
     }
+
+    const avgViewport = Number(scrollMap.avgViewportHeight);
+    if (Number.isFinite(avgViewport) && avgViewport > 0 && pageHeight > 0) {
+      const foldPercent = Math.max(0, Math.min(100, (avgViewport / pageHeight) * 100));
+      const fold = document.createElement('div');
+      fold.style.cssText = 'position:absolute;left:0;right:0;height:0;border-top:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.45);pointer-events:none;z-index:5;top:' + foldPercent + '%;';
+      const foldLabel = document.createElement('div');
+      foldLabel.textContent = 'AVERAGE FOLD';
+      foldLabel.style.cssText = 'position:absolute;right:6px;top:0;transform:translateY(-50%);background:#fff;color:#333;font:700 10px/1 sans-serif;letter-spacing:0.5px;padding:3px 6px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.3);';
+      fold.appendChild(foldLabel);
+      heatmapContainer.appendChild(fold);
+    }
+
+    heatmapContainer.style.pointerEvents = 'auto';
+    const marker = document.createElement('div');
+    marker.style.cssText = 'position:absolute;left:0;right:0;height:0;border-top:2px dashed rgba(0,0,0,0.65);pointer-events:none;display:none;z-index:6;';
+    const hoverLabel = document.createElement('div');
+    hoverLabel.style.cssText = 'position:absolute;left:50%;top:0;transform:translate(-50%,-100%);background:rgba(0,0,0,0.82);color:#fff;font:600 12px/1.4 sans-serif;padding:3px 8px;border-radius:4px;white-space:nowrap;';
+    marker.appendChild(hoverLabel);
+    heatmapContainer.appendChild(marker);
+    const onScrollOverlayMove = (e) => {
+      const rect = heatmapContainer.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const scrollPct = rect.height > 0 ? Math.max(0, Math.min(100, (y / rect.height) * 100)) : 0;
+      marker.style.top = y + 'px';
+      marker.style.display = 'block';
+      hoverLabel.textContent = Math.round(viewersAt(scrollPct) * 100) + '% of visitors reached here';
+    };
+    const onScrollOverlayLeave = () => { marker.style.display = 'none'; };
+    heatmapContainer.addEventListener('mousemove', onScrollOverlayMove);
+    heatmapContainer.addEventListener('mouseleave', onScrollOverlayLeave);
+    heatmapContainer._abstScrollMoveHandler = onScrollOverlayMove;
+    heatmapContainer._abstScrollLeaveHandler = onScrollOverlayLeave;
   };
 
   // Trigger scroll-based animations in iframe (GSAP, Elementor, Beaver, etc.)

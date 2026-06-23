@@ -1,0 +1,206 @@
+{
+  "post_data": {
+    "title": "Sample Test 5 - Full Page Collecting Data",
+    "content": "This is a Full Page Test that hasn't collected enough data yet. Each variation page is still well below the minimum views needed before a winner can be declared.",
+    "status": "publish"
+  },
+  "test_config": {
+    "test_type": "full_page",
+    "bt_experiments_full_page_default_page": "home-v1",
+    "page_variations": {
+      "home-v2": "landing-long-form",
+      "home-v3": "landing-video-hero"
+    },
+    "variation_meta": {
+      "home-v1": {
+        "label": "Original Landing Page"
+      },
+      "home-v2": {
+        "label": "Long-Form Redesign"
+      },
+      "home-v3": {
+        "label": "Video Hero"
+      }
+    },
+    "target_percentage": "50",
+    "target_option_device_size": "all",
+    "conversion_page": "url",
+    "conversion_selector": "",
+    "conversion_time": "0",
+    "conversion_text": "",
+    "conversion_use_order_value": false,
+    "conversion_url": "thank-you",
+    "conversion_link_pattern": "",
+    "url_query": "",
+    "webhook_url": "",
+    "bt_allowed_roles": [],
+    "css_test_variations": "0",
+    "conversion_style": "bayesian",
+    "goals": {
+      "1": {
+        "selector": ".signup"
+      },
+      "2": {
+        "url": "*pricing"
+      },
+      "3": {
+        "": ""
+      },
+      "4": {
+        "": ""
+      },
+      "5": {
+        "": ""
+      },
+      "6": {
+        "": ""
+      },
+      "7": {
+        "": ""
+      },
+      "8": {
+        "": ""
+      },
+      "9": {
+        "": ""
+      },
+      "10": {
+        "": ""
+      }
+    },
+    "autocomplete_on": "0",
+    "ac_min_days": "14",
+    "ac_min_views": "500"
+  },
+  "observations": {
+    "home-v1": {
+      "visit": 92,
+      "conversion": 5,
+      "goals": {
+        "1": 3,
+        "2": 2
+      },
+      "rate": 5.43,
+      "variation_meta": {
+        "label": "Original Landing Page"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup", "contact"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 47,
+          "conversion": 3,
+          "goals": {
+            "1": 2,
+            "2": 1
+          },
+          "rate": 6.38
+        },
+        "mobile": {
+          "visit": 33,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 6.06
+        },
+        "tablet": {
+          "visit": 12,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    },
+    "home-v2": {
+      "visit": 88,
+      "conversion": 7,
+      "goals": {
+        "1": 4,
+        "2": 3
+      },
+      "rate": 7.95,
+      "variation_meta": {
+        "label": "Long-Form Redesign"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup", "purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 45,
+          "conversion": 4,
+          "goals": {
+            "1": 2,
+            "2": 2
+          },
+          "rate": 8.89
+        },
+        "mobile": {
+          "visit": 31,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 6.45
+        },
+        "tablet": {
+          "visit": 12,
+          "conversion": 1,
+          "goals": {
+            "1": 1,
+            "2": 0
+          },
+          "rate": 8.33
+        }
+      }
+    },
+    "home-v3": {
+      "visit": 90,
+      "conversion": 4,
+      "goals": {
+        "1": 2,
+        "2": 2
+      },
+      "rate": 4.44,
+      "variation_meta": {
+        "label": "Video Hero"
+      },
+      "location": {
+        "visit": ["home", "pricing", "about"],
+        "conversion": ["signup", "contact"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 46,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 4.35
+        },
+        "mobile": {
+          "visit": 32,
+          "conversion": 2,
+          "goals": {
+            "1": 1,
+            "2": 1
+          },
+          "rate": 6.25
+        },
+        "tablet": {
+          "visit": 12,
+          "conversion": 0,
+          "goals": {},
+          "rate": 0
+        }
+      }
+    }
+  }
+}

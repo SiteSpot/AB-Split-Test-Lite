@@ -53,8 +53,8 @@ function abst_split_test_analyzer($data = array(),$test_age = 0){
       if(isset($d['bt_bb_ab_stats']))
         continue;
       $durationFinder[$n] = [];
-      $durationFinder[$n]['conversion'] = $d['conversion'] / $test_age;
-      $durationFinder[$n]['visit'] = $d['visit'] / $test_age;
+      $durationFinder[$n]['conversion'] = ($d['conversion'] ?? 0) / $test_age;
+      $durationFinder[$n]['visit'] = ($d['visit'] ?? 0) / $test_age;
     }
     // add 7 days to days running (loop) and test to see if theres a winner
   while(!$winnerFound && $test_age < 500){

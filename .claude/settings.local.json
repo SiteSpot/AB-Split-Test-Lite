@@ -42,7 +42,21 @@
       "Bash(perl -i -pe 's/\\\\bshow_experiment_results\\\\b/abst_show_experiment_results/g' admin/bt-bb-ab-admin.php)",
       "Bash(perl -i -pe 's/\\\\bab_get_admin_setting\\\\b/abst_ab_get_admin_setting/g' admin/bt-bb-ab-admin.php)",
       "Bash(grep -n '^$btab\\\\b\\\\|^$abtest_query_variation\\\\b\\\\|^$parts\\\\b\\\\|^$folder_path\\\\b' C:/laragon/www/tom/wp-content/plugins/ab-split-test-lite/bt-bb-ab.php)",
-      "Bash(grep -n '$abtest_query_variation' C:/laragon/www/tom/wp-content/plugins/ab-split-test-lite/bt-bb-ab.php)"
+      "Bash(grep -n '$abtest_query_variation' C:/laragon/www/tom/wp-content/plugins/ab-split-test-lite/bt-bb-ab.php)",
+      "mcp__Claude_in_Chrome__select_browser",
+      "mcp__Claude_in_Chrome__tabs_create_mcp",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "mcp__Claude_in_Chrome__find",
+      "mcp__Claude_in_Chrome__computer",
+      "Bash(grep -n '$_POST\\\\[.*\\\\] ==' 'C:\\\\laragon\\\\www\\\\tom\\\\wp-content\\\\plugins\\\\ab-split-test-lite\\\\bt-bb-ab.php')",
+      "Bash(ssh testserver-splittestsite:*)",
+      "Bash(scp:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git --version)",
+      "Bash(node \"C:\\\\Users\\\\tomis\\\\.claude\\\\skills\\\\wp-project-triage\\\\scripts\\\\detect_wp_project.mjs\")"
     ]
   }
 }

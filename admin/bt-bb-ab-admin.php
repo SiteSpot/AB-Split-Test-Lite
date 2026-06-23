@@ -52,15 +52,16 @@ class BT_BB_AB_Admin {
 
       $selected_post_types = isset($_POST['selected_post_types']) ? array_map('sanitize_text_field', wp_unslash($_POST['selected_post_types'])) : array();
       // update canonical url
-      $change_canonicals = (isset($_POST['add_canonical']) && $_POST['add_canonical'] == 1) ? 1 : 0;
+      $change_canonicals = (isset($_POST['add_canonical']) && absint(wp_unslash($_POST['add_canonical'])) === 1) ? 1 : 0;
       // Cache clearing stays enabled in lite to avoid stale-cache support issues;
       // only advanced cache controls are PRO.
       $dont_clear_cache = 0;
-      $abst_enable_logging = (isset($_POST['abst_enable_logging']) && $_POST['abst_enable_logging'] == 1) ? 1 : 0;
-      $abst_enable_heatmaps = (isset($_POST['abst_enable_heatmaps']) && $_POST['abst_enable_heatmaps'] == 1) ? 1 : 0;
+      // Lite always keeps debug logging available so the Logs screen can be used for support.
+      $abst_enable_logging = 1;
+      $abst_enable_heatmaps = (isset($_POST['abst_enable_heatmaps']) && absint(wp_unslash($_POST['abst_enable_heatmaps'])) === 1) ? 1 : 0;
       $uuid_length = isset($_POST['uuid_length']) ? intval($_POST['uuid_length']) : 30;
       $ab_fingerprint_length = isset($_POST['ab_fingerprint_length']) ? intval($_POST['ab_fingerprint_length']) : 30;
-      $wait_for_approval = (isset($_POST['wait_for_approval']) && $_POST['wait_for_approval'] == 1) ? 1 : 0;
+      $wait_for_approval = (isset($_POST['wait_for_approval']) && absint(wp_unslash($_POST['wait_for_approval'])) === 1) ? 1 : 0;
       $heatmap_retention_length = isset($_POST['heatmap_retention_length']) ? min(3, intval($_POST['heatmap_retention_length'])) : 3; // free: max 3 days
       // Lite version ignores premium-only toggles (MAB, agency, AI, webhooks, fingerprint, UUID)
       $abst_agency_mode_enabled = 0;
@@ -75,10 +76,10 @@ class BT_BB_AB_Admin {
       $woo_server_convert_status = array();
 
       // store the user journey logging preference
-      $enable_user_journeys = (isset($_POST['enable_user_journeys']) && $_POST['enable_user_journeys'] == 1) ? 1 : 0;
+      $enable_user_journeys = (isset($_POST['enable_user_journeys']) && absint(wp_unslash($_POST['enable_user_journeys'])) === 1) ? 1 : 0;
 
       // store session replays preference
-      $enable_session_replays = (isset($_POST['enable_session_replays']) && $_POST['enable_session_replays'] == 1) ? 1 : 0;
+      $enable_session_replays = (isset($_POST['enable_session_replays']) && absint(wp_unslash($_POST['enable_session_replays'])) === 1) ? 1 : 0;
 
       // store heatmap pages selection ( max 1 page)
       $heatmap_pages = array();

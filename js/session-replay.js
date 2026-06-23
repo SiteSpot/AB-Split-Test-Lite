@@ -52,10 +52,8 @@
     function init() {
         cacheElements();
         bindEvents();
-        applyFiltersFromUrl();
-        updateFilterSummary();
         loadSessions();
-        
+
         // Check for UUID in URL parameter to auto-load a session
         checkUrlForSession();
     }
@@ -183,18 +181,6 @@
      * Bind event handlers
      */
     function bindEvents() {
-        // Filters
-        $('#apply-filters').on('click', function() {
-            state.currentPage = 1;
-            updateFilterSummary();
-            updateFilterUrl();
-            $('.abst-session-filters').prop('open', false);
-            loadSessions();
-        });
-
-        $('#rebuild-index').on('click', rebuildIndex);
-        $('.abst-session-filter-controls').on('change', 'select, input', updateFilterSummary);
-
         // Session list click
         $sessionList.on('click', '.abst-session-card', function() {
             const uuid = $(this).data('uuid');
@@ -207,7 +193,6 @@
             const page = $(this).data('page');
             if (page && page !== state.currentPage) {
                 state.currentPage = page;
-                updateFilterUrl();
                 loadSessions();
             }
         });
@@ -242,227 +227,9 @@
     }
 
     /**
-     * Populate referrer/UTM filter dropdowns from AJAX response data
-     */
-    function populateFilterDropdowns(available) {
-        const dropdowns = [
-            { id: '#filter-referrer', data: available.referrers, defaultLabel: 'All Referrers' },
-            { id: '#filter-utm-source', data: available.utm_sources, defaultLabel: 'All Sources' },
-            { id: '#filter-utm-medium', data: available.utm_mediums, defaultLabel: 'All Mediums' },
-            { id: '#filter-utm-campaign', data: available.utm_campaigns, defaultLabel: 'All Campaigns' },
-        ];
-
-        dropdowns.forEach(function(dd) {
-            const $el = $(dd.id);
-            const currentVal = $el.val();
-            $el.empty().append('<option value="">' + dd.defaultLabel + '</option>');
-            if (dd.data && typeof dd.data === 'object') {
-                Object.keys(dd.data).forEach(function(key) {
-                    $el.append('<option value="' + $('<span>').text(key).html() + '">' + $('<span>').text(key).html() + ' (' + dd.data[key] + ')</option>');
-                });
-            }
-            if (currentVal) {
-                $el.val(currentVal);
-            }
-        });
-
-        updateFilterSummary();
-    }
-
-    /**
-     * Apply supported filters from the current URL so shared links restore state.
-     */
-    function applyFiltersFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const filters = getUrlFilterMap();
-
-        Object.keys(filters).forEach(function(param) {
-            if (!urlParams.has(param)) {
-                return;
-            }
-
-            const filter = filters[param];
-            const value = urlParams.get(param);
-            const $field = $(filter.selector);
-
-            if (!$field.length) {
-                return;
-            }
-
-            if (filter.type === 'checkbox') {
-                $field.prop('checked', value === '1' || value === 'true');
-                return;
-            }
-
-            if ($field.is('select') && value && !selectHasValue($field, value)) {
-                $field.append($('<option>', { value: value, text: value }));
-            }
-
-            $field.val(value);
-        });
-
-        const replayPage = parseInt(urlParams.get('replay_page'), 10);
-        if (replayPage > 1) {
-            state.currentPage = replayPage;
-        }
-    }
-
-    /**
-     * Push the current filters into the browser URL without reloading the page.
-     */
-    function updateFilterUrl() {
-        if (!window.history || !window.history.replaceState) {
-            return;
-        }
-
-        const url = new URL(window.location.href);
-        const filters = getUrlFilterMap();
-
-        Object.keys(filters).forEach(function(param) {
-            const filter = filters[param];
-            const $field = $(filter.selector);
-            let value = '';
-
-            if (!$field.length) {
-                return;
-            }
-
-            if (filter.type === 'checkbox') {
-                value = $field.is(':checked') ? '1' : '';
-            } else {
-                value = $field.val() || '';
-            }
-
-            if (value && value !== String(filter.defaultValue)) {
-                url.searchParams.set(param, value);
-            } else {
-                url.searchParams.delete(param);
-            }
-        });
-
-        if (state.currentPage > 1) {
-            url.searchParams.set('replay_page', state.currentPage);
-        } else {
-            url.searchParams.delete('replay_page');
-        }
-
-        window.history.replaceState({}, '', url.toString());
-    }
-
-    /**
-     * URL parameter names for filters that can be shared.
-     */
-    function getUrlFilterMap() {
-        return {
-            min_pages: { selector: '#filter-min-pages', defaultValue: '3' },
-            min_clicks: { selector: '#filter-min-clicks', defaultValue: '1' },
-            page_id: { selector: '#filter-page', defaultValue: '' },
-            exit_page_id: { selector: '#filter-exit-page', defaultValue: '' },
-            test_id: { selector: '#filter-test', defaultValue: '' },
-            converted: { selector: '#filter-converted', defaultValue: '' },
-            has_rage_clicks: { selector: '#filter-rage-clicks', defaultValue: '', type: 'checkbox' },
-            device: { selector: '#filter-device', defaultValue: '' },
-            date_from: { selector: '#filter-date-from', defaultValue: '' },
-            date_to: { selector: '#filter-date-to', defaultValue: '' },
-            referrer: { selector: '#filter-referrer', defaultValue: '' },
-            utm_source: { selector: '#filter-utm-source', defaultValue: '' },
-            utm_medium: { selector: '#filter-utm-medium', defaultValue: '' },
-            utm_campaign: { selector: '#filter-utm-campaign', defaultValue: '' }
-        };
-    }
-
-    /**
-     * Check option values without building a CSS selector from user-controlled text.
-     */
-    function selectHasValue($field, value) {
-        let hasValue = false;
-
-        $field.find('option').each(function() {
-            if ($(this).val() === value) {
-                hasValue = true;
-                return false;
-            }
-        });
-
-        return hasValue;
-    }
-
-    /**
-     * Keep the collapsed filter header useful without duplicating the full form.
-     */
-    function updateFilterSummary() {
-        const summary = [];
-        const minPages = parseInt($('#filter-min-pages').val(), 10);
-        const minClicks = parseInt($('#filter-min-clicks').val(), 10);
-
-        if (minPages > 1) {
-            summary.push('Min ' + minPages + ' pages');
-        }
-
-        if (minClicks > 0) {
-            summary.push('Min ' + minClicks + ' clicks');
-        }
-
-        addSelectSummary(summary, '#filter-page', 'Visited');
-        addSelectSummary(summary, '#filter-exit-page', 'Exit');
-        addSelectSummary(summary, '#filter-test', 'Test');
-        addSelectSummary(summary, '#filter-converted', 'Conversion');
-        addSelectSummary(summary, '#filter-device', 'Device');
-
-        if ($('#filter-rage-clicks').is(':checked')) {
-            summary.push('Rage clicks');
-        }
-
-        const dateFrom = $('#filter-date-from').val();
-        const dateTo = $('#filter-date-to').val();
-        if (dateFrom || dateTo) {
-            summary.push('Date ' + (dateFrom || 'Any') + ' to ' + (dateTo || 'Any'));
-        }
-
-        addSelectSummary(summary, '#filter-referrer', 'Referrer');
-        addSelectSummary(summary, '#filter-utm-source', 'Source');
-        addSelectSummary(summary, '#filter-utm-medium', 'Medium');
-        addSelectSummary(summary, '#filter-utm-campaign', 'Campaign');
-
-        $('#session-filter-summary').text(summary.length ? summary.join(', ') : 'No filters');
-    }
-
-    /**
-     * Append a selected filter value if it is more specific than "Any".
-     */
-    function addSelectSummary(summary, selector, label) {
-        const $field = $(selector);
-        const value = $field.val();
-
-        if (!value) {
-            return;
-        }
-
-        summary.push(label + ': ' + $field.find('option:selected').text());
-    }
-
-    /**
      * Load sessions from server
      */
     function loadSessions() {
-        const filters = {
-            min_pages: $('#filter-min-pages').val(),
-            min_clicks: $('#filter-min-clicks').val(),
-            page_id: $('#filter-page').val(),
-            exit_page_id: $('#filter-exit-page').val(),
-            test_id: $('#filter-test').val(),
-            converted: $('#filter-converted').val(),
-            has_rage_clicks: $('#filter-rage-clicks').is(':checked'),
-            device: $('#filter-device').val(),
-            date_from: $('#filter-date-from').val(),
-            date_to: $('#filter-date-to').val(),
-            referrer: $('#filter-referrer').val(),
-            utm_source: $('#filter-utm-source').val(),
-            utm_medium: $('#filter-utm-medium').val(),
-            utm_campaign: $('#filter-utm-campaign').val(),
-            page: state.currentPage
-        };
-
         $sessionList.html('<p class="abst-loading">Loading sessions...</p>');
 
         $.ajax({
@@ -471,14 +238,11 @@
             data: {
                 action: 'abst_get_sessions',
                 nonce: abstSessionReplay.nonce,
-                ...filters
+                page: state.currentPage
             },
             success: function(response) {
                 if (response.success) {
                     state.sessions = response.data.sessions;
-                    if (response.data.available_filters) {
-                        populateFilterDropdowns(response.data.available_filters);
-                    }
                     renderSessionList(response.data);
                 } else {
                     $sessionList.html('<p class="abst-error">Error loading sessions</p>');
@@ -1733,35 +1497,6 @@
     function showError(message) {
         showLoading(false);
         $sessionInfo.html(`<span style="color:#d63638">${message}</span>`);
-    }
-
-    /**
-     * Rebuild session index
-     */
-    function rebuildIndex() {
-        $('#rebuild-index').prop('disabled', true).text('Rebuilding...');
-
-        $.ajax({
-            url: abstSessionReplay.ajaxUrl,
-            type: 'POST',
-            data: {
-                action: 'abst_rebuild_session_index',
-                nonce: abstSessionReplay.nonce
-            },
-            success: function(response) {
-                $('#rebuild-index').prop('disabled', false).text('Rebuild Index');
-                if (response.success) {
-                    alert(response.data.message);
-                    loadSessions();
-                } else {
-                    alert('Error rebuilding index');
-                }
-            },
-            error: function() {
-                $('#rebuild-index').prop('disabled', false).text('Rebuild Index');
-                alert('Error rebuilding index');
-            }
-        });
     }
 
     /**

@@ -59,8 +59,6 @@ $abst_server_convert_woo = abst_get_admin_setting('abst_server_convert_woo');
 
 $abst_server_convert_woo_status = abst_get_admin_setting('abst_server_convert_woo_status');
 
-$abst_enable_logging = abst_get_admin_setting('abst_enable_logging');
-
 $abst_enable_heatmaps = abst_get_admin_setting('abst_enable_heatmaps');
 
 $heatmap_retention_length = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
@@ -112,7 +110,6 @@ if($abst_server_convert_woo == true) {
 
 }
 
-  $abst_enable_logging = 'checked'; 
   $abst_enable_heatmaps = 'checked'; 
   $enable_clear_cache = 'checked'; // Default to checked (cache clearing enabled)
 
@@ -789,8 +786,6 @@ if (!is_array($heatmap_pages)) {
         <div class="abst-tab-panel" id="tab-developer">
 
           <h2>Developer</h2>
-
-          
 
           <?php
 
@@ -2206,7 +2201,13 @@ document.addEventListener('DOMContentLoaded', function() {
     mcp: 'developer'
   };
 
-  let savedTab = window.location.hash.replace('#', '') || localStorage.getItem('abst_settings_tab') || 'account';
+  // On activation (redirect carries ?wizard=...) always land on the Account
+  // welcome tab, ignoring any tab previously restored from localStorage.
+  const isActivationWizard = new URLSearchParams(window.location.search).has('wizard');
+
+  let savedTab = isActivationWizard
+    ? 'account'
+    : (window.location.hash.replace('#', '') || localStorage.getItem('abst_settings_tab') || 'account');
   savedTab = legacyTabs[savedTab] || savedTab;
 
   

@@ -1,0 +1,190 @@
+{
+  "post_data": {
+    "title": "Sample Test 8 - Code Test Complete",
+    "content": "This is a completed Code Test comparing three CSS/JS variations applied site-wide. Variation B (sticky add-to-cart bar) is the winner with an 8.50% conversion rate vs 5.00% for the original.",
+    "status": "complete"
+  },
+  "test_config": {
+    "test_type": "css_test",
+    "css_test_variations": "3",
+    "variation_meta": {
+      "test-css-1": {
+        "label": "Original Styles"
+      },
+      "test-css-2": {
+        "label": "Sticky Add-to-Cart Bar"
+      },
+      "test-css-3": {
+        "label": "Compact Layout"
+      }
+    },
+    "target_percentage": "75",
+    "target_option_device_size": "desktop",
+    "conversion_page": "time",
+    "conversion_selector": "",
+    "conversion_time": "60",
+    "conversion_text": "",
+    "conversion_use_order_value": true,
+    "conversion_url": "thank-you",
+    "conversion_link_pattern": "",
+    "url_query": "",
+    "webhook_url": "",
+    "bt_allowed_roles": ["subscriber", "customer"],
+    "conversion_style": "bayesian",
+    "test_winner": "test-css-2",
+    "goals": {
+      "1": {
+        "link": "absplittest.com"
+      },
+      "2": {
+        "url": "pricing"
+      },
+      "3": {
+        "": ""
+      },
+      "4": {
+        "": ""
+      },
+      "5": {
+        "": ""
+      },
+      "6": {
+        "": ""
+      },
+      "7": {
+        "": ""
+      },
+      "8": {
+        "": ""
+      },
+      "9": {
+        "": ""
+      },
+      "10": {
+        "": ""
+      }
+    },
+    "autocomplete_on": "0",
+    "ac_min_days": "7",
+    "ac_min_views": "500"
+  },
+  "observations": {
+    "test-css-1": {
+      "visit": 6000,
+      "conversion": 300,
+      "goals": {
+        "1": 149,
+        "2": 151
+      },
+      "rate": 5.00,
+      "variation_meta": {
+        "label": "Original Styles"
+      },
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 6000,
+          "conversion": 300,
+          "goals": {
+            "1": 149,
+            "2": 151
+          },
+          "rate": 5.00
+        },
+        "mobile": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        },
+        "tablet": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        }
+      }
+    },
+    "test-css-2": {
+      "visit": 5950,
+      "conversion": 506,
+      "goals": {
+        "1": 252,
+        "2": 254
+      },
+      "rate": 8.50,
+      "variation_meta": {
+        "label": "Sticky Add-to-Cart Bar"
+      },
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 5950,
+          "conversion": 506,
+          "goals": {
+            "1": 252,
+            "2": 254
+          },
+          "rate": 8.50
+        },
+        "mobile": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        },
+        "tablet": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        }
+      }
+    },
+    "test-css-3": {
+      "visit": 5900,
+      "conversion": 342,
+      "goals": {
+        "1": 170,
+        "2": 172
+      },
+      "rate": 5.80,
+      "variation_meta": {
+        "label": "Compact Layout"
+      },
+      "location": {
+        "visit": ["homepage", "product-page"],
+        "conversion": ["purchase"]
+      },
+      "device_size": {
+        "desktop": {
+          "visit": 5900,
+          "conversion": 342,
+          "goals": {
+            "1": 170,
+            "2": 172
+          },
+          "rate": 5.80
+        },
+        "mobile": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        },
+        "tablet": {
+          "visit": 0,
+          "conversion": 0,
+          "goals": {},
+          "rate": -1
+        }
+      }
+    }
+  }
+}

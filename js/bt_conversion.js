@@ -178,8 +178,7 @@ window.abst.eventQueue = [];
 window.abst.abconvertpartner = {};
 window.abst.ignoreSelectorPrefixes = ['abst-variation','stk-'];
 window.abst.clickRegister = window.abst.clickRegister || {};
-window.abst.pageUnloading = false;
-window.abst.scrollSentThisPageview = false;
+window.abst.heatScrollLastSent = window.abst.heatScrollLastSent || 0;
 window.abst.invalidVariationWarnings = window.abst.invalidVariationWarnings || {};
 window.abst.invalidExperimentIdWarnings = window.abst.invalidExperimentIdWarnings || {};
 
@@ -1045,8 +1044,8 @@ function abstMainInit() {
     //TEST WINNER FUNCTIONS
     Object.entries(bt_experiments).forEach((([experimentId, experiment]) => {
       try {
-      // if there is a winner, AND the current page is the default page and AUTOCOMPLETE then just go straight there do not pass go
-      if (experiment.test_winner) {
+      // A winner is only implemented when autocomplete is on.
+      if (experiment.test_winner && experiment.autocomplete_on == '1') {
         if (experiment.test_type == 'full_page' && (experiment.full_page_default_page == btab_vars.post_id)) // if full p and the p is this page
         {
           if (experiment.test_winner !== btab_vars.post_id) // if its not the current page
@@ -1373,8 +1372,8 @@ function abstMainInit() {
         return true; // continue to next exp
       }
 
-      // if there is a winner for the test, then do no more - its already done above
-      if (bt_experiments[experimentId].test_winner)
+      // if there is an implemented winner for the test, then do no more - its already done above
+      if (bt_experiments[experimentId].test_winner && bt_experiments[experimentId].autocomplete_on == '1')
         return true; // continue to next exp
 
 
@@ -2076,7 +2075,7 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     return true;
   }
 
-  if (bt_experiments[eid].test_winner !== '') { // if we have a winner
+  if (bt_experiments[eid].test_winner !== '' && bt_experiments[eid].autocomplete_on == '1') { // if we have an implemented winner
 
     if (bt_experiments[eid].test_type == "full_page") // full page winner
     {
@@ -4827,6 +4826,8 @@ function enableClickTracking(){
 
     //add scroll, listener, if over max update max value
     window.abst.heatScrollMax = 0;
+    // Capture viewport height at load for the "average fold" calculation.
+    window.abst.heatViewport = window.innerHeight;
     var scrollEventLock = false;
     document.addEventListener('scroll', function() {
       if (scrollEventLock) return;
@@ -4849,34 +4850,27 @@ function enableClickTracking(){
       }, 300);
     }, { passive: true });
 
-    //most realiable page blur before unset
+    // visibilitychange->hidden is the most reliable end-of-pageview signal.
+    // Every flush carries latest scroll max + viewport; the server keeps the
+    // deepest scroll value per session.
     document.addEventListener('visibilitychange', function() {
       if (document.visibilityState === 'hidden') {
-        flushJourneyData(window.abst.pageUnloading);        
+        flushJourneyData();
       }
     });
     
-    // pagehide fires when navigating away - flush data immediately
-    // Safe for bfcache, unlike beforeunload
+    // pagehide fires when navigating away - flush any remaining events.
+    // Safe for bfcache, unlike beforeunload.
     window.addEventListener('pagehide', function() {
-      window.abst.pageUnloading = true;
-      // Only send scroll depth once per pageview
-      if (!window.abst.scrollSentThisPageview) {
-        window.abst.scrollSentThisPageview = true;
-        flushJourneyData(true); // Include scroll depth on page unload
-      } else {
-        flushJourneyData(false); // Already sent scroll, just flush remaining events
-      }
+      flushJourneyData();
     });
     
     window.addEventListener('pageshow', function(event) {
-      window.abst.pageUnloading = false;
-      
       // bfcache restore - user hit back/forward button
       if (event.persisted) {
         // Reset scroll tracking for fresh measurement
         window.abst.heatScrollMax = 0;
-        window.abst.scrollSentThisPageview = false; // Reset scroll flag for new pageview
+        window.abst.heatScrollLastSent = 0;
         
         // Log a new page view event for this "return" to the page
         window.abst.clickRegister['pv_' + new Date().toISOString()] = {
@@ -4999,7 +4993,7 @@ function check_heatmap_tracking() {
 }
 
 
-function flushJourneyData(includeScrollMax) {
+function flushJourneyData() {
   // Don't send journey data if feature is disabled
   if(typeof btab_vars !== 'undefined' && btab_vars.abst_enable_user_journeys !== '1') {
     if (!abstJourneyDisabledLogged) {
@@ -5019,9 +5013,15 @@ function flushJourneyData(includeScrollMax) {
     return;
   }
   
-  // Only send if there are actual events (not just empty register)
-  // This prevents wasteful duplicate meta lines from tab switches
-  if (!Object.keys(window.abst.clickRegister).length) return;
+  var hasJourneyEvents = Object.keys(window.abst.clickRegister).length > 0;
+  var scrollMax = Number(window.abst.heatScrollMax) || 0;
+  var lastScrollSent = Number(window.abst.heatScrollLastSent) || 0;
+  var hasNewScrollDepth = scrollMax > lastScrollSent;
+
+  // Empty tab switches should not create noise, but scroll-only pageviews still
+  // need one lightweight event so the parser can attach the meta scroll value to
+  // this page.
+  if (!hasJourneyEvents && !hasNewScrollDepth) return;
 
   // Ensure UUID exists before sending — journeys require one for attribution.
   // setAbCrypto() is consent-aware (sessionStorage until consent, then cookie).
@@ -5069,27 +5069,47 @@ function flushJourneyData(includeScrollMax) {
     click_x: 0,
     click_y: 0,
     screen_size: window.abstheatmapScreenSize,
-    meta: includeScrollMax ? window.abst.heatScrollMax : '',
+    // Scroll max + viewport height are monotonic/constant for the pageview, so
+    // send them on EVERY flush. This avoids losing them when visibilitychange
+    // drains the click buffer before pagehide can fire.
+    meta: window.abst.heatScrollMax,
     experiments: getActiveExperiments(),
-    referrer: (function() { try { return sessionStorage.getItem('abst_original_referrer') || ''; } catch(e) { return document.referrer || ''; } })()
+    referrer: (function() { try { return sessionStorage.getItem('abst_original_referrer') || ''; } catch(e) { return document.referrer || ''; } })(),
+    viewport_height: (window.abst.heatViewport || window.innerHeight)
   };
+  if (!hasJourneyEvents && hasNewScrollDepth) {
+    var scrollEventKey = 'scroll_' + new Date().toISOString();
+    batchToSend[scrollEventKey] = {
+      timestamp: new Date().toISOString(),
+      type: 's',
+      post_id: btab_vars.post_id,
+      uuid: currentUuid,
+      ab_advanced_id: currentUuid,
+      url: abstGetEventUrl(),
+      element_id_or_selector: '',
+      click_x: 0,
+      click_y: 0,
+      screen_size: window.abstheatmapScreenSize,
+      meta: 'scroll_depth'
+    };
+  }
   // Copy all existing events
   for (var key in window.abst.clickRegister) {
     batchToSend[key] = window.abst.clickRegister[key];
   }
 
-  const payload = new URLSearchParams({
-    action: 'abst_receive_journey_data',
-    data: JSON.stringify(batchToSend),
-    // nonce: btab_vars.journeyNonce // include if you add one
-  });
-  navigator.sendBeacon(bt_ajaxurl, payload);
-  console.log('ABST: Journey data sent.', {
-    event_count: Object.keys(batchToSend).length,
-    include_scroll_max: includeScrollMax,
-    ajaxurl: bt_ajaxurl
-  });
+  var journeyJson = JSON.stringify(batchToSend);
+  var payload;
+  try {
+    payload = new Blob([journeyJson], { type: 'application/json' });
+  } catch (e) {
+    payload = journeyJson;
+  }
+
+  navigator.sendBeacon(bt_ajaxurl + '?action=abst_receive_journey_data', payload);
+  console.log('ABST: Journey data sent.', batchToSend);
   window.abst.clickRegister = {}; //reset register
+  window.abst.heatScrollLastSent = scrollMax;
 }
 
 
