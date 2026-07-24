@@ -1,4 +1,4 @@
-=== AB Split Test Lite – Self-Hosted A/B Testing, Heatmaps & AI Agent (MCP) Support ===
+=== AB Split Test Lite: Test Anything: Pages, Blocks, Elements. For humans & agents ===
 Contributors: tomcarless
 Donate link: https://absplittest.com
 Tags: a/b testing, split testing, conversion optimization, heatmap, woocommerce

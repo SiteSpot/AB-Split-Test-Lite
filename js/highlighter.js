@@ -669,8 +669,13 @@ jQuery(function(){
 
             // Get variations from URL
             const variationsParam = urlParams.get('variations');
-            const variationsArray = variationsParam ? variationsParam.split('|') : [];
-            const allVariations = [textToReplace].concat(variationsArray);
+            // These land in the saved definition and are replayed via innerHTML to every
+            // visitor, so scrub them here — the query string is attacker-controllable if an
+            // admin is talked into opening a crafted link. (The raw textToReplace is still
+            // used above for text matching, where it is never treated as markup.)
+            const variationsArray = (variationsParam ? variationsParam.split('|') : [])
+                .map(function (v) { return abstSanitizeCreatedHtml(v); });
+            const allVariations = [abstSanitizeCreatedHtml(textToReplace)].concat(variationsArray);
             
             // Initialize abmagic and create definition
             if (!window.abmagic) window.abmagic = {};
@@ -695,8 +700,9 @@ jQuery(function(){
             
             // Set editor content
             if (window.abstEditor) {
-                window.abstEditor.innerHTML = textToReplace;
-                jQuery('#abst-variation-editor').val(textToReplace);
+                // Sanitized — same untrusted-URL-parameter reasoning as the variations above.
+                window.abstEditor.innerHTML = abstSanitizeCreatedHtml(textToReplace);
+                jQuery('#abst-variation-editor').val(abstSanitizeCreatedHtml(textToReplace));
             }
             
             // Update unified test object if available
@@ -4301,7 +4307,17 @@ function adjustFixedElementsForMagicBar(activate) {
                         if (isDraftSave && response.edit_url) {
                             window.location.href = response.edit_url;
                         } else if (response.updated && returnTo) {
-                            window.location.href = decodeURIComponent(returnTo);
+                            // Only follow same-origin destinations. return_to comes off the query
+                            // string, so without this it accepts "javascript:..." (script execution
+                            // in the admin's session) or an off-site redirect.
+                            var abstReturnTarget = null;
+                            try {
+                                var abstResolved = new URL(decodeURIComponent(returnTo), window.location.origin);
+                                if (abstResolved.origin === window.location.origin) {
+                                    abstReturnTarget = abstResolved.href;
+                                }
+                            } catch (e) { abstReturnTarget = null; }
+                            window.location.href = abstReturnTarget || window.location.pathname;
                         } else {
                             window.location.href = window.location.pathname;
                         }

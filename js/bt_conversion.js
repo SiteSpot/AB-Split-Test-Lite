@@ -1533,7 +1533,9 @@ function abstMainInit() {
       if (!btab) { // new user, check targeting
         var targetPercentage = bt_experiments[experimentId].target_percentage;
 
-        if (targetPercentage == '')
+        // Strict checks only: with loose equality (0 == '') a 0% allocation would
+        // silently become 100%. Missing/empty means "everyone"; an explicit 0 means "nobody".
+        if (targetPercentage === '' || targetPercentage === undefined || targetPercentage === null)
           targetPercentage = 100;
 
         var url_query = bt_experiments[experimentId].url_query;
@@ -4123,7 +4125,7 @@ function checkMagicTestSelectors(node) {
       var varIndex = parseInt(testData.variation.split('-').pop());
       
       // Check each selector in the magic definition
-      magic_definition.forEach(function(swapElement) {
+      magic_definition.forEach(function(swapElement, defIdx) {
         if (!swapElement || !swapElement.selector) return;
         if (!matchesMagicScope(swapElement.scope)) return;
         
@@ -4148,10 +4150,15 @@ function checkMagicTestSelectors(node) {
           
           // Apply the swap
           matches.forEach(function(el) {
-            // Skip if already swapped (prevent double-processing)
-            if (el.hasAttribute('data-abst-swapped')) return;
-            el.setAttribute('data-abst-swapped', eid);
-            
+            // Skip if THIS def already processed this node. The marker accumulates one token
+            // per applied def (eid + def index) — a bare per-element flag would let the first
+            // matching def block every other def targeting the same element (e.g. a text swap
+            // and a hide on one node, or a second experiment's def).
+            var swapToken = eid + ':' + defIdx;
+            var swapDone = el.getAttribute('data-abst-swapped') || '';
+            if ((' ' + swapDone + ' ').indexOf(' ' + swapToken + ' ') !== -1) return;
+            el.setAttribute('data-abst-swapped', swapDone ? swapDone + ' ' + swapToken : swapToken);
+
             if (swapElement.type === 'text' || swapElement.type === 'html') {
               el.innerHTML = variation;
             } else if (swapElement.type === 'image') {
@@ -4484,10 +4491,66 @@ function scopeSelectorToPage(selector) {
   return '.' + pageClass + ' ' + selector;
 }
 
+// Scrub HTML that came from an untrusted source (URL parameters, external hand-offs) before
+// it reaches innerHTML or gets stored in a magic definition and replayed to every visitor.
+// Strips executable/embedding tags, inline event handlers and javascript: URLs.
+function abstSanitizeCreatedHtml(html) {
+  if (typeof html !== 'string' || !html) return '';
+  var tpl = document.createElement('template');
+  try { tpl.innerHTML = html; } catch (e) { return ''; }
+  var nodes = tpl.content.querySelectorAll('*');
+  var STRIP_TAGS = { script: 1, style: 1, iframe: 1, object: 1, embed: 1, link: 1, meta: 1, form: 1, base: 1 };
+  Array.prototype.forEach.call(nodes, function (node) {
+    if (!node.parentNode) return; // already removed with an ancestor
+    var tag = node.tagName ? node.tagName.toLowerCase() : '';
+    if (STRIP_TAGS[tag]) {
+      node.parentNode.removeChild(node);
+      return;
+    }
+    if (!node.attributes) return;
+    for (var i = node.attributes.length - 1; i >= 0; i--) {
+      var attr = node.attributes[i];
+      var name = attr.name.toLowerCase();
+      var val = (attr.value || '').replace(/\s+/g, '').toLowerCase();
+      if (name.indexOf('on') === 0 ||
+          ((name === 'href' || name === 'src' || name === 'xlink:href') && val.indexOf('javascript:') === 0)) {
+        node.removeAttribute(attr.name);
+      }
+    }
+  });
+  return tpl.innerHTML;
+}
+
+// Nodes the magic editor inserts while editing (variation markers, hidden-element
+// placeholders, move anchors). They exist only in the editor DOM — never on the visitor
+// page — so nth-child sibling counts must skip them or the saved index is off by one and
+// the selector matches the wrong element (or nothing) in production.
+function abstIsEditorArtifactNode(el) {
+  if (!el || el.nodeType !== 1 || !el.getAttribute) return false;
+  if (el.getAttribute('data-abst-created')) return true;
+  var cl = el.classList;
+  return !!(cl && (cl.contains('abst-variation-marker') || cl.contains('abst-hidden-placeholder') ||
+    cl.contains('abst-move-anchor') || cl.contains('abst-create-preview')));
+}
+
+// nth-child position of `el` among its parent's REAL children (editor artifacts skipped).
+function abstRealNthChildIndex(el) {
+  var idx = 0;
+  var child = el.parentNode ? el.parentNode.firstElementChild : null;
+  while (child) {
+    if (!abstIsEditorArtifactNode(child)) {
+      idx++;
+      if (child === el) return idx;
+    }
+    child = child.nextElementSibling;
+  }
+  return -1;
+}
+
 function generateShortPath(element) {
   let path = [];
   let current = element;
-  
+
   // Walk up the DOM tree until we find an ID or reach the body
   while (current && current !== document.body) {
       // If we find an element with ID, use that and stop
@@ -4518,10 +4581,11 @@ function generateShortPath(element) {
       // If we still don't have a unique selector at this level, add nth-child
       // ALWAYS add nth-child if no unique class was found to ensure uniqueness
       if (!foundUniqueClass && current.parentNode) {
-          const siblings = current.parentNode.querySelectorAll(':scope > ' + selector);
+          const siblings = Array.from(current.parentNode.querySelectorAll(':scope > ' + selector))
+              .filter(function (s) { return !abstIsEditorArtifactNode(s); });
           if (siblings.length > 1) {
-              const index = Array.from(current.parentNode.children).indexOf(current) + 1;
-              selector += ':nth-child(' + index + ')';
+              const index = abstRealNthChildIndex(current);
+              if (index > 0) selector += ':nth-child(' + index + ')';
           }
       }
       
@@ -4547,8 +4611,10 @@ function generateShortPath(element) {
               const firstSelector = path[path.length - 1];
               const parent = element.parentNode;
               if (parent) {
-                  const index = Array.from(parent.children).indexOf(element) + 1;
-                  path[path.length - 1] = firstSelector.replace(/:nth-child\(\d+\)$/, '') + ':nth-child(' + index + ')';
+                  const index = abstRealNthChildIndex(element);
+                  if (index > 0) {
+                      path[path.length - 1] = firstSelector.replace(/:nth-child\(\d+\)$/, '') + ':nth-child(' + index + ')';
+                  }
               }
               break;
           }
@@ -4559,7 +4625,11 @@ function generateShortPath(element) {
 }
 function isIgnored(type, value) {
   if (!value) return false;
-  if (type === 'class' && value === 'abst-variation') return true; // Always ignore our own marker
+  // Ignore EVERY plugin-added class (abst-variation, abst-adjusted-for-magic-bar,
+  // abst-variation-marker, abst-hidden-placeholder, …): they exist only while the editor
+  // is open, so a selector built on one never matches the visitor page and the op
+  // silently no-ops in production.
+  if (type === 'class' && value.indexOf('abst-') === 0) return true;
 
   // Ignore Tailwind-style variants / arbitrary values
   if (type === 'class') {

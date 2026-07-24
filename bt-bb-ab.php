@@ -3050,6 +3050,90 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
+      // Magic tests: validate the definition BEFORE touching the post. save_test_config()
+
+      // silently keeps the previous value when validation fails, so without this gate a bad
+
+      // definition still produced a "created" response — publishing a live no-op test (or
+
+      // silently dropping an update's edits) while the editor reported success.
+
+      if ((($data['test_type'] ?? '') === 'magic' || !empty($data['abst_magic_mode'])) && isset($data['magic_definition']) && $data['magic_definition'] !== '') {
+
+        $abst_pre_error   = '';
+
+        // $data was wp_unslash()ed above, so decode the value as-is.
+
+        $abst_pre_decoded = json_decode((string) $data['magic_definition'], true);
+
+        if (!is_array($abst_pre_decoded)) {
+
+          $abst_pre_error = 'magic_definition is not valid JSON.';
+
+        } else {
+
+          // Mirror save_test_config's scope default so validation sees the same shape.
+
+          foreach ($abst_pre_decoded as $abst_pre_i => $abst_pre_el) {
+
+            if (is_array($abst_pre_el)) {
+
+              $abst_pre_scope = isset($abst_pre_el['scope']) && is_array($abst_pre_el['scope']) ? $abst_pre_el['scope'] : [];
+
+              $abst_pre_has = (isset($abst_pre_scope['page_id']) && $abst_pre_scope['page_id'] !== '')
+
+                || (isset($abst_pre_scope['url']) && trim((string) $abst_pre_scope['url']) !== '');
+
+              if (!$abst_pre_has) { $abst_pre_decoded[$abst_pre_i]['scope'] = ['page_id' => '*']; }
+
+            }
+
+          }
+
+          $abst_pre_validation = abst_validate_magic_definition(abst_normalize_magic_definition($abst_pre_decoded));
+
+          if (is_wp_error($abst_pre_validation)) {
+
+            $abst_pre_error = $abst_pre_validation->get_error_message();
+
+          }
+
+        }
+
+        if ($abst_pre_error !== '') {
+
+          abst_log('create_new_on_page_test: magic_definition rejected before save: ' . $abst_pre_error);
+
+          if ($expects_json) {
+
+            wp_send_json(['config_error' => $abst_pre_error]);
+
+          }
+
+          wp_die('Test not saved: ' . esc_html($abst_pre_error));
+
+        }
+
+      }
+
+
+
+      // Never create/update a test with an empty title — the client keys its success
+
+      // handling off the returned title, so '' published a live test with zero feedback.
+
+      $abst_post_title = sanitize_text_field($data['post_title'] ?? '');
+
+      if ($abst_post_title === '') {
+
+        $abst_post_title = 'Magic Test ' . current_time('Y-m-d H:i');
+
+        $data['post_title'] = $abst_post_title;
+
+      }
+
+
+
       $createdNew = false;
 
       if($data['post_id'] == 'new')
@@ -3058,7 +3142,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $my_post = array(
 
-          'post_title'   => sanitize_text_field($data['post_title']),
+          'post_title'   => $abst_post_title,
 
           'post_type'    => 'bt_experiments',
 
@@ -3082,11 +3166,25 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $my_post = array(
 
-          'ID'           => $data['post_id'],
+          'ID'           => intval($data['post_id']),
 
-          'post_title'   => sanitize_text_field($data['post_title']),
+          'post_title'   => $abst_post_title,
 
         );
+
+        // The builder/blocks "Create new Test" iframe pre-creates its post as an
+
+        // auto-draft, so this first save arrives with a real post_id and lands here
+
+        // instead of the 'new' branch. Without an explicit status wp_update_post()
+
+        // only promotes auto-draft to draft, leaving the new test invisible to the
+
+        // publish-only experiment dropdowns ("No items found").
+
+        if(get_post_status(intval($data['post_id'])) === 'auto-draft')
+
+          $my_post['post_status'] = 'publish';
 
         wp_update_post( $my_post );
 
@@ -7323,7 +7421,7 @@ public function get_experiment_stats_array( $test ){
 
   if($conversion_style != 'thompson'){
 
-    require_once 'includes/statistics.php';
+    require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
 
     $observations = abst_split_test_analyzer($observations,$test_age);
 
@@ -7965,7 +8063,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
   if($conversion_style != 'thompson'){
 
-    require_once 'includes/statistics.php';
+    require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
 
     $observations = abst_split_test_analyzer($observations,$test_age);
 
@@ -8234,7 +8332,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
     if($conversion_style != 'thompson'){
 
-      require_once 'includes/statistics.php';
+      require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
 
       $observations = abst_split_test_analyzer($observations,$test_age);
 
@@ -16406,6 +16504,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         if (!empty($v)) { $filters[$k] = sanitize_text_field($v); }
       }
 
+      abst_journey_raise_limits();
       $payload = abst_build_heatmap_payload($page_id, $filters, $limit);
 
       $response = array_merge([
@@ -16430,6 +16529,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       $days = $request->get_param('days');
       $days = ($days !== null) ? intval($days) : 30;
       $days = max(1, min($days, 90));
+
+      abst_journey_raise_limits();
 
       $pages = abst_heatmap_pages_data($days);
 
@@ -19020,6 +19121,8 @@ function abst_resolve_page_title($page_id) {
 
 function abst_heatmaps_page_content() {
 
+  abst_journey_raise_limits();
+
 
 
   echo '<div class="wrap abst-heatmaps-wrap">';
@@ -20137,6 +20240,106 @@ function abst_read_journey_file_lines($journey_file) {
 
 
 
+/**
+
+ * Stream a journey file line by line without loading the whole file into memory.
+
+ * zlib reads plain .txt files transparently, so one code path covers both .txt and
+
+ * .txt.gz. Falls back to abst_read_journey_file_lines() (whole file in memory) when
+
+ * zlib is unavailable — the same availability the gzdecode() path already required.
+
+ *
+
+ * Reading a whole day-file at once (file_get_contents + gzdecode + explode, which for
+
+ * gzipped files held three copies at peak) exhausted memory_limit on busy sites at the
+
+ * 14/30-day heatmap ranges and produced the WordPress critical-error page.
+
+ *
+
+ * @param string $journey_file Path to a .txt or .txt.gz journey file.
+
+ * @return \Generator<string> Trimmed, non-empty lines.
+
+ */
+
+function abst_journey_file_lines_iter($journey_file) {
+
+  if (function_exists('gzopen')) {
+
+    $fh = @gzopen($journey_file, 'rb');
+
+    if ($fh !== false) {
+
+      try {
+
+        while (($line = gzgets($fh)) !== false) {
+
+          $line = trim($line);
+
+          if ($line !== '') {
+
+            yield $line;
+
+          }
+
+        }
+
+      } finally {
+
+        gzclose($fh);
+
+      }
+
+      return;
+
+    }
+
+  }
+
+
+
+  foreach (abst_read_journey_file_lines($journey_file) as $line) {
+
+    yield $line;
+
+  }
+
+}
+
+
+
+/**
+
+ * Raise memory/time limits before a journey-file parse. The parse cost scales with
+
+ * traffic x day range, so the heatmap screens and endpoints call this as a guardrail
+
+ * on large sites.
+
+ */
+
+function abst_journey_raise_limits() {
+
+  if (function_exists('wp_raise_memory_limit')) {
+
+    wp_raise_memory_limit('admin');
+
+  }
+
+  if (function_exists('set_time_limit')) {
+
+    @set_time_limit(120);
+
+  }
+
+}
+
+
+
 function abst_get_scroll_data($post_id, $filters) {
 
   $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt');
@@ -20207,15 +20410,10 @@ function abst_get_scroll_data($post_id, $filters) {
 
 
 
-    $lines = abst_read_journey_file_lines($journey_file);
+    // Two streaming passes rather than holding the whole day-file in memory: one to build
+    // the exit-page map, one for the events themselves.
 
-    if (empty($lines)) {
-
-      continue;
-
-    }
-
-    $exit_pages = abst_build_journey_exit_pages_from_lines($lines);
+    $exit_pages = abst_build_journey_exit_pages_from_lines(abst_journey_file_lines_iter($journey_file));
 
 
 
@@ -20225,7 +20423,7 @@ function abst_get_scroll_data($post_id, $filters) {
 
 
 
-    foreach ($lines as $line) {
+    foreach (abst_journey_file_lines_iter($journey_file) as $line) {
 
       $parts = array_map('trim', explode('|', $line));
 
@@ -20883,7 +21081,9 @@ function abst_heatmap_pages_data($days = 30) {
     }
 
     $uuid = '';
-    foreach (abst_read_journey_file_lines($file) as $line) {
+    // Streamed: this scans up to 90 day-files, so reading each one whole was the
+    // other half of the heatmap memory blow-up.
+    foreach (abst_journey_file_lines_iter($file) as $line) {
       $parts = array_map('trim', explode('|', $line));
       if (!empty($parts[0]) && $parts[0] === 'meta') {
         $uuid = isset($parts[1]) ? $parts[1] : '';
@@ -20926,7 +21126,14 @@ function abst_heatmap_pages_data($days = 30) {
       'last_seen'     => $info['last'] ? gmdate('c', $info['last']) : null,
     ];
   }
-  usort($out, function ($a, $b) { return $b['session_count'] - $a['session_count']; });
+  // Deterministic ordering: ties on session_count previously came back in whatever
+  // order the files happened to be scanned in, so the same query could paginate
+  // differently between requests.
+  usort($out, function ($a, $b) {
+    if ($b['session_count'] !== $a['session_count']) { return $b['session_count'] - $a['session_count']; }
+    if ($b['click_count'] !== $a['click_count']) { return $b['click_count'] - $a['click_count']; }
+    return strcmp((string) $a['page_id'], (string) $b['page_id']);
+  });
   return $out;
 }
 
@@ -21016,13 +21223,11 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
     }
 
-    $lines = @file($journey_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    // Stream the file rather than loading it whole. The exit-page map needs its own pass —
+    // this branch previously never built $exit_pages at all, so an exit_url filter compared
+    // against '' and silently discarded every session from uncompressed (i.e. recent) files.
 
-    if (empty($lines)) {
-
-      continue;
-
-    }
+    $exit_pages = abst_build_journey_exit_pages_from_lines(abst_journey_file_lines_iter($journey_file));
 
 
 
@@ -21030,9 +21235,9 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
     $metadata_matches_filter = false;
 
-    
 
-    foreach ($lines as $line) {
+
+    foreach (abst_journey_file_lines_iter($journey_file) as $line) {
 
       $parts = array_map('trim', explode('|', $line));
 
@@ -21329,55 +21534,22 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
     
 
-    //unzip from gz
+    // Stream the gzipped file rather than decompressing it whole. The old path held the
+    // compressed bytes, the decompressed string and the exploded array simultaneously —
+    // three copies of a day-file at peak, which is what exhausted memory_limit on the
+    // 14/30-day ranges. Two passes: one for the exit-page map, one for the events.
 
-    if (!function_exists('gzdecode')) {
+    if (!function_exists('gzopen') && !function_exists('gzdecode')) {
 
-      abst_log('gzdecode not available');
+      abst_log('zlib not available');
 
-      continue; // gzdecode not available
-
-    }
-
-
-
-    $compressed = @file_get_contents($journey_file);
-
-    if ($compressed === false) {
-
-      abst_log('Failed to read file: ' . $journey_file);
-
-      continue; // Failed to read file
+      continue; // no way to read a gzipped journey file
 
     }
 
 
 
-    $unzipped_content = @gzdecode($compressed);
-
-    if ($unzipped_content === false) {
-
-      abst_log('Failed to decompress file: ' . $journey_file);
-
-      continue; // Failed to decompress
-
-    } 
-
-    $lines = explode("\n", $unzipped_content);
-
-    $lines = array_filter(array_map('trim', $lines)); // Remove empty lines
-
-    
-
-    if (empty($lines)) {
-
-      abst_log('No data found in file: ' . $journey_file);
-
-      continue;
-
-    }
-
-    $exit_pages = abst_build_journey_exit_pages_from_lines($lines);
+    $exit_pages = abst_build_journey_exit_pages_from_lines(abst_journey_file_lines_iter($journey_file));
 
 
 
@@ -21385,9 +21557,9 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
     $metadata_matches_filter = false;
 
-    
 
-    foreach ($lines as $line) {
+
+    foreach (abst_journey_file_lines_iter($journey_file) as $line) {
 
       $parts = array_map('trim', explode('|', $line));
 

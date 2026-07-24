@@ -125,10 +125,21 @@ function abst_rest_update_test_settings($request) {
     }
 
     if ($has_param('magic_definition')) {
-        $magic_validation = abst_validate_magic_definition($params['magic_definition']);
+        // Decode once, here, so the value that gets validated is exactly the value that gets
+        // stored further down. Previously each site decoded the payload independently, so the
+        // validated shape and the persisted shape could drift apart.
+        $magic_definition_for_validation = $params['magic_definition'];
+        if (is_string($magic_definition_for_validation)) {
+            $decoded_magic_definition = json_decode($magic_definition_for_validation, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $magic_definition_for_validation = $decoded_magic_definition;
+            }
+        }
+        $magic_validation = abst_validate_magic_definition($magic_definition_for_validation);
         if (is_wp_error($magic_validation)) {
             return $magic_validation;
         }
+        $params['magic_definition'] = $magic_definition_for_validation;
     }
 
     if ($has_param('css_variations') && intval($params['css_variations']) < 1) {
@@ -293,10 +304,8 @@ function abst_rest_update_test_settings($request) {
     }
 
     if ($has_param('magic_definition')) {
+        // Already decoded and validated at the top of this function.
         $magic_definition = $params['magic_definition'];
-        if (is_string($magic_definition)) {
-            $magic_definition = json_decode($magic_definition, true);
-        }
         // wp_slash() because update_post_meta() runs wp_unslash() and would otherwise
         // strip the backslashes from JSON-escaped quotes, corrupting the stored JSON.
         update_post_meta($test_id, 'magic_definition', wp_slash(wp_json_encode($magic_definition, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));

@@ -565,7 +565,7 @@ class ABST_Journeys {
 
         
 
-        $content = '';
+        $journey_file = '';
 
         
 
@@ -573,27 +573,7 @@ class ABST_Journeys {
 
         if (file_exists($file_gz)) {
 
-            $compressed = @file_get_contents($file_gz);
-
-            if ($compressed !== false && function_exists('gzdecode')) {
-
-                $content = @gzdecode($compressed);
-
-                if ($content === false) {
-
-                    abst_log('Failed to decompress journey file: ' . $date);
-
-                    return [];
-
-                }
-
-            } else {
-
-                abst_log('Failed to read compressed journey file: ' . $date);
-
-                return [];
-
-            }
+            $journey_file = $file_gz;
 
         }
 
@@ -601,15 +581,7 @@ class ABST_Journeys {
 
         elseif (file_exists($file_txt)) {
 
-            $content = @file_get_contents($file_txt);
-
-            if ($content === false) {
-
-                abst_log('Failed to read journey file: ' . $date);
-
-                return [];
-
-            }
+            $journey_file = $file_txt;
 
         }
 
@@ -625,7 +597,10 @@ class ABST_Journeys {
 
         // Parse into array
 
-        $lines = explode(PHP_EOL, trim($content));
+        // Streamed rather than read whole: the old path held the compressed bytes, the
+        // decompressed string and the exploded array simultaneously.
+
+        $lines = abst_journey_file_lines_iter($journey_file);
 
         $data = [];
 
