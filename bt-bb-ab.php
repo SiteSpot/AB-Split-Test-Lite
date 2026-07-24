@@ -19399,29 +19399,13 @@ function abst_heatmaps_page_content() {
 
     } else {
 
-      $journey_logs = abst_search_all_journey_logs($selected_post, $filters);
+      // Reduce to overlay points as rows stream past. Holding the full row list here
+      // cost ~2KB per matching event on top of $data, which is what pushed long
+      // ranges on busy sites into the memory limit.
 
-      $journeyData = $journey_logs['logs'];
+      $abst_meta_variations = [];
 
-      $experiments = $journey_logs['experiments'];
-
-      $foundReferrers = isset($journey_logs['referrers']) ? $journey_logs['referrers'] : [];
-
-      $foundUtmSources = isset($journey_logs['utm_sources']) ? $journey_logs['utm_sources'] : [];
-
-      $foundUtmMediums = isset($journey_logs['utm_mediums']) ? $journey_logs['utm_mediums'] : [];
-
-      $foundUtmCampaigns = isset($journey_logs['utm_campaigns']) ? $journey_logs['utm_campaigns'] : [];
-
-
-
-      // Initialize arrays
-
-      $variations = !empty($experiments) ? $experiments : [];
-
-
-
-      foreach ($journeyData as $journey_log) {
+      $journey_logs = abst_search_all_journey_logs($selected_post, $filters, function ($journey_log) use (&$data, &$abst_meta_variations, $selected_mode) {
 
         $event_type = isset($journey_log[1]) ? strtolower(trim($journey_log[1])) : '';
 
@@ -19439,7 +19423,7 @@ function abst_heatmaps_page_content() {
 
           $variation = $meta[1];
 
-          $variations[$eid][$variation] = true;
+          $abst_meta_variations[$eid][$variation] = true;
 
         }
 
@@ -19453,7 +19437,7 @@ function abst_heatmaps_page_content() {
 
           if ($event_type !== 'rc') {
 
-            continue;
+            return;
 
           }
 
@@ -19463,7 +19447,7 @@ function abst_heatmaps_page_content() {
 
           if ($event_type !== 'c') {
 
-            continue;
+            return;
 
           }
 
@@ -19471,7 +19455,7 @@ function abst_heatmaps_page_content() {
 
           if ($meta !== 'dead_click') {
 
-            continue;
+            return;
 
           }
 
@@ -19481,7 +19465,7 @@ function abst_heatmaps_page_content() {
 
           if ($event_type !== 'c') {
 
-            continue; //skip non-click events
+            return; //skip non-click events
 
           }
 
@@ -19505,7 +19489,7 @@ function abst_heatmaps_page_content() {
 
         if ($selector === '' || $percent_x === null || $percent_y === null) {
 
-          continue;
+          return;
 
         }
 
@@ -19522,6 +19506,35 @@ function abst_heatmaps_page_content() {
           'value' => 1,
 
         ];
+
+      });
+
+      $experiments = $journey_logs['experiments'];
+
+      $foundReferrers = isset($journey_logs['referrers']) ? $journey_logs['referrers'] : [];
+
+      $foundUtmSources = isset($journey_logs['utm_sources']) ? $journey_logs['utm_sources'] : [];
+
+      $foundUtmMediums = isset($journey_logs['utm_mediums']) ? $journey_logs['utm_mediums'] : [];
+
+      $foundUtmCampaigns = isset($journey_logs['utm_campaigns']) ? $journey_logs['utm_campaigns'] : [];
+
+
+
+      // Initialize arrays
+
+      $variations = !empty($experiments) ? $experiments : [];
+
+      // Fold in anything the streaming pass picked up from meta rows (kept for
+      // parity with the previous inline loop).
+
+      foreach ($abst_meta_variations as $abst_eid => $abst_vars) {
+
+        foreach ($abst_vars as $abst_var => $abst_flag) {
+
+          $variations[$abst_eid][$abst_var] = true;
+
+        }
 
       }
 
@@ -20909,8 +20922,9 @@ function abst_build_heatmap_payload($page_id, $filters = [], $point_limit = 5000
   $page_id = is_numeric($page_id) ? (int) $page_id : (is_string($page_id) ? trim($page_id) : $page_id);
   $days = isset($filters['days']) ? intval($filters['days']) : 30;
 
-  $result = abst_search_all_journey_logs($page_id, $filters);
-  $logs = isset($result['logs']) ? $result['logs'] : [];
+  // Aggregate as rows stream past instead of materialising every matching row first:
+  // everything below reduces to counters, a per-selector tally, a uuid set and a
+  // capped points array, none of which grow with traffic the way the row list does.
 
   $elements = [];
   $screen_distribution = ['s' => 0, 'm' => 0, 'l' => 0];
@@ -20921,7 +20935,10 @@ function abst_build_heatmap_payload($page_id, $filters = [], $point_limit = 5000
   $dead_clicks = 0;
   $points_total = 0;
 
-  foreach ($logs as $row) {
+  $result = abst_search_all_journey_logs($page_id, $filters, function ($row) use (
+    &$elements, &$screen_distribution, &$points, &$uuids,
+    &$total_clicks, &$rage_clicks, &$dead_clicks, &$points_total, $point_limit
+  ) {
     // Row shape from abst_search_all_journey_logs():
     // 0=ts 1=type 2=post_id 3=uuid 4=url 5=selector 6=x 7=y 8=screen 9=meta
     $uuid = isset($row[3]) ? $row[3] : '';
@@ -20931,7 +20948,7 @@ function abst_build_heatmap_payload($page_id, $filters = [], $point_limit = 5000
 
     $type = isset($row[1]) ? $row[1] : '';
     if ($type !== 'c' && $type !== 'rc') {
-      continue;
+      return; // pageviews still feed the unique-session count above
     }
 
     $selector = isset($row[5]) ? $row[5] : '';
@@ -20969,7 +20986,7 @@ function abst_build_heatmap_payload($page_id, $filters = [], $point_limit = 5000
         'selector' => $selector,
       ];
     }
-  }
+  });
 
   $elements_out = [];
   foreach ($elements as $selector => $data) {
@@ -21137,7 +21154,27 @@ function abst_heatmap_pages_data($days = 30) {
   return $out;
 }
 
-function abst_search_all_journey_logs($post_id, $filters = []) {
+/**
+ * Scan the journey logs for one page, applying $filters.
+ *
+ * By default every matching row is collected into the returned 'logs' array, which
+ * costs roughly 2KB per row — on a busy site a 30-day range is hundreds of thousands
+ * of rows and hundreds of megabytes, all of it thrown away moments later by callers
+ * that only want counters, a selector tally and a capped set of points.
+ *
+ * Pass $on_row to aggregate during the scan instead: each matching row is handed to
+ * the callback and immediately discarded, so peak memory is whatever the caller
+ * chooses to keep. 'logs' comes back empty in that mode; the filter-option arrays
+ * (experiments/referrers/utm_*) are still collected and returned either way.
+ *
+ * @param int|string    $post_id Numeric post ID or archive key.
+ * @param array         $filters days, screen, eid, variation, referrer, utm_*, exit_url.
+ * @param callable|null $on_row  Called as ($row) per matching row. Row shape:
+ *                               [0]=ts [1]=type [2]=post_id [3]=uuid [4]=url
+ *                               [5]=selector [6]=x [7]=y [8]=screen [9]=meta
+ * @return array{logs:array,experiments:array,referrers:array,utm_sources:array,utm_mediums:array,utm_campaigns:array}
+ */
+function abst_search_all_journey_logs($post_id, $filters = [], $on_row = null) {
 
 
 
@@ -21496,7 +21533,15 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
           ];
 
-          $return_object[] = $full_event;
+          if ($on_row !== null) {
+
+            $on_row($full_event); // streaming caller aggregates now; nothing is retained
+
+          } else {
+
+            $return_object[] = $full_event;
+
+          }
 
         }
 
@@ -21814,7 +21859,15 @@ function abst_search_all_journey_logs($post_id, $filters = []) {
 
           ];
 
-          $return_object[] = $full_event;
+          if ($on_row !== null) {
+
+            $on_row($full_event); // streaming caller aggregates now; nothing is retained
+
+          } else {
+
+            $return_object[] = $full_event;
+
+          }
 
         }
 
