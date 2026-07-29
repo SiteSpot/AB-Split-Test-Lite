@@ -776,6 +776,11 @@ class ABST_Journeys {
 
         $uuid_metadata_written = []; // Track which UUIDs we've written metadata for
 
+        // Lite: only the single configured heatmap page may record data. The
+        // client-side recorder already filters to it; enforce it server-side too,
+        // since this is a public endpoint.
+        $allowed_heatmap_pages = function_exists('abst_lite_allowed_heatmap_page_ids') ? abst_lite_allowed_heatmap_page_ids() : [];
+
 
 
         foreach ($records as $record_key => $record) {
@@ -811,6 +816,11 @@ class ABST_Journeys {
             }
 
             if (!$record_valid) {
+                continue;
+            }
+
+            // Lite: drop records for pages outside the configured heatmap page.
+            if (!in_array(intval($sanitized['post_id']), $allowed_heatmap_pages, true)) {
                 continue;
             }
 

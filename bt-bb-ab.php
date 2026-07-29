@@ -269,6 +269,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'transition_post_status', array($this,'post_status_transition'), 10, 3);
 
+      add_filter( 'wp_insert_post_data', array($this,'enforce_lite_publish_limit'), 10, 2); // Lite: one active test, whatever the write path
+
 
 
       add_action( 'wp_head', array($this,'conversion_targeting'),10,1); // add conversion targeting page script
@@ -1858,11 +1860,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
-      if(abst_lite_active_test_count($post_id) >= 1)
+      if(get_post_status($post_id) === 'publish' && !abst_lite_is_sample_test($post_id) && abst_lite_active_test_count($post_id) >= 1)
 
       {
 
-        //change current post status to draft
+        //change current post status to draft, but keep saving the submitted config below
 
         remove_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10 );
 
@@ -1871,8 +1873,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
         add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
 
         abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/pricing?utm_source=ug');
-
-        return;
 
       }
 
@@ -5608,7 +5608,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $css_test_variations = '2';      //not a test w 1
 
-      echo '<label class="css_test_variations" for="css_test_variations">Number of variations you want to test.</label><input class="css_test_variations" type="number" id="css_test_variations" min="1" max = "999" name="css_test_variations" placeholder="2" value="' . esc_attr( $css_test_variations ) . '"  /><span class="css_test_variations" > variations</span>';
+      echo '<label class="css_test_variations" for="css_test_variations">Number of variations you want to test.</label><input class="css_test_variations" type="number" id="css_test_variations" min="1" max="2" name="css_test_variations" placeholder="2" value="' . esc_attr( $css_test_variations ) . '"  /><span class="css_test_variations" > variations</span>';
 
 
 
@@ -13531,7 +13531,34 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         ];
 
-        
+        // Lite read-time clamps: serve at most control + 1 variation, no subgoals and no
+        // revenue weighting, regardless of how the stored meta got its values (imports,
+        // Pro->Lite migrations, direct DB edits). Write-time clamps alone don't cover those.
+        $experiments[$val->ID]['goals'] = '';
+        $experiments[$val->ID]['use_order_value'] = '';
+
+        if (is_array($experiments[$val->ID]['page_variations']) && count($experiments[$val->ID]['page_variations']) > 1) {
+          $experiments[$val->ID]['page_variations'] = array_slice($experiments[$val->ID]['page_variations'], 0, 1, true);
+        }
+
+        if (intval($experiments[$val->ID]['css_test_variations']) > 2) {
+          $experiments[$val->ID]['css_test_variations'] = '2';
+        }
+
+        if (!empty($experiments[$val->ID]['magic_definition'])) {
+          $lite_magic_def = json_decode($experiments[$val->ID]['magic_definition'], true);
+          if (is_array($lite_magic_def)) {
+            foreach ($lite_magic_def as &$lite_magic_element) {
+              if (isset($lite_magic_element['variations']) && is_array($lite_magic_element['variations']) && count($lite_magic_element['variations']) > 2) {
+                $lite_magic_element['variations'] = array_slice($lite_magic_element['variations'], 0, 2);
+              }
+            }
+            unset($lite_magic_element);
+            $experiments[$val->ID]['magic_definition'] = wp_json_encode($lite_magic_def);
+          }
+        }
+
+
 
         // Generate hide CSS for published tests, and for completed full-page tests that have a
 
@@ -14177,6 +14204,51 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
     
+
+    /**
+     * Lite: enforce the one-active-test limit at the lowest write layer.
+     * Covers bulk/quick edit, scheduled posts auto-publishing, and any
+     * programmatic wp_insert_post/wp_update_post that the plugin's own
+     * REST/admin checks never see. Sample tests are exempt.
+     */
+    function enforce_lite_publish_limit($data, $postarr)
+    {
+
+      if (($data['post_type'] ?? '') !== 'bt_experiments' || ($data['post_status'] ?? '') !== 'publish') {
+
+        return $data;
+
+      }
+
+      if (!empty($postarr['meta_input']['_abst_is_sample_test'])) {
+
+        return $data;
+
+      }
+
+      $post_id = intval($postarr['ID'] ?? 0);
+
+      if ($post_id && function_exists('abst_lite_is_sample_test') && abst_lite_is_sample_test($post_id)) {
+
+        return $data;
+
+      }
+
+      require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
+
+      if (abst_lite_active_test_count($post_id) >= 1) {
+
+        $data['post_status'] = 'draft';
+
+        abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/pricing?utm_source=ug');
+
+      }
+
+      return $data;
+
+    }
+
+
 
     function post_status_transition($new_status, $old_status, $post)
 
@@ -14849,11 +14921,41 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         {
 
+          // Only goal keys actually defined on the test are accepted. Lite strips subgoal
+          // meta on save, so on a clean Lite install every custom goal type is rejected here.
+          $defined_goals = isset($test_meta['goals'][0]) ? maybe_unserialize($test_meta['goals'][0]) : [];
+
           if((string)abst_sanitize($type) !== (string)$type)
 
           {
 
             $error = 'Goal Name contains invalid characters.';
+
+            if( $from_api ) {
+
+              return new WP_REST_Response([
+
+                'error'  => $error
+
+              ], 200);
+
+            } else {
+
+              abst_log( 'Log  ERROR: ' . $error );
+
+              echo( wp_json_encode(array('error'=>$error)) );
+
+              die();
+
+            }
+
+          }
+
+          else if(!is_array($defined_goals) || !array_key_exists($type, $defined_goals))
+
+          {
+
+            $error = 'Goal "' . $type . '" is not defined for this test.';
 
             if( $from_api ) {
 
@@ -15392,7 +15494,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           'type' => 'object',
           'properties' => [
             'page_id'      => ['type' => 'string',  'description' => 'Page to analyze: a numeric post ID or an archive key (e.g. "post-type-archive-product").'],
-            'days'         => ['type' => 'integer', 'description' => 'How many days back to analyze (1-90, default 30).'],
+            'days'         => ['type' => 'integer', 'description' => 'How many days back to analyze (1-3, default 3; Lite retains 3 days).'],
             'device'       => ['type' => 'string',  'description' => 'Filter by device bucket: s (mobile), m (tablet), l (desktop).'],
             'eid'          => ['type' => 'integer', 'description' => 'Filter to sessions that saw this test (experiment) ID.'],
             'variation'    => ['type' => 'string',  'description' => 'With eid, filter to a specific variation (e.g. "magic-1").'],
@@ -15435,7 +15537,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'input_schema' => [
           'type' => 'object',
           'properties' => [
-            'days' => ['type' => 'integer', 'description' => 'How many days back to scan (1-90, default 30).'],
+            'days' => ['type' => 'integer', 'description' => 'How many days back to scan (1-3, default 3; Lite retains 3 days).'],
           ],
         ],
         'output_schema' => [
@@ -16482,9 +16584,15 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       }
       $page_id = is_numeric($page_id_raw) ? (int) $page_id_raw : trim($page_id_raw);
 
+      // Lite: heatmap data is only served for the single configured heatmap page.
+      $allowed_pages = abst_lite_allowed_heatmap_page_ids();
+      if (empty($allowed_pages) || !in_array(intval($page_id), $allowed_pages, true)) {
+        return new WP_Error('lite_heatmap_page_limit', 'AB Split Test Lite is limited to one heatmap page. Request the page configured under Settings > Heatmaps.', ['status' => 403]);
+      }
+
       $days = $request->get_param('days');
-      $days = ($days !== null) ? intval($days) : 30;
-      $days = max(1, min($days, 90));
+      $days = ($days !== null) ? intval($days) : 3;
+      $days = max(1, min($days, 3)); // Lite retention is 3 days
 
       $limit = $request->get_param('limit');
       $limit = ($limit !== null) ? intval($limit) : 5000;
@@ -16527,12 +16635,19 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
      */
     function rest_list_heatmap_pages($request) {
       $days = $request->get_param('days');
-      $days = ($days !== null) ? intval($days) : 30;
-      $days = max(1, min($days, 90));
+      $days = ($days !== null) ? intval($days) : 3;
+      $days = max(1, min($days, 3)); // Lite retention is 3 days
 
       abst_journey_raise_limits();
 
       $pages = abst_heatmap_pages_data($days);
+
+      // Lite: only the single configured heatmap page is listed, even if stray
+      // data for other pages exists in the journey logs.
+      $allowed_pages = abst_lite_allowed_heatmap_page_ids();
+      $pages = array_values(array_filter($pages, function($page) use ($allowed_pages) {
+        return in_array(intval($page['page_id'] ?? 0), $allowed_pages, true);
+      }));
 
       return new WP_REST_Response([
         'success'       => true,
@@ -16685,7 +16800,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'methods' => 'GET',
         'callback' => [$this, 'rest_get_heatmap_data'],
         'permission_callback' => function() {
-          return current_user_can('edit_posts');
+          // Matches the capability required by the Heatmaps admin screen.
+          return current_user_can('manage_options');
         },
         'args' => [
           'page_id'      => ['type' => 'string',  'required' => true,  'sanitize_callback' => 'sanitize_text_field'],
@@ -16706,7 +16822,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         'methods' => 'GET',
         'callback' => [$this, 'rest_list_heatmap_pages'],
         'permission_callback' => function() {
-          return current_user_can('edit_posts');
+          // Matches the capability required by the Heatmaps admin screen.
+          return current_user_can('manage_options');
         },
         'args' => [
           'days' => ['type' => 'integer', 'required' => false, 'default' => 30],
@@ -18232,6 +18349,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           $reset_date     = current_time('mysql');
           $reset_date_gmt = current_time('mysql', 1);
 
+          // Lite: re-activating here must respect the one-active-test limit.
+          require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
+          $new_status = 'publish';
+          if (is_wp_error(abst_lite_validate_active_test_limit('publish', $eid))) {
+              $new_status = get_post_status($eid);
+          }
+
           $post = array(
 
               'ID' => $eid,
@@ -18240,7 +18364,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               'post_date_gmt' => $reset_date_gmt,
 
-              'post_status' => 'publish', // make active again if necess
+              'post_status' => $new_status,
 
           );
 
@@ -18666,7 +18790,42 @@ function abst_get_admin_setting($setting){
 
 
 
-  
+/**
+ * Lite: the single page heatmaps are allowed to record and serve data for.
+ * Mirrors the settings-save fallback (front page) so a never-saved install
+ * behaves the same as one saved with the default.
+ *
+ * @return int[] Zero or one page IDs.
+ */
+function abst_lite_allowed_heatmap_page_ids() {
+
+  $pages = abst_get_admin_setting('abst_heatmap_pages');
+
+  $ids = [];
+
+  if (is_array($pages)) {
+    foreach ($pages as $p) {
+      if (is_numeric($p) && intval($p) > 0) {
+        $ids[] = intval($p);
+      }
+    }
+  } elseif (is_numeric($pages) && intval($pages) > 0) {
+    $ids[] = intval($pages);
+  }
+
+  if (empty($ids)) {
+    $front = intval(get_option('page_on_front'));
+    if ($front > 0) {
+      $ids[] = $front;
+    }
+  }
+
+  return array_slice(array_values(array_unique($ids)), 0, 1);
+}
+
+
+
+
 
 function abst_sanitize($value) {
 
@@ -19150,16 +19309,12 @@ function abst_heatmaps_page_content() {
 
   }
 
-  // Lite: only one heatmap page, auto-select it so the heatmap loads immediately
-  if (empty($selected_post)) {
-    $saved_pages = abst_get_admin_setting('abst_heatmap_pages');
-    if (!empty($saved_pages) && is_array($saved_pages)) {
-      $selected_post = intval($saved_pages[0]);
-    } else {
-      $front_page_id = get_option('page_on_front');
-      if ($front_page_id) {
-        $selected_post = intval($front_page_id);
-      }
+  // Lite: only one heatmap page. Auto-select it, and clamp any requested
+  // ?post= to the configured page rather than just defaulting to it.
+  $lite_allowed_heatmap_pages = abst_lite_allowed_heatmap_page_ids();
+  if (!empty($lite_allowed_heatmap_pages)) {
+    if (empty($selected_post) || !in_array(intval($selected_post), $lite_allowed_heatmap_pages, true)) {
+      $selected_post = $lite_allowed_heatmap_pages[0];
     }
   }
 
@@ -19840,7 +19995,8 @@ function abst_heatmaps_page_content() {
 
         $heatmap_all_pages_setting = abst_get_admin_setting('abst_heatmap_all_pages');
 
-        $heatmap_all_pages = ($heatmap_all_pages_setting === 'all' || empty($heatmap_all_pages_setting));
+        // Lite always tracks chosen pages; an unset option must not read as "all pages".
+        $heatmap_all_pages = ($heatmap_all_pages_setting === 'all');
 
         
 
@@ -22813,6 +22969,8 @@ function abst_create_test_from_structured_data($data) {
     'post_date' => $two_weeks_ago,
 
     'post_date_gmt' => $two_weeks_ago_gmt,
+
+    'meta_input' => ['_abst_is_sample_test' => 1], // flag available at insert time so the lite publish limit skips samples
 
   ];
 

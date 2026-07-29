@@ -65,6 +65,10 @@ function abst_apply_conversion_order_value_guard($params) {
         ];
     }
 
+    // Lite: revenue-weighted conversions are Pro-only.
+    $params['conversion_use_order_value'] = false;
+    $warnings[] = 'conversion_use_order_value is a Pro feature and was ignored. Conversions will be counted equally.';
+
     return [
         'params' => $params,
         'warnings' => $warnings,
@@ -462,6 +466,10 @@ function abst_lite_apply_test_limits($params) {
 
     unset($params['subgoals'], $params['goals']);
     $params['autocomplete_on'] = false;
+
+    if (!empty($params['conversion_use_order_value'])) {
+        $params['conversion_use_order_value'] = false;
+    }
 
     return $params;
 }
