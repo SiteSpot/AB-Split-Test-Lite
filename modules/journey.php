@@ -380,7 +380,7 @@ class ABST_Journeys {
 
         if($retention_days === false || $retention_days === null || $retention_days === '')
 
-            $retention_days = abst_get_admin_setting('abst_heatmap_retention_length') ?? 30;
+            $retention_days = abst_get_admin_setting('abst_heatmap_retention_length');
 
         $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt'); // get all txt files in format abst_journeys_20251009.txt
 
@@ -747,7 +747,21 @@ class ABST_Journeys {
 
         // Public journey collection endpoint; payload is sanitized below and rate limited by IP.
         // phpcs:disable WordPress.Security.NonceVerification.Missing
-        $raw_payload = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : file_get_contents('php://input');
+        // Bound work before JSON decoding. Normal clients flush at 30,000 JS characters.
+        $payload_limit = max( 1, (int) apply_filters( 'abst_journey_payload_max_bytes', 256 * 1024 ) );
+        if ( isset( $_POST['data'] ) ) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Length check only; decoded and sanitized below.
+            if ( ! is_string( $_POST['data'] ) || strlen( $_POST['data'] ) > 2 * $payload_limit ) {
+                wp_send_json_error( 'Journey payload is too large', 413 );
+            }
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded and sanitized below.
+            $raw_payload = wp_unslash( $_POST['data'] );
+        } else {
+            $raw_payload = file_get_contents( 'php://input', false, null, 0, $payload_limit + 1 );
+        }
+        if ( is_string( $raw_payload ) && strlen( $raw_payload ) > $payload_limit ) {
+            wp_send_json_error( 'Journey payload is too large', 413 );
+        }
         if ( ! is_string( $raw_payload ) || $raw_payload === '' ) {
             wp_send_json_error('Invalid data');
             return;
@@ -772,14 +786,13 @@ class ABST_Journeys {
 
 
 
+        if ( count( $records ) > max( 1, (int) apply_filters( 'abst_journey_payload_max_records', 2048 ) ) ) {
+            wp_send_json_error( 'Too many journey records', 413 );
+        }
+
         $journey_data_string = '';
 
         $uuid_metadata_written = []; // Track which UUIDs we've written metadata for
-
-        // Lite: only the single configured heatmap page may record data. The
-        // client-side recorder already filters to it; enforce it server-side too,
-        // since this is a public endpoint.
-        $allowed_heatmap_pages = function_exists('abst_lite_allowed_heatmap_page_ids') ? abst_lite_allowed_heatmap_page_ids() : [];
 
 
 
@@ -816,11 +829,6 @@ class ABST_Journeys {
             }
 
             if (!$record_valid) {
-                continue;
-            }
-
-            // Lite: drop records for pages outside the configured heatmap page.
-            if (!in_array(intval($sanitized['post_id']), $allowed_heatmap_pages, true)) {
                 continue;
             }
 
@@ -979,6 +987,12 @@ class ABST_Journeys {
             // Write regular event line (without UUID and screen_size - they're in metadata)
 
             $meta_value = isset($record['meta']) ? sanitize_text_field($record['meta']) : '';
+
+            // Strip the log delimiter and line breaks so a label can never
+
+            // corrupt the pipe-delimited journey log format.
+
+            $meta_value = str_replace(['|', "\r", "\n"], '', $meta_value);
 
             // Sanitize click coordinates: must be numeric floats in 0-1 range, strip pipes/newlines
 

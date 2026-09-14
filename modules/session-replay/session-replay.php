@@ -241,7 +241,7 @@ class ABST_Session_Replay {
         $sessions = [];
         
         // Get retention period
-        $retention_days = abst_get_admin_setting('abst_heatmap_retention_length') ?? 30;
+        $retention_days = abst_get_admin_setting('abst_heatmap_retention_length');
         
         // Scan journey files for the retention period
         for ($i = 0; $i < $retention_days; $i++) {

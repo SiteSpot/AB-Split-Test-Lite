@@ -8,15 +8,19 @@
 
  * Plugin URI:        https://absplittest.com
 
- * Description:       A/B Split testing for WordPress - Test Pages, Blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and more. Free version limited to 1 active test and 1 variation.
+ * Description:       A/B Split testing for WordPress - Test Pages, Blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and more. Free version limited to 1 active test with 1 variation (plus the control).
 
  * Version:           1.0.0
+
+ * Requires at least: 6.9
+
+ * Requires PHP:      7.4
 
  * Author:            AB Split Test
 
  * Author URI:        https://absplittest.com
 
- * License:           GPL-2.0+
+ * License:           GPLv2 or later
 
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
 
@@ -59,7 +63,10 @@ if (!defined('BT_AB_TEST_WL_ABTEST')) {
 
 if (!defined('ABST_JOURNEY_DIR')) define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
 
-if (!defined('ABST_CACHE_EXCLUDES')) define( 'ABST_CACHE_EXCLUDES', " data-cfasync='false' nitro-exclude data-no-optimize='1' data-no-defer='1' data-no-minify='1' nowprocket " );
+// type='application/javascript' runs identically in every browser but is skipped by
+// keyword-based script delayers that only match untyped / text/javascript tags
+// (Flying Scripts offers no exclusion filter at all - this is the only defense).
+if (!defined('ABST_CACHE_EXCLUDES')) define( 'ABST_CACHE_EXCLUDES', " type='application/javascript' data-cfasync='false' nitro-exclude data-no-optimize='1' data-no-defer='1' data-no-minify='1' nowprocket " );
 
 
 
@@ -73,13 +80,50 @@ if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 
 
 
-// WP-CLI commands are PRO only
+// WP-CLI commands are Pro only. Lite still registers the "absplittest" command
+// so that `wp absplittest <anything>` explains the situation instead of failing
+// with "is not a registered wp command", which reads like a broken install.
+if (defined('WP_CLI') && WP_CLI) {
+  class ABST_Lite_CLI {
+    /**
+     * AB Split Test CLI commands are available in the Pro version.
+     *
+     * ## EXAMPLES
+     *
+     *     wp absplittest list-tests
+     *
+     * @when after_wp_load
+     */
+    public function __invoke($args, $assoc_args) {
+      $requested = !empty($args) ? implode(' ', array_map('sanitize_text_field', $args)) : '';
+      if ($requested !== '') {
+        WP_CLI::warning(sprintf('"wp absplittest %s" is part of AB Split Test Pro.', $requested));
+      }
+      WP_CLI::log('');
+      WP_CLI::log('AB Split Test Lite is installed on this site. WP-CLI access is a Pro feature.');
+      WP_CLI::log('');
+      WP_CLI::log('Pro adds these commands:');
+      foreach (array(
+        'create-test      Create a new A/B test',
+        'list-tests       List all tests with their configuration',
+        'get-results      Get detailed results for a test',
+        'update-status    Publish, pause or complete a test',
+        'update-settings  Change conversion goals and test settings',
+        'get-heatmap      Export heatmap data for a page',
+        'get-settings     Read plugin settings',
+      ) as $abst_cli_command) {
+        WP_CLI::log('  wp absplittest ' . $abst_cli_command);
+      }
+      WP_CLI::log('');
+      WP_CLI::log('The REST API and MCP tools that ARE available in Lite are documented at:');
+      WP_CLI::log('  ' . admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test') . ' (Developer tab)');
+      WP_CLI::log('');
+      WP_CLI::success('Upgrade at https://absplittest.com/pricing to enable WP-CLI.');
+    }
+  }
+  WP_CLI::add_command('absplittest', 'ABST_Lite_CLI');
+}
 
-// if (defined('WP_CLI') && WP_CLI) {
-
-//   require_once plugin_dir_path(__FILE__) . 'includes/class-absplittest-cli.php';
-
-// }
 
 
 
@@ -141,18 +185,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'wp_head', [$this, 'header_style'] );
 
-      // Premium hooks removed in lite version:
-
-      // add_action( 'fingerprint_cleanup_event', [$this,'clear_fingerprint_database']);
-
-      // add_action( 'admin_init', [$this, 'handle_ab251_upgrade']);
-
-      // add_action( 'admin_init', [$this, 'cleanup_fullpage_observations']);
-
-      // add_action( 'admin_init', 'abst_handle_trial_extension');      
-
-      // add_action( 'admin_init', [$this, 'handle_sample_data_request']);
-
       add_action( 'admin_init', [$this, 'handle_mcp_adapter_install']);
 
       add_action( 'rest_api_init', [$this, 'register_rest_routes']);
@@ -193,11 +225,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'activated_plugin', [$this,'activate_plugin']);
 
-      add_action( 'wp_enqueue_scripts', [$this,'include_highlighter_scripts'],9999 );
+      add_action( 'wp_enqueue_scripts', [$this,'include_highlighter_scripts'], PHP_INT_MAX );
 
-      add_action( 'enqueue_block_assets', [$this,'include_highlighter_scripts'],9999 );
+      add_action( 'enqueue_block_assets', [$this,'include_highlighter_scripts'], PHP_INT_MAX );
 
-      add_action( 'elementor/editor/before_enqueue_scripts', [$this,'include_highlighter_scripts'],9999 );
+      add_action( 'elementor/editor/after_enqueue_scripts', [$this,'include_highlighter_scripts'], PHP_INT_MAX );
 
       add_action( 'oxygen_after_add_components', [$this,'add_oxy_split_options']);
 
@@ -211,11 +243,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       register_deactivation_hook(__FILE__, array($this, 'bt_ab_uninstall'));
 
+
       
 
       // Also hook into plugin update process to catch automatic/remote updates
 
       add_action('upgrader_process_complete', array($this, 'on_plugin_update'), 10, 2);
+      add_action('abst_plugin_version_check', array($this, 'maybe_handle_plugin_version_change'));
 
       add_action( 'wp_ajax_bt_experiment_w', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions 
 
@@ -231,21 +265,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'wp_ajax_abst_delete_variation', array($this,'abst_delete_variation'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
-      // Fingerprint/UUID tracking removed in lite version
 
-      // add_action( 'wp_ajax_nopriv_ab_fp', array($this,'ab_fingerprint_event' ));
-
-      // add_action( 'wp_ajax_ab_fp', array($this,'ab_fingerprint_event' ));
-
-      // add_action( 'wp_ajax_ab_fp_event', array($this,'fingerprint_event'), 10, 0);
-
-      // add_action( 'wp_ajax_nopriv_ab_fp_event', array($this,'fingerprint_event'), 10, 0);
-
-
-
-      // Weekly reports stripped in lite version
-
-      // add_action( 'wp_ajax_abst_send_test_email', [$this, 'abst_send_test_email'], 10, 0);
 
 
 
@@ -280,18 +300,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       add_action( 'after_setup_theme', [$this, 'hide_admin_bar_in_heatmap_iframe'] ); // hide admin bar in heatmap iframe
 
       add_action( 'wp_ajax_bt_clear_experiment_results',   array($this,'wp_ajax_bt_clear_results'), 10, 2 );  // render js to show tests and log interactions 
-
-      // Premium conversion integrations removed in lite version:
-
-      // add_action( 'edd_complete_purchase', [$this,'edd_trigger_conversion']);
-
-      // add_action('fluent_cart/order_paid', [$this, 'abst_fluent_cart_order_paid'], 10, 1);
-
-      // add_action( 'woocommerce_thankyou', [$this,'enqueue_order_total_script']);
-
-      // add_action( 'woocommerce_order_status_changed', [$this,'woo_convert_on_checkout'], 10, 3 );
-
-      // add_action( 'load-plugins.php', [$this, 'wp_plugin_update_rows'], 30 );
 
       add_action( 'wp_ajax_bt_generate_embed_code', [$this, 'bt_generate_embed_code'] );
 
@@ -690,9 +698,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
+
      function bt_ab_uninstall() {
 
       abst_log('bt_ab_uninstall');
+      wp_clear_scheduled_hook('abst_plugin_version_check');
 
     }
 
@@ -724,52 +734,62 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function on_plugin_update($upgrader_object, $options) {
 
-      // Check if this is a plugin update
-
-      if (!isset($options['action']) || $options['action'] !== 'update') {
-
-        return;
-
-      }
-
+      // Zip uploads (including "Replace current with uploaded") fire with
+      // action=install, never action=update, so handle both.
       if (!isset($options['type']) || $options['type'] !== 'plugin') {
-
         return;
-
       }
-
-      
+      $action = isset($options['action']) ? $options['action'] : '';
+      if ($action !== 'update' && $action !== 'install') {
+        return;
+      }
 
       // Check if our plugin was updated
-
       $our_plugin = plugin_basename(__FILE__);
-
-      
+      $ours = false;
 
       if (isset($options['plugins'])) {
-
         // Bulk update
-
-        foreach ($options['plugins'] as $plugin) {
-
+        foreach ((array) $options['plugins'] as $plugin) {
           if ($plugin === $our_plugin) {
-
-            $this->clear_cache_on_update();
-
+            $ours = true;
             break;
-
           }
-
         }
-
       } elseif (isset($options['plugin']) && $options['plugin'] === $our_plugin) {
-
         // Single plugin update
-
-        $this->clear_cache_on_update();
-
+        $ours = true;
+      } elseif ($action === 'install') {
+        // A zip install carries no plugin/plugins key, so identify the
+        // plugin from the upgrader itself.
+        if (is_object($upgrader_object) && is_callable(array($upgrader_object, 'plugin_info'))
+            && $upgrader_object->plugin_info() === $our_plugin) {
+          $ours = true;
+        } elseif (is_object($upgrader_object) && isset($upgrader_object->result)
+            && is_array($upgrader_object->result)
+            && !empty($upgrader_object->result['destination_name'])
+            && defined('BT_AB_PLUGIN_FOLDER')
+            && $upgrader_object->result['destination_name'] === BT_AB_PLUGIN_FOLDER) {
+          $ours = true;
+        }
       }
 
+      if ($ours) {
+        $this->clear_cache_on_update();
+        // upgrader_process_complete runs while the OLD code is still loaded,
+        // so re-check on cron shortly, once the new code is loaded.
+        $this->schedule_plugin_version_check();
+      }
+    }
+
+    /**
+     * Arm a one-off cron re-run of the version-change check shortly after an
+     * update/install completes.
+     */
+    function schedule_plugin_version_check() {
+      if (!wp_next_scheduled('abst_plugin_version_check')) {
+        wp_schedule_single_event(time() + 30, 'abst_plugin_version_check');
+      }
     }
 
 
@@ -1765,7 +1785,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       
 
-      echo "<script ".esc_attr(ABST_CACHE_EXCLUDES)." id='abst_conv_details'>
+      echo "<script ".ABST_CACHE_EXCLUDES /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded constant of literal HTML attributes; esc_attr() would encode the quotes and break the attributes (and the type= MIME). */." id='abst_conv_details'>
 
           var conversion_details = ".wp_json_encode($conversion_pages).";
 
@@ -1884,9 +1904,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       }
 
-      if (!empty($data['css_test_variations']) && intval($data['css_test_variations']) > 1) {
+      if (!empty($data['css_test_variations']) && intval($data['css_test_variations']) > 2) {
 
-        $data['css_test_variations'] = 1;
+        $data['css_test_variations'] = 2; // Lite: control + 1 variation
 
       }
 
@@ -2022,9 +2042,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           // Normalize scope (sanitize and format)
 
-          $decoded = abst_normalize_magic_definition($decoded);
+          $decoded = abst_prepare_magic_definition_for_write(abst_normalize_magic_definition($decoded));
 
-          
+
 
           // Validate magic definition including scope requirement
 
@@ -2036,7 +2056,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
               // Don't save invalid data - keep existing value
 
-              return;
+              return $validation_result;
 
           }
 
@@ -2068,13 +2088,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       } else {
 
-          // Don't wipe data on JSON error - preserve what was submitted
-
-          // Admin is trying to save something, even if malformed
-
-          abst_log('WARNING: magic_definition JSON decode failed. Error: ' . json_last_error_msg());
-
-          $magic_definition = wp_kses_post($magic_definition);
+          // Don't overwrite a working test with malformed JSON.
+          abst_log('ERROR: magic_definition JSON decode failed. Existing value was preserved. Error: ' . json_last_error_msg());
+          return new WP_Error('invalid_magic_definition_json', 'The Magic definition is not valid JSON. The existing definition was kept.');
 
       }
 
@@ -2397,7 +2413,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       /* OK, its safe for us to save the data now. */
 
       // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Individual fields sanitized inside save_test_config().
-      $this->save_test_config( $post_id, wp_unslash( $_POST ) );
+      $config_result = $this->save_test_config( $post_id, wp_unslash( $_POST ) );
+      if ( is_wp_error( $config_result ) ) {
+        wp_die( esc_html( $config_result->get_error_message() ), esc_html__( 'Magic test not saved', 'ab-split-test-lite' ), array( 'back_link' => true ) );
+      }
 
 
 
@@ -2569,9 +2588,17 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-  //    if ($post_after->post_type !== 'bt_experiments')
+      // Only experiment changes affect the conversion-page map / embed script.
 
-//        return;
+      // post_updated fires for every post type, and page-builder saves (Elementor)
+
+      // update the post several times per publish - running the full refresh +
+
+      // purge-everything cascade each time can exhaust PHP memory on large sites.
+
+      if ($post_after->post_type !== 'bt_experiments')
+
+        return;
 
       
 
@@ -2585,6 +2612,18 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function refresh_conversion_pages(){ // and canonicals
 
+
+      // Debounce: save flows (Elementor publish, quick edit, REST) can call this
+
+      // several times in one request; the rebuild + cache purges only need to run once.
+
+      static $already_ran = false;
+
+      if ($already_ran)
+
+        return;
+
+      $already_ran = true;
 
 
       delete_transient('ab_posts_cache');
@@ -2870,15 +2909,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-        if ( function_exists( 'wp_cache_flush' ) ) 
-
-        {
-
-          abst_log('clearing wp cache');
-
-          wp_cache_flush();
-
-        }
+        // No wp_cache_flush() here. Everything this refresh changes is
+        // invalidated by name above; a global object-cache flush wipes every
+        // other cached query on the site.
 
         
 
@@ -3048,6 +3081,31 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $expects_json = !empty($data['abst_magic_mode']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ) ), 'application/json') !== false);
 
+      // Per-object permission checks before wp_insert_post()/wp_update_post(),
+      // which do not enforce object capabilities themselves.
+      $experiment_type = get_post_type_object('bt_experiments');
+      $is_new_test = isset($data['post_id']) && $data['post_id'] === 'new';
+      if ($is_new_test) {
+        if (!$experiment_type || !current_user_can($experiment_type->cap->create_posts)) {
+          wp_die('You do not have permission to create this test.');
+        }
+        // New tests are created published.
+        $will_publish = true;
+      } else {
+        $existing_id = isset($data['post_id']) ? absint($data['post_id']) : 0;
+        $existing_test = $existing_id ? get_post($existing_id) : null;
+        if (!$existing_test || $existing_test->post_type !== 'bt_experiments'
+            || !current_user_can('edit_post', $existing_test->ID)) {
+          wp_die('You do not have permission to edit this test.');
+        }
+        $data['post_id'] = $existing_test->ID;
+        // Existing auto-drafts are promoted to publish below.
+        $will_publish = $existing_test->post_status === 'auto-draft';
+      }
+      if ($will_publish && (!$experiment_type || !current_user_can($experiment_type->cap->publish_posts))) {
+        wp_die('You do not have permission to publish this test.');
+      }
+
 
 
       // Magic tests: validate the definition BEFORE touching the post. save_test_config()
@@ -3090,12 +3148,16 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           }
 
-          $abst_pre_validation = abst_validate_magic_definition(abst_normalize_magic_definition($abst_pre_decoded));
+          $abst_pre_decoded = abst_prepare_magic_definition_for_write(abst_normalize_magic_definition($abst_pre_decoded));
+          $abst_pre_validation = abst_validate_magic_definition($abst_pre_decoded);
 
           if (is_wp_error($abst_pre_validation)) {
 
             $abst_pre_error = $abst_pre_validation->get_error_message();
 
+          } else {
+            // Persist exactly the representation that passed validation.
+            $data['magic_definition'] = wp_json_encode($abst_pre_decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
           }
 
         }
@@ -3136,7 +3198,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $createdNew = false;
 
-      if($data['post_id'] == 'new')
+      if($is_new_test)
 
       {
 
@@ -3192,7 +3254,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       
 
-      $this->save_test_config( $data['post_id'], $data);
+      $config_result = $this->save_test_config( $data['post_id'], $data);
+      if (is_wp_error($config_result)) {
+        if ($expects_json) { wp_send_json(['config_error' => $config_result->get_error_message()]); }
+        wp_die('Test not saved: ' . esc_html($config_result->get_error_message()));
+      }
 
 
 
@@ -6138,7 +6204,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so much more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Try pro free for 7 days</a></p></div>";
+        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so much more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to Pro</a></p></div>";
 
 
       }
@@ -6703,34 +6769,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           echo "</select></div>";
 
-          if(!empty($page_variations)){
-
-            //echo "<div id='variation-meta-wrapper'>";
-
-            foreach($page_variations as $k => $page_variation){
-
-              $label = $variation_meta[$k]['label'] ?? '';
-
-              $image = $variation_meta[$k]['image'] ?? '';
-
-              //echo "<div class='variation-meta-item'>";
-
-              //echo "<label>Label for variation $k</label>";
-
-              ////echo "<input type='text' name='variation_label[$k]' value='".esc_attr($label)."' />";
-
-              //echo "<label>Screenshot URL</label>";
-
-              //echo "<input type='text' name='variation_image[$k]' value='".esc_attr($image)."' placeholder='https://...' />";
-
-              //echo "</div>";
-
-            }
-
-           // echo "</div>";
-
-          }
-
       }
 
       else
@@ -6946,6 +6984,24 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       echo '<div class="ab-target-percentage"><h4><label for="bt_experiments_target_percentage">Traffic allocation percentage</label></h4><p>Limit the number of site visitors that get tested by a percentage.</p><input type="number" min="1" max="100" id="bt_experiments_target_percentage" name="bt_experiments_target_percentage" style="width:100%;" placeholder="100" value="' . esc_attr( $target_percentage ) . '"  /><p id="percentage_description"></p></div>';
 
       echo '<div class="ab-log-on-visible"><h4>Visit Tracking</h4><label for="bt_experiments_log_on_visible"><input type="checkbox" class="ab-toggle" id="bt_experiments_log_on_visible" name="bt_experiments_log_on_visible" value="1" ' . checked( $log_on_visible, '1', false ) . '> Wait until element is visible to start tracking visits</label><p>When enabled, visits are only counted when the test element becomes visible on screen. Useful for dynamic content or elements below the fold. When disabled (default), visits are logged immediately on page load.</p></div>';
+
+
+      // Lite: Audiences and geo targeting are Pro filters. They sit at the end of
+
+      // the execution order, so showing them greyed keeps the list honest instead
+
+      // of the user assuming this is every filter that exists.
+
+      echo '<div class="ab-settings-subsection ab-target-pro-filters">';
+
+      echo '<h4>' . esc_html__( 'Audiences & Location - Pro', 'ab-split-test-lite' ) . '</h4>';
+
+      echo '<p>' . esc_html__( 'Build reusable audiences from referrer, UTM, device, returning-visitor and custom rules, and target tests by country or region.', 'ab-split-test-lite' ) . '</p>';
+
+      echo '<p><a class="button button-small" href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">' . esc_html__( 'Upgrade to unlock Audiences', 'ab-split-test-lite' ) . '</a></p>';
+
+      echo '</div>';
+
 
       echo '</div>';
 
@@ -7447,7 +7503,11 @@ public function get_experiment_stats_array( $test ){
 
   $duration_so_far_days = max($test_age, 0);
 
-  $time_remaining_days  = max($likelyDuration - $test_age, 0);
+  // 999 is the "no projection" sentinel; never subtract the age from it.
+  $time_remaining_progress = abst_test_progress_state($likelyDuration, $test_age, 0, 0);
+  $time_remaining_days     = (null === $time_remaining_progress['days_remaining'])
+    ? 0
+    : (int) $time_remaining_progress['days_remaining'];
 
 
 
@@ -7469,7 +7529,9 @@ public function get_experiment_stats_array( $test ){
 
   } elseif ($test_status === 'publish') {
 
-    $time_remaining = $time_remaining_days . ' days';
+    $time_remaining = (null === $time_remaining_progress['days_remaining'])
+      ? ''
+      : $time_remaining_days . ' days';
 
   } else {
 
@@ -8190,10 +8252,18 @@ function abst_show_experiment_results($test,$asTable = false){
 
   $remaining = '';
 
+  // Never print the raw projection: 999 is a sentinel.
   if( !empty($observations['bt_bb_ab_stats']['likelyDuration'])){
-
-    $remaining = "</p><p>About " . ($observations['bt_bb_ab_stats']['likelyDuration'] - $test_age) . " days remaining.</p>";
-
+    $remaining_visits = 0;
+    foreach ((array) $observations as $rk => $rv) {
+      if ($rk === 'bt_bb_ab_stats' || !is_array($rv)) continue;
+      $remaining_visits += isset($rv['visit']) ? intval($rv['visit']) : 0;
+    }
+    $remaining_progress = abst_test_progress_state($observations['bt_bb_ab_stats']['likelyDuration'], $test_age, $remaining_visits, 0);
+    $remaining_text = abst_test_progress_message($remaining_progress, isset($percentage_target) ? $percentage_target : 95);
+    if ($remaining_text !== '') {
+      $remaining = "</p><p>" . esc_html($remaining_text) . "</p>";
+    }
   }
 
 
@@ -8306,9 +8376,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
           {
 
-            (int)$observations[$page_id]['visit'] += (int)$observations[$key]['visit'];
-
-            (float)$observations[$page_id]['conversion'] += (float)$observations[$key]['conversion'];
+            // Fold the slug-keyed entry in fully (goals, buckets) and recompute rate.
+            $observations[$page_id] = abst_merge_observation($observations[$page_id], $observations[$key]);
 
           }
 
@@ -8877,7 +8946,10 @@ function abst_show_experiment_results($test,$asTable = false){
           require_once plugin_dir_path(__FILE__) . 'includes/email-test-complete.php';
           abst_send_test_complete_email($notify_to, $test, $observations, $conversion_use_order_value == '1');
 
-          abst_send_webhook($test->ID, $likeylwinner, $likelywinnerpercentage); // send it!
+          // Webhooks are Pro-only. Guarded so autocomplete meta left behind by Pro cannot fatal in Lite.
+          if (function_exists('abst_send_webhook')) {
+            abst_send_webhook($test->ID, $likeylwinner, $likelywinnerpercentage);
+          }
 
         }
 
@@ -9031,32 +9103,13 @@ function abst_show_experiment_results($test,$asTable = false){
 
         $remaining_message = '';
 
-        if($likelyDuration && $likelyDuration > $test_age) {
-
-          $conf_target = round($percentage_target, 1);
-
-          if($likelyDuration >= 999 && $test_age >= 1) {
-
-            // 999 = very long time - difference too small to detect (only show after 1+ days of data)
-
-            $remaining_message = "<br/>The variations are very close. This test may take a long time to reach {$conf_target}% confidence, or consider increasing traffic.";
-
-          } elseif($likelyDuration < 999) {
-
-            $days_remaining = $likelyDuration - $test_age;
-
-            if($days_remaining > 1) {
-
-              $remaining_message = "<br/>Time remaining: About {$days_remaining} days to reach {$conf_target}% confidence.";
-
-            } else {
-
-              $remaining_message = "<br/>Nearly complete! Results expected soon ({$conf_target}% confidence).";
-
-            }
-
+        // One shared state machine decides what to say here and on the chart caption.
+        if($likelyDuration) {
+          $progress = abst_test_progress_state($likelyDuration, $test_age, $total_visits, 0);
+          $progress_text = abst_test_progress_message($progress, $percentage_target);
+          if ($progress_text !== '') {
+            $remaining_message = '<br/>' . esc_html($progress_text);
           }
-
         }
 
         
@@ -9679,18 +9732,6 @@ $titles = array();
 
          
 
-      //   $image_html = '';
-
-      //  if(isset($variation_meta[$okey]['image']) && !empty($variation_meta[$okey]['image'])){
-
-      //    $image_html = "<div class='results-image'><img src='".esc_url($variation_meta[$okey]['image'])."' alt='".esc_attr($mk)."'></div>";
-
-      //  } else {
-
-      //    $image_html = "<div class='results-image'></div>";
-
-      //  }
-
         echo "<div class='results_variation " . esc_attr( $class ) . "'><div class='title'>" . esc_html( $mk ) . "" . wp_kses_post( $uplift_html ) . "</div>";
 
         echo "<div class='results-visits'>" . esc_html( $mv['visit'] ) . "<span> ▾</span></div>";
@@ -9937,6 +9978,44 @@ $titles = array();
 
     echo '</div>';
 
+    // Lite: audience/source segmentation is Pro. Shown disabled beside the
+
+    // working Goal and Device filters so the missing axis is visible where the
+
+    // user is actually reading results, rather than absent with no explanation.
+
+    echo '<div class="abst-result-filter-field abst-result-filter-field-audience">';
+
+    echo '<label for="abst-audience-select">' . esc_html__( 'Audience', 'ab-split-test-lite' ) . '</label>';
+
+    echo '<select id="abst-audience-select" disabled>';
+
+    echo '<option value="">' . esc_html__( 'All visitors', 'ab-split-test-lite' ) . '</option>';
+
+    foreach ( array(
+
+      __( 'By referrer / source - Pro', 'ab-split-test-lite' ),
+
+      __( 'By UTM campaign - Pro', 'ab-split-test-lite' ),
+
+      __( 'By location - Pro', 'ab-split-test-lite' ),
+
+      __( 'By returning vs new - Pro', 'ab-split-test-lite' ),
+
+      __( 'By saved audience - Pro', 'ab-split-test-lite' ),
+
+    ) as $abst_pro_segment ) {
+
+      echo '<option value="" disabled>' . esc_html( $abst_pro_segment ) . '</option>';
+
+    }
+
+    echo '</select>';
+
+    echo '<p class="description abst-result-filter-note"><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">' . esc_html__( 'Upgrade to segment results', 'ab-split-test-lite' ) . '</a></p>';
+
+    echo '</div>';
+
     echo '</div>';
 
     echo '</div>'; // Close Result Filters Panel
@@ -9975,15 +10054,17 @@ $titles = array();
 
       {
 
-        if($likelyDuration >= 999 && $test_age >= 1) {
+        $chart_visits_total = 0;
+        foreach ((array) $observations as $ck => $cv) {
+          if ($ck === 'bt_bb_ab_stats' || !is_array($cv)) continue;
+          $chart_visits_total += isset($cv['visit']) ? intval($cv['visit']) : 0;
+        }
+        $chart_progress = abst_test_progress_state($likelyDuration, $test_age, $chart_visits_total, 0);
+        if (abst_test_progress_is_warning($chart_progress) || $chart_progress['state'] === 'collecting') {
+          echo '<div id="expectedEnd">', esc_html( abst_test_progress_message($chart_progress, isset($percentage_target) ? $percentage_target : 95) ), '</div>';
+        } elseif ($chart_progress['state'] === 'running' && $chart_progress['days_remaining'] !== null) {
 
-          $expectedEnd = 'Variations are very close - test may take a long time';
-
-          echo '<div id="expectedEnd">', esc_html( $expectedEnd ), '</div>';
-
-        } elseif($likelyDuration < 999) {
-
-          $expectedEnd = wp_date('F jS Y', strtotime('+'. $likelyDuration . ' days'));
+          $expectedEnd = wp_date('F jS Y', strtotime('+'. (int) $chart_progress['days_remaining'] . ' days'));
 
           $expectedEnd = 'Projected end date: ' . $expectedEnd;
 
@@ -10642,6 +10723,32 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
+      // Lite: surface the Pro-only triggers as a disabled group so the ceiling is
+
+      // visible at the moment the user picks how to measure a win, rather than the
+
+      // options silently not existing (abst_get_form_optgroups() is Pro-only).
+
+      $select .= "<optgroup label='" . esc_attr__( 'Forms & eCommerce - Pro', 'ab-split-test-lite' ) . "'>";
+
+      foreach ( array(
+
+        __( 'Form Submission (CF7, WS Form, Gravity, Fluent, HubSpot)', 'ab-split-test-lite' ),
+
+        __( 'WooCommerce Purchase', 'ab-split-test-lite' ),
+
+        __( 'Easy Digital Downloads Purchase', 'ab-split-test-lite' ),
+
+        __( 'FluentCart Purchase', 'ab-split-test-lite' ),
+
+      ) as $abst_pro_trigger ) {
+
+        $select .= "<option value='' disabled>" . esc_html( $abst_pro_trigger ) . "</option>";
+
+      }
+
+      $select .= "</optgroup>";
+
       $select .= "</select>";
 
 
@@ -10657,9 +10764,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
           'option' => array(
             'value'    => true,
             'selected' => true,
+            'disabled' => true,
           ),
           'optgroup' => array(
-            'label' => true,
+            'label'    => true,
+            'disabled' => true,
           ),
         )
       );
@@ -10838,21 +10947,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-      echo '<div class="fingerprint-code-area">';
-
-
-
-      $plugin_url = esc_url(get_admin_url().'admin-ajax.php?action=ab_fp&eid=' . intval($eid));
-
-      // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- This is sample embed code shown to users, not a script executed by the plugin.
-      $fingerprint_script_html = '<script type="text/javascript" charset="utf-8" src="' . $plugin_url . '"></script>';
-
-      echo "<input type='text' readonly='readonly' onclick='this.select()' value='" . esc_attr($fingerprint_script_html) . "'>";
-
-     
-
-      echo '<p>Paste this script into any website that you want to trigger a conversion when the script is loaded. </p><p><small>Uses fingerprinting to detect the unique user. It is an invisible piece of JavaScript, it will not be visible on the converting website.</small></p></div>';
-
       echo '<div id="conversion_order_value_bottom_slot"></div>';
 
 
@@ -10871,7 +10965,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       //if conversion page is an integer
 
-      echo "<script " . esc_attr( ABST_CACHE_EXCLUDES ) . ">
+      echo "<script " . ABST_CACHE_EXCLUDES /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded constant of literal HTML attributes; esc_attr() would encode the quotes and break the attributes (and the type= MIME). */ . ">
 
       jQuery(document).ready(function() {  
 
@@ -11063,24 +11157,6 @@ echo "    if( selectval !== 'url' )
 
           }
 
-          if( selectval == 'fingerprint' )
-
-          {
-
-            jQuery('.fingerprint-code-area').show();            
-
-            jQuery('#bt_experiments_conversion_page option[value=fingerprint]').attr('selected', true);
-
-          }
-
-          else
-
-          {
-
-              jQuery('.fingerprint-code-area').hide();   
-
-          }
-
 
 
           jQuery('#bt_experiments_conversion_page, #bt_experiments_conversion_order_value').on('change', function(){
@@ -11162,6 +11238,18 @@ echo "    if( selectval !== 'url' )
       if(empty($eid) || empty($variation) || empty($type))
 
         return;
+
+      // This cookie represents a conversion/goal event and must never be cached:
+
+      // a page cache that stored our Set-Cookie header replayed a pre-stamped
+
+      // conversion:1 to every visitor, so all later submissions were skipped.
+
+      if (!headers_sent()) {
+
+        nocache_headers();
+
+      }
 
 
 
@@ -11903,14 +11991,6 @@ echo "    if( selectval !== 'url' )
 
       
 
-      // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only builder mode flag.
-      if (current_user_can('upload_files') && !isset($_GET['fb-edit'])) { 
-
-          wp_enqueue_media();
-
-      }
-
-      
 
       wp_enqueue_style('ab_test_styles', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION); 
 
@@ -11943,6 +12023,33 @@ echo "    if( selectval !== 'url' )
 
 
       //only admins etc from here
+
+      // Media modal for the magic editor. Let builders and hosts initialize it
+      // first; enqueue_block_assets runs nested inside wp_enqueue_scripts on the
+      // frontend, so wait for the outer PHP_INT_MAX callback. Skipped under
+      // ?fb-edit (Avada Live runs its own media modal).
+      // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only builder mode flag.
+      if (current_filter() !== 'enqueue_block_assets'
+          && current_user_can('upload_files')
+          && !isset($_GET['fb-edit'])) {
+          $added_months_filter = false;
+
+          // Skip core's expensive DISTINCT YEAR/MONTH months query unless
+          // someone else already filters it. Return false from
+          // abst_skip_media_months_query to restore the dropdown.
+          if (!did_action('wp_enqueue_media')
+              && false === has_filter('media_library_months_with_files')
+              && apply_filters('abst_skip_media_months_query', true)) {
+            add_filter('media_library_months_with_files', '__return_empty_array');
+            $added_months_filter = true;
+          }
+
+          wp_enqueue_media();
+
+          if ($added_months_filter) {
+            remove_filter('media_library_months_with_files', '__return_empty_array');
+          }
+      }
 
       wp_enqueue_script( 'select2', plugins_url( '/', __FILE__ ) . 'js/select2.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //  select2   
 
@@ -12829,7 +12936,7 @@ echo "    if( selectval !== 'url' )
 
       if( $btab_reset > 0 ) {
 
-        echo '<script ' . esc_attr( ABST_CACHE_EXCLUDES ) . '>
+        echo '<script ' . ABST_CACHE_EXCLUDES /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded constant of literal HTML attributes; esc_attr() would encode the quotes and break the attributes (and the type= MIME). */ . '>
 
           (function(){
 
@@ -13319,7 +13426,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if (is_string($data) && preg_match('/^[a]:\d+:{/', $data)) {
 
-        $unserialized = @unserialize($data);
+        $unserialized = unserialize($data, array('allowed_classes' => false)); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- Precheck limits to arrays; objects disallowed.
 
         if ($unserialized !== false) {
 
@@ -14163,7 +14270,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-      echo "<script " . esc_attr( ABST_CACHE_EXCLUDES ) . " id='abst_variables'>";
+      echo "<script " . ABST_CACHE_EXCLUDES /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded constant of literal HTML attributes; esc_attr() would encode the quotes and break the attributes (and the type= MIME). */ . " id='abst_variables'>";
 
       echo "var bt_ajaxurl = '".esc_url(admin_url( 'admin-ajax.php' ))."';";
 
@@ -15425,33 +15532,8 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       $active_types = ['selector', 'link', 'url', 'page', 'time', 'scroll', 'text', 'block', 'javascript'];
 
-      if (class_exists('FluentForm\\Framework\\Foundation\\Application'))       { $active_types[] = 'form-fluentform'; }
-
-      if (defined('WPCF7_VERSION'))                                             { $active_types[] = 'form-cf7'; }
-
-      if (class_exists('WPForms'))                                              { $active_types[] = 'form-wpforms'; }
-
-      if (class_exists('GFForms'))                                              { $active_types[] = 'form-gravity'; }
-
-      if (class_exists('Ninja_Forms'))                                          { $active_types[] = 'form-ninjaforms'; }
-
-      if (class_exists('FrmForm'))                                              { $active_types[] = 'form-formidable'; }
-
-      if (class_exists('Forminator'))                                           { $active_types[] = 'form-forminator'; }
-
-      if (defined('ELEMENTOR_PRO_VERSION'))                                     { $active_types[] = 'form-elementor'; }
-
-      if (class_exists('Jet_Form_Builder'))                                     { $active_types[] = 'form-jetformbuilder'; }
-
-      if (class_exists('SureForms'))                                            { $active_types[] = 'form-sureforms'; }
-
-      if (defined('BRICKS_VERSION'))                                            { $active_types[] = 'form-bricks'; }
-
-      if (class_exists('Breakdance\\Forms\\Actions\\Actions'))                  { $active_types[] = 'form-breakdance'; }
-
-      if (class_exists('FLBuilder'))                                            { $active_types[] = 'form-beaver'; }
-
-      if (class_exists('MailPoet\\Config\\Initializer'))                        { $active_types[] = 'form-mailpoet'; }
+      // Lite: form-plugin submission goals are Pro-only (no listeners ship in Lite),
+      // so they are never offered here - a form-* goal would silently never fire.
 
       $active_types = array_values(array_intersect($active_types, $supported));
 
@@ -15465,7 +15547,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'Common mappings: "button click" → selector; "thank-you page" → url or page; ' .
 
-        '"form submission" → form-[plugin]; "purchase" → woo-order-received or edd-purchase if available, otherwise url/page.';
+        '"form submission" → url or page of the form\'s thank-you page; "purchase" → the order-received or thank-you page via url or page.';
 
 
 
@@ -16103,6 +16185,82 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       ]);
 
+
+      // ┄┄ Pro-only tools (stubs) ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
+      // Registered under the same names Pro uses so an AI client discovers the
+
+      // full surface. Each is labelled "(Pro)" in its description and returns a
+
+      // SUCCESSFUL result carrying an upgrade message - never a WP_Error - so
+
+      // agents relay the message to the user instead of retrying a failed call.
+
+      $pro_stub_result = function() {
+
+        return [
+
+          'available'   => false,
+
+          'reason'      => 'pro_required',
+
+          'message'     => 'This tool requires AB Split Test Pro. It is shown so you know it exists; it does nothing in the Lite version. Tell the user they can upgrade at https://absplittest.com/pricing to unlock it.',
+
+          'upgrade_url' => 'https://absplittest.com/pricing?ref=upgradefeaturelink',
+
+        ];
+
+      };
+
+      $pro_stub_tools = [
+
+        'get-settings'       => ['Get Settings (Pro)',        'Read any AB Split Test plugin setting.'],
+
+        'update-settings'    => ['Update Settings (Pro)',     'Change any AB Split Test plugin setting.'],
+
+        'get-page-analytics' => ['Get Page Analytics (Pro)',  'Page engagement analytics: visits, active time, scroll depth.'],
+
+        'list-audiences'     => ['List Audiences (Pro)',      'List reusable targeting audiences.'],
+
+        'create-audience'    => ['Create Audience (Pro)',     'Create a reusable targeting audience.'],
+
+        'update-audience'    => ['Update Audience (Pro)',     'Update a reusable targeting audience.'],
+
+        'delete-audience'    => ['Delete Audience (Pro)',     'Delete a reusable targeting audience.'],
+
+        'update-site-content' => ['Update Site Content (Pro)', 'Update posts, post meta and page-builder content (Elementor, Beaver Builder, Bricks) so an AI client can build variations directly.'],
+
+        'get-mcp-audit-log'   => ['Get MCP Audit Log (Pro)',   'Audit trail of every change an MCP client has made on this site.'],
+
+      ];
+
+      foreach ($pro_stub_tools as $pro_tool_name => $pro_tool) {
+
+        // phpcs:ignore PluginCheck.CodeAnalysis.Functions.RestrictedFunctions.wp_register_ability_wp_register_ability, WordPress.WP.AlternativeFunctions.wp_register_ability_wp_register_ability -- Runtime-gated above with function_exists() for older WordPress versions.
+
+        wp_register_ability('absplittest/' . $pro_tool_name, [
+
+          'label'       => $pro_tool[0],
+
+          'category'    => 'site',
+
+          'description' => $pro_tool[1] . ' PRO ONLY: this tool is not available in the Lite version installed on this site; calling it returns an upgrade notice, not data.',
+
+          'input_schema'  => ['type' => 'object', 'properties' => (object) []],
+
+          'output_schema' => ['type' => 'object'],
+
+          'permission_callback' => $permission,
+
+          'execute_callback'    => $pro_stub_result,
+
+          'meta'                => $meta,
+
+        ]);
+
+      }
+
+
     }
 
 
@@ -16584,12 +16742,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       }
       $page_id = is_numeric($page_id_raw) ? (int) $page_id_raw : trim($page_id_raw);
 
-      // Lite: heatmap data is only served for the single configured heatmap page.
-      $allowed_pages = abst_lite_allowed_heatmap_page_ids();
-      if (empty($allowed_pages) || !in_array(intval($page_id), $allowed_pages, true)) {
-        return new WP_Error('lite_heatmap_page_limit', 'AB Split Test Lite is limited to one heatmap page. Request the page configured under Settings > Heatmaps.', ['status' => 403]);
-      }
-
       $days = $request->get_param('days');
       $days = ($days !== null) ? intval($days) : 3;
       $days = max(1, min($days, 3)); // Lite retention is 3 days
@@ -16641,13 +16793,6 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       abst_journey_raise_limits();
 
       $pages = abst_heatmap_pages_data($days);
-
-      // Lite: only the single configured heatmap page is listed, even if stray
-      // data for other pages exists in the journey logs.
-      $allowed_pages = abst_lite_allowed_heatmap_page_ids();
-      $pages = array_values(array_filter($pages, function($page) use ($allowed_pages) {
-        return in_array(intval($page['page_id'] ?? 0), $allowed_pages, true);
-      }));
 
       return new WP_REST_Response([
         'success'       => true,
@@ -16795,7 +16940,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
     function register_rest_routes() {
 
-      // Aggregated heatmap / click / scroll data for one page (read; edit_posts).
+      // Aggregated heatmap / click / scroll data for one page (read; manage_options).
       register_rest_route('bt-bb-ab/v1', '/heatmap-data', [
         'methods' => 'GET',
         'callback' => [$this, 'rest_get_heatmap_data'],
@@ -16805,7 +16950,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         },
         'args' => [
           'page_id'      => ['type' => 'string',  'required' => true,  'sanitize_callback' => 'sanitize_text_field'],
-          'days'         => ['type' => 'integer', 'required' => false, 'default' => 30],
+          'days'         => ['type' => 'integer', 'required' => false, 'default' => 3],
           'device'       => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
           'eid'          => ['type' => 'integer', 'required' => false],
           'variation'    => ['type' => 'string',  'required' => false, 'sanitize_callback' => 'sanitize_text_field'],
@@ -16826,7 +16971,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
           return current_user_can('manage_options');
         },
         'args' => [
-          'days' => ['type' => 'integer', 'required' => false, 'default' => 30],
+          'days' => ['type' => 'integer', 'required' => false, 'default' => 3],
         ],
       ]);
 
@@ -16961,6 +17106,60 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
         }
 
       ]);
+
+
+      // Pro-only endpoints, registered as stubs so a developer probing the API
+
+      // gets a clear 403 naming the feature instead of a rest_no_route 404
+
+      // that reads like a typo. The MCP/abilities surface deliberately does
+
+      // NOT get these stubs - erroring tools make AI agents retry and fail.
+
+      $pro_routes = [
+
+        ['/settings',                        'GET',                    'Read plugin settings'],
+
+        ['/update-settings',                 'POST',                   'Update plugin settings'],
+
+        ['/page-analytics',                  'GET',                    'Page engagement analytics'],
+
+        ['/audiences',                       ['GET', 'POST'],          'Audience targeting'],
+
+        ['/audiences/(?P<id>[a-zA-Z0-9_-]+)', ['GET', 'POST', 'DELETE'], 'Audience targeting'],
+
+      ];
+
+      foreach ($pro_routes as $pro_route) {
+
+        register_rest_route('bt-bb-ab/v1', $pro_route[0], [
+
+          'methods' => $pro_route[1],
+
+          'callback' => function() use ($pro_route) {
+
+            return new WP_Error(
+
+              'abst_pro_required',
+
+              $pro_route[2] . ' requires AB Split Test Pro. Upgrade at https://absplittest.com/pricing',
+
+              ['status' => 403, 'upgrade_url' => 'https://absplittest.com/pricing?ref=upgradefeaturelink']
+
+            );
+
+          },
+
+          // The stub reveals nothing, but still require a logged-in user so the
+
+          // routes are not an anonymous probing surface.
+
+          'permission_callback' => function() { return is_user_logged_in(); },
+
+        ]);
+
+      }
+
 
 
 
@@ -17763,9 +17962,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
       if (!empty($params['magic_definition'])) {
 
-        $magic_def = abst_lite_limit_magic_definition($params['magic_definition']);
-
-
+        $magic_def = abst_prepare_magic_definition_for_write(abst_lite_limit_magic_definition($params['magic_definition']));
 
         $magic_validation = abst_validate_magic_definition($magic_def);
 
@@ -17841,7 +18038,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
     private function configure_css_test($test_id, $params) {
 
-      update_post_meta($test_id, 'css_test_variations', 1);
+      // Lite: cap at 2 (control + 1 variation)
+      $css_variations = isset($params['css_variations']) ? intval($params['css_variations']) : 2;
+      update_post_meta($test_id, 'css_test_variations', min(2, max(1, $css_variations)));
 
 
 
@@ -18762,6 +18961,14 @@ function abst_get_admin_setting($setting){
     return '1';
   }
 
+  // Lite always enforces a 3-day analytics retention window, including for
+  // values left behind by Pro, multisite settings, or direct option writes.
+  if ($setting === 'abst_heatmap_retention_length') {
+    $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+    $value = $network ? get_site_option($setting, 3) : get_option($setting, 3);
+    return max(1, min(3, intval($value)));
+  }
+
   // Free features that ship ON by default. We return '1' only when the option
   // has never been saved (get_option/get_site_option === false); an explicit
   // '0' written by the settings form is preserved so users can still opt out.
@@ -18770,6 +18977,13 @@ function abst_get_admin_setting($setting){
     'abst_enable_session_replays' => '1',
     'abst_enable_heatmaps'        => '1',
   );
+
+  // Lite: heatmaps run on every page by default (retention is the limit, not pages).
+  if ($setting === 'abst_heatmap_all_pages') {
+    $network_all = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+    $value = $network_all ? get_site_option($setting, false) : get_option($setting, false);
+    return ($value === false || $value === '') ? 'all' : $value;
+  }
 
   $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
 
@@ -18787,42 +19001,6 @@ function abst_get_admin_setting($setting){
     return get_option($setting, false);
 
 }
-
-
-
-/**
- * Lite: the single page heatmaps are allowed to record and serve data for.
- * Mirrors the settings-save fallback (front page) so a never-saved install
- * behaves the same as one saved with the default.
- *
- * @return int[] Zero or one page IDs.
- */
-function abst_lite_allowed_heatmap_page_ids() {
-
-  $pages = abst_get_admin_setting('abst_heatmap_pages');
-
-  $ids = [];
-
-  if (is_array($pages)) {
-    foreach ($pages as $p) {
-      if (is_numeric($p) && intval($p) > 0) {
-        $ids[] = intval($p);
-      }
-    }
-  } elseif (is_numeric($pages) && intval($pages) > 0) {
-    $ids[] = intval($pages);
-  }
-
-  if (empty($ids)) {
-    $front = intval(get_option('page_on_front'));
-    if ($front > 0) {
-      $ids[] = $front;
-    }
-  }
-
-  return array_slice(array_values(array_unique($ids)), 0, 1);
-}
-
 
 
 
@@ -18996,6 +19174,34 @@ function abst_add_logs_page() {
 } 
 
 add_action('admin_menu', 'abst_add_logs_page');
+
+/**
+ * Plugins-screen row: a Settings shortcut (which Lite was missing entirely) and
+ * a Go Pro link. This row is the most-visited surface in the whole admin, so it
+ * is where a Lite user is most likely to discover that a paid tier exists.
+ */
+function abst_lite_plugin_action_links( $links ) {
+  $settings_url = admin_url( 'edit.php?post_type=bt_experiments&page=bt_bb_ab_test' );
+  $custom = array(
+    'abst_settings' => '<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'ab-split-test-lite' ) . '</a>',
+    'abst_upgrade'  => '<a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" style="color:#2271b1;font-weight:600;">' . esc_html__( 'Go Pro', 'ab-split-test-lite' ) . '</a>',
+  );
+  return array_merge( $custom, $links );
+}
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'abst_lite_plugin_action_links' );
+
+/**
+ * Plugins-screen meta row: point at the docs and the feature comparison.
+ */
+function abst_lite_plugin_row_meta( $links, $file ) {
+  if ( $file !== plugin_basename( __FILE__ ) ) {
+    return $links;
+  }
+  $links[] = '<a href="https://absplittest.com/documentation/" target="_blank">' . esc_html__( 'Documentation', 'ab-split-test-lite' ) . '</a>';
+  $links[] = '<a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">' . esc_html__( 'Lite vs Pro', 'ab-split-test-lite' ) . '</a>';
+  return $links;
+}
+add_filter( 'plugin_row_meta', 'abst_lite_plugin_row_meta', 10, 2 );
 
 
 
@@ -19309,12 +19515,16 @@ function abst_heatmaps_page_content() {
 
   }
 
-  // Lite: only one heatmap page. Auto-select it, and clamp any requested
-  // ?post= to the configured page rather than just defaulting to it.
-  $lite_allowed_heatmap_pages = abst_lite_allowed_heatmap_page_ids();
-  if (!empty($lite_allowed_heatmap_pages)) {
-    if (empty($selected_post) || !in_array(intval($selected_post), $lite_allowed_heatmap_pages, true)) {
-      $selected_post = $lite_allowed_heatmap_pages[0];
+  // Default to the configured viewer page (or front page) when none requested.
+  if (empty($selected_post)) {
+    $saved_pages = abst_get_admin_setting('abst_heatmap_pages');
+    if (!empty($saved_pages) && is_array($saved_pages)) {
+      $selected_post = intval($saved_pages[0]);
+    } else {
+      $front_page_id = get_option('page_on_front');
+      if ($front_page_id) {
+        $selected_post = intval($front_page_id);
+      }
     }
   }
 
@@ -19356,29 +19566,14 @@ function abst_heatmaps_page_content() {
 
 
 
-  // Page selector (static for lite version)
+  // Page selector: heatmaps record on every page, so offer the pages that
+  // actually have data within the retention window.
 
-  $heatmap_page_title = 'Homepage';
-
-  $saved_pages = abst_get_admin_setting('abst_heatmap_pages');
-
-  if (!empty($saved_pages) && is_array($saved_pages)) {
-
-    $title = get_the_title(intval($saved_pages[0]));
-
-    if ($title) {
-
-      $heatmap_page_title = $title;
-
-    }
-
-  }
-
-  
+  $heatmap_pages_with_data = abst_heatmap_pages_data(3);
 
   echo '<div class="abst-heatmaps-filters" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">';
 
-  
+
 
   // Left column
 
@@ -19386,14 +19581,29 @@ function abst_heatmaps_page_content() {
 
   echo '<div class="abst-filter-group" style="margin-bottom: 15px;"><label>Page</label><div class="abst-filter-row" style="display: flex; align-items: center;">';
 
-  echo '<span style="margin-right: 10px;">' . esc_html($heatmap_page_title) . '</span>';
+  echo '<select id="abst-heatmaps-page-selector" style="max-width: 25rem;">';
 
-  $settings_page_slug = class_exists('BT_BB_AB_Admin') ? BT_BB_AB_Admin::$page_slug : 'bt_bb_ab_test';
-  echo '<a href="' . esc_url(admin_url('options-general.php?page=' . $settings_page_slug . '#heatmaps')) . '" class="button button-secondary">Change page</a>';
+  $selected_in_list = false;
+  foreach ($heatmap_pages_with_data as $page_row) {
+    $row_id = $page_row['page_id'];
+    $row_title = $page_row['page_title'] !== '' ? $page_row['page_title'] : ('Page ' . $row_id);
+    $is_selected = ((string) $row_id === (string) $selected_post);
+    if ($is_selected) { $selected_in_list = true; }
+    echo '<option value="' . esc_attr($row_id) . '"' . ($is_selected ? ' selected' : '') . '>' . esc_html($row_title . ' (' . $page_row['session_count'] . ' sessions)') . '</option>';
+  }
+
+  // Keep the currently selected page choosable even before it has data.
+  if (!$selected_in_list && !empty($selected_post)) {
+    $current_title = is_numeric($selected_post) ? get_the_title(intval($selected_post)) : (string) $selected_post;
+    if (!$current_title) { $current_title = 'Page ' . $selected_post; }
+    echo '<option value="' . esc_attr($selected_post) . '" selected>' . esc_html($current_title . ' (no data yet)') . '</option>';
+  }
+
+  echo '</select>';
 
   echo '</div></div>';
 
-  
+  echo "<script>document.getElementById('abst-heatmaps-page-selector').addEventListener('change', function() { var u = new URL(window.location.href); u.searchParams.set('post', this.value); u.searchParams.delete('eid'); u.searchParams.delete('variation'); window.location.href = u.toString(); });</script>";
 
 
   echo '</div>';
@@ -19415,6 +19625,34 @@ function abst_heatmaps_page_content() {
   echo '<option value="large"' . ($selected_size === 'large' ? ' selected' : '') . '>Large Screen</option>';
 
   echo '</select></div></div>';
+
+
+  // Lite: retention is server-clamped to 3 days (abst_get_admin_setting), so the
+
+  // longer ranges render disabled. Showing the ceiling here - where the user
+
+  // actually wants more history - beats hiding the control entirely.
+
+  echo '<div class="abst-filter-group abst-heatmap-range-group" style="margin-bottom: 15px;"><label>Date Range</label><div class="abst-filter-row"><select id="abst-heatmaps-days-selector">';
+
+  echo '<option value="3" selected>' . esc_html__( 'Last 3 days', 'ab-split-test-lite' ) . '</option>';
+
+  foreach ( array( 7, 14, 30 ) as $abst_pro_range ) {
+
+    /* translators: %d: number of days in a Pro-only heatmap date range. */
+
+    $abst_range_label = sprintf( __( 'Last %d days - Pro', 'ab-split-test-lite' ), $abst_pro_range );
+
+    echo '<option value="' . esc_attr( $abst_pro_range ) . '" disabled>' . esc_html( $abst_range_label ) . '</option>';
+
+  }
+
+  echo '</select></div>';
+
+  echo '<p class="description abst-heatmap-range-note">' . wp_kses_post( __( 'Lite keeps 3 days of heatmap history. <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">Upgrade</a> for up to 30 days.', 'ab-split-test-lite' ) ) . '</p>';
+
+  echo '</div>';
+
 
   
 
@@ -19991,22 +20229,11 @@ function abst_heatmaps_page_content() {
 
         
 
-        // heatmap_all_pages is stored as 'all' or 'chosen', not boolean
+        // Lite records heatmaps on every page, even on installs that saved the
+        // old 'chosen' mode before the page limit was removed.
+        $heatmap_all_pages = true;
 
-        $heatmap_all_pages_setting = abst_get_admin_setting('abst_heatmap_all_pages');
-
-        // Lite always tracks chosen pages; an unset option must not read as "all pages".
-        $heatmap_all_pages = ($heatmap_all_pages_setting === 'all');
-
-        
-
-        $heatmap_pages = abst_get_admin_setting('abst_heatmap_pages');
-
-        if (!is_array($heatmap_pages)) $heatmap_pages = array();
-
-        $page_in_list = in_array($selected_post, $heatmap_pages) || in_array((string)$selected_post, $heatmap_pages) || in_array((int)$selected_post, $heatmap_pages);
-
-        $page_tracked = $heatmap_all_pages || $page_in_list;
+        $page_tracked = true;
 
         
 
@@ -22084,7 +22311,7 @@ function abst_logs_page_content() {
 
   // Get retention settings
 
-  $heatmap_retention = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
+  $heatmap_retention = abst_get_admin_setting('abst_heatmap_retention_length') ?: 3; // Lite retention is 3 days
 
   
 
@@ -22465,6 +22692,162 @@ add_action('abst_trim_log', 'abst_trim_abst_log');
 
 
 
+/**
+ * Merge one observation entry into another (full-page slug -> page-ID collapse).
+ * Sums visits, conversions and goals, unions location lists, recurses into
+ * device_size buckets and recomputes the derived rate.
+ *
+ * @param array $into Observation entry that survives.
+ * @param array $from Observation entry being folded in.
+ * @return array
+ */
+function abst_merge_observation( $into, $from ) {
+	if ( ! is_array( $into ) ) {
+		return $from;
+	}
+	if ( ! is_array( $from ) ) {
+		return $into;
+	}
+
+	$into['visit']      = (int) ( isset( $into['visit'] ) ? $into['visit'] : 0 ) + (int) ( isset( $from['visit'] ) ? $from['visit'] : 0 );
+	$into['conversion'] = (float) ( isset( $into['conversion'] ) ? $into['conversion'] : 0 ) + (float) ( isset( $from['conversion'] ) ? $from['conversion'] : 0 );
+
+	if ( ! empty( $from['goals'] ) && is_array( $from['goals'] ) ) {
+		if ( empty( $into['goals'] ) || ! is_array( $into['goals'] ) ) {
+			$into['goals'] = array();
+		}
+		foreach ( $from['goals'] as $gid => $n ) {
+			$into['goals'][ $gid ] = ( isset( $into['goals'][ $gid ] ) ? $into['goals'][ $gid ] : 0 ) + $n;
+		}
+	}
+
+	if ( ! empty( $from['location'] ) && is_array( $from['location'] ) ) {
+		foreach ( $from['location'] as $lk => $ids ) {
+			$cur                     = ( isset( $into['location'][ $lk ] ) && is_array( $into['location'][ $lk ] ) ) ? $into['location'][ $lk ] : array();
+			$into['location'][ $lk ] = array_values( array_unique( array_merge( $cur, (array) $ids ) ) );
+		}
+	}
+
+	if ( ! empty( $from['device_size'] ) && is_array( $from['device_size'] ) ) {
+		if ( empty( $into['device_size'] ) || ! is_array( $into['device_size'] ) ) {
+			$into['device_size'] = array();
+		}
+		foreach ( $from['device_size'] as $k => $sub ) {
+			$into['device_size'][ $k ] = isset( $into['device_size'][ $k ] )
+				? abst_merge_observation( $into['device_size'][ $k ], $sub )
+				: $sub;
+		}
+	}
+
+	$into['rate'] = $into['visit'] > 0
+		? round( ( $into['conversion'] / $into['visit'] ) * 100, 2 )
+		: 0;
+
+	return $into;
+}
+
+/**
+ * Which progress state a running test is in, from likelyDuration / test age.
+ * 999 is a sentinel meaning "the projection never reached the target".
+ *
+ * States: collecting, running, too_slow, unresolvable, unknown.
+ *
+ * @param int|false $likely_duration Projected TOTAL age in days, 999 = sentinel.
+ * @param int       $age_days        Days the test has been running.
+ * @param int       $total_visits    Visits recorded so far.
+ * @param int       $likely_visitors Projected total visitors, 0 = unknown.
+ * @return array
+ */
+function abst_test_progress_state( $likely_duration, $age_days, $total_visits = 0, $likely_visitors = 0 ) {
+	$age            = max( 0, (int) $age_days );
+	$visits         = max( 0, (int) $total_visits );
+	$min_age        = (int) apply_filters( 'abst_estimate_min_age_days', 7 );
+	$stale_age      = (int) apply_filters( 'abst_dead_test_min_age_days', 14 );
+	$max_remaining  = (int) apply_filters( 'abst_dead_test_remaining_days', 150 );
+	$is_sentinel    = ( $likely_duration >= 999 );
+	$has_projection = ( $likely_duration > 0 && ! $is_sentinel );
+	$days_remaining = $has_projection ? max( (int) $likely_duration - $age, 0 ) : null;
+	$visitors_left  = ( $likely_visitors > 0 ) ? max( (int) $likely_visitors - $visits, 0 ) : 0;
+
+	$out = array(
+		'state'              => 'unknown',
+		'days_remaining'     => $days_remaining,
+		'visitors_remaining' => $visitors_left,
+		'age'                => $age,
+		'visits'             => $visits,
+	);
+
+	if ( ! $has_projection && ! $is_sentinel ) {
+		$out['state'] = ( $age < $min_age ) ? 'collecting' : 'unknown';
+		return $out;
+	}
+
+	if ( $age < $min_age && ( $is_sentinel || $days_remaining > $max_remaining ) ) {
+		$out['state'] = 'collecting';
+		return $out;
+	}
+
+	if ( $is_sentinel ) {
+		$out['state'] = ( $age >= $stale_age ) ? 'unresolvable' : 'running';
+		return $out;
+	}
+
+	$out['state'] = ( $days_remaining > $max_remaining ) ? 'too_slow' : 'running';
+	return $out;
+}
+
+/**
+ * One sentence for a progress state. Returns '' when there is nothing to say.
+ *
+ * @param array $progress          Result of abst_test_progress_state().
+ * @param float $confidence_target Confidence target percentage.
+ * @return string
+ */
+function abst_test_progress_message( $progress, $confidence_target = 95 ) {
+	$target = round( (float) $confidence_target, 1 );
+	$days   = $progress['days_remaining'];
+	$left   = (int) $progress['visitors_remaining'];
+	/* translators: %s: number of visitors. */
+	$clause = $left > 0 ? sprintf( __( ' (about %s more visitors)', 'ab-split-test-lite' ), number_format_i18n( $left ) ) : '';
+
+	switch ( $progress['state'] ) {
+		case 'collecting':
+			/* translators: %s: number of visitors. */
+			return sprintf( __( 'Collecting data. %s visitors so far.', 'ab-split-test-lite' ), number_format_i18n( $progress['visits'] ) );
+
+		case 'running':
+			if ( null === $days ) {
+				return __( 'No winner yet.', 'ab-split-test-lite' );
+			}
+			if ( $days > 1 ) {
+				/* translators: 1: days, 2: visitors clause, 3: confidence percentage. */
+				return sprintf( __( 'About %1$d days%2$s to reach %3$s%% confidence.', 'ab-split-test-lite' ), $days, $clause, $target );
+			}
+			/* translators: %s: confidence percentage. */
+			return sprintf( __( 'Nearly complete. Results expected soon (%s%% confidence).', 'ab-split-test-lite' ), $target );
+
+		case 'too_slow':
+			/* translators: %d: days. */
+			return sprintf( __( 'About %d more days needed at this traffic. More traffic would settle it sooner.', 'ab-split-test-lite' ), (int) $days );
+
+		case 'unresolvable':
+			/* translators: %d: days. */
+			return sprintf( __( 'Too close to call after %d days. A bolder change is more likely to show a difference.', 'ab-split-test-lite' ), $progress['age'] );
+	}
+
+	return '';
+}
+
+/**
+ * True when a progress state should be shown as a warning rather than progress.
+ *
+ * @param array $progress Result of abst_test_progress_state().
+ * @return bool
+ */
+function abst_test_progress_is_warning( $progress ) {
+	return in_array( $progress['state'], array( 'too_slow', 'unresolvable' ), true );
+}
+
 function abst_get_detected_caches() {
 
 
@@ -22564,9 +22947,6 @@ function abst_get_detected_caches() {
 
 
 
-  if ( function_exists( 'wp_cache_flush' ) ) 
-
-    $detected_caches[] = 'WordPress Object Cache';
 
 
 
@@ -22983,6 +23363,23 @@ function abst_create_test_from_structured_data($data) {
   if ($test_id) {
 
     update_post_meta($test_id, '_abst_is_sample_test', 1);
+
+    // Lite: keep sample data within Lite limits even if a bundled JSON regresses —
+    // no subgoals, no revenue weighting, control + 1 variation.
+    require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
+    unset($test_config['goals']);
+    if (isset($test_config['conversion_use_order_value'])) {
+      $test_config['conversion_use_order_value'] = false;
+    }
+    if (!empty($test_config['css_test_variations']) && intval($test_config['css_test_variations']) > 2) {
+      $test_config['css_test_variations'] = 2;
+    }
+    if (isset($test_config['magic_definition'])) {
+      $test_config['magic_definition'] = abst_lite_limit_magic_definition($test_config['magic_definition']);
+    }
+    if (!empty($test_config['page_variations']) && is_array($test_config['page_variations']) && count($test_config['page_variations']) > 1) {
+      $test_config['page_variations'] = array_slice($test_config['page_variations'], 0, 1, true);
+    }
 
     // Apply test configuration with proper meta key mapping
 

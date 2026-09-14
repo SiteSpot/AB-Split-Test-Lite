@@ -52,6 +52,7 @@ function abst_lite_uninstall_for_each_site( $callback ) {
 function abst_lite_uninstall_clear_scheduled_hooks() {
 	wp_clear_scheduled_hook( 'abst_trim_log' );
 	wp_clear_scheduled_hook( 'abst_delete_journey_data' );
+	wp_clear_scheduled_hook( 'abst_plugin_version_check' );
 }
 
 /**

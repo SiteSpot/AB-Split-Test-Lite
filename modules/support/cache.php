@@ -69,6 +69,10 @@ function abst_add_cfasync_to_script($tag, $handle, $src) {
     // Use strpos to allow partial handle matches (e.g., 'bt_conversion' matches 'bt_conversion_data-js-before')
     foreach ($scripts_to_exclude as $needle) {
         if (strpos($handle, $needle) !== false) {
+            // ABST_CACHE_EXCLUDES carries type='application/javascript' (see its
+            // definition) - strip WP's default type first so the tag doesn't
+            // end up with two type attributes.
+            $tag = str_replace(array(" type='text/javascript'", ' type="text/javascript"'), '', $tag);
             return str_replace('<script', '<script '.ABST_CACHE_EXCLUDES.'', $tag);
         }
     }
@@ -144,6 +148,9 @@ function abst_nitropack_inline_script_attributes( $attr, $js ) {
             $attr['data-no-defer']       = '1';
             $attr['data-no-minify']      = '1';
             $attr['nowprocket']          = true;
+            // Dodge keyword-based delayers that only match untyped /
+            // text/javascript scripts (Flying Scripts has no exclusion filter).
+            $attr['type']                = 'application/javascript';
             break;
         }
     }

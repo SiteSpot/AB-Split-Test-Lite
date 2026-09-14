@@ -16,18 +16,13 @@ function abst_get_supported_test_statuses() {
 function abst_get_supported_conversion_types() {
     return [
         'selector', 'link', 'url', 'page', 'time', 'scroll', 'text', 'block', 'javascript',
-        'fingerprint', 'advanced',
-        'form-fluentform', 'form-cf7', 'form-wpforms', 'form-gravity', 'form-ninjaforms',
-        'form-formidable', 'form-forminator', 'form-elementor', 'form-jetformbuilder',
-        'form-metform', 'form-mwwpform', 'form-sureforms', 'form-formcraft',
-        'form-bricks', 'form-breakdance', 'form-beaver', 'form-mailpoet'
+        'advanced',
     ];
 }
 
 function abst_get_value_capable_conversion_types() {
     return [
         'javascript',
-        'fingerprint',
 
         'advanced',
     ];
@@ -339,6 +334,222 @@ function abst_normalize_magic_definition($magic_definition) {
     return $magic_definition;
 }
 
+/** Only trusted writers may store unfiltered Magic content. CLI without a user
+ * retains its existing administrator-equivalent configuration workflow. */
+function abst_can_write_unfiltered_magic() {
+    return current_user_can('unfiltered_html')
+        || (defined('WP_CLI') && WP_CLI && !get_current_user_id());
+}
+
+/** Balance selector syntax before placing it inside :is(). */
+function abst_magic_selector_is_balanced($selector) {
+    if (!is_string($selector) || $selector === '' || strpos($selector, '/*') !== false || strpos($selector, '*/') !== false) {
+        return false;
+    }
+    $stack = [];
+    $quote = '';
+    for ($i = 0, $length = strlen($selector); $i < $length; $i++) {
+        $char = $selector[$i];
+        if ($char === '\\') {
+            if (++$i >= $length) { return false; }
+            continue;
+        }
+        if ($quote !== '') {
+            if ($char === "\n" || $char === "\r" || $char === "\f") { return false; }
+            if ($char === $quote) { $quote = ''; }
+            continue;
+        }
+        if ($char === '"' || $char === "'") { $quote = $char; continue; }
+        if ($char === '(' || $char === '[') { $stack[] = $char; }
+        if ($char === ')' || $char === ']') {
+            if (array_pop($stack) !== ($char === ')' ? '(' : '[')) { return false; }
+        }
+        if ($char === '{' || $char === '}' || $char === ';' || ord($char) === 0) { return false; }
+    }
+    return $quote === '' && empty($stack);
+}
+
+/** The two target guards a stored selector can carry (trusted / untrusted author). */
+function abst_magic_selector_target_guards($type, $property) {
+    $guards = [
+        ':not(script,svg,math):not(script *,svg *,math *)',
+        ':not(script,style,iframe,object,embed,link,meta,base,svg,math,template,noscript):not(script *,style *,iframe *,object *,svg *,math *,template *,noscript *)',
+    ];
+    $sink = '';
+    if ($type === 'image' || ($type === 'attribute' && in_array($property, ['src', 'srcset'], true))) {
+        $sink = ':is(img,source)';
+    } elseif ($type === 'attribute' && $property === 'href') {
+        $sink = ':is(a,area)';
+    }
+    return [$guards[0] . $sink, $guards[1] . $sink];
+}
+
+/** Peel off guards this plugin wrote so the current author's guard replaces them. */
+function abst_magic_selector_unwrap($selector, $known_guards) {
+    for ($depth = 0; $depth < 10; $depth++) {
+        $unwrapped = false;
+        foreach ($known_guards as $guard) {
+            $inner_length = strlen($selector) - strlen($guard) - 5;
+            if ($inner_length > 0
+                && strpos($selector, ':is(') === 0
+                && substr($selector, -strlen($guard) - 1) === ')' . $guard
+                && abst_magic_selector_is_balanced(substr($selector, 4, $inner_length))) {
+                $selector = substr($selector, 4, $inner_length);
+                $unwrapped = true;
+                break;
+            }
+        }
+        if (!$unwrapped) {
+            break;
+        }
+    }
+    return $selector;
+}
+
+/** Write-only preparation: never call this during rendering/embed regeneration.
+ * Constrains the stored selector so every renderer observes the same safe DOM
+ * target boundary. */
+function abst_prepare_magic_definition_for_write($definition) {
+    if (is_string($definition)) {
+        $decoded = json_decode($definition, true);
+        if (is_array($decoded)) {
+            $definition = $decoded;
+        }
+    }
+    if (is_array($definition)) {
+        foreach ($definition as &$element) {
+            if (is_array($element)) {
+                unset($element['selector_rejected']);
+                // Hide never uses a caller-controlled HTML/URL sink on the node.
+                if (($element['type'] ?? '') === 'hide') {
+                    continue;
+                }
+                $selector = isset($element['selector']) && is_string($element['selector']) ? sanitize_text_field($element['selector']) : '';
+                if (!abst_magic_selector_is_balanced($selector)) {
+                    $element['selector'] = '';
+                    if ($selector !== '') {
+                        $element['selector_rejected'] = $selector;
+                    }
+                    continue;
+                }
+                $type = $element['type'] ?? '';
+                $property = $element['property'] ?? '';
+                $guards = abst_magic_selector_target_guards($type, $property);
+                $safe_targets = abst_can_write_unfiltered_magic() ? $guards[0] : $guards[1];
+                $element['selector'] = ':is(' . abst_magic_selector_unwrap($selector, $guards) . ')' . $safe_targets;
+            }
+        }
+        unset($element);
+    }
+    return $definition;
+}
+
+/** Quote a bounded snippet of the author's own input back to them. */
+function abst_magic_quote_for_message($value) {
+    $value = trim(preg_replace('/\s+/', ' ', (string) $value));
+    if (strlen($value) > 80) {
+        $value = rtrim(substr($value, 0, 77)) . '...';
+    }
+    return '"' . $value . '"';
+}
+
+/** Name the change by the selector the author typed (guards unwrapped). */
+function abst_magic_element_label($definition, $index, $variation_index = null) {
+    $selector = isset($definition['selector']) && is_string($definition['selector']) ? $definition['selector'] : '';
+    if ($selector !== '') {
+        $selector = abst_magic_selector_unwrap(
+            $selector,
+            abst_magic_selector_target_guards($definition['type'] ?? '', $definition['property'] ?? '')
+        );
+    }
+    $label = $selector === ''
+        ? 'Element ' . ($index + 1)
+        : 'The change to ' . abst_magic_quote_for_message($selector);
+    return $label . ($variation_index === null ? '' : ' (variation ' . ($variation_index + 1) . ')');
+}
+
+/** Name what KSES removed so the author can fix that one tag or attribute. */
+function abst_magic_removed_markup_hint($original, $filtered) {
+    $names = function($html, $pattern) {
+        preg_match_all($pattern, (string) $html, $matches);
+        return array_map('strtolower', $matches[1]);
+    };
+    $tags = array_diff(
+        $names($original, '/<([a-zA-Z][a-zA-Z0-9:-]*)/'),
+        $names($filtered, '/<([a-zA-Z][a-zA-Z0-9:-]*)/')
+    );
+    if (!empty($tags)) {
+        return 'the <' . reset($tags) . '> element is';
+    }
+    $attributes = array_diff(
+        $names($original, '/[\s"\']([a-zA-Z_:][a-zA-Z0-9:._-]*)\s*=/'),
+        $names($filtered, '/[\s"\']([a-zA-Z_:][a-zA-Z0-9:._-]*)\s*=/')
+    );
+    if (!empty($attributes)) {
+        return 'the ' . reset($attributes) . ' attribute is';
+    }
+    return 'some of that markup is';
+}
+
+/** Content policy for users without unfiltered_html. */
+function abst_validate_magic_write_content($definition, $index) {
+    if (abst_can_write_unfiltered_magic()) {
+        return true;
+    }
+    $type = $definition['type'];
+    $property = $definition['property'] ?? '';
+    $error = function($reason, $variation_index = null) use ($definition, $index) {
+        return new WP_Error(
+            'unfiltered_html_required',
+            abst_magic_element_label($definition, $index, $variation_index) . ': ' . $reason
+                . ' Ask a site administrator to save it with you — your content is untouched, not silently stripped.',
+            ['status' => 403, 'field' => 'magic_definition.' . $index]
+        );
+    };
+    if (!abst_magic_selector_is_balanced($definition['selector'])) {
+        return $error('the selector ' . abst_magic_quote_for_message($definition['selector']) . ' could not be used.');
+    }
+    if (!in_array($type, ['text', 'html', 'image', 'hide', 'style', 'attribute'], true)) {
+        // Moving arbitrary existing DOM can activate previously inert scripts.
+        return $error('the ' . abst_magic_quote_for_message($type) . ' change type rearranges existing page elements.');
+    }
+    if ($type === 'attribute' && (!is_string($property) || !preg_match('/^(?:aria-[a-z-]+|title|alt|role|class|id|href|src|srcset|width|height|placeholder|value|disabled|checked|rel|target)$/D', $property))) {
+        return $error('the ' . abst_magic_quote_for_message($property) . ' attribute is outside the set this account can set'
+            . ' (aria-*, title, alt, role, class, id, href, src, srcset, width, height, placeholder, value, disabled, checked, rel, target).');
+    }
+    if ($type === 'style' && (!is_string($property) || !preg_match('/^[a-zA-Z][a-zA-Z-]*$/D', $property) || $property === 'cssText')) {
+        return $error('the ' . abst_magic_quote_for_message($property) . ' style property is not a single CSS property this account can set.');
+    }
+    foreach ($definition['variations'] as $variation_index => $value) {
+        if ($value === 'original') { continue; }
+        $safe_html = wp_kses_post($value);
+        if ($safe_html !== $value) {
+            return $error(abst_magic_removed_markup_hint($value, $safe_html) . ' not on the list WordPress allows this account to save.', $variation_index);
+        }
+        if (($type === 'image' || ($type === 'attribute' && in_array($property, ['href', 'src', 'srcset'], true)))
+            && wp_kses_bad_protocol($value, $property === 'href' ? ['http', 'https', 'mailto', 'tel'] : ['http', 'https']) !== $value) {
+            return $error(abst_magic_quote_for_message($value) . ' is not an ordinary web'
+                . ($property === 'href' ? ', email or telephone' : '') . ' address.', $variation_index);
+        }
+        if ($type === 'style') {
+            $css_property = strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $property));
+            $rule = $css_property . ':' . $value;
+            if (trim(safecss_filter_attr($rule)) !== trim($rule)) {
+                return $error(abst_magic_quote_for_message($rule) . ' is not a style declaration WordPress accepts.', $variation_index);
+            }
+        }
+    }
+    return true;
+}
+
+/** Raw metadata tools must obey the same policy as the Magic editor. */
+function abst_prepare_magic_meta_write($value) {
+    $definition = abst_prepare_magic_definition_for_write($value);
+    $error = abst_validate_magic_definition($definition);
+    if (is_wp_error($error)) { return $error; }
+    return is_string($value) ? wp_json_encode($definition, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $definition;
+}
+
 function abst_validate_magic_definition($magic_definition) {
     if (empty($magic_definition)) {
         return new WP_Error('missing_magic_definition', 'magic_definition is required for magic tests.', ['status' => 400, 'field' => 'magic_definition']);
@@ -362,7 +573,13 @@ function abst_validate_magic_definition($magic_definition) {
         }
 
         if (empty($definition['selector'])) {
-            return new WP_Error('missing_magic_selector', 'Each magic_definition item requires a selector.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.selector']);
+            $rejected = isset($definition['selector_rejected']) && is_string($definition['selector_rejected'])
+                ? $definition['selector_rejected'] : '';
+            $message = $rejected === ''
+                ? 'Element ' . ($index + 1) . ' needs a selector so we know which element to change.'
+                : 'Element ' . ($index + 1) . ': the selector ' . abst_magic_quote_for_message($rejected)
+                  . ' could not be used. Check for an unbalanced bracket, parenthesis or quote, and remove any comment or semicolon.';
+            return new WP_Error('missing_magic_selector', $message, ['status' => 400, 'field' => 'magic_definition.' . $index . '.selector']);
         }
 
         if (empty($definition['type'])) {
@@ -404,6 +621,11 @@ function abst_validate_magic_definition($magic_definition) {
             if (!is_string($variation) || trim($variation) === '') {
                 return new WP_Error('invalid_magic_variation_value', 'Magic definition variations must be plain non-empty strings.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations.' . $variation_index]);
             }
+        }
+
+        $content_validation = abst_validate_magic_write_content($definition, $index);
+        if (is_wp_error($content_validation)) {
+            return $content_validation;
         }
     }
 
@@ -449,7 +671,8 @@ function abst_lite_apply_test_limits($params) {
     }
 
     if (isset($params['css_variations'])) {
-        $params['css_variations'] = 1;
+        // Lite: cap at 2 (control + 1 variation)
+        $params['css_variations'] = min(2, max(1, intval($params['css_variations'])));
     }
 
     if (isset($params['variations']) && is_array($params['variations'])) {

@@ -24,6 +24,7 @@ class BT_BB_AB_Admin {
     add_action( 'admin_menu', [$this, 'settings_menu']);  
     add_action( 'network_admin_menu', [$this, 'settings_menu_multisite']);  
     add_action( 'admin_menu', [$this, 'add_insights_submenu']);
+    add_action( 'admin_menu', [$this, 'add_pro_feature_submenus']);
     add_action( 'admin_menu', [$this, 'add_settings_shortcut_submenu'],99);
     add_action( 'admin_menu', [$this, 'reorder_experiments_submenu'],1000);
     
@@ -60,15 +61,13 @@ class BT_BB_AB_Admin {
       $abst_enable_logging = 1;
       $abst_enable_heatmaps = (isset($_POST['abst_enable_heatmaps']) && absint(wp_unslash($_POST['abst_enable_heatmaps'])) === 1) ? 1 : 0;
       $uuid_length = isset($_POST['uuid_length']) ? intval($_POST['uuid_length']) : 30;
-      $ab_fingerprint_length = isset($_POST['ab_fingerprint_length']) ? intval($_POST['ab_fingerprint_length']) : 30;
       $wait_for_approval = (isset($_POST['wait_for_approval']) && absint(wp_unslash($_POST['wait_for_approval'])) === 1) ? 1 : 0;
       $heatmap_retention_length = isset($_POST['heatmap_retention_length']) ? min(3, intval($_POST['heatmap_retention_length'])) : 3; // free: max 3 days
-      // Lite version ignores premium-only toggles (MAB, agency, AI, webhooks, fingerprint, UUID)
+      // Lite version ignores premium-only toggles (MAB, agency, AI, webhooks, UUID)
       $abst_agency_mode_enabled = 0;
       $abst_remote_access_enabled = 0;
       $abst_thompson_sampling_enabled = 0;
       $abst_test_ideas_enabled = 0;
-      $use_fingerprint = 0;
       $use_uuid = 0;
       $webhook_global = '';
       $abst_notification_emails = '';
@@ -81,13 +80,14 @@ class BT_BB_AB_Admin {
       // store session replays preference
       $enable_session_replays = (isset($_POST['enable_session_replays']) && absint(wp_unslash($_POST['enable_session_replays'])) === 1) ? 1 : 0;
 
-      // store heatmap pages selection ( max 1 page)
+      // Lite records heatmaps on every page; the saved page is only the default
+      // page shown when the heatmap viewer opens.
       $heatmap_pages = array();
       if (isset($_POST['heatmap_pages'])) {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized immediately below for array and scalar inputs.
         $pages = wp_unslash($_POST['heatmap_pages']);
         if (is_array($pages)) {
-          $heatmap_pages = array_slice(array_map('sanitize_text_field', $pages), 0, 1);
+          $heatmap_pages = array_map('sanitize_text_field', $pages);
         } elseif (is_string($pages) && !empty($pages)) {
           $heatmap_pages = array(sanitize_text_field($pages));
         }
@@ -99,14 +99,12 @@ class BT_BB_AB_Admin {
           $heatmap_pages = array($homepage_id);
         }
       }
-      $heatmap_all_pages = 'chosen'; // free always uses chosen pages (max 1)
+      $heatmap_all_pages = 'all'; // Lite: heatmaps free on every page, 3-day retention
 
       $this->abst_update_admin_setting( 'fathom_api_key', $fathom_api_key );
       $this->abst_update_admin_setting( 'webhook_global', $webhook_global );
       $this->abst_update_admin_setting( 'selected_post_types', $selected_post_types );
       $this->abst_update_admin_setting( 'ab_change_canonicals', $change_canonicals );
-      $this->abst_update_admin_setting( 'ab_use_fingerprint', $use_fingerprint );
-      $this->abst_update_admin_setting( 'ab_fingerprint_length', $ab_fingerprint_length );
       $this->abst_update_admin_setting( 'ab_use_uuid', $use_uuid );
       $this->abst_update_admin_setting( 'ab_uuid_length', $uuid_length );
       $this->abst_update_admin_setting( 'abst_enable_user_journeys', $enable_user_journeys );
@@ -225,12 +223,18 @@ class BT_BB_AB_Admin {
       }
     }
 
+    // Pro-only upsell screens are interleaved where the real feature lives in
+    // Pro, so the sidebar reads the same in both versions.
     $desired_order = [
+      'abst-optimization-hub',
       'post-new.php?post_type=bt_experiments',
       $parent_slug,
+      'abst-test-ideas',
       'bt_bb_ab_insights',
+      'abst-page-analytics',
       'abst-heatmaps',
       'abst-session-replay',
+      'abst-audiences',
       'abst-logs',
       self::$page_slug,
     ];
@@ -351,6 +355,87 @@ class BT_BB_AB_Admin {
    */
   public function insights_page() {
     include plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/insights-page.php';
+  }
+
+  /**
+   * Pro-only screens, registered in Lite as upsell pages.
+   *
+   * Without these the sidebar simply has no entry, so a Lite user never learns
+   * the feature exists. Each renders the shared pro-feature partial.
+   */
+  public static function pro_feature_pages() {
+    return array(
+      'abst-optimization-hub' => array(
+        'menu'  => __( 'Optimization Hub', 'ab-split-test-lite' ),
+        'title' => __( 'Optimization Hub', 'ab-split-test-lite' ),
+        'intro' => __( 'One dashboard for the whole optimization programme - every test, every learning, every site, scored and ranked in one place.', 'ab-split-test-lite' ),
+        'points' => array(
+          __( 'See every running and completed test across your site at a glance', 'ab-split-test-lite' ),
+          __( 'Keep a searchable record of what won, what lost, and why', 'ab-split-test-lite' ),
+          __( 'Track cumulative uplift over time instead of test by test', 'ab-split-test-lite' ),
+        ),
+      ),
+      'abst-test-ideas' => array(
+        'menu'  => __( 'Test Ideas', 'ab-split-test-lite' ),
+        'title' => __( 'Test Ideas', 'ab-split-test-lite' ),
+        'intro' => __( 'Capture, score and prioritise what to test next - or let the AI analyse your site and suggest improvements for you.', 'ab-split-test-lite' ),
+        'points' => array(
+          __( 'Brainstorm and rank ideas by expected impact and effort', 'ab-split-test-lite' ),
+          __( 'Have the agent analyse your pages, heatmaps and competitors and propose tests', 'ab-split-test-lite' ),
+          __( 'Turn any approved idea straight into a running test', 'ab-split-test-lite' ),
+        ),
+      ),
+      'abst-audiences' => array(
+        'menu'  => __( 'Audiences', 'ab-split-test-lite' ),
+        'title' => __( 'Audiences', 'ab-split-test-lite' ),
+        'intro' => __( 'Build reusable visitor segments once, then target any test at them - and break your results down by who converted.', 'ab-split-test-lite' ),
+        'points' => array(
+          __( 'Segment by referrer, UTM campaign, device, location and returning visitors', 'ab-split-test-lite' ),
+          __( 'Reuse the same audience across many tests instead of rebuilding filters', 'ab-split-test-lite' ),
+          __( 'Manage audiences over the REST API and from AI assistants via MCP', 'ab-split-test-lite' ),
+        ),
+      ),
+      'abst-page-analytics' => array(
+        'menu'  => __( 'Page Analytics', 'ab-split-test-lite' ),
+        'title' => __( 'Page Analytics', 'ab-split-test-lite' ),
+        'intro' => __( 'Lightweight, privacy-friendly engagement analytics for every page - no third-party script, no cookie banner.', 'ab-split-test-lite' ),
+        'points' => array(
+          __( 'Visits, active time on page and scroll depth per page', 'ab-split-test-lite' ),
+          __( 'Spot the pages losing attention before you decide what to test', 'ab-split-test-lite' ),
+          __( 'Query the same data over REST or from an AI assistant', 'ab-split-test-lite' ),
+        ),
+      ),
+    );
+  }
+
+  /**
+   * Register the Pro-only screens as submenu upsell pages.
+   */
+  public function add_pro_feature_submenus() {
+    foreach ( self::pro_feature_pages() as $slug => $page ) {
+      add_submenu_page(
+        'edit.php?post_type=bt_experiments',
+        $page['title'],
+        $page['menu'],
+        'edit_posts',
+        $slug,
+        [$this, 'render_pro_feature_page']
+      );
+    }
+  }
+
+  /**
+   * Render whichever Pro upsell screen is being requested.
+   */
+  public function render_pro_feature_page() {
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen routing; no state is changed.
+    $slug = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+    $pages = self::pro_feature_pages();
+    if ( ! isset( $pages[ $slug ] ) ) {
+      return;
+    }
+    $abst_pro_page = $pages[ $slug ];
+    include plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/pro-feature-page.php';
   }
 
 } // end class

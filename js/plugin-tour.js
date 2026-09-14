@@ -64,14 +64,6 @@ jQuery(function ($) {
           }
         }).trigger('change');
 
-        //#abst_server_convert_woo
-        jQuery('#abst_server_convert_woo').on('change', function() {
-            if (jQuery('#abst_server_convert_woo').is(':checked')) {
-                jQuery('.ab-test-woo-goal-status').show();
-            } else {
-                jQuery('.ab-test-woo-goal-status').hide();
-            }
-        }).trigger('change');
 
         jQuery('body').on('click', '#remove_heatmap_data', function() {
             if(!confirm('Are you sure you want to remove all heatmap data?')) return;   

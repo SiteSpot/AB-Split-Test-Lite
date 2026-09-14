@@ -1,96 +1,117 @@
-=== AB Split Test Lite: Test Anything: Pages, Blocks, Elements. For humans & agents ===
+=== AB Split Test – A/B Testing, Heatmaps, Session Replay & MCP for AI Agents ===
 Contributors: tomcarless
 Donate link: https://absplittest.com
-Tags: a/b testing, split testing, conversion optimization, heatmap, woocommerce
+Tags: a/b testing, split testing, conversion optimization, heatmap, mcp
 Requires at least: 6.9
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Self-hosted A/B & split testing for WordPress. Unlimited traffic, every page builder, AI-agent (MCP) + REST control, heatmaps & replays. No SaaS.
+A/B testing and split testing for WordPress, self-hosted. Unmetered traffic, heatmaps on every page, page-builder controls, MCP + REST.
 
 == Description ==
 
-**A/B testing that runs entirely on your own WordPress site. No cloud account. No traffic meter. No data leaving your server.**
+**A/B testing that runs entirely on your own WordPress site. No cloud account. No traffic meter. No visitor data leaving your server.**
 
-[AB Split Test](https://absplittest.com) is a fully **self-hosted** A/B and split testing plugin for WordPress. It's new to the WordPress.org directory — but it isn't new software. It's been refined across 170+ releases since 2019, runs on thousands of websites, and has helped surface millions of dollars in revenue those sites would otherwise have left on the table. Every test, every visitor, and every result is stored in your own database — not on someone else's servers. That single design choice changes everything: there is **no monthly "tested page view" cap**, no per-visitor pricing, and no privacy trade-off. Run as many visitors through your tests as your site can serve.
+[AB Split Test](https://absplittest.com) is a fully **self-hosted** A/B and split testing plugin for WordPress. It is the first A/B testing plugin built on the WordPress **Abilities API**, so AI agents such as Claude Code, Cursor, and Windsurf can create and run tests over **MCP (Model Context Protocol)** in the free version. It is new to the WordPress.org directory, but it is not new software. It has been refined across 170+ releases since 2019 and runs on thousands of websites.
 
-Most A/B testing plugins are really just front-ends for a paid SaaS. They route your traffic through their cloud, meter your page views, and lock real volume behind expensive tiers. AB Split Test does the opposite. The engine lives inside WordPress, so your tests scale with your hosting — not with someone's invoice.
+Every test, every visit, and every result is stored in your own database. That one design choice changes everything. There is **no monthly "tested page view" cap**, no per-visitor pricing, and no privacy trade-off. Run as many visitors through your test as your site can serve.
 
-= ⚡ Why AB Split Test is different =
+Most A/B testing plugins are front-ends for a paid SaaS. They route your tracking data through their cloud, meter your page views, and lock real volume behind expensive tiers. AB Split Test does the opposite. The engine lives inside WordPress, so your tests scale with your hosting, not with someone else's invoice.
 
-* **Self-hosted, always.** Tests, tracking, and reporting all run on your server. Your visitor data never leaves your site.
-* **Unlimited traffic.** No "tested page view" limit and no per-visitor billing. Test a landing page that gets 1,000 views a month or 10,000,000 — the plugin doesn't care.
-* **Built for AI agents.** A native **MCP (Model Context Protocol) server** and a matching **REST API** ship in the free version. Connect Claude, Cursor, or any MCP-compatible agent and it can spin up, launch, and read A/B tests on your site in seconds — for free.
-* **Works with every builder.** Test Pages, Gutenberg Blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and more — *inside* the builder, not around it.
-* **Privacy-first by design.** No fingerprinting, no personal data collection, no third-party cloud. GDPR- and CCPA-friendly out of the box.
-* **Ruthlessly cache-friendly.** First-class compatibility with WP Rocket, NitroPack, LiteSpeed, SiteGround Optimizer, and other caching/optimization plugins.
+= Why AB Split Test is different =
+
+* **Self-hosted, always.** Tests, tracking, and reporting all run on your server. Every visit, click, and conversion lives in your own database.
+* **Unmetered traffic.** No "tested page view" limit and no per-visitor billing. A page with 1,000 views a month and a page with 10,000,000 cost the same: nothing.
+* **Heatmaps and session replays on every page, free.** No page picker and no quota. The free version records across your whole site and keeps a rolling 3-day window.
+* **Built for AI agents.** A native **MCP (Model Context Protocol)** integration and a matching **REST API** ship in the free version. Connect Claude, Cursor, or any MCP client and it can create, launch, and read tests on your site.
+* **Real page-builder integrations.** Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and Gutenberg all get native test controls inside the builder itself.
+* **Privacy-first by design.** No device fingerprinting and no third-party cloud. Visitors are assigned to variations with first-party cookies on your own domain.
+* **Cache-friendly.** Test scripts are marked for exclusion in WP Rocket, NitroPack, LiteSpeed Cache, SiteGround Optimizer, and other optimization plugins, so tests don't flicker or break.
 
 > "AB Split Test is invaluable, and more so that it is not a SaaS! 100% worth it!" — *Admin, ragallo.com*
 
-= 🤖 The first A/B testing plugin your AI agents can actually drive =
+= The A/B testing plugin your AI agent can drive =
 
-This is what no SaaS competitor gives you for free: **programmatic, self-hosted test control**.
+AB Split Test registers WordPress Abilities. Install the official WordPress MCP Adapter and they appear as **MCP tools** straight away. The same actions are available over the **REST API**. Both are included free.
 
-AB Split Test registers a set of WordPress Abilities that are automatically exposed as **MCP tools** the moment you install the official WordPress MCP Adapter. The exact same actions are also available over a clean **REST API**. Both are included in the free version.
+Your AI agent can use:
 
-Your AI agent can:
-
-* `create-test` — create a new A/B test or a lightweight test idea
-* `list-tests` — list existing tests and their status
+* `create-test` — create an A/B test or save a test idea
+* `list-tests` — list tests and their status
 * `get-test-details` — read a test's full configuration
-* `get-test-results` — pull conversion data and statistical significance
+* `get-test-results` — pull visits, conversions, and statistical confidence
 * `update-test-status` — start, pause, or complete a test
-* `update-test-settings` — change goals, targeting, and variations
+* `update-test-settings` — change the goal, targeting, and variations
+* `get-heatmap-data` — read aggregated click and scroll data for a page
+* `list-heatmap-pages` — list the pages that have heatmap data
 
-That means an agent can read a page, propose a hypothesis, build a point-and-click variation, launch the test, and report back on the winner — without you touching the dashboard. On your own infrastructure, with your own data, at no cost.
+An agent can read a page, propose a hypothesis, build a point-and-click variation, launch the test, and report back on the result, without you opening the dashboard. It all happens on your own infrastructure, with your own data.
 
-= 🎯 Two ways to build a test =
+= Four ways to build a test =
 
-**Point-and-click mode.** Open any page in the visual **Magic Bar**, click the headline, button, image, or section you want to test, type your variations, and go. No selectors to hunt for, no code to write.
+**Point-and-click (Magic Bar).** Open any page, click the headline, button, image, or section you want to test, type your variation, and go. No selectors to hunt for and no code to write.
 
 > "Makes A/B testing as simple as can be — it's truly point-and-click easy with the WordPress plugin." — *Verified User, Legal Services*
 
-**Full-page mode.** Prefer to test two completely different designs? Use full-page (split-URL) tests to send traffic between entirely separate pages and measure which one converts.
+**Full-page (split URL).** Send traffic between two completely different pages and measure which one converts.
 
-You also get **code/CSS tests** for design tweaks and **on-page variation tests** built right inside your editor.
+**On-page.** Tag sections or blocks as variations inside your page builder or the block editor.
 
-= 📊 What you can test =
+**CSS.** Test design changes by applying a stylesheet class to the variation.
+
+= What you can test =
 
 * Headlines, sub-headlines, and body copy
-* Buttons and calls-to-action
+* Buttons and calls to action
 * Images and hero sections
 * Pricing and product copy
-* Entire page layouts (full-page / split-URL)
-* Custom CSS and design changes
-* Anything you can point at with the Magic Bar
+* Entire page layouts
+* Design and CSS changes
+* Anything you can click on with the Magic Bar
 
-= 🎯 Conversion goals that match your business =
+= Page-builder integrations that live inside the builder =
 
-Track exactly what matters: element/button clicks, link clicks, page visits, destination URLs, time on page, scroll depth, text appearance, and **form submissions** from the form plugin you already use — Contact Form 7, WPForms, Gravity Forms, Fluent Forms, Ninja Forms, Formidable, Forminator, SureForms, Jet Form Builder, MailPoet, and the native forms in Elementor, Bricks, Breakdance, and Beaver Builder.
+Many testing tools say they are "compatible" with page builders, which usually means they tolerate them. AB Split Test adds **native controls inside each builder**, so you build variations in the interface you already design in:
 
-= 🔥 Heatmaps, session replays & visitor journeys =
+* **Elementor** — tag any element as a test variation in the Elementor editor.
+* **Bricks** — in-editor variation tagging plus a native Bricks conversion element.
+* **Breakdance** — a "Split Test" settings section on every element, plus a conversion element.
+* **Beaver Builder** — split-test settings in row and module settings.
+* **Oxygen** — split-test options in component options.
+* **WP Bakery** — test and variation controls on rows and sections.
+* **Gutenberg** — split-test attributes on every block, managed from the block editor.
 
-See *why* a variation wins. AB Split Test includes heatmap tracking and **session replays** that reconstruct real visitor journeys — cursor movement, clicks, rage-clicks, and scroll behaviour — straight from your own server. (In the free version, heatmap tracking covers one page with a 3-day retention window; upgrade for more pages and longer history.)
+No shadow editor and no fragile selector mapping to an external tool. Your builder is the test editor.
 
-= 📈 Trustworthy results =
+= Conversion goals =
 
-Results are scored with proper statistical-significance analysis so you know when a winner is really a winner — not just noise. When a test reaches a confident result, the dashboard tells you, and you can apply the winner with confidence (and a little confetti).
+Pick the action that counts as a win:
 
-= 🧩 Plays nicely with your stack =
+* Page or post visit (for example, your thank-you page)
+* URL visited, with `*` wildcards
+* Element clicked
+* Link clicked
+* Text visible on the page
+* Scroll depth
+* Time active on the page
+* Conversion element visible (a block, module, or element you place)
+* Custom JavaScript event
+* WooCommerce "order received" page, when WooCommerce is active
 
-* **Page builders:** Pages, Blocks (Gutenberg), Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and more.
-* **Caching & optimization:** WP Rocket, NitroPack, LiteSpeed Cache, SiteGround Optimizer, and others — variation scripts are automatically excluded from optimization so tests don't flicker or break.
-* **Forms:** all the major form plugins listed above.
-* **WooCommerce:** track order-based conversions (revenue-weighted optimization is a Pro feature).
+Native form-plugin submission goals and purchase tracking with order values are part of Pro.
 
-= 🔒 Privacy & performance =
+= Heatmaps, session replays, and visitor journeys =
 
-Because nothing is offloaded to a third-party cloud, there's no personal data shipped off your site, no device fingerprinting, and no persistent cross-site tracking. AB Split Test is designed to sit comfortably inside GDPR and CCPA workflows. The front-end footprint is intentionally small and cache-aware, so testing doesn't slow your site down.
+See *why* a variation wins. Heatmaps show where visitors click and how far they scroll. Session replays reconstruct real visits: cursor movement, clicks, and scrolling. Everything is recorded and stored on your own server, on **every page of your site**. The free version keeps a rolling 3-day window. Pro keeps longer history.
 
-= ⭐ Loved by WordPress professionals =
+= Trustworthy results =
+
+Results use Bayesian statistical analysis, so you know when a winner is really a winner and not just noise. Filter results by device to see how each variation performs. When a test reaches a confident result, the dashboard tells you.
+
+= Loved by WordPress professionals =
 
 This plugin is new to WordPress.org, but its users aren't:
 
@@ -102,140 +123,156 @@ This plugin is new to WordPress.org, but its users aren't:
 
 > "As a WordPress developer, this plugin immediately stood out. It runs fast without bloating the site and integrates cleanly into a standard WordPress workflow. A solid product built by people who clearly understand WordPress." — *Stacey W., CodeInk*
 
-> "The only platform you need to run A/B tests! We run hundreds (potentially thousands) of A/B tests, and Split helps us easily determine which changes lead to the biggest gains in conversion." — *Verified User, Health, Wellness & Fitness*
-
 > "Works well and makes me more money." — *Christian, german-stories.com*
 
-= 🆓 Free vs Pro =
+= Free vs Pro =
 
-The free version (AB Split Test Lite) is genuinely useful on its own — and unlike the SaaS competition, it never meters your traffic.
+The free version is useful on its own, and it never meters your traffic.
 
-**Included free, forever:**
+**Included free:**
 
-* 1 active A/B test (A vs B)
-* Point-and-click (Magic Bar), full-page, on-page, and CSS test types
-* **Unlimited traffic / unlimited tested views**
-* **MCP server + REST API** for AI-agent and programmatic control
-* All page builders and form integrations
-* Conversion goals (clicks, URLs, pages, time, scroll, text, forms)
-* Heatmaps & session replays (1 page, 3-day retention)
-* Statistical significance analysis
+* 1 active A/B test at a time (control + 1 variation)
+* Point-and-click, full-page, on-page, and CSS test types
+* **Unmetered traffic**
+* **MCP tools and REST API** for AI agents and scripts
+* Native controls in every supported page builder
+* Click, link, page, URL, scroll, time, text, conversion-element, and JavaScript goals
+* Heatmaps and session replays on every page (3-day retention)
+* Bayesian statistical analysis with device breakdown
 * Cache-plugin compatibility
 * Self-hosted, privacy-first architecture
 
-**Pro unlocks:**
+**Pro adds:**
 
 * Unlimited active tests and unlimited variations
-* **AI copilot** — AI-generated test ideas (grounded in behavioural-psychology principles), headline/copy rewriting, and full-page conversion analysis
-* Multi-armed bandit auto-optimization (Thompson sampling)
-* Revenue / order-value tracking for WooCommerce & EDD
-* Sub-goals and automatic winner deployment
-* Webhooks and scheduled email reports
-* Public, shareable result reports
-* Agency Hub for managing tests across many client sites
-* WP-CLI commands for scripted test management
-* Extended heatmap pages and retention
+* Form submission goals for Contact Form 7, Gravity Forms, WPForms, Fluent Forms, and more
+* Purchase and revenue tracking for WooCommerce, Easy Digital Downloads, and FluentCart
+* Sub-goals for multi-step funnels
+* Automatic winner selection and multi-armed bandit optimization
+* Audiences with UTM, referrer, and location targeting, plus results segmented by audience
+* Page analytics: visits, active time, and scroll depth per page
+* AI test ideas and an optimization hub
+* Webhooks, scheduled email reports, and shareable result reports
+* WP-CLI commands
+* Longer heatmap and session replay retention
 
-[See all Pro features →](https://absplittest.com)
+[See all Pro features](https://absplittest.com/pricing)
 
-= 🆚 AB Split Test vs. cloud-based A/B tools =
+= AB Split Test vs cloud-based A/B tools =
 
-Cloud (SaaS) A/B testing plugins route your traffic through their servers, meter your page views, and charge more as your traffic grows. AB Split Test is built the opposite way:
+Cloud A/B testing plugins send your tracking data to their servers, meter your page views, and charge more as your traffic grows. AB Split Test is built the other way:
 
-* **Hosting:** runs entirely on your server vs. routed through a third-party cloud.
-* **Free traffic limit:** unlimited vs. a few hundred to a few thousand metered views.
-* **Your visitor data:** never leaves your site vs. sent to their cloud.
-* **AI-agent (MCP) control:** included free vs. rarely offered, or paid.
-* **REST API:** included free vs. limited or paid.
-* **Heatmaps & session replays:** built in vs. often a paid add-on.
-* **Ongoing cost:** none vs. a bill that scales with your traffic.
+* **Hosting:** runs on your server, not a third-party cloud.
+* **Free traffic limit:** none, instead of a few hundred to a few thousand metered views.
+* **Visitor data:** stays in your database.
+* **AI-agent (MCP) control:** included free.
+* **REST API:** included free.
+* **Heatmaps and session replays:** built in.
+* **Ongoing cost:** none for the free version, and no bill that grows with traffic.
+
+= AB Split Test vs Nelio A/B Testing =
+
+Nelio is the best-known A/B testing plugin in the directory, so it's the comparison people ask about most. The difference is architectural:
+
+* **Where your data lives.** Nelio's documentation says tests and variants are stored in WordPress, while tracking data (views, conversions, and heatmaps) is sent to and processed in Nelio's cloud on AWS. With AB Split Test, the engine and the data both run on your server.
+* **Account requirement.** Nelio needs a Nelio account and cloud plan. AB Split Test needs no external account.
+* **Metered traffic.** Nelio meters "tested page views" on every plan, and its free plan includes 500 per month. AB Split Test has no meter on any plan.
+* **Heatmaps.** AB Split Test's free version records heatmaps and session replays on every page, stored locally, with a 3-day window.
+* **What's the same?** Both free plans run one active test at a time. The difference is what happens when your traffic grows.
+
+= Help translate =
+
+AB Split Test is translation-ready. Contribute a translation for your language at [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/ab-split-test-lite/).
 
 == Installation ==
 
-1. In your WordPress admin, go to **Plugins → Add New**.
-2. Search for **AB Split Test**.
+1. In your WordPress admin, go to **Plugins → Add New Plugin**.
+2. Search for **AB Split Test Lite**.
 3. Click **Install Now**, then **Activate**.
 4. Open **Split Test** in the admin menu and create your first test.
-5. To run a test from the page itself, open the target page and use the **Magic Bar** point-and-click editor.
-
-**Manual install:**
-
-1. Download the plugin ZIP.
-2. Go to **Plugins → Add New → Upload Plugin** and choose the ZIP.
-3. Click **Install Now**, then **Activate**.
+5. To test an element on a page, open the page on the front end and launch the **Magic Bar** editor from the admin bar.
 
 **Enable AI-agent (MCP) control (optional):**
 
-1. Install and activate the official **WordPress MCP Adapter** plugin (AB Split Test can prompt you to install it from its Settings → MCP tab).
-2. Connect your MCP-compatible client (e.g. Claude) to your site.
-3. The `absplittest/*` tools become available immediately. The same actions are also reachable via the REST API under `/wp-json/bt-bb-ab/v1/`.
+1. Install and activate the official **WordPress MCP Adapter** plugin. The plugin's settings **Developer** tab walks you through it.
+2. Create an application password for your user under **Users → Profile**.
+3. Copy the ready-made client configuration from the Developer tab into Claude, Cursor, Windsurf, or another MCP client.
+4. The `absplittest/*` tools are now available. The same actions are also on the REST API under `/wp-json/bt-bb-ab/v1/`.
 
 == Frequently Asked Questions ==
 
-= Is AB Split Test really self-hosted? =
+= Is AB Split Test a self-hosted A/B testing plugin? =
 
-Yes. The testing engine, visitor tracking, and reporting all run inside your WordPress install and store data in your own database. There is no required cloud account and no SaaS backend in the loop. Your visitor data stays on your server.
+Yes. The testing engine, visitor tracking, heatmaps, and reporting all run inside your WordPress install and store data on your own server. There is no cloud account and no SaaS backend.
 
-= Is there a limit on traffic or "tested page views"? =
+= Is there a free WordPress A/B testing plugin with no page-view limit? =
 
-No. Because the plugin is self-hosted, there is no page-view meter and no per-visitor billing. Your tests scale with your hosting. This is the single biggest difference from cloud-based A/B testing tools, which cap free usage at a few hundred or a few thousand views.
+No. There is no page-view meter and no per-visitor billing on any plan. Your tests scale with your hosting.
 
-= How do AI agents control my tests for free? =
+= What are the limits of the free version? =
 
-AB Split Test registers WordPress Abilities that the official WordPress MCP Adapter exposes as MCP tools, and it ships a matching REST API. Both are in the free version. A connected agent can create tests, list them, read results, and start/pause/complete them — all on your own infrastructure, at no cost.
+One active test at a time, with a control and one variation. Heatmaps and session replays keep a rolling 3-day window. Traffic is never limited.
 
-= Does it work with my page builder? =
+= Can an AI agent like Claude run A/B tests on WordPress? =
 
-Almost certainly. AB Split Test supports Pages, Gutenberg Blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and more — and it works *inside* those builders, not just around them.
+AB Split Test registers WordPress Abilities, which the official WordPress MCP Adapter exposes as MCP tools. The same actions are on the REST API. An agent authenticated as a user with the right permissions can create tests, list them, read results, read heatmaps, and start, pause, or complete tests.
+
+= How do I A/B test an Elementor, Bricks, or Beaver Builder page? =
+
+AB Split Test adds native controls to Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and Gutenberg. The point-and-click Magic Bar and full-page tests work with any theme or builder, because they operate on the rendered page.
+
+= Is there a self-hosted alternative to Nelio A/B Testing? =
+
+Yes. AB Split Test runs the testing engine and stores all tracking data on your own server, needs no external account, and never meters tested page views. Nelio stores and processes tracking data in its cloud and meters page views on every plan. See the comparison above.
+
+= Are heatmaps limited in the free version? =
+
+Heatmaps and session replays are recorded on every page, with no page limit. The free version keeps the last 3 days of data. Pro keeps longer history.
+
+= Can I track form submissions or WooCommerce purchases? =
+
+In the free version you can count a visit to your form's thank-you page, a URL, or the WooCommerce "order received" page as the conversion. Native form-plugin submission goals and purchase and revenue tracking are part of Pro.
 
 = Will it slow down my site or fight my caching plugin? =
 
-No. The front-end code is lightweight, and the plugin automatically marks its variation scripts as excluded from optimization for major caching/optimization plugins (WP Rocket, NitroPack, LiteSpeed, SiteGround Optimizer, and others) so your tests render cleanly without flicker.
+The front-end script is small and makes no requests to third-party servers. It is automatically marked for exclusion in major caching and optimization plugins so tests render cleanly.
 
-= Is it GDPR / CCPA friendly? =
+= Does it use cookies? Is it GDPR friendly? =
 
-It's designed to be. Nothing is offloaded to a third-party cloud, there's no device fingerprinting, and no personal data is collected by default, which makes it straightforward to use within GDPR and CCPA requirements.
+AB Split Test uses first-party cookies and browser storage on your own domain to remember which variation a visitor saw. It does not fingerprint devices and sends nothing to a third party. As with any analytics tool, check your own consent requirements.
 
-= How many tests can I run on the free version? =
+= What happens to my data if I delete the plugin? =
 
-The free version runs one active test (A vs B) at a time with unlimited traffic. Upgrade to Pro for unlimited active tests and unlimited variations.
+Your tests and results are kept by default, so nothing is lost by accident. Developers who want a full clean-up can set the `abst_delete_data_on_uninstall` option to `1` before deleting the plugin.
 
 = Do I need to know how to code? =
 
-No. The Magic Bar lets you build tests by clicking elements on the page. Developers who *want* code-level control get a REST API, MCP tools, and (in Pro) WP-CLI.
-
-= Can I track form submissions or WooCommerce conversions? =
-
-Yes. You can set conversion goals on submissions from all major form plugins, and track WooCommerce order-based conversions. Revenue-weighted (order-value) optimization is a Pro feature.
+No. The Magic Bar lets you build tests by clicking elements on the page. Developers who want more control get the REST API and MCP tools.
 
 = Where can I get help or report a bug? =
 
-Visit [absplittest.com](https://absplittest.com) for documentation, or use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-split-test-lite/).
+Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-split-test-lite/) or visit [absplittest.com](https://absplittest.com) for documentation.
 
 == Screenshots ==
 
-1. The dashboard — all your tests and their status at a glance.
-2. Point-and-click Magic Bar — select any element on the page and create variations instantly.
-3. Test results with conversion rates and statistical significance.
-4. Heatmaps and session replays reconstructed from your own visitor data.
-5. MCP / Settings tab — connect AI agents to control tests programmatically.
-6. Creating a test: choose point-and-click, full-page, on-page, or CSS test types.
+1. The dashboard with all your tests and their status.
+2. The point-and-click Magic Bar: select any element and create a variation.
+3. Test results with conversion rates and statistical confidence.
+4. Heatmaps and session replays built from your own visitor data.
+5. The Developer tab with MCP and REST API setup.
+6. Creating a test: choose point-and-click, full-page, on-page, or CSS.
 
 == Changelog ==
 
 = 1.0.0 =
-* First WordPress.org release of AB Split Test Lite (the 171st update to AB Split Test since 2019 — full history at https://absplittest.com/changelog).
-* Self-hosted A/B, full-page (split-URL), on-page, and CSS test types.
-* Point-and-click Magic Bar visual editor.
-* Native MCP server (via the WordPress Abilities API) and REST API for AI-agent and programmatic test control.
-* Conversion goals: element clicks, links, page visits, URLs, time on page, scroll depth, text, and form submissions across all major form plugins.
-* Heatmaps and session replays.
-* Statistical significance analysis.
-* Page builder support: Pages, Gutenberg, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and more.
-* Cache/optimization compatibility (WP Rocket, NitroPack, LiteSpeed, SiteGround Optimizer, and others).
-* Privacy-first, self-hosted architecture with no third-party cloud.
+* First WordPress.org release of AB Split Test Lite, built on the AB Split Test engine used since 2019.
+* Self-hosted point-and-click, full-page, on-page, and CSS tests.
+* MCP tools (via the WordPress Abilities API) and REST API for AI-agent and programmatic control.
+* Heatmaps and session replays on every page, with a 3-day retention window.
+* Native page-builder controls for Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery, and Gutenberg.
+* Bayesian statistical analysis with device breakdown.
 
 == Upgrade Notice ==
 
 = 1.0.0 =
-First public release of AB Split Test Lite: self-hosted A/B testing with unlimited traffic, AI-agent (MCP) control, point-and-click editing, heatmaps, and session replays.
+First public release of AB Split Test Lite: self-hosted A/B testing with unmetered traffic, AI-agent (MCP) control, point-and-click editing, heatmaps, and session replays.

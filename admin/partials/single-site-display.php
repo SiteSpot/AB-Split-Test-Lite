@@ -61,7 +61,7 @@ $abst_server_convert_woo_status = abst_get_admin_setting('abst_server_convert_wo
 
 $abst_enable_heatmaps = abst_get_admin_setting('abst_enable_heatmaps');
 
-$heatmap_retention_length = abst_get_admin_setting('abst_heatmap_retention_length') ?: 30;
+$heatmap_retention_length = abst_get_admin_setting('abst_heatmap_retention_length');
 
 $abst_notification_emails = abst_get_admin_setting('abst_notification_emails');
 
@@ -186,7 +186,7 @@ if (!is_array($heatmap_pages)) {
 
 }
 
-  $heatmap_all_pages = 'chosen';
+  $heatmap_all_pages = 'all'; // Lite: heatmaps record on every page
   $user_level = 'free';
 
 
@@ -494,7 +494,47 @@ if (!is_array($heatmap_pages)) {
 
           <h2>Conversions</h2>
 
-        </div>
+          <div class="ab-settings-subsection ab-settings-conversion-triggers">
+            <label><strong>Conversion Triggers</strong></label>
+            <p>Every way a test can count a conversion. All of these work in Lite:</p>
+            <ul class="abst-trigger-list">
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Page or Post Visit</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> URL Match</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Link Click</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Element Click</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Text on Page</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Scroll Depth</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Time Active</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Conversion Block / Module / Element Class</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Custom JavaScript</li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> Form Submission (Contact Form 7, WS Form, Gravity, Fluent, HubSpot) <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> WooCommerce Purchase <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> Easy Digital Downloads Purchase <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> FluentCart Purchase <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+            </ul>
+          </div>
+
+          <div class="ab-settings-subsection ab-settings-sub-goals">
+
+            <label><strong>Sub Goals</strong></label>
+
+            <p>Track several steps of a funnel in one test, and choose whether goals keep recording after the primary conversion fires.</p>
+
+            <?php echo wp_kses_post($upgrade_link); ?>
+
+          </div>
+
+          <div class="ab-settings-subsection ab-settings-revenue">
+
+            <label><strong>Revenue &amp; Order Value Tracking</strong></label>
+
+            <p>Score variations on revenue per visitor instead of conversion count, using the real order value from your store.</p>
+
+            <?php echo wp_kses_post($upgrade_link); ?>
+
+          </div>
+
+        </div><!-- end #tab-conversions -->
 
 
 
@@ -616,11 +656,10 @@ if (!is_array($heatmap_pages)) {
 
 
 
-              <label><strong>Page Selection</strong></label>
+              <label><strong>Default Viewer Page</strong></label>
 
-              <p>Choose the page you want to track users anonymously and generate click heatmaps for.</p>
+              <p>Heatmaps and session replays are recorded anonymously on every page of your site. Choose the page shown first when you open the heatmap viewer.</p>
               <p><select id="heatmap_page_select" name="heatmap_pages[]" style="width: 25rem;"></select></p>
-              <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to track heatmaps & session replays on any page.</a></p>
 
               <script>
               jQuery(document).ready(function($) {
@@ -696,9 +735,33 @@ if (!is_array($heatmap_pages)) {
 
         <div class="abst-tab-panel" id="tab-reports">
 
-          <h2>Reports</h2>
+          <h2>Reports &amp; Notifications</h2>
 
-        </div>
+          <div class="ab-settings-subsection ab-settings-weekly-reports">
+
+            <label><strong>Scheduled Email Reports</strong></label>
+
+            <p>Send a weekly summary of every running test - visits, conversions, uplift and confidence - to you, your team or your clients.</p>
+
+            <?php echo wp_kses_post($upgrade_link); ?>
+
+          </div>
+
+          <div class="ab-settings-subsection ab-settings-report-link">
+            <label><strong>Report Link</strong></label>
+            <p>A shareable link you can give to anyone - no WordPress login needed. It shows live test results, heatmaps and everything a stakeholder needs, in one page.</p>
+            <?php echo wp_kses_post($upgrade_link); ?>
+          </div>
+          <div class="ab-settings-subsection ab-settings-report-shortcode">
+
+            <label><strong>Report Shortcode</strong></label>
+
+            <p>Embed a live results table on any page or post with <code>[abst_report]</code>, for client-facing dashboards.</p>
+
+            <?php echo wp_kses_post($upgrade_link); ?>
+
+          </div>
+        </div><!-- end #tab-reports -->
 
 
 
@@ -818,6 +881,28 @@ if (!is_array($heatmap_pages)) {
               <li><strong>update-test-status</strong> - Change test status (publish, draft, pending, complete)</li>
 
               <li><strong>update-test-settings</strong> - Update conversion goals and other settings on an existing test</li>
+              <li><strong>get-test-details</strong> - Get the full configuration of a specific test</li>
+
+              <li><strong>get-heatmap-data</strong> - Get click / scroll heatmap data for a page</li>
+
+              <li><strong>list-heatmap-pages</strong> - List the pages that have heatmap data</li>
+
+            </ul>
+
+            <p style="margin-top: 15px;"><strong>Pro adds these tools</strong> (AI clients can see them in Lite, but they respond with an upgrade notice):</p>
+
+            <ul class="abst-trigger-list">
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-settings / update-settings</strong> - Read and change any plugin setting programmatically <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-page-analytics</strong> - Page engagement analytics: visits, active time, scroll depth <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>audiences</strong> - List, create, update and delete reusable targeting audiences <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>update-site-content</strong> - Update posts, post meta and page-builder content (Elementor, Beaver Builder, Bricks) so your AI can build variations directly <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-mcp-audit-log</strong> - Audit trail of every change an MCP client makes <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
 
             </ul>
 
@@ -842,6 +927,24 @@ if (!is_array($heatmap_pages)) {
               <li><strong>POST</strong> <code>/wp-json/bt-bb-ab/v1/update-test-status</code> - Update test status</li>
 
               <li><strong>POST</strong> <code>/wp-json/bt-bb-ab/v1/update-test-settings</code> - Update conversion goals and settings</li>
+              <li><strong>GET</strong> <code>/wp-json/bt-bb-ab/v1/test-details/{id}</code> - Get a test's full configuration</li>
+
+              <li><strong>GET</strong> <code>/wp-json/bt-bb-ab/v1/heatmap-data</code> - Aggregated heatmap / click / scroll data for a page</li>
+
+              <li><strong>GET</strong> <code>/wp-json/bt-bb-ab/v1/heatmap-pages</code> - Pages that have recorded heatmap data</li>
+
+            </ul>
+
+            <p style="margin-top: 15px;"><strong>Pro adds these endpoints</strong> (they respond in Lite with an upgrade notice, HTTP 403):</p>
+
+            <ul class="abst-trigger-list">
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET</strong> <code>/settings</code> &middot; <strong>POST</strong> <code>/update-settings</code> - Read and change plugin settings <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET</strong> <code>/page-analytics</code> - Page engagement analytics <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET/POST/DELETE</strong> <code>/audiences</code> - Manage targeting audiences <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+
 
             </ul>
 
@@ -1022,6 +1125,21 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
 
 
+          <div class="ab-settings-subsection ab-settings-cli">
+
+            <h3>CLI <span class="abst-mcp-pro-badge">Pro</span></h3>
+
+            <p><?php esc_html_e( 'Drive A/B tests from the command line or a deploy script - no browser, no REST client. Pro registers an "absplittest" WP-CLI command:', 'ab-split-test-lite' ); ?></p>
+                <pre class="abst-mcp-config abst-mcp-config--muted"><code>wp absplittest create-test --title="Homepage hero"
+wp absplittest list-tests --status=publish
+wp absplittest get-results &lt;test-id&gt;
+wp absplittest update-status &lt;test-id&gt; --status=complete
+wp absplittest get-heatmap &lt;page-id&gt;
+wp absplittest get-settings</code></pre>
+            <p><a class="button button-primary" href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank"><?php esc_html_e( 'Upgrade to Pro for WP-CLI', 'ab-split-test-lite' ); ?></a></p>
+
+          </div>
+
           <div class="ab-settings-subsection">
 
             <h3>MCP Integration (AI Assistants)</h3>
@@ -1144,103 +1262,114 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
             
 
-            <h5 style="margin-top: 20px;">Windsurf IDE</h5>
+            <?php
+            // Each client config is assembled here and echoed inside a whitespace-
+            // significant <pre>; fragments are escaped as they are concatenated. The
+            // only raw HTML is the two placeholder spans the config JS rewrites live.
+            $abst_mcp_url  = home_url( '/wp-json/mcp/mcp-adapter-default-server' );
+            $abst_mcp_user_span = '<span class="abst-mcp-username-placeholder">' . esc_html( wp_get_current_user()->user_login ) . '</span>';
+            $abst_mcp_pass_span = '<span class="abst-mcp-password-placeholder">YOUR_APPLICATION_PASSWORD</span>';
+            $abst_mcp_json = function( $root ) use ( $abst_mcp_url, $abst_mcp_user_span, $abst_mcp_pass_span, $mcpServerName ) {
+              return "{\n"
+                . '  "' . esc_html( $root ) . "\": {\n"
+                . '    "' . esc_html( $mcpServerName ) . "\": {\n"
+                . "      \"command\": \"npx\",\n"
+                . "      \"args\": [\"-y\", \"@automattic/mcp-wordpress-remote@latest\"],\n"
+                . "      \"env\": {\n"
+                . '        "WP_API_URL": "' . esc_html( $abst_mcp_url ) . "\",\n"
+                . '        "WP_API_USERNAME": "' . $abst_mcp_user_span . "\",\n"
+                . '        "WP_API_PASSWORD": "' . $abst_mcp_pass_span . "\"\n"
+                . "      }\n    }\n  }\n}";
+            };
+            $abst_mcp_clients = array(
+              'windsurf' => array(
+                'title' => 'Windsurf IDE',
+                'intro' => 'Add to your <code>.windsurf/mcp_config.json</code>:',
+                'code'  => $abst_mcp_json( 'mcpServers' ),
+              ),
+              'claude' => array(
+                'title' => 'Claude Desktop',
+                'intro' => 'Add to your Claude Desktop config file.<br><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code><br><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>',
+                'code'  => $abst_mcp_json( 'mcpServers' ),
+              ),
+              'claude_code' => array(
+                'title' => 'Claude Code',
+                'intro' => 'Run once in your terminal (from any directory):',
+                'code'  => 'claude mcp add ' . esc_html( $mcpServerName ) . ' \\' . "\n"
+                  . '  --env WP_API_URL=' . esc_html( $abst_mcp_url ) . ' \\' . "\n"
+                  . '  --env WP_API_USERNAME=' . $abst_mcp_user_span . ' \\' . "\n"
+                  . '  --env WP_API_PASSWORD=' . $abst_mcp_pass_span . ' \\' . "\n"
+                  . '  -- npx -y @automattic/mcp-wordpress-remote@latest',
+              ),
+              'codex' => array(
+                'title' => 'Codex CLI (OpenAI)',
+                'intro' => 'Add to <code>~/.codex/config.toml</code>:',
+                'code'  => '[mcp_servers.' . esc_html( str_replace( '-', '_', $mcpServerName ) ) . "]\n"
+                  . "command = \"npx\"\n"
+                  . "args = [\"-y\", \"@automattic/mcp-wordpress-remote@latest\"]\n"
+                  . "\n"
+                  . '[mcp_servers.' . esc_html( str_replace( '-', '_', $mcpServerName ) ) . ".env]\n"
+                  . 'WP_API_URL = "' . esc_html( $abst_mcp_url ) . "\"\n"
+                  . 'WP_API_USERNAME = "' . $abst_mcp_user_span . "\"\n"
+                  . 'WP_API_PASSWORD = "' . $abst_mcp_pass_span . '"',
+              ),
+              'cursor' => array(
+                'title' => 'Cursor',
+                'intro' => 'Add to <code>~/.cursor/mcp.json</code> (or <code>.cursor/mcp.json</code> inside a project):',
+                'code'  => $abst_mcp_json( 'mcpServers' ),
+              ),
+              'cline' => array(
+                'title' => 'Cline (VS Code Extension)',
+                'intro' => 'Add to Cline\'s MCP settings file (<code>~/.cline/mcp.json</code>, or the MCP settings JSON in the extension):',
+                'code'  => $abst_mcp_json( 'mcpServers' ),
+              ),
+              'openclaw' => array(
+                'title' => 'OpenClaw',
+                'intro' => 'Add to <code>~/.openclaw/openclaw.json</code> (note the nested <code>mcp.servers</code> shape), then restart the gateway:',
+                'code'  => "{\n"
+                  . "  \"mcp\": {\n"
+                  . "    \"servers\": {\n"
+                  . '      "' . esc_html( $mcpServerName ) . "\": {\n"
+                  . "        \"command\": \"npx\",\n"
+                  . "        \"args\": [\"-y\", \"@automattic/mcp-wordpress-remote@latest\"],\n"
+                  . "        \"env\": {\n"
+                  . '          "WP_API_URL": "' . esc_html( $abst_mcp_url ) . "\",\n"
+                  . '          "WP_API_USERNAME": "' . $abst_mcp_user_span . "\",\n"
+                  . '          "WP_API_PASSWORD": "' . $abst_mcp_pass_span . "\"\n"
+                  . "        }\n      }\n    }\n  }\n}",
+              ),
+              'hermes' => array(
+                'title' => 'Hermes Agent (Nous Research)',
+                'intro' => 'Add under the top-level <code>mcp_servers</code> key in <code>~/.hermes/config.yaml</code>, then run <code>/reload-mcp</code> or restart:',
+                'code'  => "mcp_servers:\n"
+                  . '  ' . esc_html( $mcpServerName ) . ":\n"
+                  . "    command: \"npx\"\n"
+                  . "    args: [\"-y\", \"@automattic/mcp-wordpress-remote@latest\"]\n"
+                  . "    env:\n"
+                  . '      WP_API_URL: "' . esc_html( $abst_mcp_url ) . "\"\n"
+                  . '      WP_API_USERNAME: "' . $abst_mcp_user_span . "\"\n"
+                  . '      WP_API_PASSWORD: "' . $abst_mcp_pass_span . '"',
+              ),
+            );
+            foreach ( $abst_mcp_clients as $abst_mcp_key => $abst_mcp_client ) :
+              ?>
+              <details class="abst-mcp-client">
+                <summary><?php echo esc_html( $abst_mcp_client['title'] ); ?></summary>
+                <div class="abst-mcp-client-body">
+                  <p><?php echo wp_kses_post( $abst_mcp_client['intro'] ); ?></p>
+                  <div class="abst-mcp-config-wrap">
+                    <button type="button" class="button button-small abst-mcp-copy" data-target="abst_mcp_config_<?php echo esc_attr( $abst_mcp_key ); ?>"><?php echo esc_html( 'Copy' ); ?></button>
+                    <pre class="abst-mcp-config"><code id="abst_mcp_config_<?php echo esc_attr( $abst_mcp_key ); ?>"><?php
+                      // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Assembled above from individually escaped parts plus two known placeholder spans.
+                      echo $abst_mcp_client['code'];
+                    ?></code></pre>
+                  </div>
+                </div>
+              </details>
+            <?php
+            endforeach;
+            ?>
 
-            <p>Add to your <code>.windsurf/mcp_config.json</code>:</p>
-
-            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;"><code id="abst_mcp_config_windsurf">{
-
-  "mcpServers": {
-
-    "<?php echo esc_html($mcpServerName); ?>": {
-
-      "command": "npx",
-
-      "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
-
-      "env": {
-
-        "WP_API_URL": "<?php echo esc_html(home_url('/wp-json/mcp/mcp-adapter-default-server')); ?>",
-
-        "WP_API_USERNAME": "<span class="abst-mcp-username-placeholder"><?php echo esc_html(wp_get_current_user()->user_login); ?></span>",
-
-        "WP_API_PASSWORD": "<span class="abst-mcp-password-placeholder">YOUR_APPLICATION_PASSWORD</span>"
-
-      }
-
-    }
-
-  }
-
-}</code></pre>
-
-
-
-            <h5 style="margin-top: 20px;">Claude Desktop</h5>
-
-            <p>Add to your Claude Desktop config file:</p>
-
-            <p><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></p>
-
-            <p><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></p>
-
-            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;"><code id="abst_mcp_config_claude">{
-
-  "mcpServers": {
-
-    "<?php echo esc_html($mcpServerName); ?>": {
-
-      "command": "npx",
-
-      "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
-
-      "env": {
-
-        "WP_API_URL": "<?php echo esc_html(home_url('/wp-json/mcp/mcp-adapter-default-server')); ?>",
-
-        "WP_API_USERNAME": "<span class="abst-mcp-username-placeholder"><?php echo esc_html(wp_get_current_user()->user_login); ?></span>",
-
-        "WP_API_PASSWORD": "<span class="abst-mcp-password-placeholder">YOUR_APPLICATION_PASSWORD</span>"
-
-      }
-
-    }
-
-  }
-
-}</code></pre>
-
-
-
-            <h5 style="margin-top: 20px;">Cline (VS Code Extension)</h5>
-
-            <p>Add to VS Code settings or Cline MCP settings:</p>
-
-            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;"><code id="abst_mcp_config_cline">{
-
-  "cline.mcpServers": {
-
-    "<?php echo esc_html($mcpServerName); ?>": {
-
-      "command": "npx",
-
-      "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
-
-      "env": {
-
-        "WP_API_URL": "<?php echo esc_html(home_url('/wp-json/mcp/mcp-adapter-default-server')); ?>",
-
-        "WP_API_USERNAME": "<span class="abst-mcp-username-placeholder"><?php echo esc_html(wp_get_current_user()->user_login); ?></span>",
-
-        "WP_API_PASSWORD": "<span class="abst-mcp-password-placeholder">YOUR_APPLICATION_PASSWORD</span>"
-
-      }
-
-    }
-
-  }
-
-}</code></pre>
 
             
 
@@ -1250,7 +1379,7 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
             <ol style="margin-left: 20px;">
 
-              <li>Copy the configuration for your AI client (Claude Desktop, VScode, OpenClaw or Cline) from below</li>
+              <li>Copy the configuration for your AI client (Windsurf, Claude Desktop, Claude Code, Codex, Cursor, Cline, OpenClaw or Hermes) from below</li>
 
               <li>Paste it into your MCP client's configuration file</li>
 
@@ -1420,6 +1549,19 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 
             updateMcpConfigs();
 
+
+            // Copy buttons on the MCP config blocks
+            document.querySelectorAll('.abst-mcp-copy').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var code = document.getElementById(btn.getAttribute('data-target'));
+                if (!code || !navigator.clipboard) return;
+                navigator.clipboard.writeText(code.textContent).then(function() {
+                  var label = btn.textContent;
+                  btn.textContent = 'Copied!';
+                  setTimeout(function() { btn.textContent = label; }, 1500);
+                });
+              });
+            });
           });
 
         })();
@@ -1447,6 +1589,75 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
 </div>
 
 <style> 
+
+
+/* --- Conversion trigger checklist --- */
+.abst-trigger-list { margin: 10px 0 0; }
+.abst-trigger-list li { margin: 6px 0; display: flex; align-items: baseline; gap: 8px; }
+.abst-trigger-check { color: #00a32a; font-weight: 700; }
+.abst-trigger-pro { color: #787c82; }
+.abst-trigger-lock { font-size: 12px; }
+.abst-trigger-upgrade { font-size: 12px; text-decoration: none; margin-left: 4px; }
+
+/* --- MCP client accordions --- */
+.abst-mcp-client {
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+  margin: 12px 0;
+  background: #fff;
+}
+.abst-mcp-client summary {
+  cursor: pointer;
+  padding: 12px 15px;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.abst-mcp-client summary::-webkit-details-marker { display: none; }
+.abst-mcp-client summary::before {
+  content: '\25B8'; /* right-pointing triangle */
+  font-size: 11px;
+  color: #787c82;
+  transition: transform .15s ease;
+}
+.abst-mcp-client[open] summary::before { transform: rotate(90deg); }
+.abst-mcp-client[open] summary { border-bottom: 1px solid #dcdcde; }
+.abst-mcp-client-body { padding: 5px 15px 15px; }
+.abst-mcp-config-wrap { position: relative; }
+.abst-mcp-copy { position: absolute; top: 8px; right: 8px; }
+.abst-mcp-config {
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  padding: 15px;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 0;
+  line-height: 1.5;
+}
+/* WP admin gives every <code> a grey background; inside a multi-line block that
+   paints a band behind each line-box. Neutralise it within the config blocks. */
+.abst-mcp-config code {
+  background: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  display: block;
+}
+.abst-mcp-config--muted code { color: #646970; }
+.abst-mcp-pro-badge {
+  background: #2271b1;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 2px 7px;
+  border-radius: 10px;
+  line-height: 1.6;
+}
 
 /* =====================================================
 

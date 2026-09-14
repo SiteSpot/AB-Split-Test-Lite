@@ -135,6 +135,7 @@ function abst_rest_update_test_settings($request) {
                 $magic_definition_for_validation = $decoded_magic_definition;
             }
         }
+        $magic_definition_for_validation = abst_prepare_magic_definition_for_write($magic_definition_for_validation);
         $magic_validation = abst_validate_magic_definition($magic_definition_for_validation);
         if (is_wp_error($magic_validation)) {
             return $magic_validation;

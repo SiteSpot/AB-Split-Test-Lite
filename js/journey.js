@@ -378,7 +378,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // even if content expands during animation
     const initialHeight = iframeDoc.body.scrollHeight;
     const scrollTarget = Math.max(initialHeight, 50000); // At least 50000px to catch everything
-    const scrollTime = Math.ceil(initialHeight / 1000) * 1000; // 1s per 1000px of initial height
+    // Page height does not tell us how long animations take; cap the wait at 1.4s.
+    // Existing redraws handle later layout changes.
+    const scrollTime = Math.min(1400, Math.ceil(initialHeight / 1000) * 1000);
     
     console.log(`Triggering animations: scrolling to ${scrollTarget}px over ${scrollTime}ms`);
     

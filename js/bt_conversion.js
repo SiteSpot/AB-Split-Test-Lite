@@ -85,13 +85,19 @@
 // Poll for ABST_CONFIG if cache plugins defer/delay our inline scripts
 // This handles LiteSpeed, WP Rocket delay, etc. that may load config after this script
 (function() {
-  var maxWait = 5000; // Max 5 seconds
-  var interval = 50;  // Check every 50ms
+  var maxWait = 15000; // Script-delay plugins commonly fire at 3-10s - outlast them
+  var interval = 50;   // Check every 50ms
   var waited = 0;
   
+  // Only the wp_localize_script payload counts. The legacy abst_variables
+  // inline also sets window.btab_vars, and when an optimizer (Flying Scripts,
+  // WP Rocket delay, NitroPack...) delays ONE of the two scripts, the legacy
+  // globals made this report "ready" while bt_experiments was still empty -
+  // the poll stopped, the empty run latched ab-test-setup-complete, and tests
+  // never processed when the real config arrived. Legacy-only installs set
+  // all their globals at parse time and never needed the poll.
   function configReady() {
-    return (window.ABST_CONFIG && window.ABST_CONFIG.btab_vars) || 
-           (window.btab_vars && Object.keys(window.btab_vars).length > 0);
+    return !!(window.ABST_CONFIG && window.ABST_CONFIG.btab_vars);
   }
   
   function hasExperiments() {
@@ -109,10 +115,16 @@
           // Re-initialize config variables
           window.abstInitConfig();
           
-          // If DOMContentLoaded already fired and we now have experiments, 
-          // trigger the experiment setup that was missed
-          if (document.readyState !== 'loading' && hasExperiments() && !document.body.classList.contains('ab-test-setup-complete')) {
+          // If DOMContentLoaded already fired and we now have experiments,
+          // trigger the experiment setup that was missed. The DOM-ready run may
+          // already have executed with ZERO experiments and latched the
+          // setup-complete class - that run did no test work, so lift the latch
+          // and let the init process for real this time.
+          if (document.readyState !== 'loading' && hasExperiments()) {
             console.log('ABST: Running delayed experiment initialization...');
+            if (document.body) {
+              document.body.classList.remove('ab-test-setup-complete');
+            }
             // Dispatch a custom event that our DOMContentLoaded handler can listen for
             document.dispatchEvent(new Event('abst-config-ready'));
           }
@@ -882,24 +894,10 @@ function abstMainInit() {
     //loop through each conversion d
     Object.entries(conversion_details).forEach(function ([key, detail]) {
 
-      //simple contains matching for url's with *   *about*
-      var urlMatched = false;
-      if (detail.conversion_page_url && page_url) {
-        // Remove * wildcards and check if the remaining text is contained in the URL
-
-        //try regex matching
-        var regexPattern = detail.conversion_page_url.replace(/\*/g, '.*');
-        var regex = new RegExp(regexPattern);
-        if (regex.test(page_url)) {
-          console.log('ABST: ' + key + ' URL matched, regex, converting: ' + detail.conversion_page_url + ' to ' + page_url);
-          urlMatched = true;
-        }
-
-        var searchPattern = detail.conversion_page_url.replace(/\*/g, '');
-        if (!urlMatched && page_url.includes(searchPattern)) {
-          console.log('ABST: ' + key + ' URL matched, contains, converting: ' + detail.conversion_page_url + ' to ' + page_url);
-          urlMatched = true;
-        }
+      //wildcard + contains matching for url's with *   *about*
+      var urlMatched = abstUrlPatternMatches(detail.conversion_page_url, page_url);
+      if (urlMatched) {
+        console.log('ABST: ' + key + ' URL matched, converting: ' + detail.conversion_page_url + ' to ' + page_url);
       }
 
       if (urlMatched) {
@@ -946,7 +944,9 @@ function abstMainInit() {
     
     // check for css classes, then add attributes
     document.querySelectorAll("[class^='ab-'],[class*=' ab-']").forEach(function (el, e) {
-      if (el.className.includes('ab-var-') || el.className.includes('ab-convert')) {
+      // ab-goal- must be in this guard too: a sub-goal element carries only
+      // "ab-{testID} ab-goal-{n}", so without it the goal branch below was unreachable.
+      if (el.className.includes('ab-var-') || el.className.includes('ab-convert') || el.className.includes('ab-goal-')) {
         var allClasses = el.className;
         allClasses = allClasses.split(" "); // into an array
         var thisTestVar = false;
@@ -1171,17 +1171,23 @@ function abstMainInit() {
           const firstKey = Object.keys(experiment['goals'][i])[0];
 
           // click selector
+          // guarded: an empty value must not register a listener that matches everything.
           if (firstKey === 'selector') {
-            abClickListener(experimentId, experiment['goals'][i]['selector'], i);
+            if (experiment['goals'][i]['selector'] != '') {
+              abClickListener(experimentId, experiment['goals'][i]['selector'], i);
+            }
           }
 
           if(firstKey === 'link') {
-            abLinkPatternListener(experimentId, experiment['goals'][i]['link'], i);
+            if (experiment['goals'][i]['link'] != '') {
+              abLinkPatternListener(experimentId, experiment['goals'][i]['link'], i);
+            }
           }
 
           if (firstKey === 'scroll') {
             // Only set up scroll listener if contextually appropriate
-            if (shouldSetupScrollListener(experimentId, experiment)) {
+            if (experiment['goals'][i]['scroll'] !== undefined && experiment['goals'][i]['scroll'] !== '' &&
+                shouldSetupScrollListener(experimentId, experiment)) {
               abScrollListener(experimentId, experiment['goals'][i]['scroll'], i);
             }
           }
@@ -2162,26 +2168,63 @@ function skippedCookie(eid, btv) {
   return true;
 }
 
+// Shared URL trigger matcher. * is the only wildcard - every other character is
+// matched literally (case-insensitive) against the full href, by walking the
+// wildcard-separated pieces in order instead of compiling input as a RegExp.
+function abstUrlPatternMatches(pattern, page_url) {
+  if (!pattern || !page_url) return false;
+
+  var parts = String(pattern).toLowerCase().split('*');
+  var url = String(page_url).toLowerCase();
+  var position = 0;
+
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i] === '') continue;
+
+    var matchAt = url.indexOf(parts[i], position);
+    if (matchAt === -1) return false;
+    position = matchAt + parts[i].length;
+  }
+
+  return true;
+}
+
+// Merge the visitor's query string into a redirect target: parameters already on the
+// target win, every other visitor parameter is carried over. Plugin control
+// parameters (ssr, abst_pin, abst_uuid) are never carried.
+function abstMergeRedirectQuery(targetUrl, visitorSearch, visitorHash) {
+  var target;
+  try {
+    target = new URL(targetUrl, window.location.href);
+  } catch (e) {
+    return targetUrl;
+  }
+  var visitor = new URLSearchParams(visitorSearch || '');
+  var carried = false;
+  visitor.forEach(function (value, key) {
+    if (key === 'ssr' || key === 'abst_pin' || key === 'abst_uuid') return;
+    if (!target.searchParams.has(key)) {
+      target.searchParams.append(key, value);
+      carried = true;
+    }
+  });
+  if (!target.hash && visitorHash) {
+    target.hash = visitorHash;
+  }
+  if (!carried && !visitorHash) {
+    return targetUrl; // untouched: keep whatever form the caller passed
+  }
+  return target.toString();
+}
+
 //takes input slug or url and ends url suitable for window/replace
 function abRedirectUrl(url) {
-  // Only add query params and hash if they don't already exist in the URL
-  var hasQuery = url.includes('?');
-  var hasHash = url.includes('#');
-  
-  if (!hasQuery && window.location.search) {
-    url += window.location.search;
-  }
-  
-  if (!hasHash && window.location.hash) {
-    url += window.location.hash;
-  }
-  
   // if it starts with http/s do nothing
-  if (url.startsWith('http') || url.startsWith('/'))
-    return url;
-  else
-    return '/' + url;
+  if (!(url.startsWith('http') || url.startsWith('/')))
+    url = '/' + url;
 
+  // Carry the visitor's query string + hash; the target's own parameters win.
+  return abstMergeRedirectQuery(url, window.location.search, window.location.hash);
 }
 
 function abstOneSecond() {
@@ -2377,14 +2420,30 @@ function abstSetCookie(c_name, value, exdays) {
 }
 
 function abstDeleteCookie(c_name) {
-  if (btIsLocalhost())
-    return btDeleteLocal(c_name);
+  if (!c_name)
+    return;
 
-  var hostname = window.location.hostname;
-  var domain = hostname.replace(/^www\./, '').split('.').slice(-2).join('.');
-  domain = '.' + domain;
+  var expiredCookie = c_name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; path=/';
 
-  document.cookie = c_name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=None; Secure; domain=" + domain;
+  // Cookies may have been created as host-only or on any parent domain.
+  // Expire every scope accessible from this host.
+  try {
+    document.cookie = expiredCookie;
+
+    var hostnameParts = window.location.hostname.replace(/^www\./, '').split('.');
+    for (var i = 0; i < hostnameParts.length - 1; i++) {
+      document.cookie = expiredCookie + '; domain=.' + hostnameParts.slice(i).join('.');
+    }
+  } catch (e) { }
+
+  // abstSetCookie falls back to browser storage when cookies are unavailable.
+  // Remove both copies regardless of the current consent state.
+  try {
+    localStorage.removeItem(c_name);
+  } catch (e) { }
+  try {
+    sessionStorage.removeItem(c_name);
+  } catch (e) { }
 }
 
 function abstGetCookie(c_name) {
@@ -5006,38 +5065,18 @@ function check_heatmap_tracking() {
     }
   }
 
-  // Check if current page is the selected heatmap page from settings.
+  // Heatmaps record on every page (no page gate); only admins are skipped.
   var should_track_heatmap = false;
   if(enable_click_tracking && typeof btab_vars !== 'undefined') {
-    var heatmap_pages = btab_vars.heatmap_pages;
     var current_post_id = window.current_page; //array of post id's or tags if archives 404 etc
 
     if (btab_vars.is_admin) {
       should_track_heatmap = false;
       console.log('ABST: Heatmap tracking skipped for admin user.', {
-        current_page: current_post_id,
-        heatmap_pages: heatmap_pages
-      });
-    } else if (typeof heatmap_pages !== 'undefined' && Array.isArray(heatmap_pages) && heatmap_pages.length > 0 ) {
-      var idsToCheck = Array.isArray(current_post_id) ? current_post_id : [current_post_id];
-      should_track_heatmap = idsToCheck.some(function(id) {
-        if (id === null || typeof id === 'undefined') {
-          return false;
-        }
-        return heatmap_pages.includes(id) || heatmap_pages.includes(String(id));
-      });
-      console.log('ABST: Heatmap selected-page gate checked.', {
-        url: window.location.href,
-        current_page: current_post_id,
-        heatmap_pages: heatmap_pages,
-        matched: should_track_heatmap
+        current_page: current_post_id
       });
     } else {
-      console.log('ABST: Heatmap tracking skipped because no selected heatmap page was output in settings.', {
-        url: window.location.href,
-        current_page: current_post_id,
-        heatmap_pages: heatmap_pages
-      });
+      should_track_heatmap = true;
     }
   }
   // Initialize heatmap tracking if enabled
@@ -5046,17 +5085,15 @@ function check_heatmap_tracking() {
       setAbCrypto(); // Create UUID for heatmap tracking
     }
     enableClickTracking();
-    console.log('ABST: Heatmap tracking enabled for selected page.', {
+    console.log('ABST: Heatmap tracking enabled.', {
       url: window.location.href,
       current_page: window.current_page,
-      heatmap_pages: btab_vars.heatmap_pages,
       has_approval: window.abst.hasApproval
     });
   } else if (enable_click_tracking && typeof btab_vars !== 'undefined' && !btab_vars.is_admin) {
     console.log('ABST: Heatmap tracking not enabled on this page.', {
       url: window.location.href,
-      current_page: window.current_page,
-      heatmap_pages: btab_vars.heatmap_pages
+      current_page: window.current_page
     });
   }
 
@@ -5319,19 +5356,45 @@ function abstGetFormAttributionData() {
   var cookies = document.cookie.split(';');
   var abstData = {};
 
+  function addAttribution(name, value) {
+    if (name.indexOf('btab_') !== 0 || !value) return;
+
+    try {
+      var data = JSON.parse(value);
+    } catch(e) {
+      try {
+        data = JSON.parse(decodeURIComponent(value));
+      } catch(e) {
+        return;
+      }
+    }
+
+    if (data && data.variation) {
+      abstData[name.replace('btab_', '')] = data.variation;
+    }
+  }
+
   for (var i = 0; i < cookies.length; i++) {
     var cookie = cookies[i].trim();
     if (cookie.indexOf('btab_') === 0) {
       var parts = cookie.split('=');
-      var eid = parts[0].replace('btab_', '');
-      try {
-        var data = JSON.parse(decodeURIComponent(parts[1]));
-        if (data && data.variation) {
-          abstData[eid] = data.variation;
-        }
-      } catch(e) {}
+      // A cookie value can legitimately contain '=', so rejoin everything after the first one.
+      addAttribution(parts[0], parts.slice(1).join('='));
     }
   }
+
+  // Assignments are stored outside cookies when consent is unavailable and on localhost.
+  ['localStorage', 'sessionStorage'].forEach(function(storageName) {
+    try {
+      var storage = window[storageName];
+      Object.keys(storage).forEach(function(key) {
+        if (Object.prototype.hasOwnProperty.call(abstData, key.replace('btab_', ''))) return;
+        addAttribution(key, storage.getItem(key));
+      });
+    } catch(e) {
+      // Storage can be unavailable in privacy-restricted browser contexts.
+    }
+  });
 
   return abstData;
 }
@@ -5372,24 +5435,12 @@ function abstSetupFormAttributionSubmitListener() {
 function abstInjectFormFields(targetForm) {
   abstSetupFormAttributionSubmitListener();
 
-  var abstData = abstGetFormAttributionData();
-
-  if (Object.keys(abstData).length === 0) return;
-
-  var forms = targetForm && targetForm.nodeType === Node.ELEMENT_NODE && targetForm.tagName === 'FORM'
-    ? [targetForm]
-    : document.querySelectorAll('form');
-
-  forms.forEach(function(form) {
-    abstApplyFormAttributionData(form, abstData);
-  });
-
   window.abst = window.abst || {};
-  window.abst.formFieldsInjected = true;
 
-  // Use MutationObserver for dynamic forms instead of polling interval
-  // This is more efficient and doesn't run forever
-  if (window.MutationObserver && !window.abst.formObserver) {
+  // Use MutationObserver for dynamic forms instead of polling interval.
+  // This is installed BEFORE the empty-data early return below: a visitor with no
+  // assignment yet still needs the observer running for when one arrives.
+  if (window.MutationObserver && !window.abst.formObserver && document.body) {
     window.abst.formObserver = new MutationObserver(function(mutations) {
       mutations.forEach(function(mutation) {
         mutation.addedNodes.forEach(function(node) {
@@ -5407,15 +5458,34 @@ function abstInjectFormFields(targetForm) {
               abstApplyFormAttributionData(form, latestAbstData);
             });
           }
+
+          // Some form builders add fields inside a form that already exists.
+          if (node.closest) {
+            abstApplyFormAttributionData(node.closest('form'), latestAbstData);
+          }
         });
       });
     });
-    
+
     window.abst.formObserver.observe(document.body, {
       childList: true,
       subtree: true
     });
   }
+
+  var abstData = abstGetFormAttributionData();
+
+  if (Object.keys(abstData).length === 0) return;
+
+  var forms = targetForm && targetForm.nodeType === Node.ELEMENT_NODE && targetForm.tagName === 'FORM'
+    ? [targetForm]
+    : document.querySelectorAll('form');
+
+  forms.forEach(function(form) {
+    abstApplyFormAttributionData(form, abstData);
+  });
+
+  window.abst.formFieldsInjected = true;
 }
 
 

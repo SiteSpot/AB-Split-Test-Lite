@@ -33,6 +33,8 @@ package.json
 package-lock.json
 node_modules
 phpunit.xml
+includes/vendor/**/phpunit.xml
+includes/vendor/**/composer.json
 phpcs.xml
 phpcs.xml.dist
 tests
@@ -40,3 +42,6 @@ tests
 # Packaging
 .distignore
 *.zip
+
+# WordPress.org SVN assets (banner, icon, screenshots, blueprint) - not part of the plugin
+.wordpress-org
