@@ -30,12 +30,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 //get default and saved settings
 
-// Lite version: hardcode free tier since licensing is removed
-
-$license_key = '';
-
-$license_status = 'valid';
-
 $user_level = 'free';
 
 $fathom_api_key = abst_get_admin_setting('fathom_api_key');
@@ -99,9 +93,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
 // Compute shareable site key if helper exists
 
-$upgrade_link = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade</a></p>';
+$upgrade_link = '<p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="button button-secondary">Upgrade</a></p>';
 
-$upgrade_link_teams = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade</a></p>';
+$upgrade_link_teams = '<p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="button button-secondary">Upgrade</a></p>';
 
 
 if($abst_server_convert_woo == true) {
@@ -383,7 +377,7 @@ if (!is_array($heatmap_pages)) {
 
             <div class="ab-settings-subsection">
 
-              <p><a target="_blank" href='https://absplittest.com/pricing?utm_source=ug'>Upgrade your account</a> for Analytics integrations, White Label branding, Reporting, Webhooks and more.</p>
+              <p><a target="_blank" href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice'>Upgrade your account</a> for Analytics integrations, White Label branding, Reporting, Webhooks and more.</p>
 
             </div>
 
@@ -443,7 +437,7 @@ if (!is_array($heatmap_pages)) {
 
             <p>To avoid SEO duplicate content issues. Adds the default page from your split test as a canonical link to each variation page.</p>
 
-            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to enable canonical override for full page tests</a></p>
+            <p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade to enable canonical override for full page tests</a></p>
 
           </div>
 
@@ -457,7 +451,7 @@ if (!is_array($heatmap_pages)) {
 
             <p>AB Split Test can automatically clear caches when a post or test is updated.</p>
 
-            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade</a> for advanced cache controls</p>
+            <p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade</a> for advanced cache controls</p>
 
             <p>Detected caches: <?php echo esc_html($detected_caches); ?></p>
 
@@ -620,7 +614,7 @@ if (!is_array($heatmap_pages)) {
 
               <p>Choose the page you want to track users anonymously and generate click heatmaps for.</p>
               <p><select id="heatmap_page_select" name="heatmap_pages[]" style="width: 25rem;"></select></p>
-              <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to track heatmaps & session replays on any page.</a></p>
+              <p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade to track heatmaps & session replays on any page.</a></p>
 
               <script>
               jQuery(document).ready(function($) {
@@ -674,7 +668,7 @@ if (!is_array($heatmap_pages)) {
 
               <label for="heatmap_retention_length"><strong>Data Retention</strong></label>
 
-              <p>3 days <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to choose any data retention</a></p>
+              <p>3 days <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade to choose any data retention</a></p>
 
 
 

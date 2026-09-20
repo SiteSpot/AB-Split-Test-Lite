@@ -756,7 +756,6 @@ class ABST_Journeys {
 
 
 
-        $licence = trim(apply_filters( 'abst_licence_key', abst_get_admin_setting( 'bt_bb_ab_licence' )) );
 
         $records = json_decode($raw_payload, true);
 

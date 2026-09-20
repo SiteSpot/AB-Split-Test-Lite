@@ -194,7 +194,7 @@ function wizard1(){
                 },
                 {
                     action: function() {
-                        window.location.href = 'https://absplittest.com/pricing?ref=ug';
+                        window.location.href = 'https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice';
                     },
                     text: 'Upgrade'
                 },
@@ -657,7 +657,7 @@ jQuery(function($){
       if(this.checked && $c.length>2){
         $(this).prop('checked',false);
         if(!$w.find('.abst-freelimit-notice').length)
-          $w.append('<div class="notice notice-warning abst-freelimit-notice"><p><strong>You can only test on 2 post types. </strong><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">Upgrade</a>, or uncheck a post type to add more.</p></div>');
+          $w.append('<div class="notice notice-warning abst-freelimit-notice"><p><strong>You can only test on 2 post types. </strong><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">Upgrade</a>, or uncheck a post type to add more.</p></div>');
       }else if($c.length===1){
         $w.find('.abst-freelimit-notice').remove();
       }

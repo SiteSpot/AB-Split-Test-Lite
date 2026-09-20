@@ -1470,7 +1470,7 @@ function abstMainInit() {
         // Free version: limit to 2 variations (1 variation + control)
         if (current_exp[experimentId].length > 2) {
           var randVar = getRandomInt(0, 1);  //limit to 2
-          console.info('Free version of AB Split Test is limited to 1 variation. Your others will not be shown. Upgrade: https://absplittest.com/pricing?ref=ug');
+          console.info('Free version of AB Split Test is limited to 1 variation. Your others will not be shown. Upgrade: https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice');
           experimentVariation = current_exp[experimentId][randVar];
         }
       }
