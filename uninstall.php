@@ -10,6 +10,9 @@
  * "abst_delete_data_on_uninstall" option. Default is to keep all data, so
  * deleting and reinstalling the plugin never loses a running test.
  *
+ * If the full AB Split Test plugin is installed, nothing at all is removed: it
+ * shares this data (and the cron events), so Lite is only being tidied away.
+ *
  * @package AB_Split_Test_Lite
  */
 
@@ -132,6 +135,41 @@ function abst_lite_uninstall_cleanup_current_site() {
 	if ( file_exists( $abst_log_file ) ) {
 		wp_delete_file( $abst_log_file );
 	}
+}
+
+/**
+ * Is the full AB Split Test plugin installed (active or not)?
+ *
+ * Its main file is also bt-bb-ab.php, in whatever folder it was installed to; the
+ * "bt-bb-ab" text domain tells it apart from Lite.
+ *
+ * @return bool
+ */
+function abst_lite_uninstall_full_plugin_installed() {
+	if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+		return false;
+	}
+	foreach ( (array) glob( WP_PLUGIN_DIR . '/*/bt-bb-ab.php' ) as $abst_candidate ) {
+		if ( ! is_string( $abst_candidate ) || ! is_readable( $abst_candidate ) ) {
+			continue;
+		}
+		$abst_candidate_data = get_file_data( $abst_candidate, array( 'domain' => 'Text Domain' ) );
+		if ( 'bt-bb-ab' === $abst_candidate_data['domain'] ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// The full plugin uses the very same tests, results, settings, uploads and cron
+// events. If it is installed, Lite is just being tidied away after an upgrade:
+// remove nothing, whatever the opt-in says.
+if ( abst_lite_uninstall_full_plugin_installed() ) {
+	// abst_log() only exists here when the full plugin is active.
+	if ( function_exists( 'abst_log' ) ) {
+		abst_log( 'Lite handoff: AB Split Test Lite deleted; full plugin is installed, so no data or cron events were removed.' );
+	}
+	return;
 }
 
 // Cron events go unconditionally — they cannot run without the plugin.
