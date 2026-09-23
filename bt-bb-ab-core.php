@@ -100,7 +100,7 @@ if (defined('WP_CLI') && WP_CLI) {
       WP_CLI::log('The REST API and MCP tools that ARE available in Lite are documented at:');
       WP_CLI::log('  ' . admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test') . ' (Developer tab)');
       WP_CLI::log('');
-      WP_CLI::success('Upgrade at https://absplittest.com/pricing to enable WP-CLI.');
+      WP_CLI::success('Upgrade at https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=wp-cli to enable WP-CLI.');
     }
   }
   WP_CLI::add_command('absplittest', 'ABST_Lite_CLI');
@@ -1874,7 +1874,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         add_action( 'save_post_bt_experiments', [$this,'save_postdata'], 10, 1 );
 
-        abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/pricing?utm_source=ug');
+        abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice');
 
       }
 
@@ -4595,9 +4595,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><div class='subgoal upgrade'> <h4>Upgrade to add Sub Goals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance.</p><p>Upgrade also includes support for more sites, custom conversion values (order value), analytics integrations, and more.</p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
+        echo "<div class='show_goals'><div class='subgoal upgrade'> <h4>Upgrade to add Sub Goals</h4><p>Analyze each stage of your customer's journey, identify drop-off points, and optimize every part of your funnel for better performance.</p><p>Upgrade also includes support for more sites, custom conversion values (order value), analytics integrations, and more.</p><p><a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=upgrade-link' target='_blank'>Upgrade to a Pro Plan</a></p></div>";
 
-        echo "<p><a class='button button-small' href='https://absplittest.com/pricing' target='_blank'>Upgrade to unlock Sub Goals</a></p></div>";
+        echo "<p><a class='button button-small' href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=upgrade-link' target='_blank'>Upgrade to unlock Sub Goals</a></p></div>";
 
       }
 
@@ -5190,7 +5190,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $panel['primary_action'] = ['label' => 'Upgrade to Pro', 'action' => 'upgrade-pro', 'class' => 'button button-primary button-large'];
 
-        $panel['primary_action']['href'] = 'https://absplittest.com/pricing?ref=upgradefeaturelink';
+        $panel['primary_action']['href'] = 'https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link';
 
         if ($trash_link) {
 
@@ -5503,11 +5503,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         if($active_tests_count > 0 && (get_post_status($pid) !== 'publish'))
 
-          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p></div>";
+          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Cancel your other tests or upgrade to start this test. </h4><p><a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice' target='_blank'>Upgrade to pro.</a></p></div>";
 
         if($active_tests_count > 0 && (get_post_status($pid) == 'publish') && !abst_lite_is_sample_test($pid))
 
-          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade to pro.</a></p></div>";
+          echo "<div class='free-notice'><h3>HEADS UP!</h3><h4>This free version of AB Split Test is limited to one active test. Upgrade to modify this test. </h4><p><a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice' target='_blank'>Upgrade to pro.</a></p></div>";
 
       }
 
@@ -6186,7 +6186,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so much more. </p><p><a href='https://absplittest.com/pricing' target='_blank'>Upgrade to Pro</a></p></div>";
+        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so much more. </p><p><a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=upgrade-link' target='_blank'>Upgrade to Pro</a></p></div>";
 
 
       }
@@ -6591,7 +6591,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       if($this->isf())
 
-        echo "<p><strong>NOTE: this free version is limited to one test variation. <a href='https://absplittest.com/pricing?utm_source=ug' target='_blank'>Upgrade for unlimited tests with unlimited variations, AI assistance and more.</a></strong></p>";
+        echo "<p><strong>NOTE: this free version is limited to one test variation. <a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice' target='_blank'>Upgrade for unlimited tests with unlimited variations, AI assistance and more.</a></strong></p>";
 
       $mypages = $posts;
 
@@ -6980,7 +6980,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo '<p>' . esc_html__( 'Build reusable audiences from referrer, UTM, device, returning-visitor and custom rules, and target tests by country or region.', 'ab-split-test-lite' ) . '</p>';
 
-      echo '<p><a class="button button-small" href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">' . esc_html__( 'Upgrade to unlock Audiences', 'ab-split-test-lite' ) . '</a></p>';
+      echo '<p><a class="button button-small" href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">' . esc_html__( 'Upgrade to unlock Audiences', 'ab-split-test-lite' ) . '</a></p>';
 
       echo '</div>';
 
@@ -9994,7 +9994,7 @@ $titles = array();
 
     echo '</select>';
 
-    echo '<p class="description abst-result-filter-note"><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">' . esc_html__( 'Upgrade to segment results', 'ab-split-test-lite' ) . '</a></p>';
+    echo '<p class="description abst-result-filter-note"><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">' . esc_html__( 'Upgrade to segment results', 'ab-split-test-lite' ) . '</a></p>';
 
     echo '</div>';
 
@@ -14329,7 +14329,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         $data['post_status'] = 'draft';
 
-        abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/pricing?utm_source=ug');
+        abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice');
 
       }
 
@@ -16186,9 +16186,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
           'reason'      => 'pro_required',
 
-          'message'     => 'This tool requires AB Split Test Pro. It is shown so you know it exists; it does nothing in the Lite version. Tell the user they can upgrade at https://absplittest.com/pricing to unlock it.',
+          'message'     => 'This tool requires AB Split Test Pro. It is shown so you know it exists; it does nothing in the Lite version. Tell the user they can upgrade at https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=mcp-pro-tool to unlock it.',
 
-          'upgrade_url' => 'https://absplittest.com/pricing?ref=upgradefeaturelink',
+          'upgrade_url' => 'https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link',
 
         ];
 
@@ -17124,9 +17124,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
               'abst_pro_required',
 
-              $pro_route[2] . ' requires AB Split Test Pro. Upgrade at https://absplittest.com/pricing',
+              $pro_route[2] . ' requires AB Split Test Pro. Upgrade at https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=rest-pro-route',
 
-              ['status' => 403, 'upgrade_url' => 'https://absplittest.com/pricing?ref=upgradefeaturelink']
+              ['status' => 403, 'upgrade_url' => 'https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link']
 
             );
 
@@ -18754,8 +18754,6 @@ function abst_defaults(){
 
   $defaults = array(
 
-    'bt_bb_ab_licence' => '',
-
     'ab_test_modules' => '1',
 
     'ab_test_rows' => '1',
@@ -19166,7 +19164,7 @@ function abst_lite_plugin_action_links( $links ) {
   $settings_url = admin_url( 'edit.php?post_type=bt_experiments&page=bt_bb_ab_test' );
   $custom = array(
     'abst_settings' => '<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'ab-split-test-lite' ) . '</a>',
-    'abst_upgrade'  => '<a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" style="color:#2271b1;font-weight:600;">' . esc_html__( 'Go Pro', 'ab-split-test-lite' ) . '</a>',
+    'abst_upgrade'  => '<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" style="color:#2271b1;font-weight:600;">' . esc_html__( 'Go Pro', 'ab-split-test-lite' ) . '</a>',
   );
   return array_merge( $custom, $links );
 }
@@ -19180,7 +19178,7 @@ function abst_lite_plugin_row_meta( $links, $file ) {
     return $links;
   }
   $links[] = '<a href="https://absplittest.com/documentation/" target="_blank">' . esc_html__( 'Documentation', 'ab-split-test-lite' ) . '</a>';
-  $links[] = '<a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">' . esc_html__( 'Lite vs Pro', 'ab-split-test-lite' ) . '</a>';
+  $links[] = '<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">' . esc_html__( 'Lite vs Pro', 'ab-split-test-lite' ) . '</a>';
   return $links;
 }
 add_filter( 'plugin_row_meta', 'abst_lite_plugin_row_meta', 10, 2 );
@@ -19631,7 +19629,7 @@ function abst_heatmaps_page_content() {
 
   echo '</select></div>';
 
-  echo '<p class="description abst-heatmap-range-note">' . wp_kses_post( __( 'Lite keeps 3 days of heatmap history. <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank">Upgrade</a> for up to 30 days.', 'ab-split-test-lite' ) ) . '</p>';
+  echo '<p class="description abst-heatmap-range-note">' . wp_kses_post( __( 'Lite keeps 3 days of heatmap history. <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">Upgrade</a> for up to 30 days.', 'ab-split-test-lite' ) ) . '</p>';
 
   echo '</div>';
 

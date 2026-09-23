@@ -14,6 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     <h2>Test Idea Management</h2>
     <p class="abst-insights-page-description">Brainstorm and rank ideas, or have our agent analyse your site, heatmaps, surveys and competitors for you and create improvement suggestions in seconds.</p>
     <p style="margin: 20px 0;">
-        <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button">Upgrade to Pro</a>
+        <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="button">Upgrade to Pro</a>
     </p>
 </div>

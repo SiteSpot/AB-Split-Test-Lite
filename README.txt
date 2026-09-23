@@ -156,7 +156,13 @@ The free version is useful on its own, and it never meters your traffic.
 * WP-CLI commands
 * Longer heatmap and session replay retention
 
-[See all Pro features](https://absplittest.com/pricing)
+= Try the full version free for 7 days =
+
+Want unlimited tests, AI test ideas, and everything else in the Pro list above? Get the free full version from absplittest.com. It includes a **7-day trial of every paid feature, plus AI credits**. No credit card needed.
+
+**Upgrading keeps everything.** Your tests, results, and settings carry over. Install the full version and activate it. Lite steps aside on its own, and you pick up exactly where you left off.
+
+[Get the free full version and 7-day trial](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=free-vs-pro)
 
 = AB Split Test vs cloud-based A/B tools =
 

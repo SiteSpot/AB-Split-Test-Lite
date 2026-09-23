@@ -212,13 +212,13 @@ function renderAiUpgradeState() {
     jQuery('#ai-generate-more').hide();
     jQuery('#ai-suggestions-list')
         .show()
-        .html('<li class="abst-ai-upsell-item"><p class="abst-ai-suggestions-hint">AI suggestions are a Pro feature.<a href="https://absplittest.com/pricing/?utm_source=lite-plugin&utm_medium=magic-bar&utm_campaign=ai-suggestions-upsell" target="_blank" rel="noopener noreferrer">7 day trial</a></p></li>');
+        .html('<li class="abst-ai-upsell-item"><p class="abst-ai-suggestions-hint">AI suggestions are a Pro feature.<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=ai-suggestions-upsell" target="_blank" rel="noopener noreferrer">7 day trial</a></p></li>');
     updateAISuggestionToggleCount();
 }
 
 function renderCroChatUpgradeState() {
     jQuery('#abst-cro-chat-messages').html(
-        '<div class="abst-cro-chat-response abst-cro-chat-response--assistant"><p>Subscribe for AI features.</p><p><a href="https://absplittest.com/pricing/?utm_source=lite-plugin&utm_medium=magic-bar&utm_campaign=chatcro-upsell" target="_blank" rel="noopener noreferrer">Upgrade to unlock ChatCRO</a></p></div>'
+        '<div class="abst-cro-chat-response abst-cro-chat-response--assistant"><p>Subscribe for AI features.</p><p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=chatcro-upsell" target="_blank" rel="noopener noreferrer">Upgrade to unlock ChatCRO</a></p></div>'
     );
 }
 
@@ -2724,7 +2724,7 @@ function abst_magic_bar(options = {}) {
             <div id="abst-cro-chat-container" style="display: flex; flex-direction: column;">
                 <h4 style="margin: 0 0 8px 0; color: #94a3b8; font-size: 14px;">💬 ChatCRO</h4>
                 <div id="abst-cro-chat-messages" style="flex: 1; max-height: 200px; overflow-y: auto; margin-bottom: 8px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; color: #64748b; opacity: 0.7;">
-                    <div class="abst-cro-chat-response abst-cro-chat-response--assistant"><p>Try AI features.</p><p><a href="https://absplittest.com/pricing/?utm_source=lite-plugin&utm_medium=magic-bar&utm_campaign=chatcro-upsell" target="_blank" rel="noopener noreferrer">Try ChatCRO free for 7 days</a></p></div>
+                    <div class="abst-cro-chat-response abst-cro-chat-response--assistant"><p>Try AI features.</p><p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=chatcro-upsell" target="_blank" rel="noopener noreferrer">Try ChatCRO free for 7 days</a></p></div>
                 </div>
                 <div id="abst-cro-chat-footer">
                     <div id="abst-cro-chat-suggestions" style="display: none; margin-bottom: 8px; padding: 8px; background: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0;">
@@ -2830,7 +2830,7 @@ function abst_magic_bar(options = {}) {
                     <input type="text" class="abst-goal-input-value" placeholder="">
                 </div>
                 <div class="abst-button-container">
-                    <p class="abst-goal-upgrade-text">Add additional goals, external conversions & revenue optimization (Woo, EDD, SureCart etc) by going <a href="https://absplittest.com/pricing?utm_source=lite_magic_goals" target="_blank" rel="noopener noreferrer">Pro</a>.</p>
+                    <p class="abst-goal-upgrade-text">Add additional goals, external conversions & revenue optimization (Woo, EDD, SureCart etc) by going <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=magic-goals" target="_blank" rel="noopener noreferrer">Pro</a>.</p>
                 </div>
             </div>
         </div>

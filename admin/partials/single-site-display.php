@@ -30,12 +30,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 //get default and saved settings
 
-// Lite version: hardcode free tier since licensing is removed
-
-$license_key = '';
-
-$license_status = 'valid';
-
 $user_level = 'free';
 
 $fathom_api_key = abst_get_admin_setting('fathom_api_key');
@@ -99,9 +93,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
 // Compute shareable site key if helper exists
 
-$upgrade_link = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade</a></p>';
+$upgrade_link = '<p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="button button-secondary">Upgrade</a></p>';
 
-$upgrade_link_teams = '<p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-secondary">Upgrade</a></p>';
+$upgrade_link_teams = '<p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="button button-secondary">Upgrade</a></p>';
 
 
 if($abst_server_convert_woo == true) {
@@ -383,7 +377,7 @@ if (!is_array($heatmap_pages)) {
 
             <div class="ab-settings-subsection">
 
-              <p><a target="_blank" href='https://absplittest.com/pricing?utm_source=ug'>Upgrade your account</a> for Analytics integrations, White Label branding, Reporting, Webhooks and more.</p>
+              <p><a target="_blank" href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice'>Upgrade your account</a> for Analytics integrations, White Label branding, Reporting, Webhooks and more.</p>
 
             </div>
 
@@ -443,7 +437,7 @@ if (!is_array($heatmap_pages)) {
 
             <p>To avoid SEO duplicate content issues. Adds the default page from your split test as a canonical link to each variation page.</p>
 
-            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to enable canonical override for full page tests</a></p>
+            <p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade to enable canonical override for full page tests</a></p>
 
           </div>
 
@@ -457,7 +451,7 @@ if (!is_array($heatmap_pages)) {
 
             <p>AB Split Test can automatically clear caches when a post or test is updated.</p>
 
-            <p><a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade</a> for advanced cache controls</p>
+            <p><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade</a> for advanced cache controls</p>
 
             <p>Detected caches: <?php echo esc_html($detected_caches); ?></p>
 
@@ -507,10 +501,10 @@ if (!is_array($heatmap_pages)) {
               <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Time Active</li>
               <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Conversion Block / Module / Element Class</li>
               <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Custom JavaScript</li>
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> Form Submission (Contact Form 7, WS Form, Gravity, Fluent, HubSpot) <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> WooCommerce Purchase <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> Easy Digital Downloads Purchase <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> FluentCart Purchase <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> Form Submission (Contact Form 7, WS Form, Gravity, Fluent, HubSpot) <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> WooCommerce Purchase <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> Easy Digital Downloads Purchase <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> FluentCart Purchase <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
             </ul>
           </div>
 
@@ -713,7 +707,7 @@ if (!is_array($heatmap_pages)) {
 
               <label for="heatmap_retention_length"><strong>Data Retention</strong></label>
 
-              <p>3 days <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="">Upgrade to choose any data retention</a></p>
+              <p>3 days <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="">Upgrade to choose any data retention</a></p>
 
 
 
@@ -893,15 +887,15 @@ if (!is_array($heatmap_pages)) {
 
             <ul class="abst-trigger-list">
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-settings / update-settings</strong> - Read and change any plugin setting programmatically <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-settings / update-settings</strong> - Read and change any plugin setting programmatically <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-page-analytics</strong> - Page engagement analytics: visits, active time, scroll depth <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-page-analytics</strong> - Page engagement analytics: visits, active time, scroll depth <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>audiences</strong> - List, create, update and delete reusable targeting audiences <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>audiences</strong> - List, create, update and delete reusable targeting audiences <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>update-site-content</strong> - Update posts, post meta and page-builder content (Elementor, Beaver Builder, Bricks) so your AI can build variations directly <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>update-site-content</strong> - Update posts, post meta and page-builder content (Elementor, Beaver Builder, Bricks) so your AI can build variations directly <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-mcp-audit-log</strong> - Audit trail of every change an MCP client makes <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>get-mcp-audit-log</strong> - Audit trail of every change an MCP client makes <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
 
             </ul>
@@ -939,11 +933,11 @@ if (!is_array($heatmap_pages)) {
 
             <ul class="abst-trigger-list">
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET</strong> <code>/settings</code> &middot; <strong>POST</strong> <code>/update-settings</code> - Read and change plugin settings <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET</strong> <code>/settings</code> &middot; <strong>POST</strong> <code>/update-settings</code> - Read and change plugin settings <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET</strong> <code>/page-analytics</code> - Page engagement analytics <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET</strong> <code>/page-analytics</code> - Page engagement analytics <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
-              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET/POST/DELETE</strong> <code>/audiences</code> - Manage targeting audiences <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
+              <li class="abst-trigger-pro"><span class="abst-trigger-lock">&#128274;</span> <strong>GET/POST/DELETE</strong> <code>/audiences</code> - Manage targeting audiences <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="abst-trigger-upgrade">Upgrade</a></li>
 
 
             </ul>
@@ -1136,7 +1130,7 @@ wp absplittest get-results &lt;test-id&gt;
 wp absplittest update-status &lt;test-id&gt; --status=complete
 wp absplittest get-heatmap &lt;page-id&gt;
 wp absplittest get-settings</code></pre>
-            <p><a class="button button-primary" href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank"><?php esc_html_e( 'Upgrade to Pro for WP-CLI', 'ab-split-test-lite' ); ?></a></p>
+            <p><a class="button button-primary" href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank"><?php esc_html_e( 'Upgrade to Pro for WP-CLI', 'ab-split-test-lite' ); ?></a></p>
 
           </div>
 

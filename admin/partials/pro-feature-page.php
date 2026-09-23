@@ -22,7 +22,7 @@ $abst_pro_points = isset( $abst_pro_page['points'] ) && is_array( $abst_pro_page
     </ul>
     <?php endif; ?>
     <p style="margin: 25px 0;">
-        <a href="https://absplittest.com/pricing?ref=upgradefeaturelink" target="_blank" class="button button-primary button-hero"><?php esc_html_e( 'Upgrade to Pro', 'ab-split-test-lite' ); ?></a>
+        <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" class="button button-primary button-hero"><?php esc_html_e( 'Upgrade to Pro', 'ab-split-test-lite' ); ?></a>
     </p>
     <p class="description"><?php esc_html_e( 'This screen is part of AB Split Test Pro. It is shown here so you know what is available - nothing on this page is active in the Lite version.', 'ab-split-test-lite' ); ?></p>
 </div>
