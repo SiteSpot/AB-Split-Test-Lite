@@ -1,5 +1,5 @@
 === AB Split Test – A/B Testing, Heatmaps, Session Replay & MCP for AI Agents ===
-Contributors: tomcarless
+Contributors: tomsitespot
 Donate link: https://absplittest.com
 Tags: a/b testing, split testing, conversion optimization, heatmap, mcp
 Requires at least: 6.9

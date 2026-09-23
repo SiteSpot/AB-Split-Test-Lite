@@ -2,7 +2,7 @@
   "$schema": "https://playground.wordpress.net/blueprint-schema.json",
   "meta": {
     "title": "AB Split Test Lite demo",
-    "author": "tomcarless",
+    "author": "tomsitespot",
     "description": "Try self-hosted A/B testing: sample tests with results, heatmaps, and the point-and-click Magic Bar."
   },
   "landingPage": "/wp-admin/edit.php?post_type=bt_experiments",
