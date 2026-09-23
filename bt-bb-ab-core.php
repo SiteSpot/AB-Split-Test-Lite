@@ -13133,9 +13133,13 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
             $test_type = get_post_meta( $post->ID, 'test_type', true );
 
-            if($post->post_status == 'idea' || empty($test_type))
+            if($post->post_status == 'idea')
 
               $test_type = 'Pro Feature';
+
+            else if(empty($test_type)) // a draft saved before a test type was picked
+
+              $test_type = 'Setup needed';
 
             else if($test_type == 'full_page')
 
