@@ -856,13 +856,13 @@ if (!is_array($heatmap_pages)) {
 
           <div class="ab-settings-subsection">
 
-            <p><strong>AB Split Test integrates with anything via API, Command Line or MCP (Model Context Protocol).</strong></p>
+            <p><strong>AB Split Test integrates with anything via the REST API or MCP (Model Context Protocol).</strong></p>
 
             
 
             <h3>Available Tools</h3>
 
-            <p>The following tools are available across API, CLI, and MCP:</p>
+            <p>The following tools are available over the REST API and MCP:</p>
 
             <ul style="list-style: disc; margin-left: 20px;">
 

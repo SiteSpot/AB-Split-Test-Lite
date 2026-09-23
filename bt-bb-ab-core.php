@@ -421,6 +421,15 @@ if(! class_exists ( 'Bt_Ab_Tests'))
         if (isset($views['all'])) {
 
             $views['all'] = str_replace('All', 'Active Tests', $views['all']);
+            // Core counts completed tests under "All", but this view hides them, so match the list.
+            $counts = (array) wp_count_posts('bt_experiments', 'readable');
+            $active = 0;
+            foreach (get_post_stati(['show_in_admin_all_list' => true]) as $status) {
+                if ($status !== 'complete' && isset($counts[$status])) {
+                    $active += (int) $counts[$status];
+                }
+            }
+            $views['all'] = preg_replace('/\([\d.,\s]+\)/', '(' . number_format_i18n($active) . ')', $views['all'], 1);
 
         }
 
@@ -6876,7 +6885,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       <h5>Magic - Point & Click</h5>
 
-      <p>Click anything on your site to test it, and let the magic AI guide you. ✨</p>
+      <p>Click anything on your site to test it. No code or selectors needed.</p>
 
     </label>  
 
@@ -8620,7 +8629,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
             $annual_visits = $daily_visits * 365;
 
-            $improvement_per_visit = $winner_rate - $control_rate;
+            // Stored rates are x100 (conversion/visit * 100), so scale back to per-visit.
+            $improvement_per_visit = ($winner_rate - $control_rate) / 100;
 
             $annual_improvement = $improvement_per_visit * $annual_visits;
 
