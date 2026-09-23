@@ -15197,7 +15197,9 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
 
-        do_action('abst_log_experiment_activity', $eid, $variation, $type, $location); // do ya thing vibe coders
+        // Notification only. It must not share a name with the abst_log_experiment_activity
+        // action above, which is hooked to this method: that made every event call itself.
+        do_action('abst_after_log_experiment_activity', $eid, $variation, $type, $location);
 
         
 
