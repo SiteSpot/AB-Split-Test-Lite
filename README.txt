@@ -184,7 +184,7 @@ Nelio is the best-known A/B testing plugin in the directory, so it's the compari
 * **Account requirement.** Nelio needs a Nelio account and cloud plan. AB Split Test needs no external account.
 * **Metered traffic.** Nelio meters "tested page views" on every plan, and its free plan includes 500 per month. AB Split Test has no meter on any plan.
 * **Heatmaps.** AB Split Test's free version records heatmaps and session replays on every page, stored locally, with a 3-day window.
-* **What's the same?** Both free plans run one active test at a time. The difference is what happens when your traffic grows.
+* **What's the same?** Nelio's documentation says its free version runs one active test, the same as AB Split Test Lite. The difference is what happens when your traffic grows.
 
 = Help translate =
 
@@ -261,12 +261,14 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 
 == Screenshots ==
 
-1. Every test at a glance: visits, conversions, and conversion rate for each variation, with its status.
-2. The point-and-click Magic Bar: click any element on your page, type a variation, and pick a goal.
-3. Test results with uplift, confidence, and conversion rates, calculated on your own server.
-4. Click heatmaps built from your own visitors, recorded on every page.
-5. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
-6. Creating a test: choose point-and-click, full-page, on-page elements, or code.
+1. The point-and-click Magic Bar: click any element on your page, type a variation, and pick a goal.
+2. Test results with uplift, confidence, and conversion rates, calculated on your own server.
+3. Click heatmaps built from your own visitors, recorded on every page.
+4. Scroll maps show how far down each page your visitors actually read.
+5. Native page-builder controls: tag any Elementor element as a test variation from its Advanced tab. Bricks, Breakdance, Beaver Builder, Oxygen, WP Bakery, and Gutenberg have their own native controls too.
+6. Every test at a glance: visits, conversions, and conversion rate for each variation, with its status.
+7. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
+8. Creating a test: choose point-and-click, full-page, on-page elements, or code.
 
 == Changelog ==
 
