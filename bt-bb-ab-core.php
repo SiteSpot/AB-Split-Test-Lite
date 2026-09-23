@@ -9607,7 +9607,9 @@ $titles = array();
 
           $control_rate_raw = $observations['magic-0']['rate'];
 
-          $this_rate_raw = $mv['rate'];
+          // Raw stored rate: $mv['rate'] is already formatted (and /100 for revenue).
+
+          $this_rate_raw = $observations[$okey]['rate'];
 
           $control_rate_clean = (float)str_replace(['%', '$', ','], '', $control_rate_raw);
 
@@ -9643,6 +9645,10 @@ $titles = array();
 
               $alt = (float)str_replace(['%', '$', ' ', ','], '', $obs['rate']);
 
+              // Same scale as $control_rate: revenue per visit for revenue tests.
+
+              if ($conversion_use_order_value) $alt = $alt / 100;
+
               if ($best_alt === null || $alt > $best_alt) $best_alt = $alt;
 
             }
@@ -9667,7 +9673,7 @@ $titles = array();
 
                   $annual_control_revenue = $control_rate * $annual_visits;
 
-                  $annual_bestalt_revenue = ($best_alt / 100) * $annual_visits;
+                  $annual_bestalt_revenue = $best_alt * $annual_visits;
 
                   $annual_avoided_loss = $annual_control_revenue - $annual_bestalt_revenue;
 
