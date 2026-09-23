@@ -213,7 +213,7 @@ Yes. The testing engine, visitor tracking, heatmaps, and reporting all run insid
 
 = Is there a free WordPress A/B testing plugin with no page-view limit? =
 
-No. There is no page-view meter and no per-visitor billing on any plan. Your tests scale with your hosting.
+Yes. AB Split Test has no page-view meter and no per-visitor billing on any plan. Your tests scale with your hosting.
 
 = What are the limits of the free version? =
 

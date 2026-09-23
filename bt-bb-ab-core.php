@@ -12,7 +12,12 @@
  * ABST_LITE_MAIN_FILE.
  */
 
-if ( ! defined( 'ABSPATH' ) || ! defined( 'ABST_LITE_MAIN_FILE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+// Only bt-bb-ab.php may load the core, after its full-version handoff check.
+if ( ! defined( 'ABST_LITE_MAIN_FILE' ) ) {
     exit;
 }
 
@@ -1844,16 +1849,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
     
-
-    if(empty($data))
-
-    {
-
-    // wl('no data');
-
-      $data = wp_unslash( $_POST );
-
-    }
 
       // get user level
 
@@ -6927,7 +6922,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      echo wp_kses_post( $this->show_login_targeting_options($post) );
+      $this->show_login_targeting_options($post); // echoes its own escaped markup
 
 
 
@@ -14441,7 +14436,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
 
     // Rate limit by IP: max 60 batch requests per minute
-    $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+    $ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
     $rate_key = 'abst_rate_' . md5($ip);
     $rate_count = (int) get_transient($rate_key);
     if ($rate_count > 60) {

@@ -179,6 +179,7 @@ class ABST_Session_Replay {
         }
 
         $uuid = isset($_POST['uuid']) ? sanitize_text_field(wp_unslash($_POST['uuid'])) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each date is sanitized and format-checked in the array_map below.
         $dates_raw = isset($_POST['dates']) && is_array($_POST['dates']) ? wp_unslash($_POST['dates']) : [];
         $dates = array_values(array_filter(array_map(function($date) {
             $date = sanitize_text_field($date);
