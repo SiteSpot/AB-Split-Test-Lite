@@ -261,12 +261,12 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 
 == Screenshots ==
 
-1. The dashboard with all your tests and their status.
-2. The point-and-click Magic Bar: select any element and create a variation.
-3. Test results with conversion rates and statistical confidence.
-4. Heatmaps and session replays built from your own visitor data.
-5. The Developer tab with MCP and REST API setup.
-6. Creating a test: choose point-and-click, full-page, on-page, or CSS.
+1. Every test at a glance: visits, conversions, and conversion rate for each variation, with its status.
+2. The point-and-click Magic Bar: click any element on your page, type a variation, and pick a goal.
+3. Test results with uplift, confidence, and conversion rates, calculated on your own server.
+4. Click heatmaps built from your own visitors, recorded on every page.
+5. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
+6. Creating a test: choose point-and-click, full-page, on-page elements, or code.
 
 == Changelog ==
 
