@@ -37,6 +37,9 @@ if(! class_exists ( 'BtConversionModule'))
 
     public function add_conversion()
     {
+      // Public endpoint: anonymous visitors log conversions without a login, so there is no
+      // user nonce to check. Inputs are sanitized, and the variation must already exist.
+      // phpcs:disable WordPress.Security.NonceVerification.Missing
       if ( ! isset( $_POST['eid'] ) || ! isset( $_POST['variation'] ) ) {
         return new WP_REST_Response([
           'status'  => 0,
@@ -46,10 +49,12 @@ if(! class_exists ( 'BtConversionModule'))
 
       $eid = absint( sanitize_text_field( wp_unslash( $_POST['eid'] ) ) );
       $variation = sanitize_text_field( wp_unslash( $_POST['variation'] ) );
+      // phpcs:enable WordPress.Security.NonceVerification.Missing
 
       $exp_data = (array) get_post_meta($eid,'observations',true);
 
       if( array_key_exists($variation, $exp_data) ) { // check if variation exists
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public action.
         do_action('bt_log_experiment_activity', $eid, $variation, 'conversion', true);
         return new WP_REST_Response([
           'status'  => 1
@@ -101,7 +106,7 @@ if(! class_exists ( 'BtConversionModule'))
 
   } // end class
 
-  $bt_conversion_module = new BtConversionModule;
+  $abst_conversion_module = new BtConversionModule;
 }
 
 
@@ -114,7 +119,9 @@ if( class_exists('FLBuilderModule') ) {
       parent::__construct(array(
         'name'          => __('AB test conversion', 'ab-split-test-lite'),
         'description'   => __('Trigger the conversion event of your AB test when this module is loaded. Does not display anything.', 'ab-split-test-lite'),
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
         'category'      => apply_filters( 'bt_bb_ab_conversion_category','Utilities'),
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
         'group'         => apply_filters( 'bt_bb_ab_conversion_group', BT_AB_TEST_PLUGIN_NAME ),
         'dir'           => BT_CONVERSION_DIR . 'modules/conversion',
         'url'           => BT_CONVERSION_URL . 'modules/conversion',
