@@ -174,6 +174,8 @@ window.bt_homeurl = window.ABST_CONFIG.homeurl || window.bt_homeurl || '';
 
 // Local aliases for backwards compatibility with existing code
 var ABST_CONFIG = window.ABST_CONFIG;
+// Conversion elements (block, shortcode, builder widgets) push into this list.
+window.bt_conversion_vars = window.bt_conversion_vars || [];
 var btab_vars = window.btab_vars;
 var bt_experiments = window.bt_experiments;
 var conversion_details = window.conversion_details;
@@ -1858,13 +1860,21 @@ function startTextWatcher(experimentId, word, goalId = null) {
         } else {
           abstGoal(experimentId, goalId);
         }
-        clearInterval(window.abst.intervals[experimentId][goalId]);
+        stopTextWatcher(experimentId, goalId);
       }
     } catch (e) {
       console.error('Error in text watcher:', e);
-      clearInterval(window.abst.intervals[experimentId][goalId]);
+      stopTextWatcher(experimentId, goalId);
     }
   }, 1000);
+}
+
+// abstConvert()/abstGoal() already clear and delete a test's watchers, so the entry may be gone.
+function stopTextWatcher(experimentId, goalId) {
+  var watchers = window.abst.intervals[experimentId];
+  if (watchers && watchers[goalId]) {
+    clearInterval(watchers[goalId]);
+  }
 }
 
 

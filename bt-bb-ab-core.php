@@ -491,7 +491,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             'description' => __('Choose an existing split test', 'ab-split-test-lite'),
 
-            'group' => __('BT_AB_TEST_WL_ABTEST Settings', 'ab-split-test-lite'),
+            'group' => __('Split Test Settings', 'ab-split-test-lite'),
 
         ));
 
@@ -15903,7 +15903,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
                          'likelihood of winning, uplift vs control, time remaining, winner confidence, ' .
 
-                         'variation preview URLs, and a shareable public report URL',
+                         'and variation preview URLs. (Shareable public reports are a Pro feature; report_url is always null in Lite.)',
 
         'input_schema' => [
 

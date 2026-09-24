@@ -115,7 +115,7 @@ if( class_exists('FLBuilderModule') ) {
         'name'          => __('AB test conversion', 'ab-split-test-lite'),
         'description'   => __('Trigger the conversion event of your AB test when this module is loaded. Does not display anything.', 'ab-split-test-lite'),
         'category'      => apply_filters( 'bt_bb_ab_conversion_category','Utilities'),
-        'group'         => apply_filters( 'bt_bb_ab_conversion_group', 'AB BT_AB_TEST_WL_ABTEST Lite'),
+        'group'         => apply_filters( 'bt_bb_ab_conversion_group', BT_AB_TEST_PLUGIN_NAME ),
         'dir'           => BT_CONVERSION_DIR . 'modules/conversion',
         'url'           => BT_CONVERSION_URL . 'modules/conversion',
       ));  

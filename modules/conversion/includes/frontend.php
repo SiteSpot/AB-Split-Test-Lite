@@ -64,7 +64,8 @@ if(isset($abst_experiment))
   ]);
 
 ?>
-<script <?php echo esc_attr( ABST_CACHE_EXCLUDES ); ?> type="text/javascript">
-if(window.bt_conversion_vars)
-  bt_conversion_vars.push(<?php echo wp_json_encode( json_decode( $abst_conversion_vars ) ); ?>);
+<script <?php echo ABST_CACHE_EXCLUDES; /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded constant of literal HTML attributes; esc_attr() would break the quotes that caching plugins match. */ ?> type="text/javascript">
+// Register this element even if the tracker has not declared the list yet.
+window.bt_conversion_vars = window.bt_conversion_vars || [];
+window.bt_conversion_vars.push(<?php echo wp_json_encode( json_decode( $abst_conversion_vars ) ); ?>);
 </script>
