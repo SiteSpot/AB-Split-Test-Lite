@@ -421,13 +421,12 @@ if(! class_exists ( 'Bt_Ab_Tests'))
         if (isset($views['all'])) {
 
             $views['all'] = str_replace('All', 'Active Tests', $views['all']);
-            // Core counts completed tests under "All", but this view hides them, so match the list.
+            // Core counts every status under "All", but this view only lists these (see the
+            // pre_get_posts filter), so count the same statuses.
             $counts = (array) wp_count_posts('bt_experiments', 'readable');
             $active = 0;
-            foreach (get_post_stati(['show_in_admin_all_list' => true]) as $status) {
-                if ($status !== 'complete' && isset($counts[$status])) {
-                    $active += (int) $counts[$status];
-                }
+            foreach (array('publish', 'draft', 'pending', 'private') as $status) {
+                $active += isset($counts[$status]) ? (int) $counts[$status] : 0;
             }
             $views['all'] = preg_replace('/\([\d.,\s]+\)/', '(' . number_format_i18n($active) . ')', $views['all'], 1);
 
