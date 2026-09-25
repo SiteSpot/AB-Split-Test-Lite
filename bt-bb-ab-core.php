@@ -6217,7 +6217,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       {
 
-        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other ex-commerce tools, and so much more. </p><p><a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=upgrade-link' target='_blank'>Upgrade to Pro</a></p></div>";
+        echo "<div class='show_goals'><p>Add subgoals, integrate with Woo and other e-commerce tools, and so much more. </p><p><a href='https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=upgrade-link' target='_blank'>Upgrade to Pro</a></p></div>";
 
 
       }
@@ -9255,7 +9255,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
         if(!empty(trim($goal)))
 
-          $goalSelect .= '<option value="'.$key.'">'.$goal.'</option>';
+          $goalSelect .= '<option value="'.esc_attr($key).'">'.esc_html($goal).'</option>';
 
       }
 
@@ -9283,7 +9283,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
     else
 
-      echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>', wp_kses_post( $goalsHtml ), '<div class="results-conversions">Conversions</div><div class="results-conversion-rate">', esc_html( $conversion_text ), '</div><div class="results-likely">', esc_html( $chance_column_header ), '</div></div>';
+      echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div>', wp_kses( $goalsHtml, array( 'div' => array( 'class' => true ), 'select' => array( 'class' => true ), 'option' => array( 'value' => true ) ) ), '<div class="results-conversions">Conversions</div><div class="results-conversion-rate">', esc_html( $conversion_text ), '</div><div class="results-likely">', esc_html( $chance_column_header ), '</div></div>';
 
     //hide old results remove soon
 
@@ -10744,7 +10744,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       }
 
-      echo wp_kses_post( $select );
+      // wp_kses_post() strips <option> tags, which left this select empty.
+      echo wp_kses( $select, array( 'option' => array( 'value' => true, 'selected' => true ) ) );
 
       echo '</select></label>';
 
