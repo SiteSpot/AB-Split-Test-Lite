@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @version    2.2.0
  */
 
-class BT_BB_AB_Admin {
+class ABST_Admin {
 
   public static $menu_name  = 'AB Split Test Lite';
   public static $page_title = 'AB Split Test Lite Settings';

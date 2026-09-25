@@ -335,7 +335,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         include_once( plugin_dir_path(__FILE__) . 'admin/bt-bb-ab-admin.php');
 
-        $abst_admin = new BT_BB_AB_Admin;
+        $abst_admin = new ABST_Admin;
 
         add_action('admin_enqueue_scripts', array($this,'render_admin_scripts_styles'));
 

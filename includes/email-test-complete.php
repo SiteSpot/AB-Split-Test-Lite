@@ -13,8 +13,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! defined( 'BT_AB_TEST_WL_NAME' ) ) {
-    define( 'BT_AB_TEST_WL_NAME', defined( 'BT_AB_TEST_WL_ABTEST' ) ? BT_AB_TEST_WL_ABTEST : 'AB Split Test' );
+if ( ! function_exists( 'abst_email_brand_name' ) ) {
+    /**
+     * Name shown in test-complete emails. Honors a white-label BT_AB_TEST_WL_NAME set
+     * in wp-config.php, without defining that unprefixed global here.
+     */
+    function abst_email_brand_name() {
+        if ( defined( 'BT_AB_TEST_WL_NAME' ) ) {
+            return BT_AB_TEST_WL_NAME;
+        }
+        return defined( 'BT_AB_TEST_WL_ABTEST' ) ? BT_AB_TEST_WL_ABTEST : 'AB Split Test';
+    }
 }
 
 /**
@@ -32,7 +41,7 @@ function abst_send_test_complete_email( $notify_to, $experiment, $observations, 
         return false;
     }
 
-    $subject = BT_AB_TEST_WL_NAME . ': ' . $experiment->post_title . ', Complete.';
+    $subject = abst_email_brand_name() . ': ' . $experiment->post_title . ', Complete.';
     $subject = apply_filters( 'abst_email_complete_subject', $subject, $data, $experiment );
 
     $html = abst_render_test_complete_email_html( $data );
@@ -238,7 +247,7 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
         'report_url'        => $report_url,
         'edit_url'          => $edit_url,
         'settings_url'      => $settings_url,
-        'wl_name'           => BT_AB_TEST_WL_NAME,
+        'wl_name'           => abst_email_brand_name(),
     );
 }
 

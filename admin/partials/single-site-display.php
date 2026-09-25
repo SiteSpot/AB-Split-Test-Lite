@@ -192,7 +192,7 @@ if (!is_array($heatmap_pages)) {
 
   
 
-  <form id="bt-bb-ab-form" action="<?php echo esc_url(BT_BB_AB_Admin::get_current_settings_url()); ?>" method="post">
+  <form id="bt-bb-ab-form" action="<?php echo esc_url(ABST_Admin::get_current_settings_url()); ?>" method="post">
 
     <?php wp_nonce_field('bt-bb-ab-nonce', 'bt-bb-ab-nonce'); ?>
 
