@@ -961,7 +961,7 @@ function abstMainInit() {
             thisTestVar = element;
           else if (element.startsWith('ab-goal-'))
             thisTestGoal = element;
-          else if (element.startsWith('ab-') && !element.includes('ab-convert'))
+          else if (/^ab-\d+$/.test(element)) // the test ID class only; ab-click-convert-12 or a theme's ab-hero is not a test ID
             thisTestId = element;
           if (element == 'ab-convert')
             thisTestConversion = true;
@@ -1025,7 +1025,7 @@ function abstMainInit() {
       console.log('AB Split Test: URL variables detected. Skipping user.');
       //do we need to scroll and flash the element? probably
 
-      showSkippedVisitorDefault(abtid, true, abtv);
+      showSkippedVisitorDefault(abtid, 'preview', abtv);
       document.body.classList.add('ab-test-setup-complete');
       return true;
     }
@@ -1342,6 +1342,11 @@ function abstMainInit() {
       }
       else if (bt_experiments[experimentId]['test_type'] == 'magic' && bt_experiments[experimentId]['magic_definition'] && bt_experiments[experimentId]['magic_definition'].length > 0) {
         var magic_definition = parseMagicTestDefinition(bt_experiments[experimentId]['magic_definition']);
+        // An unreadable definition would throw below and stop every later test from being set up.
+        if (!Array.isArray(magic_definition) || !magic_definition.length || !magic_definition[0] || !Array.isArray(magic_definition[0].variations)) {
+          console.warn('ABST: magic_definition unavailable for experiment ' + experimentId + '. Skipping magic variation registration.');
+          return;
+        }
         current_exp[experimentId] = []; // create
         exp_redirect[experimentId] = [];
         
@@ -1393,7 +1398,8 @@ function abstMainInit() {
       {
         var btab = abstGetCookie('btab_' + experimentId);
         try {
-          if (btab && JSON.parse(btab).skipped) {
+          var skippedAs = btab ? JSON.parse(btab).skipped : false;
+          if (skippedAs && skippedAs !== 'pct') { // 'preview', or an older skipped:1 cookie; a traffic % skip is kept
             abstDeleteCookie('btab_' + experimentId);
             console.info('ABST: previously skipped experiment will begin ' + experimentId);
           }
@@ -2088,7 +2094,7 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     }
     abstShowPage();
     if (createCookie) {
-      skippedCookie(eid, variation);
+      skippedCookie(eid, variation, createCookie);
     }
     return true;
   }
@@ -2127,7 +2133,7 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
   if (bt_experiments[eid].test_type == "full_page") {
     abstShowPage();
     if (createCookie)
-      skippedCookie(eid, bt_experiments[eid].full_page_default_page);
+      skippedCookie(eid, bt_experiments[eid].full_page_default_page, createCookie);
 
     return true; // next
   }
@@ -2136,7 +2142,7 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
   {
     document.body.classList.add('test-css-' + eid + '-1');
     if (createCookie)
-      skippedCookie(eid, 'test-css-' + eid + '-1');
+      skippedCookie(eid, 'test-css-' + eid + '-1', createCookie);
     return true; // next
   }
 
@@ -2146,10 +2152,10 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     return;
   var foundSpecial = false;
   document.querySelectorAll('[bt-eid="' + eid + '"]').forEach((function (element, index) {
-    var variationName = element.getAttribute('bt-variation').toLowerCase();
+    var variationName = element.getAttribute('bt-variation') || '';
     var defaultNames = ["original", "one", "1", "default", "standard", "a", "control"];
-    if (defaultNames.includes(variationName)) {
-      btv = variationName;
+    if (defaultNames.includes(variationName.toLowerCase())) {
+      btv = variationName; // keep the attribute's case - the cookie is matched against it exactly
       element.classList.add('bt-show-variation');
       foundSpecial = true;
     }
@@ -2163,15 +2169,17 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
   }
 
   if (createCookie)
-    skippedCookie(eid, btv);
+    skippedCookie(eid, btv, createCookie);
 
 } 
-function skippedCookie(eid, btv) {
+// reason: 'preview' (?abtid/abtv link - cleared on the next tracked load so the visitor joins the test)
+// or anything else = 'pct' (outside the traffic % - sticky, keeps showing the default)
+function skippedCookie(eid, btv, reason) {
   var experiment_vars = {
     eid: eid,
     variation: btv,
     conversion: 1,
-    skipped: 1
+    skipped: reason === 'preview' ? 'preview' : 'pct'
   };
   experiment_vars = JSON.stringify(experiment_vars);
   abstSetCookie('btab_' + eid, experiment_vars, 1000);
@@ -3524,6 +3532,13 @@ function showMagicTest(eid, index,scroll = false) { // called from magic bar so 
         try { el.setAttribute('src', variation); } catch (e) { console.error('ABST: Error setting src in showMagicTest:', el, '-', e); }
         try { el.setAttribute('srcset', variation); } catch (e) { console.error('ABST: Error setting srcset in showMagicTest:', el, '-', e); }
       });
+    }
+    // Saved style/attribute changes were only applied to elements added after load.
+    if (swapElement.type === 'style' && swapElement.property) {
+      elements.forEach(function(el) { try { el.style[swapElement.property] = variation; } catch (e) {} });
+    }
+    if (swapElement.type === 'attribute' && swapElement.property) {
+      elements.forEach(function(el) { try { el.setAttribute(swapElement.property, variation); } catch (e) {} });
     }
   });
   // scroll into view first element (if any)

@@ -56,6 +56,7 @@ function abst_lite_uninstall_clear_scheduled_hooks() {
 	wp_clear_scheduled_hook( 'abst_trim_log' );
 	wp_clear_scheduled_hook( 'abst_delete_journey_data' );
 	wp_clear_scheduled_hook( 'abst_plugin_version_check' );
+	wp_clear_scheduled_hook( 'abst_refresh_conversion_pages_deferred' );
 }
 
 /**
@@ -130,10 +131,12 @@ function abst_lite_uninstall_cleanup_current_site() {
 		abst_lite_uninstall_delete_dir( WP_CONTENT_DIR . '/abst-journeys' );
 	}
 
-	// Debug log file, which lives outside the abst directory.
-	$abst_log_file = $abst_upload_base . 'abst_log.txt';
-	if ( file_exists( $abst_log_file ) ) {
-		wp_delete_file( $abst_log_file );
+	// Debug log files, which live outside the abst directory: abst_log_<hash>.log
+	// (named from AUTH_KEY) and the older abst_log.txt.
+	foreach ( array_merge( (array) glob( $abst_upload_base . 'abst_log_*.log' ), array( $abst_upload_base . 'abst_log.txt' ) ) as $abst_log_file ) {
+		if ( $abst_log_file && file_exists( $abst_log_file ) ) {
+			wp_delete_file( $abst_log_file );
+		}
 	}
 }
 

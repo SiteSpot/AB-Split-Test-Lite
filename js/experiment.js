@@ -2356,6 +2356,11 @@ var table = new Tabulator("#abst-results-table", {
 
   responsiveLayout: "collapse",
 
+  // Without a minimum width, fitColumns squeezes every column to an ellipsis on a
+  // phone and collapse never triggers. With one, columns that do not fit fold
+  // into a details row under each variation.
+  columnDefaults: { minWidth: 90 },
+
   pagination: false,
 
   height: "auto",
@@ -2370,11 +2375,11 @@ var table = new Tabulator("#abst-results-table", {
 
   columns:[
 
-      {title:" ", field:"link", visible:true, headerSort:false, width:70, formatter:"html"},
+      {title:" ", field:"link", visible:true, headerSort:false, width:70, minWidth:60, responsive:0, formatter:"html"},
 
       {title:"ID", field:"id", sorter:"string", visible:false },
 
-      {title:"Variation", field:"variation_label", hozAlign:"left",headerHozAlign:"left", sorter:"string", editor:true, frozen:true, cellEdited:function(cell){
+      {title:"Variation", field:"variation_label", minWidth:130, responsive:0, hozAlign:"left",headerHozAlign:"left", sorter:"string", editor:true, frozen:true, cellEdited:function(cell){
 
         //send to wp ajax to save variation label
 

@@ -491,6 +491,70 @@ function abst_magic_removed_markup_hint($original, $filtered) {
     return 'some of that markup is';
 }
 
+if (!function_exists('abst_magic_html_shape')) {
+/** Tags, attributes and text a browser would build from $html. Null when the
+ * markup cannot be tokenized with certainty. */
+function abst_magic_html_shape($html) {
+    $processor = new WP_HTML_Tag_Processor((string) $html);
+    $shape = [];
+    while ($processor->next_token()) {
+        $token = $processor->get_token_type();
+        if ($token === '#text') {
+            $shape[] = '#' . $processor->get_modifiable_text();
+            continue;
+        }
+        if ($token !== '#tag') { continue; }
+        if ($processor->is_tag_closer()) {
+            $shape[] = '/' . $processor->get_tag();
+            continue;
+        }
+        $attributes = [];
+        foreach ((array) $processor->get_attribute_names_with_prefix('') as $name) {
+            $attributes[strtolower($name)] = $processor->get_attribute($name);
+        }
+        ksort($attributes);
+        $shape[] = $processor->get_tag() . ' ' . wp_json_encode($attributes);
+        if (in_array($processor->get_tag(), ['SCRIPT', 'STYLE', 'TEXTAREA', 'TITLE', 'XMP', 'IFRAME', 'NOEMBED', 'NOFRAMES'], true)) {
+            $shape[] = '#' . $processor->get_modifiable_text();
+        }
+    }
+    if ($processor->paused_at_incomplete_token()) {
+        return null;
+    }
+    return $shape;
+}
+}
+
+if (!function_exists('abst_magic_html_equivalent')) {
+/** True when $filtered (KSES output) only re-encoded $original, e.g. a bare
+ * "&" written as "&amp;" or attribute quotes normalised, and removed or
+ * changed nothing a browser would render. Such content is as safe as the
+ * filtered copy, so it is stored exactly as the author wrote it. */
+function abst_magic_html_equivalent($original, $filtered) {
+    $original_shape = abst_magic_html_shape($original);
+    return $original_shape !== null && $original_shape === abst_magic_html_shape($filtered);
+}
+}
+
+if (!function_exists('abst_magic_kses_allowed_html')) {
+/** The post-content HTML allowlist, plus the plain SVG drawing elements icons
+ * use. Scripts, event handlers, <use>, <foreignObject> and animation stay out:
+ * KSES removes them, which changes the markup, so the content is refused. */
+function abst_magic_kses_allowed_html() {
+    $allowed = wp_kses_allowed_html('post');
+    $svg_attributes = array_fill_keys([
+        'class', 'id', 'role', 'aria-hidden', 'aria-label', 'focusable', 'xmlns', 'version', 'viewbox', 'width', 'height',
+        'preserveaspectratio', 'fill', 'fill-rule', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-linecap',
+        'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'clip-rule', 'opacity', 'transform', 'd', 'cx', 'cy',
+        'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'points',
+    ], true);
+    foreach (['svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon', 'title', 'desc'] as $tag) {
+        $allowed[$tag] = isset($allowed[$tag]) && is_array($allowed[$tag]) ? array_merge($allowed[$tag], $svg_attributes) : $svg_attributes;
+    }
+    return $allowed;
+}
+}
+
 /** Content policy for users without unfiltered_html. */
 function abst_validate_magic_write_content($definition, $index) {
     if (abst_can_write_unfiltered_magic()) {
@@ -498,11 +562,14 @@ function abst_validate_magic_write_content($definition, $index) {
     }
     $type = $definition['type'];
     $property = $definition['property'] ?? '';
-    $error = function($reason, $variation_index = null) use ($definition, $index) {
+    // On multisite only network administrators hold unfiltered_html, so a site
+    // administrator told to "ask a site administrator" has nobody to ask.
+    $who = is_multisite() ? 'a network administrator' : 'a site administrator';
+    $error = function($reason, $variation_index = null) use ($definition, $index, $who) {
         return new WP_Error(
             'unfiltered_html_required',
             abst_magic_element_label($definition, $index, $variation_index) . ': ' . $reason
-                . ' Ask a site administrator to save it with you — your content is untouched, not silently stripped.',
+                . ' Ask ' . $who . ' to save it with you — your content is untouched, not silently stripped.',
             ['status' => 403, 'field' => 'magic_definition.' . $index]
         );
     };
@@ -522,8 +589,11 @@ function abst_validate_magic_write_content($definition, $index) {
     }
     foreach ($definition['variations'] as $variation_index => $value) {
         if ($value === 'original') { continue; }
-        $safe_html = wp_kses_post($value);
-        if ($safe_html !== $value) {
+        $safe_html = wp_kses($value, abst_magic_kses_allowed_html());
+        // Refuse only when KSES would remove or change something a browser
+        // renders. Pure re-encoding ("Fish & Chips" -> "Fish &amp; Chips",
+        // attribute quoting) leaves the content exactly as safe as the filtered copy.
+        if ($safe_html !== $value && !abst_magic_html_equivalent($value, $safe_html)) {
             return $error(abst_magic_removed_markup_hint($value, $safe_html) . ' not on the list WordPress allows this account to save.', $variation_index);
         }
         if (($type === 'image' || ($type === 'attribute' && in_array($property, ['href', 'src', 'srcset'], true)))

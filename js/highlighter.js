@@ -618,7 +618,7 @@ jQuery(function(){
 
 // https://example.com/?abmagic=1&abiframe=1&text_to_replace=Get%20a%20locker&variations=Reserve%20Your%20Locker%20Now%7CBook%20Your%20Locker%20Instantly%7CSecure%20Your%20Storage%20Spot%20Today
 // if text_to_replace and variations are set, then log url decoded values of each
-    if(window.location.search.includes('abmagic') && window.location.search.includes('text_to_replace') && window.location.search.includes('variations'))
+    if(/[?&]abmagic\b/.test(window.location.search) && window.location.search.includes('text_to_replace') && window.location.search.includes('variations'))
     {
       setTimeout(function(){
         console.log('Magic bar loaded adding url testvars');
@@ -1566,24 +1566,33 @@ function selectorDetection(){
         }
     });
 
+    // Remember the selector when the user starts editing the box, and only treat a
+    // blur as an edit when they typed: the editor also sets the box and fires blur.
+    jQuery('body').on('focus','#abst-selector-input',function(){
+        jQuery(this).data('abstSelectorBaseline', jQuery(this).val());
+    });
+    jQuery('body').on('input','#abst-selector-input',function(){
+        jQuery(this).data('abstUserEdited', true);
+    });
+
     jQuery('body').on('blur','#abst-selector-input',function(){
-        console.log('blur');
         var $inputElement = jQuery(this); // Store jQuery object for the input element
+        if (!$inputElement.data('abstUserEdited')) return;
+        $inputElement.data('abstUserEdited', false);
 
-        if(!$inputElement.attr('lastvalue')) {
-            $inputElement.attr('lastvalue', $inputElement.val());
-        }
-
-        var newSelectorValue = $inputElement.val(); // Get the new selector value
-        var oldSelector = $inputElement.attr('lastvalue');
-        console.log('oldSelector', oldSelector);
-        console.log('newSelectorValue', newSelectorValue);
+        var oldSelector = $inputElement.data('abstSelectorBaseline') || '';
+        var newSelectorValue = ($inputElement.val() || '').trim(); // Get the new selector value
 
         if(oldSelector !== newSelectorValue) {
-            $inputElement.attr('lastvalue', newSelectorValue);
-            
-            // Use getElementIndexFromMagic for consistent element identification
-            var elementIndex = getElementIndexFromMagic(newSelectorValue);
+            // A selector that matches nothing (or is invalid) would orphan the element.
+            if (newSelectorValue !== '') {
+                try { if (!jQuery(newSelectorValue).length) throw 0; }
+                catch (e) { $inputElement.val(oldSelector); return; }
+            }
+
+            // Look the definition up by the selector it had before the edit; looking it
+            // up by the new one never matched, so retargeting and removing did nothing.
+            var elementIndex = getElementIndexFromMagic(oldSelector);
             console.log('elementIndex from blur handler:', elementIndex);
             
             if(elementIndex !== -1) {
@@ -2040,7 +2049,8 @@ function selectorDetection(){
     // This uses capture phase but only prevents when the class is present
     document.body.addEventListener('click', function(e) {
         // Only prevent if magic bar is active
-        if (!document.body.classList.contains('doing-abst-magic-bar')) {
+        // The class is set on <html>, so checking <body> meant this guard never ran.
+        if (!document.documentElement.classList.contains('doing-abst-magic-bar')) {
             return; // Allow normal behavior when magic bar is not active
         }
         
@@ -2057,10 +2067,10 @@ function selectorDetection(){
         // Traverse up in case the click is on a child inside the link
         while (target && target !== document.body) {
             if (target.tagName && target.tagName.toLowerCase() === 'a') {
-                console.log('preventing click because we\'re in test setup mode');
+                // preventDefault only: stopping propagation here (capture phase) would also
+                // stop the editor's own click handler, so links could not be selected.
                 e.preventDefault();
-                e.stopImmediatePropagation();
-                return false;
+                return;
             }
             target = target.parentElement;
                     }
@@ -2974,6 +2984,21 @@ function abst_magic_bar(options = {}) {
         const htmlEditor = document.createElement('textarea');
         htmlEditor.id = 'abst-html-editor';
         htmlEditor.className = 'abst-html-editor';
+        // Typing in HTML mode goes straight into the editor, so saving or switching
+        // variation while still in HTML mode keeps the edit.
+        htmlEditor.addEventListener('input', function() {
+            if (window.abstEditor) {
+                window.abstEditor.innerHTML = htmlEditor.value;
+                checkChangedEditor();
+            }
+        });
+        // When another element or variation is loaded into the editor while HTML mode
+        // is open, show that content instead of leaving the previous element's HTML.
+        new MutationObserver(function() {
+            if (htmlEditor.style.display === 'block' && document.activeElement !== htmlEditor) {
+                htmlEditor.value = window.abstEditor.innerHTML;
+            }
+        }).observe(window.abstEditor, { childList: true, subtree: true, characterData: true });
         
         buttons.forEach(btn => {
             const button = document.createElement('button');
@@ -3024,9 +3049,8 @@ function abst_magic_bar(options = {}) {
             button.textContent = '</>';
             button.title = 'HTML Mode';
             
-            // Update the editor content from HTML
-            window.abstEditor.innerHTML = htmlEditor.value;
-            checkChangedEditor();
+            // Nothing to copy back: the textarea writes into the editor as you type.
+            // Copying here overwrote an element loaded while HTML mode was open.
         } else {
             // Switch to HTML mode
             editor.style.display = 'none';
@@ -3247,6 +3271,9 @@ function abst_magic_bar(options = {}) {
 
     // Function to close the magic bar
     window.close_abst_magic_bar = function() {
+        if (window.abmagic && window.abmagic.definition && window.abmagic.definition.length && !confirm('Close the test editor? Unsaved changes will be lost.')) {
+            return;
+        }
 
         //reload page without ?abmagic if its there
         const url = new URL(window.location);
@@ -3290,7 +3317,8 @@ function adjustFixedElementsForMagicBar(activate) {
     $(function() {
         
         //if url contains query string abmagic then load magic bar
-        if(window.location.search.includes('abmagic')) {
+        // Only the abmagic parameter itself, not any query string that contains the text (utm_campaign=abmagicx).
+        if(/[?&]abmagic\b/.test(window.location.search)) {
             abst_magic_bar();
         }
         
@@ -4098,9 +4126,18 @@ function adjustFixedElementsForMagicBar(activate) {
                             response = JSON.parse(response);
                         } catch (e) {
                             console.error('ABST: Failed to parse Magic save response', e, response);
-                            alert('The test was saved, but the response could not be understood. Please reload and confirm your changes.');
+                            // Refusals (permissions, nonce, the Lite limit) come back as plain text.
+                            var abstReply = String(response || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+                            alert('The server replied: ' + (abstReply || '(empty)') + '\n\nPlease reload and check whether your changes were saved.');
                             return;
                         }
+                    }
+
+                    // The server refuses a save with config_error (e.g. markup this account
+                    // cannot save, or the Lite one-active-test limit). Say so instead of doing nothing.
+                    if (response && response.config_error) {
+                        alert('The test was NOT saved: ' + response.config_error);
+                        return;
                     }
 
                     if(response.post_title && response.post_title !== ''){
@@ -4125,7 +4162,12 @@ function adjustFixedElementsForMagicBar(activate) {
                         } else {
                             window.location.href = window.location.pathname;
                         }
+                    } else {
+                        alert('Saving finished with an unexpected response. Please reload and confirm your changes.');
                     }
+                },
+                error: function(xhr) {
+                    alert('Saving the test failed (' + (xhr && xhr.status ? 'HTTP ' + xhr.status : 'network error') + '). Your changes are still in the editor - please try again.');
                 }
             });
         
@@ -4636,6 +4678,9 @@ function checkChangedEditor() {
         console.log('elementIndex after DOM element match:', elementIndex);
 
         if (elementIndex !== -1) {
+            // Slot 0 is the element's original markup, captured from the page; the
+            // raw-HTML toggle and synthetic input events must not rewrite the control.
+            if (!(variationIndex >= 1)) return;
             // Update existing variation with cleaned HTML
             window.abmagic.definition[elementIndex].variations[variationIndex] = cleanValue;
             console.log('updated variation', window.abmagic.definition[elementIndex].variations);

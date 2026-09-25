@@ -1124,12 +1124,12 @@ fetch('<?php echo esc_url(home_url('/wp-json/bt-bb-ab/v1/create-test')); ?>', {
             <h3>CLI <span class="abst-mcp-pro-badge">Pro</span></h3>
 
             <p><?php esc_html_e( 'Drive A/B tests from the command line or a deploy script - no browser, no REST client. Pro registers an "absplittest" WP-CLI command:', 'ab-split-test-lite' ); ?></p>
-                <pre class="abst-mcp-config abst-mcp-config--muted"><code>wp absplittest create-test --title="Homepage hero"
-wp absplittest list-tests --status=publish
-wp absplittest get-results &lt;test-id&gt;
-wp absplittest update-status &lt;test-id&gt; --status=complete
-wp absplittest get-heatmap &lt;page-id&gt;
-wp absplittest get-settings</code></pre>
+                <pre class="abst-mcp-config abst-mcp-config--muted"><code>wp absplittest create_test --name="Homepage hero" --type=magic --status=draft
+wp absplittest list_tests --format=table
+wp absplittest get_results &lt;test-id&gt;
+wp absplittest update_status &lt;test-id&gt; complete
+wp absplittest get_heatmap &lt;page-id&gt;
+wp absplittest get_settings</code></pre>
             <p><a class="button button-primary" href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank"><?php esc_html_e( 'Upgrade to Pro for WP-CLI', 'ab-split-test-lite' ); ?></a></p>
 
           </div>
@@ -1158,47 +1158,13 @@ wp absplittest get-settings</code></pre>
 
             <h4 style="margin-top: 20px;">Step 1: Install WordPress MCP Adapter Plugin</h4>
 
-            
+            <ol style="margin-left: 20px;">
+              <li><a href="https://github.com/WordPress/mcp-adapter/releases/latest/download/mcp-adapter.zip" target="_blank" rel="noopener noreferrer">Download the WordPress MCP Adapter</a> (a zip file from WordPress on GitHub)</li>
+              <li>Go to <strong>Plugins &rarr; Add New Plugin</strong> and click <strong>Upload Plugin</strong></li>
+              <li>Choose the zip, click <strong>Install Now</strong>, then <strong>Activate Plugin</strong></li>
+              <li>Come back to this tab for the connection steps</li>
+            </ol>
 
-            <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status flag after redirect. ?>
-            <?php if (isset($_GET['mcp_install_success'])): ?>
-
-            <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin-bottom: 15px;">
-
-              <strong>✅ WordPress MCP Adapter installed successfully!</strong> Please refresh this page.
-
-            </div>
-
-            <?php endif; ?>
-
-
-
-            <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status flag after redirect. ?>
-            <?php if (isset($_GET['mcp_install_error'])): ?>
-
-            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin-bottom: 15px;">
-
-              <strong>❌ Installation failed:</strong> <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only status message after redirect. ?><?php echo esc_html(urldecode(sanitize_text_field(wp_unslash($_GET['mcp_install_error'])))); ?>
-
-            </div>
-
-            <?php endif; ?>
-
-            
-
-            <p>Click the button below to automatically install and activate the latest WordPress MCP Adapter plugin:</p>
-
-            <form method="post" action="" style="margin: 15px 0;">
-
-              <?php wp_nonce_field('absplittest_install_mcp', 'absplittest_mcp_nonce'); ?>
-
-              <button type="submit" name="install_mcp_adapter" class="button button-primary" style="height: auto; padding: 10px 20px;">
-
-                🚀 Install WordPress MCP Adapter Now
-
-              </button>
-
-            </form>
 
             <p><strong>Requirements:</strong> WordPress 6.9 or higher</p>
 

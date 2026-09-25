@@ -254,7 +254,9 @@
     border: 8px solid #1d2327;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    transition: width 0.3s ease, height 0.3s ease;
+    /* No width/height transition: the JS fits the frame and the cursor/click
+       maths reads the wrapper size immediately, so an animation made those
+       reads stale for 300ms after every fit. */
 }
 
 /* Device-specific iframe styling */
@@ -272,6 +274,8 @@
     width: 100%;
     height: 100%;
     border: 0;
+    /* JS keeps the iframe at the recorded device size and scales it to fit */
+    transform-origin: 0 0;
     pointer-events: none;
 }
 

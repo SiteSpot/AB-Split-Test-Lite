@@ -929,14 +929,19 @@ div#all_boxes {
     border: none;
 }
 
-div#side-sortables {
-    position: sticky;
-    top: 40px;
-}
-#postbox-container-1 {
-    position: sticky !important;
-    top: 45px !important; /* Adjust as needed for your admin bar height */
-    z-index: 100;
+/* Keep the status sidebar in view while scrolling, but only in WordPress's
+   two-column edit layout (851px and up). Below that the sidebar is stacked
+   above the content, and a sticky block would sit on top of the results. */
+@media screen and (min-width: 851px) {
+    div#side-sortables {
+        position: sticky;
+        top: 40px;
+    }
+    #postbox-container-1 {
+        position: sticky !important;
+        top: 45px !important; /* Adjust as needed for your admin bar height */
+        z-index: 100;
+    }
 }
 #post-body {
     display: flow-root !important;

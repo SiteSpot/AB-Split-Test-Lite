@@ -158,3 +158,14 @@ function abst_nitropack_inline_script_attributes( $attr, $js ) {
     return $attr;
 }
 add_filter( 'wp_inline_script_attributes', 'abst_nitropack_inline_script_attributes', 10, 2 );
+
+// W3 Total Cache minify ignores the exclusion attributes the other optimisers honour.
+function abst_w3tc_skip_js_minify( $do_minify, $script_tag, $file ) {
+    foreach ( abst_exclude_js() as $needle ) {
+        if ( $needle !== '' && strpos( $script_tag, $needle ) !== false ) {
+            return false;
+        }
+    }
+    return $do_minify;
+}
+add_filter( 'w3tc_minify_js_do_tag_minification', 'abst_w3tc_skip_js_minify', 10, 3 );

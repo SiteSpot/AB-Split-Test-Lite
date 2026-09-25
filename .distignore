@@ -26,15 +26,13 @@ quick_reference.md
 styleguide.md
 SECURITY.md
 
-# Build / dependency manifests (vendor/ is committed and must ship)
+# Build / dependency manifests
 composer.json
 composer.lock
 package.json
 package-lock.json
 node_modules
 phpunit.xml
-includes/vendor/**/phpunit.xml
-includes/vendor/**/composer.json
 phpcs.xml
 phpcs.xml.dist
 tests

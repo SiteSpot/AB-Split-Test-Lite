@@ -38,7 +38,11 @@
         iframeReady: false,
         waitingForIframe: false,
         iframeLoadTimeout: null,
-        delayedTimeouts: []
+        delayedTimeouts: [],
+        frameSize: null,
+        fitWidth: 0,
+        fitHeight: 0,
+        scrollAnimId: 0
     };
 
     // DOM Elements
@@ -52,6 +56,13 @@
     function init() {
         cacheElements();
         bindEvents();
+
+        // Re-fit the replay frame when the window is resized
+        let fitTimer = null;
+        $(window).on('resize.sessionReplayFit', function () {
+            clearTimeout(fitTimer);
+            fitTimer = setTimeout(fitWrapperToScreen, 100);
+        });
         loadSessions();
 
         // Check for UUID in URL parameter to auto-load a session
@@ -290,8 +301,8 @@
                     <div class="abst-session-pages">${esc(pages)}${esc(morePages)}</div>
                     <div class="abst-session-meta">
                         <span class="device-icon ${esc(deviceIcon)}"></span>
-                        <span>${esc(String(session.page_count))} pages</span>
-                        <span>${esc(String(session.click_count))} clicks</span>
+                        <span>${esc(String(session.page_count))} ${Number(session.page_count) === 1 ? 'page' : 'pages'}</span>
+                        <span>${esc(String(session.click_count))} ${Number(session.click_count) === 1 ? 'click' : 'clicks'}</span>
                         ${session.tests_converted.length > 0 ? '<span class="converted">✓ Converted</span>' : ''}
                         ${session.rage_click_count > 0 ? '<span class="rage">🔥 ' + esc(String(session.rage_click_count)) + ' rage</span>' : ''}
                     </div>
@@ -396,8 +407,8 @@
         // Update session info
         const session = state.currentSession;
         $sessionInfo.html(`
-            <strong>${session.page_count} pages</strong> · 
-            ${session.click_count} clicks · 
+            <strong>${session.page_count} ${Number(session.page_count) === 1 ? 'page' : 'pages'}</strong> ·
+            ${session.click_count} ${Number(session.click_count) === 1 ? 'click' : 'clicks'} ·
             ${formatDuration(session.duration_seconds)} duration
             ${session.tests_converted.length > 0 ? ' · <span style="color:#00a32a">✓ Converted</span>' : ''}
         `);
@@ -412,6 +423,9 @@
 
         // Build timeline
         buildTimeline();
+
+        // Re-fit now the timeline has its real height for this session
+        fitWrapperToScreen();
 
         // Load first page and auto-start after 1 second delay
         state.iframeReady = false;
@@ -569,6 +583,11 @@
                 state.iframeReady = true;
                 showLoading(false);
                 scheduleReplayTimeout(playNextEvent, 100);
+            } else if (!state.iframeReady) {
+                // A newly selected session starts on the page already in the
+                // iframe: no load event will fire, so finish loading here
+                // (clears the spinner, marks ready, schedules autoplay).
+                onIframeLoad();
             } else {
                 positionCursorForEvent(event);
             }
@@ -592,6 +611,7 @@
         try {
             const iframeDoc = $iframe[0].contentDocument || $iframe[0].contentWindow.document;
             if (iframeDoc && iframeDoc.documentElement) {
+                iframeDoc.documentElement.style.scrollBehavior = 'auto';
                 iframeDoc.documentElement.scrollTop = 0;
             }
         } catch (e) { /* cross-origin */ }
@@ -607,6 +627,15 @@
             'transition': 'none',
             'transform': `translate(${pixelX}px, ${pixelY}px)`
         });
+
+        // Stepped (paused) onto a click on a different page: show where it
+        // happened instead of leaving the cursor at the default spot.
+        if (!state.isPlaying && !state.waitingForIframe && state.currentEventIndex > 0) {
+            const steppedEvent = state.events[state.currentEventIndex];
+            if (steppedEvent && steppedEvent.type !== 'pv') {
+                positionCursorForEvent(steppedEvent);
+            }
+        }
 
         // If this is the first load (index 0), auto-start playback after 1 second
         if (state.currentEventIndex === 0 && !state.isPlaying) {
@@ -817,16 +846,9 @@
      * Set iframe size based on device type
      */
     function setIframeSize(device) {
-        const size = config.deviceSizes[device] || config.deviceSizes['l'];
         const $wrapper = $('.abst-replay-iframe-wrapper');
-        
-        $wrapper.css({
-            'width': size.width + 'px',
-            'height': size.height + 'px',
-            'max-width': '100%'
-        });
-        
-        // Add device class for styling
+
+        // Add device class for styling (before fitting: it changes the border width)
         $wrapper.removeClass('device-desktop device-tablet device-mobile');
         if (device === 's') {
             $wrapper.addClass('device-mobile');
@@ -834,6 +856,76 @@
             $wrapper.addClass('device-tablet');
         } else {
             $wrapper.addClass('device-desktop');
+        }
+
+        state.frameSize = config.deviceSizes[device] || config.deviceSizes['l'];
+        state.fitWidth = 0;
+        state.fitHeight = 0;
+        fitWrapperToScreen();
+    }
+
+    /**
+     * Scale the replay frame down so it fits inside the visible viewport.
+     * The iframe always keeps the recorded device size (1280x800 on desktop) so
+     * the page renders at the breakpoint the visitor saw; it is shrunk visually
+     * with a transform and the wrapper takes the scaled size. Without this the
+     * frame overflows short laptop screens and pushes the playback controls and
+     * timeline below the fold.
+     */
+    function fitWrapperToScreen() {
+        const $wrapper = $('.abst-replay-iframe-wrapper');
+        const size = state.frameSize;
+        if (!size || !$wrapper.length || !$replayArea || !$replayArea.is(':visible')) {
+            return;
+        }
+
+        const wrapper = $wrapper[0];
+        const borderW = wrapper.offsetWidth - wrapper.clientWidth;
+        const borderH = wrapper.offsetHeight - wrapper.clientHeight;
+
+        // Frame + info bar + controls + timeline must fit the window
+        let chromeH = 0;
+        $replayArea.children().not($wrapper).filter(':visible').each(function () {
+            chromeH += $(this).outerHeight(true);
+        });
+        // Everything above the replay area (admin bar, page title, notices) is
+        // measured from the document top so it is independent of scroll position.
+        // On narrow screens the session list stacks above the player, which then
+        // starts below the fold: size it to fit one screen once scrolled to instead.
+        const areaTop = $replayArea.offset().top;
+        const adminBar = $('#wpadminbar').outerHeight() || 0;
+        const topOffset = areaTop < window.innerHeight / 2 ? areaTop : adminBar;
+        const availH = Math.max(240, window.innerHeight - topOffset - chromeH - borderH - 24);
+        const availW = Math.max(200, $replayArea[0].clientWidth - borderW);
+
+        const scale = Math.min(1, availW / size.width, availH / size.height);
+        const newW = Math.floor(size.width * scale);
+        const newH = Math.floor(size.height * scale);
+        // Compare against the previous fit's target size rather than reading
+        // the wrapper, so the cursor rescale always uses the settled size.
+        const oldW = state.fitWidth || wrapper.clientWidth;
+        const oldH = state.fitHeight || wrapper.clientHeight;
+        state.fitWidth = newW;
+        state.fitHeight = newH;
+
+        $iframe.css({
+            'width': size.width + 'px',
+            'height': size.height + 'px',
+            'transform': scale < 1 ? `scale(${scale})` : 'none'
+        });
+        $wrapper.css({
+            'width': newW + 'px',
+            'height': newH + 'px',
+            'max-width': 'none'
+        });
+
+        // Keep the cursor over the same spot when the frame changes size
+        const matrix = ($cursor.css('transform') || '').match(/matrix\(([^)]+)\)/);
+        if (matrix && oldW > 0 && oldH > 0 && (oldW !== newW || oldH !== newH)) {
+            const parts = matrix[1].split(',').map(parseFloat);
+            const x = parts[4] * newW / oldW;
+            const y = parts[5] * newH / oldH;
+            $cursor.css({ 'transition': 'none', 'transform': `translate(${x}px, ${y}px)` });
         }
     }
 
@@ -1351,7 +1443,12 @@
         try {
             const iframeDoc = $iframe[0].contentDocument || $iframe[0].contentWindow.document;
             if (!iframeDoc || !iframeDoc.documentElement) return;
-            
+
+            // Sites with `scroll-behavior: smooth` would ease every per-frame
+            // scrollTop write, so the real scroll lags far behind this animation
+            // and cursor positions get measured mid-scroll.
+            iframeDoc.documentElement.style.scrollBehavior = 'auto';
+
             const startScrollY = iframeDoc.documentElement.scrollTop;
             const scrollDelta = targetScrollY - startScrollY;
             
@@ -1359,9 +1456,15 @@
             if (Math.abs(scrollDelta) < 1) return;
             
             const startTime = performance.now();
-            
+            // A newer scroll supersedes this one. Pausing stops a scroll that
+            // playback started, but a scroll started while paused (stepping
+            // with prev/next, timeline clicks) must still run.
+            const animId = ++state.scrollAnimId;
+            const startedWhilePlaying = state.isPlaying;
+
             function step(currentTime) {
-                if (!state.isPlaying) return;
+                if (animId !== state.scrollAnimId) return;
+                if (startedWhilePlaying && !state.isPlaying) return;
                 
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / durationMs, 1);
@@ -1375,6 +1478,14 @@
             }
             
             requestAnimationFrame(step);
+
+            // requestAnimationFrame does not run in a hidden or occluded tab;
+            // make sure the scroll still lands so cursor maths stays correct.
+            setTimeout(() => {
+                if (animId !== state.scrollAnimId) return;
+                if (startedWhilePlaying && !state.isPlaying) return;
+                iframeDoc.documentElement.scrollTop = targetScrollY;
+            }, durationMs);
         } catch (e) {
             // Cross-origin
         }

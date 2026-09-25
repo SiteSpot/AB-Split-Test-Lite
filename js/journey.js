@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
-  iframe.addEventListener('load', async () => {
+  const onIframeLoad = async () => {
     const doc = iframe.contentDocument;
     const win = iframe.contentWindow;
 
@@ -1053,5 +1053,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-  }, { once: true });
+  };
+
+  // A cached preview can finish loading before this script runs; then the load event
+  // has already fired, the heatmap stayed blank and Re-render did nothing.
+  let alreadyLoaded = false;
+  try {
+    const idoc = iframe.contentDocument;
+    alreadyLoaded = !!(idoc && idoc.readyState === 'complete' && idoc.location &&
+      idoc.location.href !== 'about:blank' && idoc.body && idoc.body.children.length > 0);
+  } catch (e) { alreadyLoaded = false; }
+  if (alreadyLoaded) {
+    onIframeLoad();
+  } else {
+    iframe.addEventListener('load', onIframeLoad, { once: true });
+  }
 });

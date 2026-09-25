@@ -236,9 +236,18 @@ if(class_exists('\Elementor\Widget_Base'))
       $fields   = BtConversionModule::get_fields();
       $attr     = '';
 
+      // The widget's test control is registered as `bt_experiment_id`, but the
+      // shared conversion fields (and the shortcode) use `bt_experiment`. Without
+      // this mapping the chosen test never reached the shortcode, so the widget
+      // rendered "Choose an experiment to complete setup" and recorded nothing.
+      if ( empty( $settings['bt_experiment'] ) && ! empty( $settings['bt_experiment_id'] ) ) {
+        $settings['bt_experiment'] = $settings['bt_experiment_id'];
+      }
+
       foreach ($fields as $key => $value) {
-        if( $settings[$key] != '' || $settings[$key] != null ) {
-          $attr .= ' '. $key .'='. $settings[$key];
+        $setting = isset( $settings[ $key ] ) ? $settings[ $key ] : '';
+        if ( $setting !== '' && $setting !== null && $setting !== 0 && $setting !== '0' ) {
+          $attr .= ' '. $key .'='. $setting;
         }
       }
 
