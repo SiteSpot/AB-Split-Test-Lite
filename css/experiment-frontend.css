@@ -208,6 +208,7 @@ body[data-builder-window='iframe'] .brx-body [bt-eid],
 }
 /* parent */
 .abst-settings-column.help {
+  box-sizing: border-box; /* its 30px side padding otherwise pushed it past the bar's edge */
   position: relative;
   box-shadow: 0 1px 10px #979797;
   background: #ffffd7;

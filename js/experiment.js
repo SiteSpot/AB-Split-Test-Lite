@@ -279,7 +279,7 @@ jQuery(document).ready(function() {
 
     // Initialize conversion page selector separately with its own config (no AJAX, uses server-rendered options)
     var conversionPageAttrs = {
-        width: '25rem',
+        width: '100%', // a fixed 25rem overflowed the goals card; capped in bt-bb-ab-admin.css
         dropdownAutoWidth: true,
         placeholder: 'Choose Page',
         allowClear: true
@@ -2214,6 +2214,15 @@ for (let observationKey in abtestChartData.observations) {
 
     }
 
+    // Code tests: test-css-<test id>-1 is Variation A, -2 is Variation B, ...
+    else if(/^test-css-\d+-\d+$/.test(observationKey)){
+      var cssNumber = parseInt(observationKey.split("-").pop(), 10) - 1;
+      var cssLetters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+      if(cssNumber >= 0 && cssNumber < cssLetters.length){
+        variationLabel = "Variation " + cssLetters[cssNumber];
+      }
+    }
+
 
 
     var conversions = observation.conversion;
@@ -3003,6 +3012,7 @@ for (var key in observations) {
       ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].forEach(function(letter, index) {
 
         labelText = labelText.replace('magic-' + index, 'Variation ' + letter);
+        labelText = labelText.replace(new RegExp('^test-css-\\d+-' + (index + 1) + '$'), 'Variation ' + letter);
 
       });
 

@@ -4140,6 +4140,14 @@ function adjustFixedElementsForMagicBar(activate) {
                         return;
                     }
 
+                    // Saved, but not live (the free version's one-test limit): say so and
+                    // open the draft instead of announcing a running test.
+                    if (response && response.notice) {
+                        alert(response.post_title + ': ' + response.notice);
+                        window.location.href = response.edit_url || window.location.pathname;
+                        return;
+                    }
+
                     if(response.post_title && response.post_title !== ''){
                         var message = isDraftSave ? ' saved as a draft.' : (response.updated ? ' updated.' : ' created, reloading page.');
                         alert(response.post_title + message);

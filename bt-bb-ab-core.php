@@ -2470,6 +2470,15 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
    }
 
+ // A launch the one-test limit turned into a draft (set in enforce_lite_publish_limit).
+ $launch_refused = false;
+ $refused_id = (int) get_transient('abst_launch_refused_' . get_current_user_id());
+ if ($refused_id && $refused_id === (int) $post->ID && $status === 'draft') {
+     delete_transient('abst_launch_refused_' . get_current_user_id());
+     $message_text = 'Not launched: the free version runs one test at a time, so this test was saved as a draft. Pause or complete your live test, then launch this one.';
+     $launch_refused = true;
+ }
+
 
 
     $cache_message = '';
@@ -2496,7 +2505,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    $full_message = esc_html($message_text) . "<br/><br/>" . $cache_message ;
+    // Nothing went live on a refused launch, so there is no cached page to clear.
+    $full_message = $launch_refused ? esc_html($message_text) : esc_html($message_text) . "<br/><br/>" . $cache_message ;
 
 
 
@@ -2616,17 +2626,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
     function refresh_conversion_pages(){ // and canonicals
 
 
-      // Debounce: save flows (Elementor publish, quick edit, REST) can call this
-
-      // several times in one request; the rebuild + cache purges only need to run once.
-
-      static $already_ran = false;
-
-      if ($already_ran)
-
-        return;
-
-      $already_ran = true;
+      // No run-once guard. Saving a test calls this first from post_updated, before
+      // the test's settings are saved, and again once they are. A guard kept the first,
+      // stale build, so a test created or edited in the editor lost its page goal,
+      // URL goal, time/scroll goals, traffic % and URL targeting until the next save.
+      // refresh_on_update() only calls this for test saves, so it stays cheap.
 
 
       delete_transient('ab_posts_cache');
@@ -3097,13 +3101,17 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       // Per-object permission checks before wp_insert_post()/wp_update_post(),
       // which do not enforce object capabilities themselves.
       $experiment_type = get_post_type_object('bt_experiments');
+      // Save Draft in the Magic Bar sends post_status=draft; ignoring it published the
+      // test while the editor said "saved as a draft". Builder pop-ups send nothing and
+      // still create a live test, since it has to appear in their test pickers.
+      $requested_status = isset($data['post_status']) && in_array($data['post_status'], array('publish', 'draft'), true) ? $data['post_status'] : 'publish';
       $is_new_test = isset($data['post_id']) && $data['post_id'] === 'new';
       if ($is_new_test) {
         if (!$experiment_type || !current_user_can($experiment_type->cap->create_posts)) {
           wp_die('You do not have permission to create this test.');
         }
-        // New tests are created published.
-        $will_publish = true;
+        // New tests get the requested status (live unless a draft was asked for).
+        $will_publish = ($requested_status === 'publish');
       } else {
         $existing_id = isset($data['post_id']) ? absint($data['post_id']) : 0;
         $existing_test = $existing_id ? get_post($existing_id) : null;
@@ -3112,8 +3120,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
           wp_die('You do not have permission to edit this test.');
         }
         $data['post_id'] = $existing_test->ID;
-        // Existing auto-drafts are promoted to publish below.
-        $will_publish = $existing_test->post_status === 'auto-draft';
+        // Existing auto-drafts are promoted to the requested status below.
+        $will_publish = $existing_test->post_status === 'auto-draft' && $requested_status === 'publish';
       }
       if ($will_publish && (!$experiment_type || !current_user_can($experiment_type->cap->publish_posts))) {
         wp_die('You do not have permission to publish this test.');
@@ -3221,7 +3229,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'post_type'    => 'bt_experiments',
 
-          'post_status'  => 'publish',
+          'post_status'  => $requested_status,
 
           'post_date'    => current_time('mysql'),
 
@@ -3257,7 +3265,11 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         // publish-only experiment dropdowns ("No items found").
 
-        if(get_post_status(intval($data['post_id'])) === 'auto-draft')
+        if($requested_status === 'draft')
+
+          $my_post['post_status'] = 'draft'; // Save Draft, including on an edit of a live test
+
+        elseif(get_post_status(intval($data['post_id'])) === 'auto-draft')
 
           $my_post['post_status'] = 'publish';
 
@@ -3288,6 +3300,15 @@ if(! class_exists ( 'Bt_Ab_Tests'))
           'created' => $createdNew,
 
           'updated' => !$createdNew,
+
+          'status' => get_post_status($data['post_id']),
+
+          'edit_url' => admin_url('post.php?post=' . intval($data['post_id']) . '&action=edit'),
+
+          // The one-test limit turns a launch into a draft; the editor must say so.
+          'notice' => ($requested_status === 'publish' && get_post_status($data['post_id']) === 'draft')
+            ? 'Not launched: the free version runs one test at a time, so this test was saved as a draft. Pause or complete your live test, then launch this one.'
+            : '',
 
         ]);
 
@@ -4948,7 +4969,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'value' => max(0, min(100, $confidence)),
 
-          'left' => $confidence > 0 ? $confidence . '% to significance' : 'Paused',
+          'left' => ($confidence > 0 && is_array($stats) && !empty($stats['has_sufficient_data']) && in_array($stats['blocked_by'] ?? '', ['', 'confidence'], true)) ? $confidence . '% to significance' : '', // right-hand label already says Paused
 
           'right' => 'Paused',
 
@@ -8605,57 +8626,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
         
 
-        // Format leading variation name
-
-        //if it copntains magic- then do the thiong else just use its nameSZ
-
-        if($leading_variation && strpos($leading_variation, 'magic-') !== false) {
-
-          $leading_display = str_replace('magic-', '', $leading_variation);
-
-          $leading_label = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$leading_display];
-
-        } else {
-
-          $leading_display = $leading_variation;
-
-          if(is_int($leading_display)) {
-
-            //get post name by id
-
-            $leading_label = get_the_title($leading_display);
-
-          } else {
-
-            $leading_label = $leading_variation;
-
-          }
-
-        }
-
-        //if its set in variation meta then use that
-
-        if($variation_meta)
-
-        {
-
-          foreach($variation_meta as $key => $value)
-
-          {
-
-            if($key == $leading_variation)
-
-            {
-
-              if(!empty($value['label']))
-
-                $leading_label = $value['label'];
-
-            }
-
-          }
-
-        }
+        // Custom label, page title, "Variation B" for Magic and code tests.
+        $leading_label = abst_get_variation_label($leading_variation, $variation_meta ?? get_post_meta($test->ID, 'variation_meta', true));
 
         
 
@@ -9092,57 +9064,14 @@ $titles = array();
 
 
 
-      //if its an id
-
-      if(is_numeric($mk))
-
-      {
-
-        $post_id_data = get_post($mk);
-
-
-
-        if( !is_null($post_id_data))
-
-        {
-
-          $mk = $post_id_data->post_title;
-
-          if(in_array($mk,$titles))
-
-            $mk = $post_id_data->post_name;
-
-          $titles[] = $mk;
-
-        }
-
-
-
+      // Custom label, page title, "Variation B" for Magic and code tests.
+      $mk = abst_get_variation_label($okey, $variation_meta);
+      if (in_array($mk, $titles, true) && is_numeric($okey)) {
+        $post_id_data = get_post($okey);
+        if (!is_null($post_id_data))
+          $mk = $post_id_data->post_name; // two pages with the same title
       }
-
-
-
-      //if is magic if mk starts with magic-
-
-      if(stripos($mk, 'magic-') === 0)
-
-      {
-
-        $mk = substr($mk, 6);
-
-        //0= variation a 1= variation b etc
-
-        $mk = "Variation " . ['A (original)','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][$mk];
-
-      }
-
-
-
-      if(isset($variation_meta[$okey]['label']) && !empty($variation_meta[$okey]['label'])){
-
-        $mk = $variation_meta[$okey]['label'];
-
-      }
+      $titles[] = $mk;
 
       
 
@@ -10401,9 +10330,20 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $foundConversion = false;
 
+      // Empty first option: shows the "Choose Page" placeholder instead of silently
+      // preselecting the first page as the goal of a new test.
+      $select = '<option value=""></option>';
+
+      // Builder template libraries are public post types but never a page a visitor lands on.
+      $abst_not_landing_pages = apply_filters( 'abst_conversion_page_excluded_post_types', array( 'bt_experiments', 'elementor_library', 'fl-builder-template', 'bricks_template', 'ct_template', 'oxy_user_library', 'breakdance_template', 'breakdance_header', 'breakdance_footer', 'breakdance_block', 'breakdance_popup' ) );
+
       foreach($allPublicPosts as $publicPost)
 
       {
+
+        if (in_array($publicPost->post_type, $abst_not_landing_pages, true))
+
+          continue;
 
         $selected = '';
 
@@ -10419,11 +10359,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       }
 
-      if(!$foundConversion)
+      // Only for a saved page ID: get_post('') returns the current post (this test),
+      // which showed up as a blank ": bt_experiments" choice on every new test.
+      if(!$foundConversion && is_numeric($conversion_page) && (int) $conversion_page > 0)
 
       {
 
-        $cPage = get_post($conversion_page);
+        $cPage = get_post((int) $conversion_page);
 
         if(!empty($cPage)){
 
@@ -12481,11 +12423,15 @@ echo "    if( selectval !== 'url' )
 
                 // Shorten the title
 
-                $title = ( mb_strlen( get_the_title() ) > 50 ) 
+                // get_the_title() is HTML ("-" becomes &#8211;); the block editor's picker
+                // prints plain text, so decode it before shortening.
+                $plain_title = html_entity_decode( get_the_title(), ENT_QUOTES, 'UTF-8' );
 
-                    ? mb_substr( get_the_title(), 0, 49 ) . '...' 
+                $title = ( mb_strlen( $plain_title ) > 50 )
 
-                    : get_the_title();
+                    ? mb_substr( $plain_title, 0, 49 ) . '...'
+
+                    : $plain_title;
 
                     
 
@@ -13985,6 +13931,11 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
       if (abst_lite_active_test_count($post_id) >= 1) {
 
         $data['post_status'] = 'draft';
+
+        // Tell the saved-message screen this was a refused launch, not a draft save.
+        if ($post_id && get_current_user_id()) {
+          set_transient('abst_launch_refused_' . get_current_user_id(), $post_id, MINUTE_IN_SECONDS);
+        }
 
         abst_log('Free licence limited to one active non-sample test. Upgrade https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice');
 

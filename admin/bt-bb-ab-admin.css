@@ -3846,3 +3846,8 @@ div#wpfooter {
 .abst-filter-field select {
     width: 100%;
 }
+
+/* Conversion Page picker: fill the goals card, never wider than it */
+label.conversion_page_selector .select2-container {
+  max-width: 25rem;
+}
