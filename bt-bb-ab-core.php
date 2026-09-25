@@ -3528,974 +3528,647 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       //select input post_title
 
         jQuery('#post_title').focus();
+        jQuery('body').on('click','.abst-popup-close',function(){
+          window.parent.postMessage('abclosemodal','*');
+        });
 
-      });</script>";
+      });
+      // keys pressed in this iframe never reach the builder page, so Escape is handled here.
+      // capture phase runs before select2, so Escape on an open dropdown only closes the dropdown
+      window.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && !document.querySelector('.select2-container--open'))
+          window.parent.postMessage('abclosemodal','*');
+      }, true);</script>";
 
       // include select2
 
       echo '<style>
-
-            :root {
-
-                --abst-primary: #17A8E3;
-
-                --abst-text: #1e293b;
-
-                --abst-text-secondary: #64748b;
-
-                --abst-border: #e2e8f0;
-
-                --abst-bg: #f8fafc;
-
-            }
-
-
-
+            /* Colours, radii and shadows come from the --abst-* tokens in admin/bt-bb-ab-admin.css */
             body {
-
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-
                 padding: 0 !important;
-
                 margin: 0 !important;
-
                 overflow-x: hidden;
-
                 background: #ffffff;
-
                 font-size: 14px;
-
                 color: var(--abst-text);
-
                 line-height: 1.5;
-
             }
 
+            /* Form controls otherwise fall back to the browser font */
+            input, select, textarea, button {
+                font-family: inherit;
+            }
 
+            /* WP core admin CSS normally hides these, but it is not loaded in this iframe */
+            .screen-reader-text {
+                position: absolute !important;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0 !important;
+                overflow: hidden;
+                clip: rect(1px, 1px, 1px, 1px);
+                clip-path: inset(50%);
+                border: 0;
+                white-space: nowrap;
+            }
 
             form#post {
-
-                padding: 24px;
-
-                padding-bottom: 80px;
-
+                padding: 0 24px 80px;
             }
 
-
-
-            /* Main title */
-
-            form#post > h4:first-child {
-
-                font-size: 18px;
-
-                font-weight: 600;
-
-                color: var(--abst-text);
-
-                margin: 0 0 24px 0;
-
-                padding-bottom: 16px;
-
+            /* Header - stays visible while the form scrolls */
+            .abst-popup-header {
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin: 0 -24px 20px;
+                padding: 16px 24px;
+                background: #ffffff;
                 border-bottom: 1px solid var(--abst-border);
-
             }
 
+            .abst-popup-header h2 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: var(--abst-text);
+            }
 
+            .abst-popup-close {
+                width: 28px;
+                height: 28px;
+                padding: 0;
+                border: none;
+                border-radius: 6px;
+                background: transparent;
+                color: var(--abst-text-muted);
+                font-size: 20px;
+                line-height: 1;
+                cursor: pointer;
+            }
+
+            .abst-popup-close:hover, .abst-popup-close:focus-visible {
+                background: #fee2e2;
+                color: #dc2626;
+                outline: none;
+            }
 
             /* Section boxes */
-
             .experiment_box, .title_box {
-
                 background: #ffffff;
-
                 padding: 0;
-
                 margin-bottom: 24px;
-
             }
-
-
 
             /* Section titles (h4) */
-
             h4 {
-
                 font-size: 14px;
-
                 font-weight: 600;
-
                 color: var(--abst-text) !important;
-
                 margin: 16px 0 8px 0;
-
                 text-decoration: none !important;
-
             }
-
-
 
             h4:first-child {
-
                 margin-top: 0;
-
             }
-
-
 
             /* Labels */
-
             label {
-
                 font-size: 13px;
-
                 font-weight: 500;
-
                 color: var(--abst-text-secondary);
-
                 display: block;
-
                 margin-bottom: 4px;
-
             }
 
-
+            .title_box label {
+                color: var(--abst-text);
+            }
 
             /* Accordion headers (h3) - collapsed state */
-
             .collapsed > h3 {
-
-                font-size: 14px;
-
-                font-weight: 600;
-
+                font-size: 13px;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
                 color: var(--abst-text);
-
                 background: #ffffff !important;
-
                 padding: 14px 16px;
-
                 border: 1px solid var(--abst-border);
-
-                border-radius: 6px;
-
-                box-shadow: none;
-
+                border-radius: var(--abst-radius);
+                box-shadow: var(--abst-shadow-sm);
                 margin: 8px 0;
-
                 cursor: pointer;
-
                 display: flex;
-
                 justify-content: space-between;
-
                 align-items: center;
-
             }
-
-
 
             .collapsed > h3:hover {
-
                 border-color: var(--abst-primary);
-
                 color: var(--abst-primary);
-
             }
-
-
 
             .collapsed > h3::after {
-
                 content: "▸";
-
-                color: #94a3b8;
-
+                color: var(--abst-text-muted);
                 font-weight: 400;
-
-                font-size: 12px;
-
+                font-size: 14px;
             }
-
-
 
             /* Accordion headers (h3) - expanded state */
-
             .expanded > h3 {
-
-                font-size: 14px;
-
-                font-weight: 600;
-
+                font-size: 13px;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
                 color: var(--abst-text);
-
                 background: #ffffff !important;
-
                 padding: 14px 16px;
-
                 border: 1px solid var(--abst-border);
-
                 border-bottom: none;
-
-                border-radius: 6px 6px 0 0;
-
+                border-radius: var(--abst-radius) var(--abst-radius) 0 0;
                 box-shadow: none;
-
                 margin: 8px 0 0 0;
-
                 cursor: pointer;
-
                 display: flex;
-
                 justify-content: space-between;
-
                 align-items: center;
-
             }
-
-
 
             .expanded > h3:hover {
-
                 color: var(--abst-primary);
-
             }
-
-
 
             .expanded > h3::after {
-
                 content: "▾";
-
-                color: #94a3b8;
-
+                color: var(--abst-text-muted);
                 font-weight: 400;
-
-                font-size: 12px;
-
+                font-size: 14px;
             }
-
-
 
             /* Expanded section - wrap all content */
-
             .expanded {
-
                 background: #ffffff;
-
                 border: 1px solid var(--abst-border);
-
-                border-radius: 6px;
-
+                border-radius: var(--abst-radius);
+                box-shadow: var(--abst-shadow-sm);
                 margin: 8px 0;
-
                 overflow: hidden;
-
             }
-
-
 
             .expanded > h3 {
-
                 margin: 0 !important;
-
                 border: none !important;
-
                 border-bottom: 1px solid var(--abst-border) !important;
-
                 border-radius: 0 !important;
-
             }
-
-
 
             .expanded > *:not(h3) {
-
                 padding: 0 16px;
-
             }
 
-
+            /* a select placed straight in an accordion (free version Device Size) lines up with the text */
+            .expanded > select {
+                width: calc(100% - 32px);
+                margin: 0 16px 16px;
+                padding: 0 36px 0 14px;
+            }
 
             .expanded > *:last-child {
-
                 padding-bottom: 16px;
-
             }
-
-
 
             .expanded h4 {
-
                 margin-top: 16px;
-
             }
-
-
 
             /* Generic h3 fallback */
-
             h3 {
-
                 font-size: 14px;
-
                 font-weight: 600;
-
                 color: var(--abst-text);
-
                 margin: 16px 0 8px 0;
-
             }
-
-
 
             /* Description text */
-
             p {
-
                 font-size: 13px;
-
                 color: var(--abst-text-secondary);
-
                 margin: 0 0 12px 0;
-
                 line-height: 1.5;
-
             }
-
-
 
             /* Form inputs */
-
-            input[type="text"], input[type="number"] {
-
+            input[type="text"], input[type="number"], textarea {
                 width: 100%;
-
                 padding: 10px 14px;
-
                 border: 1px solid var(--abst-border);
-
-                border-radius: 6px;
-
+                border-radius: var(--abst-radius-md);
                 font-size: 14px;
-
+                color: var(--abst-text);
                 background: #ffffff;
-
                 box-sizing: border-box;
-
                 transition: border-color 0.15s ease;
-
             }
 
-
-
-            input[type="text"]:focus, input[type="number"]:focus {
-
+            input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
                 border-color: var(--abst-primary);
-
                 outline: none;
-
-                box-shadow: 0 0 0 3px rgba(23, 168, 227, 0.1);
-
+                box-shadow: 0 0 0 3px rgba(23, 168, 227, 0.12);
             }
 
-
-
-            /* Selects */
-
+            /* Selects - same height and chevron as the select2 fields */
             select {
-
                 width: 100%;
-
-                padding: 10px 14px;
-
+                height: 42px;
+                padding: 0 36px 0 14px;
                 border: 1px solid var(--abst-border);
-
-                border-radius: 6px;
-
+                border-radius: var(--abst-radius-md);
                 font-size: 14px;
-
-                background: #ffffff;
-
+                color: var(--abst-text);
+                background: #ffffff url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239CA3AF%22 stroke-width=%222.5%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E") no-repeat right 14px center;
+                -webkit-appearance: none;
+                appearance: none;
                 cursor: pointer;
-
                 box-sizing: border-box;
-
                 margin-bottom: 16px;
-
             }
-
-
-
-            select:focus {
-
-                border-color: var(--abst-primary);
-
-                outline: none;
-
-            }
-
-
 
             /* Device Size select */
-
             #bt_experiments_target_option_device_size {
-
                 margin-top: 4px;
-
             }
-
             .show_goals {
-
                 margin-bottom: 30px;
-
             }
 
-            
-
-            /* Primary conversion goal card - prominent green accent */
-
-            .conversion-goal {
-
-                background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
-
-                padding: 20px;
-
-                border: 1px solid #bbf7d0;
-
-                border-left: 4px solid #22c55e;
-
-                border-radius: 8px;
-
+            /* Goal cards - flat cards, as on the main test editor */
+            .conversion-goal,
+            .subgoal {
+                background: var(--abst-border-light);
+                padding: 16px;
+                border: 1px solid var(--abst-border);
+                border-radius: var(--abst-radius-md);
                 margin-bottom: 16px;
-
                 position: relative;
-
-                box-shadow: 0 2px 8px rgba(34, 197, 94, 0.08);
-
             }
 
-            
+            .conversion-goal h4,
+            .subgoal h4 {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin: 0 0 8px 0;
+            }
 
             .conversion-goal h4 {
-
-                font-size: 11px;
-
-                font-weight: 700;
-
-                color: #15803d;
-
-                text-transform: uppercase;
-
-                letter-spacing: 0.5px;
-
-                margin: 0 0 12px 0;
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 8px;
-
+                color: #15803d !important;
             }
-
-            
-
-            .conversion-goal h4::before {
-
-                content: "🎯";
-
-                font-size: 14px;
-
-            }
-
-
-
-            .conversion-goal p {
-
-                margin-bottom: 12px;
-
-                color: var(--abst-text);
-
-            }
-
-            
-
-            /* Subgoal cards - blue accent */
-
-            .subgoal {
-
-                background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-
-                padding: 16px 20px;
-
-                border: 1px solid #bfdbfe;
-
-                border-left: 4px solid #3b82f6;
-
-                border-radius: 8px;
-
-                margin-bottom: 12px;
-
-                position: relative;
-
-                box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
-
-            }
-
-            
 
             .subgoal h4 {
-
-                font-size: 11px;
-
-                font-weight: 700;
-
-                color: #1d4ed8;
-
-                text-transform: uppercase;
-
-                letter-spacing: 0.5px;
-
-                margin: 0 0 12px 0;
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 8px;
-
+                color: #1d4ed8 !important;
             }
 
-            
-
-            .subgoal h4::before {
-
-                content: "📊";
-
-                font-size: 13px;
-
+            .conversion-goal p {
+                margin-bottom: 12px;
+                color: var(--abst-text);
             }
 
-            
+            /* the trigger select sits in a <p>, so its own margin only adds empty space */
+            .conversion-goal select {
+                margin-bottom: 0;
+            }
 
             .subgoal label {
-
                 display: block;
-
                 font-size: 13px;
-
                 font-weight: 500;
-
                 color: var(--abst-text);
-
                 margin-bottom: 6px;
-
             }
-
-            
 
             .subgoal p {
-
                 font-size: 12px;
-
                 color: var(--abst-text-secondary);
-
                 margin: 8px 0;
-
                 line-height: 1.5;
-
             }
-
-
 
             .subgoal input[type="text"] {
-
                 margin-top: 4px;
-
                 width: 100%;
-
             }
-
-            
 
             .subgoal select {
-
                 width: 100%;
-
                 max-width: 300px;
-
             }
-
-
 
             /* Close button on subgoals */
-
             .subgoal .close-goal {
-
                 position: absolute;
-
                 top: 12px;
-
                 right: 12px;
-
                 width: 22px;
-
                 height: 22px;
-
                 border-radius: 4px;
-
                 background: #f1f5f9;
-
                 color: #94a3b8;
-
                 border: 1px solid #e2e8f0;
-
                 font-size: 12px;
-
                 font-weight: 500;
-
                 cursor: pointer;
-
                 display: flex;
-
                 align-items: center;
-
                 justify-content: center;
-
                 transition: all 0.15s ease;
-
                 line-height: 1;
-
             }
-
-
 
             .subgoal .close-goal:hover {
-
                 background: #fee2e2;
-
                 border-color: #fecaca;
-
                 color: #dc2626;
-
             }
 
-            
-
-            /* Add Goal button */
-
-            .show_goals .add-goal {
-
-                background: #f0fdf4;
-
-                color: #15803d;
-
-                border: 1px solid #bbf7d0;
-
-                border-radius: 6px;
-
-                padding: 8px 16px;
-
-                font-size: 13px;
-
-                font-weight: 500;
-
-                cursor: pointer;
-
-                transition: all 0.15s ease;
-
-            }
-
-            
-
-            .show_goals .add-goal:hover {
-
-                background: #dcfce7;
-
-                border-color: #86efac;
-
-            }
-
-
-
-            /* Checkboxes - inline pills */
-
+            /* Checkboxes - inline pills (toggles keep their own switch style) */
             .ab-targeting-roles label,
-
-            label:has(input[type="checkbox"]) {
-
+            label:has(input[type="checkbox"]:not(.ab-toggle)) {
                 display: inline-flex;
-
                 align-items: center;
-
                 background: #f9fafb;
-
                 border: 1px solid var(--abst-border);
-
                 border-radius: 20px;
-
                 padding: 6px 12px;
-
                 margin: 4px 4px 4px 0;
-
                 font-size: 12px;
-
                 cursor: pointer;
-
                 transition: all 0.15s ease;
-
             }
-
-
 
             .ab-targeting-roles label:hover,
-
-            label:has(input[type="checkbox"]):hover {
-
+            label:has(input[type="checkbox"]:not(.ab-toggle)):hover {
                 background: #eff6ff;
-
                 border-color: #93c5fd;
-
             }
-
-
 
             .ab-targeting-roles label:has(input:checked),
-
-            label:has(input[type="checkbox"]:checked) {
-
+            label:has(input[type="checkbox"]:not(.ab-toggle):checked) {
                 background: #dbeafe;
-
                 border-color: #3b82f6;
-
                 color: #1e40af;
-
             }
-
-
 
             input[type="checkbox"] {
-
                 width: 14px;
-
                 height: 14px;
-
                 margin-right: 6px;
-
                 border-radius: 3px;
-
             }
-
-
 
             /* Add Goal button */
-
             button.button.button-small.add-goal,
-
             .add-goal {
-
                 background: #ffffff;
-
                 border: 1px solid var(--abst-border);
-
                 border-radius: 6px;
-
                 padding: 10px 16px;
-
                 cursor: pointer;
-
                 font-size: 13px;
-
                 font-weight: 500;
-
                 color: #374151;
-
                 transition: all 0.15s ease;
-
                 margin-top: 8px;
-
             }
-
-
 
             button.button.button-small.add-goal:hover,
-
             .add-goal:hover {
-
                 background: var(--abst-bg);
-
                 border-color: var(--abst-primary);
-
                 color: var(--abst-primary);
-
             }
 
+            /* Visitor segmentation rules - same look as the main editor, which scopes them to #configuration_settings */
+            .expanded > .abst-target-rules {
+                margin: 4px 16px 16px;
+                padding: 0;
+                border: 1px solid var(--abst-border);
+                border-radius: var(--abst-radius);
+                background: #ffffff;
+                overflow: hidden;
+            }
 
+            .abst-target-rule {
+                margin: 0;
+                border-bottom: 1px solid var(--abst-border);
+            }
+
+            .abst-target-rule:last-child {
+                border-bottom: 0;
+            }
+
+            .abst-target-rule > summary {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 13px 16px;
+                color: var(--abst-text);
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                list-style: none;
+            }
+
+            .abst-target-rule > summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .abst-target-rule > summary::after {
+                content: "+";
+                color: var(--abst-text-secondary);
+                font-size: 18px;
+                font-weight: 400;
+                line-height: 1;
+            }
+
+            .abst-target-rule[open] > summary::after {
+                content: "−";
+            }
+
+            .abst-target-rule > summary small {
+                margin-left: auto;
+                color: var(--abst-text-secondary);
+                font-size: 11px;
+                font-weight: 500;
+            }
+
+            .abst-target-rule[open] > summary {
+                background: #f8fafc;
+            }
+
+            .abst-target-rule__body {
+                padding: 14px 16px 16px;
+                border-top: 1px solid var(--abst-border-light);
+            }
+
+            .abst-target-rule__body textarea {
+                min-height: 72px;
+            }
+
+            .abst-target-rule__body .description {
+                margin: 8px 0 0;
+            }
+
+            /* Audience subsets */
+            .expanded > .ab-targeting-audiences {
+                margin: 0 16px 16px;
+                padding: 14px;
+                border: 1px solid var(--abst-border);
+                border-radius: var(--abst-radius-md);
+            }
+
+            .ab-targeting-audiences__heading {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 6px;
+            }
+
+            .ab-targeting-audiences__heading h4 {
+                margin: 1px 0 0;
+            }
+
+            .ab-targeting-audiences__heading a {
+                color: var(--abst-text-secondary);
+                font-size: 11px;
+            }
+
+            .abst-section-kicker, .abst-optional-label {
+                color: var(--abst-text-muted);
+                font-size: 9px;
+                font-weight: 600;
+                letter-spacing: .05em;
+                text-transform: uppercase;
+            }
+
+            .abst-optional-label {
+                margin-left: 4px;
+                font-weight: 400;
+            }
+
+            .ab-targeting-audiences__intro {
+                margin: 0 0 10px;
+                font-size: 12px;
+                line-height: 1.45;
+            }
+
+            /* Autocomplete toggle sits beside its label, inside the card padding */
+            .show_autocomplete > input.ab-toggle {
+                margin: 0 10px 0 16px !important;
+            }
+
+            .show_autocomplete > input.ab-toggle + label {
+                display: inline-block;
+                margin: 0;
+                padding: 0;
+                vertical-align: middle;
+            }
 
             /* Submit button */
-
             .submit_box {
-
                 position: fixed;
-
                 bottom: 0;
-
                 left: 0;
-
                 right: 0;
-
                 background: #ffffff;
-
-                padding: 16px 24px;
-
-                box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-
+                padding: 14px 24px;
                 border-top: 1px solid var(--abst-border);
-
             }
-
-
 
             button#submit_experiment {
-
                 width: 100%;
-
                 display: block;
-
-                background: #10b981;
-
-                border-radius: 6px;
-
+                background: var(--abst-primary);
+                border-radius: var(--abst-radius-md);
                 color: #ffffff;
-
-                padding: 14px 24px;
-
-                font-size: 15px;
-
+                padding: 13px 24px;
+                font-size: 13px;
                 font-weight: 600;
-
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
                 border: none;
-
                 cursor: pointer;
-
                 transition: background 0.15s ease;
-
             }
-
-
 
             button#submit_experiment:hover {
-
-                background: #059669;
-
+                background: var(--abst-primary-hover);
             }
-
-
 
             /* Links */
-
             a {
-
                 color: var(--abst-primary);
-
                 text-decoration: none;
-
             }
-
-
 
             a:hover {
-
                 text-decoration: underline;
-
             }
-
-
 
             /* Hide elements */
-
             .ab-tab-button { display: none; }
 
-
-
             /* Select2 overrides */
-
-            .select2-container { 
-
-                width: 100% !important; 
-
+            .select2-container {
+                width: 100% !important;
                 max-width: 100% !important;
-
                 box-sizing: border-box !important;
-
             }
-
             .select2-container--default .select2-selection--single {
-
                 border: 1px solid var(--abst-border) !important;
-
                 border-radius: 6px !important;
-
                 height: 42px !important;
-
                 padding: 6px 12px !important;
-
             }
-
             .select2-container--default .select2-selection--single .select2-selection__rendered {
-
                 line-height: 28px !important;
-
             }
-
-            
 
             /* Select2 dropdown - contain within iframe */
-
             .select2-dropdown {
-
                 max-width: calc(100vw - 48px) !important;
-
                 border: 1px solid var(--abst-border) !important;
-
                 border-radius: 6px !important;
-
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-
             }
-
-            
 
             .select2-results__options {
-
                 max-height: 200px !important;
-
             }
-
-            
 
             .select2-results__option {
-
                 padding: 10px 14px !important;
-
                 font-size: 13px !important;
-
             }
-
-            
 
             .select2-results__option--highlighted {
-
                 background: var(--abst-primary) !important;
-
             }
-
       </style>';
 
       //form post to ajax url action name create_new_on_page_test
 
-      echo '</head><body><form action="' . esc_url(admin_url('admin-ajax.php')) . '" method="post" id="post" enctype="multipart/form-data"><h4 style="font-size:1.1em;">Create new Split Test</h4><div class="title_box"> <h4><label for="post_title">Test Name</label></h4><input name="post_title" id="post_title" type="text" value="" placeholder="Test Name" size="30" class="regular-text" required="required"/>';
+      echo '</head><body><form action="' . esc_url(admin_url('admin-ajax.php')) . '" method="post" id="post" enctype="multipart/form-data"><div class="abst-popup-header"><h2>Create new Split Test</h2><button type="button" class="abst-popup-close" aria-label="Close">&times;</button></div><div class="title_box"> <h4><label for="post_title">Test Name</label></h4><input name="post_title" id="post_title" type="text" value="" placeholder="Test Name" size="30" class="regular-text" required="required"/>';
 
       echo '<input type="hidden"  name="test_type" value="ab_test"/>';
 

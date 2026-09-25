@@ -368,18 +368,28 @@ font-size:1.1em;
     color:#525252 !important;
   }
 
+/* create-test pop-up in page builders (js/builderhelper.js); framed like .abst-modal in the admin */
 .newabpanel {
-  width: 500px;
-  height: 60vh;
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  height: min(760px, 88vh);
   position: fixed;
-  top: 6vh;
-  left: calc(50% - 250px);
+  top: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
   border: none;
-  z-index: 50001;
+  z-index: 100101;
   display: none;
-  box-shadow: 0 1px 10px -3px black;
-  border-radius: 20px;
-  background-color: whitesmoke;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+
+.newabpanel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100100;
+  background: rgba(0, 0, 0, 0.55);
 }
 
 #ab-ai-form {

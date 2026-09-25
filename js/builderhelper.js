@@ -74,12 +74,20 @@ jQuery(document).ready(function(){
             attachVariationSanitizer(window.parent.document);
         }
 
+        // closes the open create-test pop-up (iframe + backdrop), if there is one
+        var closeActiveNewAbPanel = null;
+        function closeNewAbPanelIfOpen(){
+            if (closeActiveNewAbPanel)
+                closeActiveNewAbPanel();
+            jQuery('.newabpanel, .newabpanel-backdrop').remove();
+        }
+
         jQuery(window.parent.document.body).on("click", ".new-on-page-test-button", function(e){
-                
+
             e.preventDefault();
             console.log('clicked');
             var testName = '';
-            jQuery('.newabpanel').remove();
+            closeNewAbPanelIfOpen();
     
             if(jQuery(this).parents('#bricks-panel-element').length > 0) // if its bricks get its name
                 testName = '&name=' + jQuery(this).parents('#bricks-panel-element').find('#bricks-panel-header input').val() + ' Test';
@@ -98,60 +106,42 @@ jQuery(document).ready(function(){
                 testName = '&name=' + 'Row Test';
     
     
-            //create close button that floats above the iframe
-            var newabclose = document.createElement('button');
-            newabclose.style.position = 'fixed';
-            newabclose.style.top = 'calc(5vh - 20px)';
-            newabclose.style.right = 'calc(50% - 230px)';
-            newabclose.classList.add('newabpanel');
-            newabclose.style.zIndex = '9999';
-            newabclose.style.backgroundColor = '#b30202';
-            newabclose.style.color = 'white';
-            newabclose.style.border = 'none';
-            newabclose.style.borderRadius = '10px 10px 0 0';
-            newabclose.style.padding = '10px';
-            newabclose.style.fontWeight = 'bold';
-            newabclose.style.cursor = 'pointer';
-            newabclose.style.boxShadow = '0 1px 10px -3px black';
-            newabclose.innerHTML = 'CLOSE X';
-            document.body.appendChild(newabclose);
-    
-            //CREATE IFRAME AS A MODAL POPOVER TAKING UP 600PX WIDE FULL HEIGHT
+            //backdrop dims the builder and blocks clicks to it while the pop-up is open
+            var newabbackdrop = document.createElement('div');
+            newabbackdrop.classList.add('newabpanel-backdrop');
+            document.body.appendChild(newabbackdrop);
+
+            //CREATE IFRAME AS A MODAL POPOVER
             var newabiframe = document.createElement('iframe');
-            
+
             // Function to close and cleanup
             function closeNewAbPanel() {
                 if (newabiframe && newabiframe.parentNode) {
                     newabiframe.parentNode.removeChild(newabiframe);
                 }
-                if (newabclose && newabclose.parentNode) {
-                    newabclose.parentNode.removeChild(newabclose);
+                if (newabbackdrop && newabbackdrop.parentNode) {
+                    newabbackdrop.parentNode.removeChild(newabbackdrop);
                 }
                 // Remove event listeners
                 document.removeEventListener('keydown', escapeHandler);
-                document.removeEventListener('click', clickOutsideHandler);
+                if (closeActiveNewAbPanel === closeNewAbPanel)
+                    closeActiveNewAbPanel = null;
             }
-            
-            // Event handlers
+
+            // Escape pressed on the builder page (Escape inside the iframe is posted as 'abclosemodal')
             function escapeHandler(e) {
                 if (e.key == 'Escape') {
                     closeNewAbPanel();
                 }
             }
-            
-            function clickOutsideHandler(e) {
-                if (e.target == document.body) {
-                    closeNewAbPanel();
-                }
-            }
 
-            newabclose.addEventListener('click', closeNewAbPanel);
-    
+            // close on a click outside the pop-up
+            newabbackdrop.addEventListener('click', closeNewAbPanel);
+
             // close on escape key
             document.addEventListener('keydown', escapeHandler);
-    
-            //close on click outside the iframe on parent body
-            document.addEventListener('click', clickOutsideHandler);
+
+            closeActiveNewAbPanel = closeNewAbPanel;
     
             // generate source
             const wp_ajax_on_page_test_create = window.ajaxurl 
@@ -261,14 +251,12 @@ jQuery(document).ready(function(){
                 }
     
                 //window closing in 1 second
-                this.setTimeout(function(){
-                    jQuery('.newabpanel').remove();
-                },1500);
+                this.setTimeout(closeNewAbPanelIfOpen,1500);
             }
-    
+
             if (data == 'abclosemodal'){
                 console.log('ABST close modal');
-                jQuery('.newabpanel').remove();
+                closeNewAbPanelIfOpen();
             //    jQuery('.newabpanel',window.iframe).remove();//bricks in iframe
             }
     
