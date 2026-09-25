@@ -150,6 +150,7 @@ if ( ! function_exists( 'abst_stats_no_verdict' ) ) {
     $data['bt_bb_ab_stats']['best'] = false;
     $data['bt_bb_ab_stats']['probability'] = 0;
     $data['bt_bb_ab_stats']['winner'] = false;
+    $data['bt_bb_ab_stats']['blocked_by'] = $likely_duration === 999 ? 'conversions' : 'visits';
     $data['bt_bb_ab_stats']['likelyDuration'] = $likely_duration;
     $data['bt_bb_ab_stats']['likelyVisitors'] = 0;
     foreach ( $data as $key => $v ) {
@@ -173,24 +174,133 @@ if ( ! function_exists( 'abst_stats_conversion_sampler' ) ) {
   }
 }
 
+if ( ! function_exists( 'abst_stats_draw_verdict' ) ) {
+/**
+ * Chance each variation is best, and the expected loss of choosing each one,
+ * from one set of draws (the same draws abst_stats_probability_best() makes).
+ *
+ * Expected loss of choosing k = the average, over all draws, of (the best value
+ * in that draw minus k's value). It is what you give up on average if k is not
+ * really the best: small when k is almost surely best, and also small when the
+ * variations that might beat it would only beat it by a hair.
+ *
+ * @param callable[] $samplers Variation key => function returning one draw.
+ * @return array ['probability' => key => %, 'loss' => key => value, 'mean' => key => value]
+ */
+function abst_stats_draw_verdict(array $samplers, $draws) {
+  $keys = array_keys($samplers);
+  $wins = array_fill_keys($keys, 0);
+  $loss = array_fill_keys($keys, 0.0);
+  $sum = array_fill_keys($keys, 0.0);
+  for ($i = 0; $i < $draws; $i++) {
+    $values = array();
+    $best = null;
+    $best_value = -INF;
+    foreach ($samplers as $key => $draw) {
+      $x = $draw();
+      $values[$key] = $x;
+      $sum[$key] += $x;
+      if ($x > $best_value) {
+        $best_value = $x;
+        $best = $key;
+      }
+    }
+    if ($best !== null) $wins[$best]++;
+    foreach ($values as $key => $x) $loss[$key] += $best_value - $x;
+  }
+  $out = array('probability' => array(), 'loss' => array(), 'mean' => array());
+  foreach ($keys as $key) {
+    $out['probability'][$key] = round($wins[$key] / $draws * 100);
+    $out['loss'][$key] = $loss[$key] / $draws;
+    $out['mean'][$key] = $sum[$key] / $draws;
+  }
+  return $out;
+}
+
+/** Expected loss as a share of the variation's own expected value (0.01 = 1%). */
+function abst_stats_relative_loss($verdict, $key) {
+  $loss = (float) ($verdict['loss'][$key] ?? 0);
+  $mean = (float) ($verdict['mean'][$key] ?? 0);
+  if ($loss <= 0) return 0.0;
+  return $mean > 0 ? $loss / $mean : INF;
+}
+
+/**
+ * Conversions (orders, for revenue tests) the whole test needs before a winner
+ * can be called: 25 per variation by default, counted across the test so a
+ * variation that truly converts close to 0 can still lose.
+ */
+function abst_stats_min_conversions($variation_count) {
+  return max(0, (int) apply_filters('abst_min_conversions_for_winner', 25)) * max(2, (int) $variation_count);
+}
+
+/**
+ * Optional extra rule: the largest expected loss, relative to the leader's own
+ * rate, at which it can be called the winner (0.01 = choosing it costs under 1%
+ * of its conversion rate if it is not really the best).
+ *
+ * Off by default. At the 95% threshold the leader's expected loss is already a
+ * fraction of a percent, so it would never decide anything; it only matters
+ * when a site lowers the confidence threshold and wants a floor under it.
+ * Expected loss is always recorded in the verdict either way.
+ */
+function abst_stats_max_expected_loss() {
+  $threshold = apply_filters('abst_expected_loss_threshold', null);
+  return (is_numeric($threshold) && $threshold > 0) ? (float) $threshold : INF;
+}
+
+/**
+ * Why the leader is not (yet) the winner, in the order a user would fix it:
+ * 'visits', 'conversions', 'confidence', 'loss'; '' when it is the winner.
+ */
+function abst_stats_blocked_by($has_min_visits, $events, $min_events, $probability, $threshold, $relative_loss, $max_loss) {
+  if (!$has_min_visits) return 'visits';
+  if ($events < $min_events) return 'conversions';
+  if ($probability < $threshold) return 'confidence';
+  if ($relative_loss > $max_loss) return 'loss';
+  return '';
+}
+
+/** Record the verdict fields every screen reads. */
+function abst_stats_store_verdict($data, $best, $verdict, $blocked_by, $events, $min_events) {
+  if (!isset($data['bt_bb_ab_stats']) || !is_array($data['bt_bb_ab_stats'])) $data['bt_bb_ab_stats'] = array();
+  $data['bt_bb_ab_stats']['best'] = $best;
+  $data['bt_bb_ab_stats']['probability'] = $verdict['probability'][$best];
+  // The one winner rule every screen should use.
+  $data['bt_bb_ab_stats']['winner'] = ($blocked_by === '');
+  $data['bt_bb_ab_stats']['blocked_by'] = $blocked_by;
+  $data['bt_bb_ab_stats']['conversions'] = (int) round($events); // counts, stored whole
+  $data['bt_bb_ab_stats']['min_conversions'] = $min_events;
+  $data['bt_bb_ab_stats']['expected_loss'] = $verdict['loss'][$best];
+  $relative = abst_stats_relative_loss($verdict, $best);
+  $data['bt_bb_ab_stats']['expected_loss_pct'] = is_finite($relative) ? round($relative * 100, 2) : null;
+  return $data;
+}
+}
+
 if ( ! function_exists( 'abst_stats_project_duration' ) ) {
   /**
-   * Days (and total visits) until the leader would reach the threshold if every
-   * variation keeps its current daily traffic and results. 999 days = not within
+   * Days (and total visits) until the leader would be the winner if every
+   * variation keeps its current daily traffic and results, by the same rule as
+   * today (visits, conversions, confidence, expected loss). 999 days = not within
    * 500 days at this traffic.
    *
    * @param callable $samplers_at Given a projected age in days, returns the samplers,
-   *                              the smallest projected visit count and the total.
+   *                              the smallest projected visit count, the total
+   *                              visits and the total conversions.
    */
-  function abst_stats_project_duration( $test_age, $threshold, $min_visits, callable $samplers_at ) {
+  function abst_stats_project_duration( $test_age, $threshold, $min_visits, callable $samplers_at, $min_events = 0, $max_loss = INF ) {
     $age = (int) $test_age;
     while ( $age < 500 ) {
       $age += $age > 120 ? 30 : 7;
-      list( $samplers, $fewest_visits, $total_visits ) = $samplers_at( $age );
+      $projected = $samplers_at( $age );
+      list( $samplers, $fewest_visits, $total_visits ) = $projected;
+      $events = isset( $projected[3] ) ? $projected[3] : INF;
       if ( count( $samplers ) < 2 ) break;
-      if ( $fewest_visits < $min_visits ) continue;
-      $probabilities = abst_stats_probability_best( $samplers, 1000 );
-      if ( max( $probabilities ) >= $threshold ) {
+      if ( $fewest_visits < $min_visits || $events < $min_events ) continue;
+      $verdict = abst_stats_draw_verdict( $samplers, 1000 );
+      $best = array_keys( $verdict['probability'], max( $verdict['probability'] ) )[0];
+      if ( $verdict['probability'][ $best ] >= $threshold && abst_stats_relative_loss( $verdict, $best ) <= $max_loss ) {
         return array( $age, $total_visits );
       }
     }
@@ -238,17 +348,17 @@ function abst_split_test_analyzer( $data = array(), $test_age = 0, $min_visits =
   foreach ( $variations as $key => $v ) {
     $samplers[ $key ] = abst_stats_conversion_sampler( $v['visit'], $v['conversion'] );
   }
-  $probabilities = abst_stats_probability_best( $samplers, 5000 );
-  foreach ( $probabilities as $key => $probability ) {
+  $verdict = abst_stats_draw_verdict( $samplers, 5000 );
+  foreach ( $verdict['probability'] as $key => $probability ) {
     $data[ $key ]['probability'] = $probability;
   }
-  $best = array_keys( $probabilities, max( $probabilities ) )[0];
-  if ( ! isset( $data['bt_bb_ab_stats'] ) || ! is_array( $data['bt_bb_ab_stats'] ) ) $data['bt_bb_ab_stats'] = array();
-  $data['bt_bb_ab_stats']['best'] = $best;
-  $data['bt_bb_ab_stats']['probability'] = $probabilities[ $best ];
-  // The one winner rule every screen should use: confidence at or above the
-  // threshold and every variation past the minimum visits.
-  $data['bt_bb_ab_stats']['winner'] = $probabilities[ $best ] >= $percentage_target && $has_min_visits;
+  $best = array_keys( $verdict['probability'], max( $verdict['probability'] ) )[0];
+  // A winner needs every variation past the minimum visits, enough conversions in
+  // the test, the confidence threshold, and (if a site opts in) a small expected loss.
+  $min_events = abst_stats_min_conversions( count( $variations ) );
+  $max_loss = abst_stats_max_expected_loss();
+  $blocked_by = abst_stats_blocked_by( $has_min_visits, $total_conversions, $min_events, $verdict['probability'][ $best ], $percentage_target, abst_stats_relative_loss( $verdict, $best ), $max_loss );
+  $data = abst_stats_store_verdict( $data, $best, $verdict, $blocked_by, $total_conversions, $min_events );
 
   if ( $data['bt_bb_ab_stats']['winner'] ) {
     $data['bt_bb_ab_stats']['likelyDuration'] = false; // Winner found
@@ -259,15 +369,18 @@ function abst_split_test_analyzer( $data = array(), $test_age = 0, $min_visits =
       $samplers = array();
       $fewest = PHP_INT_MAX;
       $total = 0;
+      $events = 0;
       foreach ( $variations as $key => $v ) {
         $n = (int) ( $v['visit'] / $test_age * $age );
         if ( $n <= 0 ) continue;
+        $c = (int) ( $v['conversion'] / $test_age * $age );
         $fewest = min( $fewest, $n );
         $total += $n;
-        $samplers[ $key ] = abst_stats_conversion_sampler( $n, (int) ( $v['conversion'] / $test_age * $age ) );
+        $events += $c;
+        $samplers[ $key ] = abst_stats_conversion_sampler( $n, $c );
       }
-      return array( $samplers, $fewest, $total );
-    } );
+      return array( $samplers, $fewest, $total, $events );
+    }, $min_events, $max_loss );
     $data['bt_bb_ab_stats']['likelyDuration'] = $days;
     $data['bt_bb_ab_stats']['likelyVisitors'] = $visits;
   }

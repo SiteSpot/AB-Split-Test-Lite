@@ -4918,7 +4918,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'value' => max(0, min(100, $confidence)),
 
-          'left' => ($confidence > 0 && !empty($stats['has_sufficient_data'])) ? $confidence . '% to significance' : 'Collecting data',
+          'left' => ($confidence > 0 && !empty($stats['has_sufficient_data']) && in_array($stats['blocked_by'] ?? '', ['', 'confidence'], true)) ? $confidence . '% to significance' : (($stats['blocked_by'] ?? '') === 'conversions' ? 'Collecting conversions' : 'Collecting data'),
 
           'right' => ($time_remaining !== '' && $time_remaining !== 'Paused' && $time_remaining !== 'Complete') ? $time_remaining . ' left' : '',
 
@@ -7591,6 +7591,10 @@ public function get_experiment_stats_array( $test ){
     'min_visits_for_winner'   => $min_visits_for_winner,
 
     'has_sufficient_data'     => $has_sufficient_data,
+    'blocked_by'              => $stats_block['blocked_by'] ?? ($has_sufficient_data ? '' : 'visits'),
+    'conversions'             => $stats_block['conversions'] ?? null,
+    'min_conversions'         => $stats_block['min_conversions'] ?? null,
+    'expected_loss_pct'       => $stats_block['expected_loss_pct'] ?? null,
 
     'is_underpowered'         => $is_underpowered,
 
@@ -8156,6 +8160,16 @@ function abst_show_experiment_results($test,$asTable = false){
       if($notenoughvisits !== '')
 
         $experiment_status .= $notenoughvisits;
+      // The analyzer's other reasons for holding back (minimum conversions; expected loss if a site opts in).
+      $abst_blocked_by = $observations['bt_bb_ab_stats']['blocked_by'] ?? '';
+      $abst_hold_message = '';
+      if ($abst_blocked_by === 'conversions') {
+        $abst_hold_message = '<br/>⏳ <strong>Not called yet:</strong> ' . intval($observations['bt_bb_ab_stats']['conversions'] ?? 0) . ' ' . 'conversions' . ' so far - a winner needs at least ' . intval($observations['bt_bb_ab_stats']['min_conversions'] ?? 0) . '.';
+      } elseif ($abst_blocked_by === 'loss') {
+        $abst_hold_message = '<br/>⏳ <strong>Not called yet:</strong> the difference is still too small to rule out chance (expected loss ' . esc_html((string) ($observations['bt_bb_ab_stats']['expected_loss_pct'] ?? '')) . '%).';
+      }
+      if ($abst_hold_message !== '')
+        $experiment_status .= '<h4>' . $abst_hold_message . '</h4>';
 
       
 
@@ -8850,7 +8864,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
           $experiment_status = sprintf(
 
-            '<h4 class="bt_ab_warning">🧪 %s is leading%s%s%s</h4>',
+            '<h4 class="bt_ab_warning">🧪 %s is leading%s%s%s%s</h4>',
 
             $leading_label,
 
@@ -8858,7 +8872,9 @@ function abst_show_experiment_results($test,$asTable = false){
 
             $projection_message,
 
-            $remaining_message
+            $remaining_message,
+
+            $abst_hold_message ?? ''
 
           );
 
@@ -22486,11 +22502,11 @@ function abst_test_progress_message( $progress, $confidence_target = 95 ) {
 				return __( 'No winner yet.', 'ab-split-test-lite' );
 			}
 			if ( $days > 1 ) {
-				/* translators: 1: days, 2: visitors clause, 3: confidence percentage. */
-				return sprintf( __( 'About %1$d days%2$s to reach %3$s%% confidence.', 'ab-split-test-lite' ), $days, $clause, $target );
+				/* translators: 1: days, 2: visitors clause. */
+				return sprintf( __( 'About %1$d days%2$s until a winner can be called.', 'ab-split-test-lite' ), $days, $clause );
 			}
 			/* translators: %s: confidence percentage. */
-			return sprintf( __( 'Nearly complete. Results expected soon (%s%% confidence).', 'ab-split-test-lite' ), $target );
+			return sprintf( __( 'Nearly complete. A winner should be called soon (%s%% confidence).', 'ab-split-test-lite' ), $target );
 
 		case 'too_slow':
 			/* translators: %d: days. */
