@@ -3295,4 +3295,9 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
   #abst-magic-bar .abst-magic-bar-close { top: 24px; }
   #abst-magic-bar #abst-cro-chat-container { min-height: 0; }
   .abst-move-hint { left: 50%; }
+  /* Too many bars on a phone: hide the WP admin bar while the drawer is open (it returns
+     when the bar closes and the class is removed). WP's own rule is html { margin-top: 46px !important }. */
+  html.doing-abst-magic-bar #wpadminbar { display: none !important; }
+  html.doing-abst-magic-bar { margin-top: 0 !important; scroll-padding-top: 0 !important; }
+  html body.admin-bar #abst-magic-bar { max-height: calc(100% - 12px); }
 }
