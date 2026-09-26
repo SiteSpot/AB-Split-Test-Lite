@@ -3029,7 +3029,9 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 /* Padding stays inside each section's width (Lite's base styles don't set this) */
 #abst-magic-bar, #abst-magic-bar *, #abst-magic-bar *::before, #abst-magic-bar *::after { box-sizing: border-box; }
 #abst-magic-bar .abst-magic-bar-container { display: flex; flex-direction: column; min-height: 100%; }
-#abst-magic-bar .abst-settings-column { margin: 0 !important; box-shadow: none; }
+/* The base styles make each section a card: width calc(100% - 16px) + 8px margins. The refresh
+   drops the margins, so the width has to follow or every section stops 16px short. */
+#abst-magic-bar .abst-settings-column, #abst-magic-bar .abst-goals-column { margin: 0 !important; width: 100% !important; box-shadow: none; }
 
 /* Header: title + tour, the close button sits top-right */
 #abst-magic-bar .abst-magic-bar-header {
@@ -3163,7 +3165,7 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 #abst-magic-bar #ai-generate-more:hover { border-color: var(--abst-mb-accent) !important; background: var(--abst-mb-accent-soft) !important; }
 
 /* Targeting + goals */
-#abst-magic-bar #abst-targeting-button { margin: 0; padding: 12px 18px; border-bottom: 1px solid var(--abst-mb-line); font-size: 12px; color: var(--abst-mb-muted); }
+#abst-magic-bar #abst-targeting-button { margin: 0; padding: 12px 18px; background: #fff; border: 0; border-bottom: 1px solid var(--abst-mb-line); border-radius: 0; font-size: 12px; color: var(--abst-mb-muted); }
 #abst-magic-bar #abst-show-targeting { color: var(--abst-mb-accent) !important; font-weight: 500; }
 #abst-magic-bar .abst-settings-header { padding: 9px 0; border-bottom: 1px solid var(--abst-mb-line); color: var(--abst-mb-ink); font-weight: 500; }
 /* No display here: the base rule hides .winning-mode until an element is selected (then jQuery shows it) */
@@ -3208,7 +3210,7 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 #abst-magic-bar button#abst-magic-bar-save-draft:hover { background: var(--abst-mb-soft) !important; }
 
 /* ChatCRO panel (markup carries inline styles) */
-#abst-magic-bar #abst-cro-chat-column { padding: 16px 18px !important; background: #fff !important; border: 0 !important; }
+#abst-magic-bar #abst-cro-chat-column { margin: 0 !important; width: 100% !important; padding: 16px 18px !important; background: #fff !important; border: 0 !important; }
 #abst-magic-bar #abst-cro-chat-container { min-height: calc(100vh - 170px); }
 #abst-magic-bar #abst-cro-chat-container > h4 { display: none; }
 #abst-magic-bar #abst-cro-chat-messages {
