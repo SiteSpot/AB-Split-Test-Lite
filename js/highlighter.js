@@ -697,6 +697,7 @@ jQuery(function(){
             jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
             bt_highlight(selector);
             jQuery('#abst-selector-input').val(selector).trigger('blur');
+            abstDrawerReveal(selector);
             
             // Set editor content
             if (window.abstEditor) {
@@ -2401,6 +2402,7 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
     }
 
     jQuery('#abst-selector-input').val(selector).trigger('blur');
+    abstDrawerReveal(selector);
     
     jQuery("#abst-variation-editor-container").addClass('flash');
     setTimeout(function(){
@@ -2866,6 +2868,7 @@ function abst_magic_bar(options = {}) {
 
     // Add the magic bar to the body
     document.body.appendChild(magicBar);
+    abstInitMagicDrawer(magicBar);
 
     jQuery('.abst-ai-suggestions-toggle').html('<span class="abst-ai-suggestions-toggle-label"><span class="abst-ai-suggestions-icon">*</span><span>AI Suggestions</span></span><span class="abst-ai-suggestions-inline-loading ai-loading" style="display:none;"><span class="abst-ai-loading-text">Upgrade for AI Suggestions</span></span><span class="abst-ai-toggle-chevron">v</span>');
 
@@ -4178,6 +4181,83 @@ function adjustFixedElementsForMagicBar(activate) {
 
 // Make the function available globally
 window.abst_magic_bar = abst_magic_bar;
+
+/* Phones: the bar is a bottom drawer (CSS, max-width 767px). The handle drags it between
+ * peek / half / full height and a tap (or Enter/Space) toggles half <-> full. The height
+ * is published as --abst-mb-drawer-h so the page gets the same bottom padding and every
+ * part of it can still be scrolled above the drawer. */
+var ABST_DRAWER_MQ = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
+
+function abstIsDrawer() { return !!(ABST_DRAWER_MQ && ABST_DRAWER_MQ.matches); }
+function abstDrawerSnaps() {
+    var h = window.innerHeight;
+    return [Math.min(150, Math.round(h * 0.3)), Math.round(h * 0.55), Math.round(h * 0.88)];
+}
+function abstSetDrawerHeight(px) {
+    document.documentElement.style.setProperty('--abst-mb-drawer-h', Math.round(px) + 'px');
+}
+
+function abstInitMagicDrawer(bar) {
+    var handle = document.createElement('div');
+    handle.className = 'abst-magic-drawer-handle';
+    handle.setAttribute('role', 'button');
+    handle.setAttribute('tabindex', '0');
+    handle.setAttribute('aria-label', 'Drag to resize the test editor, or tap to expand it');
+    handle.innerHTML = '<span></span>';
+    bar.insertBefore(handle, bar.firstChild);
+    if (abstIsDrawer()) abstSetDrawerHeight(abstDrawerSnaps()[1]);
+
+    // Tap: peek -> half, half -> full, full -> half.
+    var toggle = function() {
+        var s = abstDrawerSnaps(), h = bar.getBoundingClientRect().height;
+        abstSetDrawerHeight(h < s[1] - 10 ? s[1] : (h < s[1] + 10 ? s[2] : s[1]));
+    };
+    var startY = 0, startH = 0, moved = false, dragging = false;
+    handle.addEventListener('pointerdown', function(e) {
+        if (!abstIsDrawer()) return;
+        dragging = true; moved = false;
+        startY = e.clientY; startH = bar.getBoundingClientRect().height;
+        bar.classList.add('is-dragging');
+        if (handle.setPointerCapture) handle.setPointerCapture(e.pointerId);
+        e.preventDefault();
+    });
+    handle.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        var dy = e.clientY - startY, s = abstDrawerSnaps();
+        if (Math.abs(dy) > 4) moved = true;
+        abstSetDrawerHeight(Math.max(s[0] * 0.8, Math.min(s[2], startH - dy)));
+    });
+    var end = function() {
+        if (!dragging) return;
+        dragging = false;
+        bar.classList.remove('is-dragging');
+        if (!moved) { toggle(); return; }
+        var h = bar.getBoundingClientRect().height;
+        abstSetDrawerHeight(abstDrawerSnaps().reduce(function(best, v) { return Math.abs(v - h) < Math.abs(best - h) ? v : best; }));
+    };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+    handle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+    if (ABST_DRAWER_MQ && ABST_DRAWER_MQ.addEventListener) {
+        ABST_DRAWER_MQ.addEventListener('change', function() { if (abstIsDrawer()) abstSetDrawerHeight(abstDrawerSnaps()[1]); });
+    }
+}
+
+/* On a phone the drawer covers the lower half of the page: bring a selection hidden
+ * behind it up into view. */
+function abstDrawerReveal(selector) {
+    if (!abstIsDrawer()) return;
+    var el = null;
+    try { el = document.querySelector(selector); } catch (e) {}
+    var bar = document.getElementById('abst-magic-bar');
+    if (!el || !bar) return;
+    var r = el.getBoundingClientRect(), visibleBottom = window.innerHeight - bar.getBoundingClientRect().height;
+    if (r.top < 60 || r.bottom > visibleBottom) {
+        window.scrollBy({ top: r.top - Math.max(70, (visibleBottom - r.height) / 3), behavior: 'smooth' });
+    }
+}
 
 function get_goals_from_dom(){
 

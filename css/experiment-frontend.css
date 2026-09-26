@@ -3253,3 +3253,47 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 .abst-magic-tour .shepherd-button.abst-tour-secondary, .abst-magic-tour .shepherd-button.shepherd-button-secondary { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
 .abst-magic-tour .shepherd-button.abst-tour-secondary:not(:disabled):hover, .abst-magic-tour .shepherd-button.shepherd-button-secondary:not(:disabled):hover { background: #f8fafc; color: #1e293b; }
 .abst-magic-tour .shepherd-arrow:before { background: #fff; }
+
+/* ==========================================================================
+   MAGIC BAR ON PHONES: bottom drawer
+   The page is not squeezed; it gets bottom padding equal to the drawer, which the
+   handle resizes through --abst-mb-drawer-h (see abstInitMagicDrawer).
+   ========================================================================== */
+.abst-magic-drawer-handle { display: none; }
+@media (max-width: 767px) {
+  html.doing-abst-magic-bar { margin-right: 0 !important; padding-bottom: var(--abst-mb-drawer-h, 55vh) !important; }
+  .abst-adjusted-for-magic-bar { margin-right: 0 !important; width: auto !important; max-width: none !important; }
+  /* must outrank body:not(.admin-bar) #abst-magic-bar (the :not counts as a class) */
+  html body:not(.admin-bar) #abst-magic-bar,
+  html body.admin-bar #abst-magic-bar {
+    top: auto !important; bottom: 0; left: 0; right: 0;
+    width: 100% !important; max-width: 100%;
+    height: var(--abst-mb-drawer-h, 55vh) !important; max-height: calc(100% - 46px);
+    border-left: 0; border-top: 1px solid var(--abst-mb-line); border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 32px rgba(15, 23, 42, 0.18);
+    transform: translateY(100%);
+    transition: transform .3s ease-in-out, height .22s ease;
+  }
+  html body #abst-magic-bar.is-dragging { transition: none !important; }
+  /* Only the panel scrolls: the drawer itself must not, or the handle, header and close
+     button scroll away. The content box fills the space under the 22px handle instead
+     of claiming min-height: 100% on top of it. */
+  html body:not(.admin-bar) #abst-magic-bar, html body.admin-bar #abst-magic-bar { overflow: hidden !important; }
+  #abst-magic-bar .abst-magic-bar-container { flex: 1 1 auto; min-height: 0 !important; }
+  #abst-magic-bar .abst-magic-tab-panels { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  /* Page overlays (variation marker 100000, Hide/Move popover 999999) must not float over the
+     drawer; the bar's own dropdowns (appended to body) must stay above it. The tour sits higher still. */
+  html body:not(.admin-bar) #abst-magic-bar, html body.admin-bar #abst-magic-bar { z-index: 1000000; }
+  .select2-container--open .select2-dropdown, .select2-container--open, .abst-link-popover,
+  .abst-page-select-container, .abst-page-select-container .awesomplete > ul { z-index: 1000001 !important; }
+  #abst-magic-bar .abst-magic-drawer-handle {
+    display: flex; justify-content: center; align-items: center; flex: none;
+    height: 22px; cursor: grab; touch-action: none; border-radius: 16px 16px 0 0;
+  }
+  #abst-magic-bar .abst-magic-drawer-handle span { width: 40px; height: 5px; border-radius: 999px; background: #cbd5e1; }
+  #abst-magic-bar .abst-magic-drawer-handle:focus-visible { outline: 2px solid var(--abst-mb-accent); outline-offset: -2px; }
+  #abst-magic-bar .abst-magic-bar-header { padding-top: 2px; }
+  #abst-magic-bar .abst-magic-bar-close { top: 24px; }
+  #abst-magic-bar #abst-cro-chat-container { min-height: 0; }
+  .abst-move-hint { left: 50%; }
+}
