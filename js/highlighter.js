@@ -3283,6 +3283,9 @@ function abst_magic_bar(options = {}) {
  * @param {boolean} activate - Whether to activate or deactivate adjustments
  */
 function adjustFixedElementsForMagicBar(activate) {
+        // Phones: the bar is a bottom drawer and nothing is squeezed, so fixed elements
+        // (sticky headers, modals) keep their own layout.
+        if (activate && typeof abstIsDrawer === 'function' && abstIsDrawer()) activate = false;
         // Get all elements in the document
         const allElements = document.querySelectorAll('*');
     
@@ -4241,7 +4244,11 @@ function abstInitMagicDrawer(bar) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
     });
     if (ABST_DRAWER_MQ && ABST_DRAWER_MQ.addEventListener) {
-        ABST_DRAWER_MQ.addEventListener('change', function() { if (abstIsDrawer()) abstSetDrawerHeight(abstDrawerSnaps()[1]); });
+        ABST_DRAWER_MQ.addEventListener('change', function() {
+            if (abstIsDrawer()) abstSetDrawerHeight(abstDrawerSnaps()[1]);
+            // Rotating / resizing across the breakpoint: squeeze fixed elements only for the side panel.
+            if (document.documentElement.classList.contains('doing-abst-magic-bar')) adjustFixedElementsForMagicBar(!abstIsDrawer());
+        });
     }
 }
 

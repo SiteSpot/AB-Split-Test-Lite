@@ -3262,7 +3262,6 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 .abst-magic-drawer-handle { display: none; }
 @media (max-width: 767px) {
   html.doing-abst-magic-bar { margin-right: 0 !important; padding-bottom: var(--abst-mb-drawer-h, 55vh) !important; }
-  .abst-adjusted-for-magic-bar { margin-right: 0 !important; width: auto !important; max-width: none !important; }
   /* must outrank body:not(.admin-bar) #abst-magic-bar (the :not counts as a class) */
   html body:not(.admin-bar) #abst-magic-bar,
   html body.admin-bar #abst-magic-bar {
