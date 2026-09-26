@@ -1807,7 +1807,11 @@ function selectorDetection(){
         if(!element)
             return false;
 
-        if (jQuery(element).closest('.abst-goals-column, .abst-goals-container, .remove-goal, .abst-goal-card-header, .abst-button-container').length > 0)
+        // Page UI that opts out of selection (e.g. a button that opens the Magic bar)
+        if (element.closest && element.closest('.abst-magic-ignore'))
+            return false;
+
+        if (jQuery(element).closest('.abst-goals-column,.abst-goals-container, .remove-goal, .abst-goal-card-header, .abst-button-container').length > 0)
             return false;
 
         //dont show if on the abst-magic-bar or any parent is abst-magic-bar
@@ -1975,7 +1979,7 @@ function selectorDetection(){
 
 
         // Allow normal interaction inside the magic bar and admin bar UI
-        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.shepherd-element') || e.target.closest('.shepherd-modal-overlay-container'))) {
+        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.shepherd-element') || e.target.closest('.shepherd-modal-overlay-container') || e.target.closest('.abst-magic-ignore'))) {
             return;
         }
 
@@ -2060,7 +2064,8 @@ function selectorDetection(){
             (target.closest && target.closest('#wpadminbar')) ||
             (target.closest && target.closest('#abst-magic-bar')) ||
             (target.closest && target.closest('.shepherd-element')) ||
-            (target.closest && target.closest('.shepherd-modal-overlay-container'))
+            (target.closest && target.closest('.shepherd-modal-overlay-container')) ||
+            (target.closest && target.closest('.abst-magic-ignore'))
         ) {
             return; // Allow normal behavior
         }
@@ -2703,8 +2708,7 @@ function abst_magic_bar(options = {}) {
     }).join('');
 
     magicBar.innerHTML = `
-    <div class="abst-magic-bar-container">
-            <div class="abst-settings-column help" data-llm-instructions="this div contains instructions for LLM assistance 
+    <div class="abst-magic-bar-container" data-llm-instructions="this div contains instructions for LLM assistance 
             #abst-magic-bar-title is the test name. add your descriptive title
             #abst-selector-input gives you the css selector of the selected element, if any is selected.
             #variation-picker is the way to choose and add a variation to the test. 
@@ -2712,17 +2716,10 @@ function abst_magic_bar(options = {}) {
             You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and add a variation. you'll see #abst-selector-input update to the new element. You can then edit the text in the editor and  swap the #variation-picker to other variations to edit those too. 
             Additional goals are a Pro feature.  
             #ai-suggestions-list contains our trained suggestions for the highlighted element - you can click on a suggestion to add it, then create a new variation. You can also define the variation on your own if you have a better option. #abst-variation-editor-container is the way to edit the variation after you have selected it. After saving test, you can go to /wp-admin/edit.php?post_type=bt_experiments to view all tests. do not edit other tests unless  specifically asked">
-            <h4>How to create a new test</h4>
-            <ol>
-                <li>Click any element on the page to begin.</li>
-                <li>In the editor, change the text to create your first variation.</li>
-                <li>Want to make multiple changes in the same variation? Just click and edit the next element.</li>
-                <li>To test an alternate version, use the “Variation” dropdown and click + Add another.</li>
-                <li>Choose your test goal(s)</li>
-                <li>Start your test</li>
-            </ol>
-            <span class="hide-magic-bar" id="close-magic-bar" data-llm-instructions="this span is used to hide this help window, LLM should click it so that users can see you creating the test.">Hide Help</span>
-            </div>
+        <div class="abst-magic-bar-header">
+            <span class="abst-magic-bar-heading">Magic Test</span>
+            <button type="button" id="abst-magic-bar-show-tour" class="abst-magic-tour-button" title="Show me how it works">How it works</button>
+        </div>
         <div class="abst-magic-tabs" role="tablist" aria-label="Magic Bar sections">
             <button type="button" class="abst-magic-tab-button" id="abst-magic-tab-chat" data-tab="chat" role="tab" aria-selected="false" aria-controls="abst-magic-panel-chat" tabindex="-1">ChatCRO</button>
             <button type="button" class="abst-magic-tab-button is-active" id="abst-magic-tab-test" data-tab="test" role="tab" aria-selected="true" aria-controls="abst-magic-panel-test">Test</button>
@@ -2755,8 +2752,7 @@ function abst_magic_bar(options = {}) {
             <h3 style="color: #9e9e9e;">Create a Split Test.</h3>
             <p style="font-size: 24px; line-height: 1.25; margin: 40px 0 8px;">To start: Click the element you want to change.</p>
             <p style="font-size: 12px; line-height: 1.6; margin: 40px 0 20px 0; color: #9e9e9e;">Not sure what to test? Upgrade to unlock AI agent suggestions and ChatCRO guidance.</p>
-            <button id="abst-magic-bar-show-tour" class="abst-magic-bar-show-tour">Show Tour</button>
-        </div>
+</div>
         <!-- Test Name - Hidden until test starts -->
         <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">
             <label for="abst-magic-bar-title" style="font-weight: 600; white-space: nowrap;">Test Name:</label>
@@ -2924,10 +2920,6 @@ function abst_magic_bar(options = {}) {
 
     window.setAbstMagicBarTab('test');
 
-    //if localstorage localStorage.setItem('abst-magic-help', 'false'); then hide
-    if(localStorage.getItem('abst-magic-help') === 'false'){
-        jQuery('.abst-settings-column.help').hide();
-    }
 
 
     jQuery('.abst-goal-page-input').hide();
@@ -3361,15 +3353,8 @@ function adjustFixedElementsForMagicBar(activate) {
         jQuery("body").on('click','#abst-show-targeting',function(){
             jQuery('.abst-targeting-settings').slideToggle();
             jQuery('#abst-targeting-text').text('Custom targeting.');
-            jQuery('.abst-settings-column.help').slideUp();
         })
 
-        jQuery('body').on('click','.hide-magic-bar',function(){
-            jQuery('.abst-settings-column.help').toggleClass('abst-hidden');
-            //set localStorage
-            localStorage.setItem('abst-magic-help', 'false');
-        })
-        
         // AI Suggestion - "Add as Variation" button click
         jQuery('body').on('click', '.ai-add-variation', function(e) {
             e.preventDefault();

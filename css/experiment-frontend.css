@@ -206,31 +206,12 @@ body[data-builder-window='iframe'] .brx-body [bt-eid],
   position: relative !important;
   background: rgba(76, 175, 80, 0.05);
 }
-/* parent */
-.abst-settings-column.help {
-  box-sizing: border-box; /* its 30px side padding otherwise pushed it past the bar's edge */
-  position: relative;
-  box-shadow: 0 1px 10px #979797;
-  background: #ffffd7;
-  padding: 20px 30px;
-  margin-top: 60px !important;
-}
 .click-to-start-help{
   padding: 30px !important;
   text-align: center;
 
 }
-.abst-settings-column.help li{
-font-size:1.1em;
-  margin-bottom:5px;
-}
-.hide-magic-bar{
-    text-decoration: underline;
-     cursor: pointer;
-    padding: 10px;
-    z-index: 10;
-  }
-  
+
 
 /* Variation marker toolbar - positioned on element */
 .abst-variation-marker {
@@ -1054,24 +1035,6 @@ margin: 0 -13px -13px -13px;
 }
 #abst-magic-bar button#abst-magic-bar-save-draft:active {
     background: #dcdcde !important;
-}
-.click-to-start-help #abst-magic-bar-show-tour {
-    margin-top: 20px;
-    color: #9e9e9e !important;
-    font-size: 12px !important;
-    font-weight: 400 !important;
-    letter-spacing: 0.01em;
-    border-radius: 9px !important;
-    padding: 8px 16px !important;
-    background: transparent !important;
-    border: 1px solid #dcdcde !important;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.click-to-start-help #abst-magic-bar-show-tour:hover {
-    background: #f0f0f1 !important;
-    color: #646970 !important;
-    border-color: #c3c4c7 !important;
 }
 
 #abst-magic-bar .abst-add-goal-button, #imageSelector{
@@ -3033,3 +2996,260 @@ ul#ai-suggestions-list li:hover {
   background-color: #f4f8ff;
   color: #334155;
 }
+
+/* ==========================================================================
+   MAGIC BAR REFRESH (2026-09)
+   One type scale, one accent, flat cards. Scoped to #abst-magic-bar so page
+   styles can't leak in; !important only where the bar's markup has inline styles.
+   ========================================================================== */
+#abst-magic-bar {
+  --abst-mb-ink: #1e293b;
+  --abst-mb-text: #334155;
+  --abst-mb-muted: #64748b;
+  --abst-mb-line: #e2e8f0;
+  --abst-mb-soft: #f8fafc;
+  --abst-mb-accent: #2271b1;
+  --abst-mb-accent-ink: #135e96;
+  --abst-mb-accent-soft: #f0f6fc;
+  --abst-mb-radius: 8px;
+  font: 400 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--abst-mb-text) !important;
+  background: #fff;
+  border-left: 1px solid var(--abst-mb-line);
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.10);
+}
+/* No admin bar (logged-out demo, external editor): use the full height */
+body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
+#abst-magic-bar h1, #abst-magic-bar h2, #abst-magic-bar h3, #abst-magic-bar h4,
+#abst-magic-bar input, #abst-magic-bar select, #abst-magic-bar textarea, #abst-magic-bar button {
+  font-family: inherit !important;
+  letter-spacing: normal;
+  text-transform: none;
+}
+/* Padding stays inside each section's width (Lite's base styles don't set this) */
+#abst-magic-bar, #abst-magic-bar *, #abst-magic-bar *::before, #abst-magic-bar *::after { box-sizing: border-box; }
+#abst-magic-bar .abst-magic-bar-container { display: flex; flex-direction: column; min-height: 100%; }
+#abst-magic-bar .abst-settings-column { margin: 0 !important; box-shadow: none; }
+
+/* Header: title + tour, the close button sits top-right */
+#abst-magic-bar .abst-magic-bar-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 52px 12px 18px;
+  border-bottom: 1px solid var(--abst-mb-line);
+}
+#abst-magic-bar .abst-magic-bar-heading { font-size: 15px; font-weight: 600; color: var(--abst-mb-ink); }
+#abst-magic-bar .abst-magic-tour-button {
+  padding: 4px 10px; min-height: 0;
+  border: 1px solid var(--abst-mb-line) !important; border-radius: 999px; background: #fff !important;
+  color: var(--abst-mb-muted) !important; font-size: 12px !important; font-weight: 500; line-height: 1.4; box-shadow: none;
+}
+#abst-magic-bar .abst-magic-tour-button:hover { color: var(--abst-mb-accent) !important; border-color: var(--abst-mb-accent) !important; }
+#abst-magic-bar .abst-magic-bar-close {
+  top: 10px; right: 10px; width: 32px; height: 32px; line-height: 30px;
+  border-radius: 6px; color: var(--abst-mb-muted); font-size: 22px; background: transparent;
+}
+#abst-magic-bar .abst-magic-bar-close:hover { background: var(--abst-mb-soft); color: var(--abst-mb-ink); }
+
+/* Tabs */
+#abst-magic-bar .abst-magic-tabs { margin: 0; padding: 0 18px; gap: 20px; border-bottom: 1px solid var(--abst-mb-line); background: #fff; }
+#abst-magic-bar .abst-magic-tab-button {
+  flex: 0 0 auto; padding: 11px 0 10px; margin-bottom: -1px;
+  border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0;
+  background: none !important; color: var(--abst-mb-muted) !important; font-size: 13px !important; font-weight: 500;
+}
+#abst-magic-bar .abst-magic-tab-button:hover { color: var(--abst-mb-ink) !important; }
+#abst-magic-bar .abst-magic-tab-button.is-active { color: var(--abst-mb-ink) !important; border-bottom-color: var(--abst-mb-accent) !important; font-weight: 600; }
+#abst-magic-bar .abst-magic-tab-panels { flex: 1; }
+
+/* Empty state */
+#abst-magic-bar .click-to-start-help { padding: 28px 22px !important; text-align: left; }
+#abst-magic-bar .click-to-start-help h3 { margin: 0 0 6px; font-size: 17px; font-weight: 600; color: var(--abst-mb-ink); }
+#abst-magic-bar .click-to-start-help p { margin: 0; font-size: 13px; color: var(--abst-mb-text); }
+#abst-magic-bar .click-to-start-help #abst-start-add-element { color: var(--abst-mb-accent) !important; text-decoration-color: currentColor !important; }
+#abst-magic-bar .abst-test-empty-chat-prompt {
+  margin-top: 18px; padding: 14px; border: 1px solid var(--abst-mb-line); border-radius: var(--abst-mb-radius);
+  background: var(--abst-mb-soft); box-shadow: none; text-align: left;
+}
+#abst-magic-bar .abst-test-empty-chat-label { text-align: left !important; margin: 0 0 8px !important; font-size: 12px !important; font-weight: 600; color: var(--abst-mb-ink) !important; }
+#abst-magic-bar .abst-test-empty-chat-row { display: flex; gap: 8px; }
+
+/* Sections */
+#abst-magic-bar .magic-test-name,
+#abst-magic-bar #abst-version-bar,
+#abst-magic-bar #variation-editor-container,
+#abst-magic-bar .abst-goals-column,
+#abst-magic-bar .abst-targeting-settings,
+#abst-magic-bar .winning-mode {
+  margin: 0 !important; padding: 14px 18px !important;
+  border: 0 !important; border-bottom: 1px solid var(--abst-mb-line) !important; border-radius: 0 !important;
+  background: #fff !important; box-shadow: none !important;
+}
+#abst-magic-bar .magic-test-name label,
+#abst-magic-bar .abst-goals-title,
+#abst-magic-bar .abst-settings-title {
+  font-size: 11px !important; font-weight: 600 !important; letter-spacing: .04em !important; text-transform: uppercase !important;
+  color: var(--abst-mb-muted) !important;
+}
+#abst-magic-bar .abst-version-value { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+#abst-magic-bar .abst-version-prefix { color: var(--abst-mb-muted); }
+#abst-magic-bar .abst-version-toggle {
+  padding: 3px 10px; border: 0 !important; border-radius: 999px; background: var(--abst-mb-accent-soft) !important;
+  color: var(--abst-mb-accent-ink) !important; font-weight: 600; text-decoration: none !important;
+}
+#abst-magic-bar .abst-version-swap { border: 0 !important; background: none !important; color: var(--abst-mb-muted) !important; }
+#abst-magic-bar .abst-version-actions { margin-left: auto; }
+#abst-magic-bar .abst-version-action { color: var(--abst-mb-accent) !important; font-size: 12px; text-decoration: none !important; }
+#abst-magic-bar .abst-version-action:hover { text-decoration: underline !important; }
+
+#abst-magic-bar #variation-editor-container > .abst-goals-title { justify-content: flex-start !important; margin-bottom: 8px; }
+#abst-magic-bar #abst-selector-input {
+  text-align: left !important; color: var(--abst-mb-muted) !important; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  height: 28px !important; padding: 0 8px !important; border: 1px solid var(--abst-mb-line) !important; border-radius: 6px !important; background: var(--abst-mb-soft) !important;
+}
+#abst-magic-bar .abst-element-actions-row { margin: 6px 0 8px; text-align: right; }
+
+/* Rich text editor as one card: #abst-variation-editor holds the toolbar + editable area */
+#abst-magic-bar #abst-variation-editor {
+  padding: 0 !important; border: 1px solid #cbd5e1; border-radius: var(--abst-mb-radius); overflow: hidden; background: #fff;
+}
+#abst-magic-bar #abst-variation-editor:focus-within { border-color: var(--abst-mb-accent); box-shadow: 0 0 0 1px var(--abst-mb-accent); }
+#abst-magic-bar .abst-editor-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 0; padding: 4px 6px;
+  border: 0 !important; border-bottom: 1px solid var(--abst-mb-line) !important; border-radius: 0; background: var(--abst-mb-soft);
+}
+#abst-magic-bar .abst-editor-toolbar button {
+  min-width: 28px; height: 28px; padding: 0 7px; margin: 0;
+  border: 0 !important; border-radius: 5px; background: transparent !important;
+  color: var(--abst-mb-text) !important; font-size: 13px !important; line-height: 28px; box-shadow: none !important;
+}
+#abst-magic-bar .abst-editor-toolbar button:hover, #abst-magic-bar .abst-editor-toolbar button.is-active { background: #fff !important; color: var(--abst-mb-ink) !important; }
+#abst-magic-bar .abst-editor-toolbar button[data-command="html"] {
+  margin-left: auto; height: 26px; line-height: 24px; font-size: 12px !important;
+  border: 1px solid var(--abst-mb-line) !important; background: #fff !important;
+}
+#abst-magic-bar #abst-variation-editor-container {
+  min-height: 110px; padding: 12px 14px !important; border: 0 !important; background: #fff;
+  color: var(--abst-mb-ink); font-size: 14px; line-height: 1.5; outline: none;
+}
+
+/* AI suggestions */
+#abst-magic-bar #ai-suggestions { margin-top: 12px; border: 1px solid var(--abst-mb-line); border-radius: var(--abst-mb-radius); overflow: hidden; background: #fff; }
+#abst-magic-bar .abst-ai-suggestions-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;
+  border: 0 !important; border-radius: 0; background: var(--abst-mb-soft) !important; color: var(--abst-mb-ink) !important; font-weight: 600; font-size: 13px !important;
+}
+#abst-magic-bar .abst-ai-suggestions-count { background: var(--abst-mb-accent) !important; color: #fff !important; }
+#abst-magic-bar .abst-ai-suggestions-hint { margin: 10px 12px 4px; font-size: 12px; color: var(--abst-mb-muted); }
+#abst-magic-bar #ai-suggestions-list { margin: 0; padding: 4px 12px 12px; list-style: none; }
+#abst-magic-bar .ai-suggestion-item {
+  margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--abst-mb-line) !important; border-radius: var(--abst-mb-radius);
+  background: #fff !important; box-shadow: none !important;
+}
+#abst-magic-bar .ai-suggestion-item:hover { border-color: #cbd5e1 !important; }
+#abst-magic-bar .ai-suggestion-style { display: block; margin-bottom: 3px; font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--abst-mb-muted) !important; }
+#abst-magic-bar .ai-suggestion-text { display: block; color: var(--abst-mb-ink); font-size: 13px; line-height: 1.45; }
+#abst-magic-bar .ai-suggestion-actions { display: flex; gap: 6px; margin-top: 8px; }
+#abst-magic-bar .ai-suggestion-actions button {
+  padding: 4px 9px; border: 1px solid var(--abst-mb-line) !important; border-radius: 6px; background: #fff !important;
+  color: var(--abst-mb-accent) !important; font-size: 12px !important; font-weight: 500;
+}
+#abst-magic-bar .ai-suggestion-actions button:hover { border-color: var(--abst-mb-accent) !important; background: var(--abst-mb-accent-soft) !important; }
+
+#abst-magic-bar #ai-generate-more {
+  display: block; margin: 4px 12px 12px; padding: 7px 12px; width: calc(100% - 24px);
+  border: 1px dashed #cbd5e1 !important; border-radius: 6px; background: #fff !important; background-image: none !important;
+  color: var(--abst-mb-accent) !important; font-size: 12px !important; font-weight: 500; text-shadow: none; box-shadow: none !important;
+}
+#abst-magic-bar #ai-generate-more:hover { border-color: var(--abst-mb-accent) !important; background: var(--abst-mb-accent-soft) !important; }
+
+/* Targeting + goals */
+#abst-magic-bar #abst-targeting-button { margin: 0; padding: 12px 18px; border-bottom: 1px solid var(--abst-mb-line); font-size: 12px; color: var(--abst-mb-muted); }
+#abst-magic-bar #abst-show-targeting { color: var(--abst-mb-accent) !important; font-weight: 500; }
+#abst-magic-bar .abst-settings-header { padding: 9px 0; border-bottom: 1px solid var(--abst-mb-line); color: var(--abst-mb-ink); font-weight: 500; }
+/* No display here: the base rule hides .winning-mode until an element is selected (then jQuery shows it) */
+#abst-magic-bar .winning-mode p { display: inline-block; margin: 0 10px 0 0; vertical-align: middle; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--abst-mb-muted); white-space: nowrap; }
+#abst-magic-bar .winning-mode select { display: inline-block; width: calc(100% - 130px); vertical-align: middle; }
+#abst-magic-bar .abst-goals-container {
+  margin: 8px 0 0; padding: 12px; border: 1px solid var(--abst-mb-line) !important; border-radius: var(--abst-mb-radius) !important;
+  background: var(--abst-mb-soft) !important; box-shadow: none !important;
+}
+#abst-magic-bar .abst-goal-card-title { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--abst-mb-ink); }
+#abst-magic-bar .abst-button-container { margin-top: 10px; }
+#abst-magic-bar .abst-add-goal-button {
+  padding: 6px 12px; border: 1px dashed #cbd5e1 !important; border-radius: 6px; background: #fff !important;
+  color: var(--abst-mb-accent) !important; font-size: 12px !important; font-weight: 500; box-shadow: none !important;
+}
+
+/* Inputs */
+#abst-magic-bar input[type="text"], #abst-magic-bar input[type="number"], #abst-magic-bar select, #abst-magic-bar textarea:not(.wp-editor-area) {
+  min-height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
+  background: #fff; color: var(--abst-mb-ink) !important; font-size: 13px !important; box-shadow: none;
+}
+#abst-magic-bar input:focus, #abst-magic-bar select:focus, #abst-magic-bar textarea:focus {
+  border-color: var(--abst-mb-accent) !important; box-shadow: 0 0 0 1px var(--abst-mb-accent) !important; outline: none;
+}
+
+/* One primary action colour everywhere */
+#abst-magic-bar #abst-test-empty-chat-send,
+#abst-magic-bar #abst-cro-chat-send,
+#abst-magic-bar button#abst-magic-bar-start {
+  background: var(--abst-mb-accent) !important; color: #fff !important; border: 0 !important; border-radius: 6px !important;
+  font-weight: 600 !important; box-shadow: none !important;
+}
+#abst-magic-bar #abst-test-empty-chat-send:hover,
+#abst-magic-bar #abst-cro-chat-send:hover,
+#abst-magic-bar button#abst-magic-bar-start:hover { background: var(--abst-mb-accent-ink) !important; }
+#abst-magic-bar #abst-test-empty-chat-send, #abst-magic-bar #abst-cro-chat-send { padding: 0 14px !important; min-height: 34px; font-size: 13px !important; white-space: nowrap; }
+#abst-magic-bar .abst-magic-bar-footer { padding: 12px 18px; border-top: 1px solid var(--abst-mb-line); box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.04); }
+#abst-magic-bar button#abst-magic-bar-start, #abst-magic-bar button#abst-magic-bar-save-draft { min-height: 40px; font-size: 14px !important; }
+#abst-magic-bar button#abst-magic-bar-save-draft {
+  background: #fff !important; color: var(--abst-mb-ink) !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; box-shadow: none !important;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft:hover { background: var(--abst-mb-soft) !important; }
+
+/* ChatCRO panel (markup carries inline styles) */
+#abst-magic-bar #abst-cro-chat-column { padding: 16px 18px !important; background: #fff !important; border: 0 !important; }
+#abst-magic-bar #abst-cro-chat-container { min-height: calc(100vh - 170px); }
+#abst-magic-bar #abst-cro-chat-container > h4 { display: none; }
+#abst-magic-bar #abst-cro-chat-messages {
+  max-height: none !important; padding: 0 !important; border: 0 !important; background: none !important;
+  font-size: 13px !important; color: var(--abst-mb-text) !important;
+}
+#abst-magic-bar .abst-cro-chat-response { margin: 0 0 10px; padding: 10px 12px; border: 0 !important; border-radius: 12px; background: var(--abst-mb-soft) !important; box-shadow: none !important; }
+#abst-magic-bar .abst-cro-chat-response-label { display: none; }
+#abst-magic-bar .abst-cro-chat-response--user { margin-left: 18%; background: var(--abst-mb-accent) !important; color: #fff !important; border-bottom-right-radius: 4px; }
+#abst-magic-bar .abst-cro-chat-response--assistant { margin-right: 6%; border-bottom-left-radius: 4px; }
+#abst-magic-bar .abst-cro-chat-response--error { background: #fef2f2 !important; color: #991b1b !important; }
+#abst-magic-bar .abst-cro-chat-response--error .abst-cro-chat-response-label { display: inline; }
+#abst-magic-bar .abst-cro-chat-response p { margin: 0 0 6px; }
+#abst-magic-bar .abst-cro-chat-response p:last-child { margin-bottom: 0; }
+#abst-magic-bar #abst-cro-chat-footer { position: sticky; bottom: 0; padding-top: 10px; background: #fff; }
+#abst-magic-bar #abst-cro-chat-input { padding: 8px 12px !important; font-size: 13px !important; }
+#abst-magic-bar #abst-cro-chat-suggestions { background: var(--abst-mb-accent-soft) !important; border-color: #c5d9ed !important; border-radius: var(--abst-mb-radius) !important; }
+#abst-magic-bar #abst-cro-chat-suggestions p { color: var(--abst-mb-accent-ink) !important; }
+
+@media (max-width: 782px) {
+  body.admin-bar #abst-magic-bar { top: 46px; height: calc(100% - 46px) !important; }
+}
+
+/* Magic bar walkthrough (Shepherd) */
+.shepherd-modal-overlay-container.shepherd-modal-is-visible { z-index: 2147483645 !important; }
+.shepherd-element.abst-magic-tour {
+  z-index: 2147483646 !important; max-width: 300px; border-radius: 10px;
+  background: #fff; box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+  font: 400 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.abst-magic-tour .shepherd-content { border-radius: 10px; }
+.abst-magic-tour .shepherd-header { padding: 14px 14px 0 16px !important; background: #fff !important; border-radius: 10px 10px 0 0; }
+.abst-magic-tour .shepherd-title { font-size: 15px; font-weight: 600; color: #1e293b; }
+.abst-magic-tour .shepherd-cancel-icon { color: #94a3b8; font-size: 20px; }
+.abst-magic-tour .shepherd-text { padding: 6px 16px 4px; color: #334155; font-size: 13px; line-height: 1.5; }
+.abst-magic-tour .abst-tour-count { display: block; margin-top: 8px; font-size: 11px; color: #94a3b8; }
+.abst-magic-tour .shepherd-footer { padding: 8px 14px 14px; gap: 6px; }
+.abst-magic-tour .shepherd-button {
+  margin: 0; padding: 7px 14px; border-radius: 6px; background: #2271b1; color: #fff; font-size: 13px; font-weight: 600;
+}
+.abst-magic-tour .shepherd-button:not(:disabled):hover { background: #135e96; color: #fff; }
+.abst-magic-tour .shepherd-button.abst-tour-secondary, .abst-magic-tour .shepherd-button.shepherd-button-secondary { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+.abst-magic-tour .shepherd-button.abst-tour-secondary:not(:disabled):hover, .abst-magic-tour .shepherd-button.shepherd-button-secondary:not(:disabled):hover { background: #f8fafc; color: #1e293b; }
+.abst-magic-tour .shepherd-arrow:before { background: #fff; }
