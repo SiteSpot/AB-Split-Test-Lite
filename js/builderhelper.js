@@ -36,7 +36,9 @@ jQuery(document).ready(function(){
         if (window.parent.document !== window.document) {
             console.log('in iframe');
             //uf url contains ?fl_builder
-            if(window.location.href.indexOf('fl_builder') <1)
+            // Beaver Builder and Breakdance run their editor UI in the window around this
+            // frame; the helper binds to it from here so "Create a new test" works there.
+            if(window.location.href.indexOf('fl_builder') <1 && window.location.href.indexOf('breakdance_iframe') <1)
             {
                 return;
             }
@@ -67,6 +69,15 @@ jQuery(document).ready(function(){
                     jQuery(this).next('.bt-variation-warning').remove();
                 }
             });
+        }
+
+        // oxygen builder: the scope of the page iframe, which holds the active element and its options
+        function abstOxygenScope(){
+            var ui = document.getElementById('ct-controller-ui');
+            if (!ui || typeof angular === 'undefined')
+                return null;
+            var uiScope = angular.element(ui).scope();
+            return uiScope && uiScope.iframeScope ? uiScope.iframeScope : null;
         }
 
         attachVariationSanitizer(document);
@@ -104,8 +115,21 @@ jQuery(document).ready(function(){
             //if its wp bakery  parent .vc_edit_form_elements
             if(jQuery(this).parents('.vc_edit_form_elements').length > 0) // if its wp bakery get its name
                 testName = '&name=' + 'Row Test';
-    
-    
+
+            if(jQuery(this).parents('.breakdance-alert-box').length > 0) // if its breakdance get its name, e.g. "Heading"
+            {
+                var bdName = jQuery(window.parent.document).find('.properties-panel-titlebar-title').first().text().trim();
+                testName = '&name=' + encodeURIComponent((bdName || 'Breakdance') + ' Test');
+            }
+
+            var oxyScope = abstOxygenScope();
+            if(oxyScope && oxyScope.component && oxyScope.component.active) // if its oxygen get its name, e.g. "Headline (#12)"
+            {
+                var oxyOptions = oxyScope.component.options[oxyScope.component.active.id];
+                var oxyName = (oxyOptions && oxyOptions.nicename ? oxyOptions.nicename : 'Oxygen').replace(/\s*\(#\d+\)$/, '');
+                testName = '&name=' + encodeURIComponent(oxyName + ' Test');
+            }
+
             //backdrop dims the builder and blocks clicks to it while the pop-up is open
             var newabbackdrop = document.createElement('div');
             newabbackdrop.classList.add('newabpanel-backdrop');
@@ -234,6 +258,21 @@ jQuery(document).ready(function(){
                     },1000)
                 }
     
+                // oxygen: add the new test to the rendered test dropdowns, then select it on the active element
+                var oxyScope = abstOxygenScope();
+                if(oxyScope)
+                {
+                    jQuery('[ng-include="\'ctDropDownTemplate\'"]').each(function(){
+                        var dropdownScope = angular.element(this).scope();
+                        if(dropdownScope && dropdownScope.data && dropdownScope.data.paramName === 'btExperiment')
+                            dropdownScope.data.pairs[data.id] = data.name;
+                    });
+                    oxyScope.$apply(function(){
+                        oxyScope.setOptionModel('btExperiment', String(data.id));
+                    });
+                    angular.element(document.getElementById('ct-controller-ui')).scope().$applyAsync();
+                }
+
                 // bb gotta type in
                 jQuery('#ab_test').val('' + data.name + '').trigger('focus');
     

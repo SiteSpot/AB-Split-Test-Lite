@@ -11486,6 +11486,8 @@ echo "    if( selectval !== 'url' )
 
               "heading" =>  BT_AB_TEST_WL_ABTEST .' Name',
 
+              "description" => '<a class="new-on-page-test-button" href="javascript:void(0);" style="display:inline-block;margin:2px 0 8px;padding:6px 12px;border-radius:3px;background:#7046db;color:#fff;font-size:12px;font-weight:600;line-height:1.4;text-decoration:none;">+ ' . esc_html__( 'Create a new test', 'ab-split-test-lite' ) . '</a>', // opens the create-test modal (js/builderhelper.js)
+
               "param_name" => 'btExperiment',				
 
               "hidden" 		=> false,
@@ -17603,7 +17605,7 @@ body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
 
         'edit_url' => admin_url('post.php?post=' . $test_id . '&action=edit'),
 
-        'message' => ucfirst($test_type) . ' test created successfully'
+        'message' => 'Test created successfully'
 
       ], 201);
 
