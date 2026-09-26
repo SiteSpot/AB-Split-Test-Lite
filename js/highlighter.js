@@ -697,6 +697,7 @@ jQuery(function(){
             jQuery('.magic-test-name').css('display', 'flex').hide().slideDown();
             bt_highlight(selector);
             jQuery('#abst-selector-input').val(selector).trigger('blur');
+            abstDrawerReveal(selector);
             
             // Set editor content
             if (window.abstEditor) {
@@ -1807,7 +1808,11 @@ function selectorDetection(){
         if(!element)
             return false;
 
-        if (jQuery(element).closest('.abst-goals-column, .abst-goals-container, .remove-goal, .abst-goal-card-header, .abst-button-container').length > 0)
+        // Page UI that opts out of selection (e.g. a button that opens the Magic bar)
+        if (element.closest && element.closest('.abst-magic-ignore'))
+            return false;
+
+        if (jQuery(element).closest('.abst-goals-column,.abst-goals-container, .remove-goal, .abst-goal-card-header, .abst-button-container').length > 0)
             return false;
 
         //dont show if on the abst-magic-bar or any parent is abst-magic-bar
@@ -1975,7 +1980,7 @@ function selectorDetection(){
 
 
         // Allow normal interaction inside the magic bar and admin bar UI
-        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.shepherd-element') || e.target.closest('.shepherd-modal-overlay-container'))) {
+        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.shepherd-element') || e.target.closest('.shepherd-modal-overlay-container') || e.target.closest('.abst-magic-ignore'))) {
             return;
         }
 
@@ -2060,7 +2065,8 @@ function selectorDetection(){
             (target.closest && target.closest('#wpadminbar')) ||
             (target.closest && target.closest('#abst-magic-bar')) ||
             (target.closest && target.closest('.shepherd-element')) ||
-            (target.closest && target.closest('.shepherd-modal-overlay-container'))
+            (target.closest && target.closest('.shepherd-modal-overlay-container')) ||
+            (target.closest && target.closest('.abst-magic-ignore'))
         ) {
             return; // Allow normal behavior
         }
@@ -2396,6 +2402,7 @@ function setMagicBar(selector, selectorText, goal = false, type = 'text', suppre
     }
 
     jQuery('#abst-selector-input').val(selector).trigger('blur');
+    abstDrawerReveal(selector);
     
     jQuery("#abst-variation-editor-container").addClass('flash');
     setTimeout(function(){
@@ -2703,8 +2710,7 @@ function abst_magic_bar(options = {}) {
     }).join('');
 
     magicBar.innerHTML = `
-    <div class="abst-magic-bar-container">
-            <div class="abst-settings-column help" data-llm-instructions="this div contains instructions for LLM assistance 
+    <div class="abst-magic-bar-container" data-llm-instructions="this div contains instructions for LLM assistance 
             #abst-magic-bar-title is the test name. add your descriptive title
             #abst-selector-input gives you the css selector of the selected element, if any is selected.
             #variation-picker is the way to choose and add a variation to the test. 
@@ -2712,17 +2718,10 @@ function abst_magic_bar(options = {}) {
             You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and add a variation. you'll see #abst-selector-input update to the new element. You can then edit the text in the editor and  swap the #variation-picker to other variations to edit those too. 
             Additional goals are a Pro feature.  
             #ai-suggestions-list contains our trained suggestions for the highlighted element - you can click on a suggestion to add it, then create a new variation. You can also define the variation on your own if you have a better option. #abst-variation-editor-container is the way to edit the variation after you have selected it. After saving test, you can go to /wp-admin/edit.php?post_type=bt_experiments to view all tests. do not edit other tests unless  specifically asked">
-            <h4>How to create a new test</h4>
-            <ol>
-                <li>Click any element on the page to begin.</li>
-                <li>In the editor, change the text to create your first variation.</li>
-                <li>Want to make multiple changes in the same variation? Just click and edit the next element.</li>
-                <li>To test an alternate version, use the “Variation” dropdown and click + Add another.</li>
-                <li>Choose your test goal(s)</li>
-                <li>Start your test</li>
-            </ol>
-            <span class="hide-magic-bar" id="close-magic-bar" data-llm-instructions="this span is used to hide this help window, LLM should click it so that users can see you creating the test.">Hide Help</span>
-            </div>
+        <div class="abst-magic-bar-header">
+            <span class="abst-magic-bar-heading">Magic Test</span>
+            <button type="button" id="abst-magic-bar-show-tour" class="abst-magic-tour-button" title="Show me how it works">How it works</button>
+        </div>
         <div class="abst-magic-tabs" role="tablist" aria-label="Magic Bar sections">
             <button type="button" class="abst-magic-tab-button" id="abst-magic-tab-chat" data-tab="chat" role="tab" aria-selected="false" aria-controls="abst-magic-panel-chat" tabindex="-1">ChatCRO</button>
             <button type="button" class="abst-magic-tab-button is-active" id="abst-magic-tab-test" data-tab="test" role="tab" aria-selected="true" aria-controls="abst-magic-panel-test">Test</button>
@@ -2755,8 +2754,7 @@ function abst_magic_bar(options = {}) {
             <h3 style="color: #9e9e9e;">Create a Split Test.</h3>
             <p style="font-size: 24px; line-height: 1.25; margin: 40px 0 8px;">To start: Click the element you want to change.</p>
             <p style="font-size: 12px; line-height: 1.6; margin: 40px 0 20px 0; color: #9e9e9e;">Not sure what to test? Upgrade to unlock AI agent suggestions and ChatCRO guidance.</p>
-            <button id="abst-magic-bar-show-tour" class="abst-magic-bar-show-tour">Show Tour</button>
-        </div>
+</div>
         <!-- Test Name - Hidden until test starts -->
         <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">
             <label for="abst-magic-bar-title" style="font-weight: 600; white-space: nowrap;">Test Name:</label>
@@ -2870,6 +2868,7 @@ function abst_magic_bar(options = {}) {
 
     // Add the magic bar to the body
     document.body.appendChild(magicBar);
+    abstInitMagicDrawer(magicBar);
 
     jQuery('.abst-ai-suggestions-toggle').html('<span class="abst-ai-suggestions-toggle-label"><span class="abst-ai-suggestions-icon">*</span><span>AI Suggestions</span></span><span class="abst-ai-suggestions-inline-loading ai-loading" style="display:none;"><span class="abst-ai-loading-text">Upgrade for AI Suggestions</span></span><span class="abst-ai-toggle-chevron">v</span>');
 
@@ -2924,10 +2923,6 @@ function abst_magic_bar(options = {}) {
 
     window.setAbstMagicBarTab('test');
 
-    //if localstorage localStorage.setItem('abst-magic-help', 'false'); then hide
-    if(localStorage.getItem('abst-magic-help') === 'false'){
-        jQuery('.abst-settings-column.help').hide();
-    }
 
 
     jQuery('.abst-goal-page-input').hide();
@@ -3288,6 +3283,9 @@ function abst_magic_bar(options = {}) {
  * @param {boolean} activate - Whether to activate or deactivate adjustments
  */
 function adjustFixedElementsForMagicBar(activate) {
+        // Phones: the bar is a bottom drawer and nothing is squeezed, so fixed elements
+        // (sticky headers, modals) keep their own layout.
+        if (activate && typeof abstIsDrawer === 'function' && abstIsDrawer()) activate = false;
         // Get all elements in the document
         const allElements = document.querySelectorAll('*');
     
@@ -3361,15 +3359,8 @@ function adjustFixedElementsForMagicBar(activate) {
         jQuery("body").on('click','#abst-show-targeting',function(){
             jQuery('.abst-targeting-settings').slideToggle();
             jQuery('#abst-targeting-text').text('Custom targeting.');
-            jQuery('.abst-settings-column.help').slideUp();
         })
 
-        jQuery('body').on('click','.hide-magic-bar',function(){
-            jQuery('.abst-settings-column.help').toggleClass('abst-hidden');
-            //set localStorage
-            localStorage.setItem('abst-magic-help', 'false');
-        })
-        
         // AI Suggestion - "Add as Variation" button click
         jQuery('body').on('click', '.ai-add-variation', function(e) {
             e.preventDefault();
@@ -4007,11 +3998,7 @@ function adjustFixedElementsForMagicBar(activate) {
 
             var goalType = jQuery('.abst-goals-container').first().find('.goal-type').val();
             if (!isDraftSave && !jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() && !abstSpecialPages.includes(goalType) && !(goalType && goalType.startsWith(abstFormConversionPrefix))) {
-                alert('Please add at least one goal to the test');
-                //scroll #abst-magic-bar to the bottom
-                jQuery('#abst-magic-bar').animate({
-                    scrollTop: jQuery('#abst-magic-bar').height()
-                }, 1000);
+                abstNeedGoal();
                 return;
             }
 
@@ -4193,6 +4180,134 @@ function adjustFixedElementsForMagicBar(activate) {
 
 // Make the function available globally
 window.abst_magic_bar = abst_magic_bar;
+
+/* Start Test without a goal: no alert. Bring the Goals card into view, flash its border and
+ * offer one-tap goals that need no extra input (purchases first, then forms). Deliberately
+ * no silent default: a wrong goal measures the wrong thing. */
+function abstNeedGoal() {
+    var $col = jQuery('#abst-magic-bar .abst-goals-column');
+    var $box = jQuery('.abst-goals-container').first();
+    if (!$box.length) { alert('Please add at least one goal to the test'); return; }
+    if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
+    var bar = document.getElementById('abst-magic-bar');
+    if (typeof abstIsDrawer === 'function' && abstIsDrawer() && bar && bar.getBoundingClientRect().height < abstDrawerSnaps()[1] - 10) {
+        abstSetDrawerHeight(abstDrawerSnaps()[1]);
+    }
+    // Card top (with the note) at the top of the panel; the whole column is taller than a phone drawer.
+    setTimeout(function() { var t = $box[0] || $col[0]; if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+    $box.removeClass('abst-goal-needed');
+    void $box[0].offsetWidth; // restart the flash
+    $box.addClass('abst-goal-needed');
+
+    $box.find('.abst-goal-needed-hint').remove();
+    var $sel = $box.find('select.goal-type').first();
+    var oneTap = function(v) {
+        if (!v || v === 'javascript' || v === 'woo') return false; // these still need a value
+        return abstSpecialPages.indexOf(v) > -1 || (v.indexOf(abstFormConversionPrefix) === 0 && v !== (typeof abstHubspotGoalType !== 'undefined' ? abstHubspotGoalType : 'form-hubspot'));
+    };
+    var picks = [];
+    $sel.find('option').each(function() {
+        if (!oneTap(this.value)) return;
+        var group = this.parentNode && this.parentNode.tagName === 'OPTGROUP' ? this.parentNode.label : '';
+        picks.push({ value: this.value, label: this.textContent.trim(), group: group, sale: /purchase|order|paid/i.test(this.value) });
+    });
+    picks.sort(function(a, b) { return (b.sale ? 1 : 0) - (a.sale ? 1 : 0); });
+    var $hint = jQuery('<div class="abst-goal-needed-hint" role="alert"></div>')
+        .append(jQuery('<p></p>').text('Choose what counts as a win before starting the test.'));
+    picks.slice(0, 3).forEach(function(p) {
+        $hint.append(jQuery('<button type="button" class="abst-goal-quick"></button>')
+            .text('Use: ' + p.label + (p.group && p.group.toLowerCase().indexOf(p.label.toLowerCase()) === -1 ? ' (' + p.group + ')' : ''))
+            .on('click', function(e) {
+                e.preventDefault();
+                $sel.val(p.value).trigger('change');
+                $hint.remove();
+                $box.removeClass('abst-goal-needed');
+            }));
+    });
+    var $head = $box.find('.abst-goal-card-header').first();
+    if ($head.length) $head.after($hint); else $box.prepend($hint);
+}
+
+/* Phones: the bar is a bottom drawer (CSS, max-width 767px). The handle drags it between
+ * peek / half / full height and a tap (or Enter/Space) toggles half <-> full. The height
+ * is published as --abst-mb-drawer-h so the page gets the same bottom padding and every
+ * part of it can still be scrolled above the drawer. */
+var ABST_DRAWER_MQ = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
+
+function abstIsDrawer() { return !!(ABST_DRAWER_MQ && ABST_DRAWER_MQ.matches); }
+function abstDrawerSnaps() {
+    var h = window.innerHeight;
+    return [Math.min(150, Math.round(h * 0.3)), Math.round(h * 0.55), Math.round(h * 0.88)];
+}
+function abstSetDrawerHeight(px) {
+    document.documentElement.style.setProperty('--abst-mb-drawer-h', Math.round(px) + 'px');
+}
+
+function abstInitMagicDrawer(bar) {
+    var handle = document.createElement('div');
+    handle.className = 'abst-magic-drawer-handle';
+    handle.setAttribute('role', 'button');
+    handle.setAttribute('tabindex', '0');
+    handle.setAttribute('aria-label', 'Drag to resize the test editor, or tap to expand it');
+    handle.innerHTML = '<span></span>';
+    bar.insertBefore(handle, bar.firstChild);
+    if (abstIsDrawer()) abstSetDrawerHeight(abstDrawerSnaps()[1]);
+
+    // Tap: peek -> half, half -> full, full -> half.
+    var toggle = function() {
+        var s = abstDrawerSnaps(), h = bar.getBoundingClientRect().height;
+        abstSetDrawerHeight(h < s[1] - 10 ? s[1] : (h < s[1] + 10 ? s[2] : s[1]));
+    };
+    var startY = 0, startH = 0, moved = false, dragging = false;
+    handle.addEventListener('pointerdown', function(e) {
+        if (!abstIsDrawer()) return;
+        dragging = true; moved = false;
+        startY = e.clientY; startH = bar.getBoundingClientRect().height;
+        bar.classList.add('is-dragging');
+        if (handle.setPointerCapture) handle.setPointerCapture(e.pointerId);
+        e.preventDefault();
+    });
+    handle.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        var dy = e.clientY - startY, s = abstDrawerSnaps();
+        if (Math.abs(dy) > 4) moved = true;
+        abstSetDrawerHeight(Math.max(s[0] * 0.8, Math.min(s[2], startH - dy)));
+    });
+    var end = function() {
+        if (!dragging) return;
+        dragging = false;
+        bar.classList.remove('is-dragging');
+        if (!moved) { toggle(); return; }
+        var h = bar.getBoundingClientRect().height;
+        abstSetDrawerHeight(abstDrawerSnaps().reduce(function(best, v) { return Math.abs(v - h) < Math.abs(best - h) ? v : best; }));
+    };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+    handle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+    if (ABST_DRAWER_MQ && ABST_DRAWER_MQ.addEventListener) {
+        ABST_DRAWER_MQ.addEventListener('change', function() {
+            if (abstIsDrawer()) abstSetDrawerHeight(abstDrawerSnaps()[1]);
+            // Rotating / resizing across the breakpoint: squeeze fixed elements only for the side panel.
+            if (document.documentElement.classList.contains('doing-abst-magic-bar')) adjustFixedElementsForMagicBar(!abstIsDrawer());
+        });
+    }
+}
+
+/* On a phone the drawer covers the lower half of the page: bring a selection hidden
+ * behind it up into view. */
+function abstDrawerReveal(selector) {
+    if (!abstIsDrawer()) return;
+    var el = null;
+    try { el = document.querySelector(selector); } catch (e) {}
+    var bar = document.getElementById('abst-magic-bar');
+    if (!el || !bar) return;
+    var r = el.getBoundingClientRect(), visibleBottom = window.innerHeight - bar.getBoundingClientRect().height;
+    if (r.top < 60 || r.bottom > visibleBottom) {
+        window.scrollBy({ top: r.top - Math.max(70, (visibleBottom - r.height) / 3), behavior: 'smooth' });
+    }
+}
 
 function get_goals_from_dom(){
 
