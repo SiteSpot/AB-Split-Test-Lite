@@ -3303,3 +3303,14 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
   html.doing-abst-magic-bar { margin-top: 0 !important; scroll-padding-top: 0 !important; }
   html body.admin-bar #abst-magic-bar { max-height: calc(100% - 12px); }
 }
+
+/* Start Test without a goal: flash the Goals card and offer one-tap goals (abstNeedGoal) */
+#abst-magic-bar .abst-goals-container.abst-goal-needed { animation: abst-goal-needed 0.7s ease-in-out 3; border-color: #d97706 !important; }
+@keyframes abst-goal-needed { 0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); } 50% { box-shadow: 0 0 0 4px rgba(217, 119, 6, .45); } }
+#abst-magic-bar .abst-goal-needed-hint { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 10px 12px; border-radius: 8px; background: #fffbeb; }
+#abst-magic-bar .abst-goal-needed-hint p { flex-basis: 100%; margin: 0 0 2px !important; font-size: 12px; font-weight: 600; color: #92400e; }
+#abst-magic-bar .abst-goal-quick {
+  padding: 5px 10px; min-height: 0; border: 1px solid #fcd34d !important; border-radius: 999px; background: #fff !important;
+  color: #92400e !important; font-size: 12px !important; font-weight: 600; box-shadow: none !important; cursor: pointer;
+}
+#abst-magic-bar .abst-goal-quick:hover { border-color: #d97706 !important; }

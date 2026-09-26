@@ -3998,11 +3998,7 @@ function adjustFixedElementsForMagicBar(activate) {
 
             var goalType = jQuery('.abst-goals-container').first().find('.goal-type').val();
             if (!isDraftSave && !jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() && !abstSpecialPages.includes(goalType) && !(goalType && goalType.startsWith(abstFormConversionPrefix))) {
-                alert('Please add at least one goal to the test');
-                //scroll #abst-magic-bar to the bottom
-                jQuery('#abst-magic-bar').animate({
-                    scrollTop: jQuery('#abst-magic-bar').height()
-                }, 1000);
+                abstNeedGoal();
                 return;
             }
 
@@ -4184,6 +4180,53 @@ function adjustFixedElementsForMagicBar(activate) {
 
 // Make the function available globally
 window.abst_magic_bar = abst_magic_bar;
+
+/* Start Test without a goal: no alert. Bring the Goals card into view, flash its border and
+ * offer one-tap goals that need no extra input (purchases first, then forms). Deliberately
+ * no silent default: a wrong goal measures the wrong thing. */
+function abstNeedGoal() {
+    var $col = jQuery('#abst-magic-bar .abst-goals-column');
+    var $box = jQuery('.abst-goals-container').first();
+    if (!$box.length) { alert('Please add at least one goal to the test'); return; }
+    if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
+    var bar = document.getElementById('abst-magic-bar');
+    if (typeof abstIsDrawer === 'function' && abstIsDrawer() && bar && bar.getBoundingClientRect().height < abstDrawerSnaps()[1] - 10) {
+        abstSetDrawerHeight(abstDrawerSnaps()[1]);
+    }
+    // Card top (with the note) at the top of the panel; the whole column is taller than a phone drawer.
+    setTimeout(function() { var t = $box[0] || $col[0]; if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+    $box.removeClass('abst-goal-needed');
+    void $box[0].offsetWidth; // restart the flash
+    $box.addClass('abst-goal-needed');
+
+    $box.find('.abst-goal-needed-hint').remove();
+    var $sel = $box.find('select.goal-type').first();
+    var oneTap = function(v) {
+        if (!v || v === 'javascript' || v === 'woo') return false; // these still need a value
+        return abstSpecialPages.indexOf(v) > -1 || (v.indexOf(abstFormConversionPrefix) === 0 && v !== (typeof abstHubspotGoalType !== 'undefined' ? abstHubspotGoalType : 'form-hubspot'));
+    };
+    var picks = [];
+    $sel.find('option').each(function() {
+        if (!oneTap(this.value)) return;
+        var group = this.parentNode && this.parentNode.tagName === 'OPTGROUP' ? this.parentNode.label : '';
+        picks.push({ value: this.value, label: this.textContent.trim(), group: group, sale: /purchase|order|paid/i.test(this.value) });
+    });
+    picks.sort(function(a, b) { return (b.sale ? 1 : 0) - (a.sale ? 1 : 0); });
+    var $hint = jQuery('<div class="abst-goal-needed-hint" role="alert"></div>')
+        .append(jQuery('<p></p>').text('Choose what counts as a win before starting the test.'));
+    picks.slice(0, 3).forEach(function(p) {
+        $hint.append(jQuery('<button type="button" class="abst-goal-quick"></button>')
+            .text('Use: ' + p.label + (p.group && p.group.toLowerCase().indexOf(p.label.toLowerCase()) === -1 ? ' (' + p.group + ')' : ''))
+            .on('click', function(e) {
+                e.preventDefault();
+                $sel.val(p.value).trigger('change');
+                $hint.remove();
+                $box.removeClass('abst-goal-needed');
+            }));
+    });
+    var $head = $box.find('.abst-goal-card-header').first();
+    if ($head.length) $head.after($hint); else $box.prepend($hint);
+}
 
 /* Phones: the bar is a bottom drawer (CSS, max-width 767px). The handle drags it between
  * peek / half / full height and a tap (or Enter/Space) toggles half <-> full. The height
