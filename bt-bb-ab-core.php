@@ -15700,9 +15700,7 @@ function abst_heatmaps_page_content() {
 
   foreach ( $abst_ranges as $abst_range ) {
 
-    /* translators: %d: number of days of heatmap history to show. */
-
-    $abst_range_label = sprintf( _n( 'Last %d day', 'Last %d days', $abst_range, 'ab-split-test-lite' ), $abst_range );
+    $abst_range_label = sprintf( /* translators: %d: number of days of heatmap history to show. */ _n( 'Last %d day', 'Last %d days', $abst_range, 'ab-split-test-lite' ), $abst_range );
 
     echo '<option value="' . esc_attr( $abst_range ) . '"' . selected( $abst_range, min( 3, $abst_retention_days ), false ) . '>' . esc_html( $abst_range_label ) . '</option>';
 
