@@ -45,7 +45,7 @@
                 cancelIcon: {
                     enabled: true
                 },
-                classes: 'shadow-md bg-purple-dark',
+                classes: 'shadow-md bg-purple-dark abst-magic-tour',
                 scrollTo: true
             },
             useModalOverlay: true
