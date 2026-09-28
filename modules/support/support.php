@@ -3,23 +3,16 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class BT_BB_AB_Supports
 {
-	public static $shortcode_name = 'abtest_conversion';
-	public static $shortcode_abtest_variation = 'test';
+	public static $shortcode_abtest_variation = 'abst_test';
 
 	public function __construct()
 	{
-		add_shortcode( self::$shortcode_name, [$this, 'support_conversion_shortcode'] );
 		add_shortcode( self::$shortcode_abtest_variation, [$this, 'support_ab_redirect_variation'] );
 
 		add_filter( 'abst_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
-		add_filter( 'abst_experiments_conversion_html', [$this, 'get_conversion_html'], 10, 1 );
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
 		add_filter( 'bt_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-		add_filter( 'bt_experiments_conversion_html', [$this, 'get_conversion_html'], 10, 1 );
 
-		add_action( 'wp_ajax_render_ab_test_html', [$this, 'render_ab_test_html'] );
-		add_action( 'wp_ajax_nopriv_render_ab_test_html', [$this, 'render_ab_test_html'] );
 
 		$this->load_supports();
 	}
@@ -32,60 +25,13 @@ class BT_BB_AB_Supports
                 include_once plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/support/bricks/bricks.php';
 	}
 
-	public function get_conversion_html( $param = [] )
-	{
-		if( !empty($param) ) {
-			$settings = (object) $param;
-		}
+	
 
-		ob_start();
+	
 
-		include plugin_dir_path( dirname(dirname(__FILE__)) ) .'/modules/conversion/includes/frontend.php';
+	
 
-		return ob_get_clean();
-	}
-
-	public function render_ab_test_html()
-	{
-		if( ! isset($_POST['nonce']) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'bt_gutenberg_ab_test_html' ) ) { wp_die('sorry..'); }
-
-		if ( ! current_user_can('edit_posts') ) { wp_die('Unauthorized'); }
-
-		$attr = '';
-
-		$data = isset($_POST['data']) && is_array($_POST['data']) ? array_map('sanitize_text_field', wp_unslash($_POST['data'])) : array();
-		foreach ($data as $key => $value) {
-			$key = sanitize_key($key);
-			if( $value != '' ) {
-				$attr .= ' '. $key .'='. sanitize_text_field( $value );
-			}
-		}
-
-		echo do_shortcode('['. self::$shortcode_name .' '. $attr .']');
-
-		wp_die();		
-	}
-
-	public static function get_shortcode_args()
-	{
-		$fields = BtConversionModule::get_fields();
-		$new_fields = [];
-
-		foreach ($fields as $key => $value) {
-			$default_val = (isset($value['default']))? $value['default'] : '';
-			$new_fields[$key] = $default_val;
-		}
-
-		return $new_fields;
-	}
-
-	public function support_conversion_shortcode( $atts )
-	{
-		$fields = self::get_shortcode_args();
-		$attr   = shortcode_atts($fields, $atts);
-
-		return $this->get_conversion_html( $attr );
-	}
+	
 
 	public function support_ab_redirect_variation( $atts,$content )
 	{

@@ -169,13 +169,14 @@ jQuery(document).ready(function(){
     
             // generate source
             const wp_ajax_on_page_test_create = window.ajaxurl 
-                ? `${window.ajaxurl}?action=on_page_test_create` 
-                : `${window.location.origin}/wp-admin/admin-ajax.php?action=on_page_test_create`;
+                ? `${window.ajaxurl}?action=abst_on_page_test_create` 
+                : `${window.location.origin}/wp-admin/admin-ajax.php?action=abst_on_page_test_create`;
     
             newabiframe.classList.add('newabpanel');
             document.body.appendChild(newabiframe);
             newabiframe.style.display = 'block';
-            newabiframe.src = wp_ajax_on_page_test_create + testName;
+            var createNonce = (window.abstBuilderHelper && window.abstBuilderHelper.createNonce) ? window.abstBuilderHelper.createNonce : '';
+            newabiframe.src = wp_ajax_on_page_test_create + '&nonce=' + encodeURIComponent(createNonce) + testName;
     
             //POPUP THE IFRAME
             newabiframe.contentWindow.focus();

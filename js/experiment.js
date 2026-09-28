@@ -19,7 +19,7 @@
 
         var args = Array.prototype.slice.call(arguments);
         if (typeof args[0] === 'string') {
-            args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+            args[0] = args[0].replace(/^\s*ABST\s*:\s*/i, '');
             args[0] = 'ABST: ' + args[0];
         } else {
             args.unshift('ABST:');
@@ -54,7 +54,7 @@ window.acattrs = {
 
           type:'control', // or 'variations'
 
-          action: 'ab_page_selector', // AJAX action for admin-ajax.php
+          action: 'abst_page_selector', // AJAX action for admin-ajax.php
 
           nonce: bt_exturl.page_selector_nonce
 
@@ -258,23 +258,6 @@ jQuery(document).ready(function() {
 
   jQuery(function($){  
 
-    jQuery('body').on('click', '.conversion_order_value_info', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      var $button = jQuery(this);
-      var expanded = $button.attr('aria-expanded') === 'true';
-      $button.attr('aria-expanded', expanded ? 'false' : 'true');
-      $button
-        .closest('#conversion_order_value')
-        .find('.conversion_order_value_help_panel')
-        .first()
-        .stop(true, true)
-        .slideToggle(180);
-    });
-
-    
-
     jQuery( '#bt_experiments_full_page_default_page' ).select2(window.acattrs);
 
     // Initialize conversion page selector separately with its own config (no AJAX, uses server-rendered options)
@@ -310,7 +293,7 @@ jQuery(document).ready(function() {
 
             type:'variations', // 'control' or 'variations'
 
-            action: 'ab_page_selector', // AJAX action for admin-ajax.php
+            action: 'abst_page_selector', // AJAX action for admin-ajax.php
 
             nonce: bt_exturl.page_selector_nonce
 
@@ -414,16 +397,6 @@ jQuery(document).ready(function() {
 
 
 
-  window.acattrs.multiple=false;
-
-  jQuery( '.goal-page' ).select2(window.acattrs);
-
-
-
-  var bt_ext_url_xhr = null;
-
-
-
   //update labels
 
   if(jQuery("#timestamp").length > 0)
@@ -449,12 +422,8 @@ jQuery(document).ready(function() {
 
   function validateExperimentCanLaunch() {
     var hasTestType = jQuery('#full_page').is(':checked') || jQuery('#ab_test').is(':checked') || jQuery('#css_test').is(':checked') || jQuery('#magic').is(':checked');
-    var conversionType = jQuery.trim(jQuery('#bt_experiments_conversion_page').val() || '');
-    var hasConversion = conversionType !== '';
-
-    if (hasConversion && conversionType === 'page') {
-      hasConversion = jQuery.trim(jQuery('#bt_experiments_conversion_page_selector').val() || '') !== '';
-    }
+    // The conversion goal is a page visit, so a goal page must be chosen.
+    var hasConversion = jQuery.trim(jQuery('#bt_experiments_conversion_page_selector').val() || '') !== '';
 
     if (hasTestType && hasConversion) {
       return true;
@@ -465,7 +434,7 @@ jQuery(document).ready(function() {
     }
 
     if (!hasConversion) {
-      jQuery('#bt_experiments_conversion_page')
+      jQuery('#bt_experiments_conversion_page_selector')
         .closest('.conversion-goal, .bt_experiments_inner_custom_box')
         .addClass('err');
     }
@@ -550,48 +519,6 @@ jQuery(document).ready(function() {
 
   
 
-  jQuery('body').on('click', '.bt_exturl_copy', function(e) {
-
-
-
-    var copyText = document.getElementById('bt-embed-code');
-
-
-
-    copyText.select();
-
-    copyText.setSelectionRange(0, 99999);
-
-
-
-    document.execCommand('copy');
-
-
-
-    jQuery('.bt-copied').css('visibility', 'visible');
-
-  });
-
-
-
-  jQuery('body').on('click', '.bt_js_copy', function(e) {
-
-    e.preventDefault();
-
-    var copyText = document.getElementById('conversion_javascript_area');
-
-    copyText.select();
-
-    copyText.setSelectionRange(0, 99999);
-
-    document.execCommand('copy');
-
-    jQuery('.bt_js_copied').fadeIn().delay(800).fadeOut();
-
-  });
-
-
-
   jQuery('.test-variation-info input').on('click',function(){
 
 
@@ -601,22 +528,6 @@ jQuery(document).ready(function() {
     
 
     alert(jQuery(this).val() + ' copied! \n\nRemember to replace {name} with a name of your choice. e.g...\nab-var-new');
-
-
-
-  });
-
-
-
-  jQuery('.test-conversion-info input').on('click',function(){
-
-
-
-    copyToClipboard(jQuery(this).val());
-
-    
-
-    alert(jQuery(this).val() + ' copied! Wherever you add this class a conversion will be triggered.');
 
 
 
@@ -643,68 +554,6 @@ jQuery(document).ready(function() {
   });
 
 
-
-
-
-  jQuery('body').on('click', '.bt-generate-code', function(e) {
-
-
-
-    var button = jQuery(this);
-
-
-
-    if( bt_ext_url_xhr != null ) {
-
-      bt_ext_url_xhr.abort();
-
-      bt_ext_url_xhr = null;
-
-    }      
-
-
-
-    bt_ext_url_xhr = jQuery.ajax({
-
-      url: bt_exturl.ajax_url,
-
-      dataType: "html",
-
-      type: 'POST',
-
-      data: {
-
-        action: bt_exturl.action,
-
-        nonce: bt_exturl.nonce,
-
-        eid: bt_exturl.eid
-
-      },
-
-      beforeSend: function() {
-
-        button.text('Generating code...');
-
-      },
-
-      success: function( response ) {
-
-        jQuery('#bt-embed-code').text(response).show();
-
-        button.text('Copy Conversion Pixel').removeClass('bt-generate-code').addClass('bt_exturl_copy').addClass('button-primary');
-
-      },
-
-      error: function( xhr ) {
-
-        console.log(xhr);
-
-      }
-
-    });
-
-  });
 
 
 
@@ -926,7 +775,7 @@ jQuery(document).ready(function() {
 
         var data = {
 
-          'action': 'bt_clear_experiment_results',
+          'action': 'abst_clear_experiment_results',
 
           'eid': eid,
 
@@ -962,24 +811,6 @@ jQuery(document).ready(function() {
 
 
 
-  jQuery('.close-goal').on('click',function(){
-
-    jQuery(this).parents('.subgoal').find('.goal-value').val('');
-
-    jQuery(this).parents('.subgoal').find('.goal-type :selected').removeAttr("selected");
-
-
-
-    // unserlect from goal page
-
-    jQuery(this).parents('.subgoal').find(".goal-page :selected").removeAttr("selected");
-
-    jQuery(this).parents('.subgoal').hide();
-
-  });
-
-  
-
   // Attach input event listeners to trigger description update
 
   jQuery("#bt_experiments_target_percentage").on("input", updateDescription);
@@ -1009,48 +840,6 @@ jQuery(document).ready(function() {
   });
 
 
-
-
-
-  jQuery('.goal-select').change(function(e){
-
-    //get value of select
-
-    var selectedValue = jQuery(this).val();
-
-
-
-    jQuery('.results-goal').hide();
-
-   //show goal then append span inside thje tag
-
-   
-
-    jQuery('[data-goal="'+selectedValue+'"]').show().each(function(){
-
-      goalVisits = parseInt(jQuery(this).text());
-
-      parent = jQuery(this).parents('.results_variation');
-
-      visits = parseInt(parent.find('.results-visits').text());
-
-      //console.log(goalVisits,visits);
-
-
-
-      rateExists = parent.children('.goal-conversion-rate').length;
-
-
-
-      rate = Math.round((goalVisits/visits)*100);
-
-      jQuery(this).find('.goal-conversion-rate').remove();
-
-        jQuery(this).append( ' <span class="goal-conversion-rate">'+rate+'%</span>' );
-
-    });
-
-  });
 
 
 
@@ -1150,372 +939,18 @@ jQuery(document).ready(function() {
 
   });
 
-  function abstPositionAdminOrderValue() {
-    var $orderValue = jQuery('#conversion_order_value');
-    var targetSelector = '#conversion_order_value_bottom_slot';
-
-    if ($orderValue.length && jQuery(targetSelector).length) {
-      $orderValue.appendTo(targetSelector);
-    }
-  }
-
+  // The conversion goal is a page visit.
   jQuery("#bt_experiments_conversion_page").change(function(){
-
-    jQuery('#selector_explanation').remove();
-
-
 
     refreshConversionPage();
 
-
-
-    selectval = jQuery(this).find('option:selected').attr('value');
-
-
-
-    if( selectval !== 'page')
-
-      jQuery('.conversion_page_selector').hide();
-
-    else
-
-      jQuery('.conversion_page_selector').show();
-
-
-
-      if( selectval == 'link' )
-
-        jQuery('.conversion_link_pattern_input').show();
-
-      else
-
-        jQuery('.conversion_link_pattern_input').hide();
-
-    if( selectval !== 'url')
-
-      jQuery('.conversion_url_input').hide();
-
-    else
-
-      jQuery('.conversion_url_input').show();
-
-      
-
-      if( selectval == 'embed' )
-
-        jQuery('.embed-code-area').show();
-
-      else
-
-        jQuery('.embed-code-area').hide();
-
-      
-
-      if( selectval == 'fingerprint' )
-
-        jQuery('.fingerprint-code-area').show();
-
-      else
-
-        jQuery('.fingerprint-code-area').hide();
-
-
-
-
-
-      if( selectval == 'time' )
-
-      jQuery('.conversion_time_input').show();
-
-    else
-
-      jQuery('.conversion_time_input').hide();
-
-
-
-      if( selectval == 'scroll' )
-
-      jQuery('.conversion_scroll_input').show();
-
-    else
-
-      jQuery('.conversion_scroll_input').hide();
-
-
-
-      if( selectval == 'text' )
-
-        jQuery('.conversion_text_input').show();
-
-      else
-
-        jQuery('.conversion_text_input').hide();
-
-
-
-    abstPositionAdminOrderValue();
-
-    jQuery('#conversion_order_value').toggle(selectval !== '');
-
-
-
-    if( selectval == 'selector' )
-
-      jQuery('.conversion_selector_input').show();
-
-    else
-
-      jQuery('.conversion_selector_input').hide();
-
-
-
-    if( selectval == 'javascript' )
-
-      jQuery('#conversion_javascript').show();
-
-    else
-
-      jQuery('#conversion_javascript').hide();
-
-
-
-      if(selectval == 'block' ){
-
-        jQuery('.test-conversion-tags-mode').show();
-
-      }
-
-      else
-
-      {
-
-        jQuery('.test-conversion-tags-mode').hide();
-
-      }
-
-
-
-
+    jQuery('.conversion_page_selector').toggle(jQuery(this).val() === 'page');
 
   }).change();
 
 
 
 
-
-
-
-  // Show an unshown subgoal when the "+ Add Sub Goal" button is clicked
-
-  jQuery('.add-goal').on('click', function(e) {
-
-    e.preventDefault();
-
-      var hiddenSubgoal = jQuery('.subgoal:hidden').first();
-
-      if (hiddenSubgoal.length > 0) {
-
-          hiddenSubgoal.show();
-
-          hiddenSubgoal.find('.select2-container').hide();
-
-          hiddenSubgoal.find('input').hide(); 
-
-          hiddenSubgoal.find('label').hide();
-
-          if(!jQuery('.subgoal:hidden').length)
-
-            jQuery('.add-goal').hide();
-
-      } else {
-
-          alert('Maximum '+jQuery('.subgoal').length+' subgoals.');
-
-      }
-
-  });
-
-
-
-  // on change of select name="goal[1]" get the value of the option and put it in variable 
-
-  jQuery('body').on('change', '.goal-type', function() {
-
-    // get the goal number from the select[name^="goal["]
-
-    var goalNumber = jQuery(this).attr('name').replace('goal[', '').replace(']', '');
-
-    //get selected value
-
-    var selectedValue = jQuery(this).val();
-
-    //is this option inside an optgroup?
-
-    //if setup clear input
-
-    if(jQuery( this ).parents('.subgoal').hasClass('absetupcompletegoal'))
-
-      jQuery( this ).parents('.subgoal').find("input").val('');
-
-
-
-    jQuery( this ).parents('.subgoal').addClass('absetupcompletegoal')
-
-    var isOptgroup = jQuery(this).find('option:selected').parent().is('optgroup');
-
-    if(selectedValue == 'page'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").show(); 
-
-      jQuery( this ).parents('.subgoal').find("input").hide();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Choose a page that when visited, the goal will be triggered.<br><br> e.g. "Choose a thankyou page or order complete page."').show();
-
-    }
-
-    //text
-
-    else if(selectedValue == 'text'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Choose an exact string of text that when visible on the page, the goal will be triggered. Separate multiple trigger strings with a pipe "|".<br><br> e.g. "Thank you for your order"').show();
-
-    }
-
-    //link
-
-    else if(selectedValue == 'link'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Enter some of the URL that when clicked, the goal will be triggered. <BR>Can be a local or remote URL. <BR>Can be a full or partial URL e.g. /buynow').show();
-
-    }
-
-    //selector
-
-    else if(selectedValue == 'selector'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Enter a CSS selector that when visible on the page, the goal will be triggered. Use # for ID, . for class, or any other css selector. <BR> You can add multiple selectors by separating them with a comma. <BR>e.g. #my-id, .my-class, .another-class .my-child-class').show();
-
-    }
-
-    //url
-
-    else if(selectedValue == 'url'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Enter part of the URL that when found, the goal will be triggered. <BR>Can be a full or partial URL. Can include query strings but must be in the correct order. <BR> e.g. /buynow').show();
-
-    }
-
-    else if(selectedValue == 'javascript'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").hide();
-
-      var conversion_code = "ab-" + window.abstpid + " ab-goal-" + goalNumber;
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Add this JavaScript code to your website to trigger this goal: <br><br> <code>&lt;script&gt;(window.abGoal = window.abGoal || []).push(['+window.abstpid+','+goalNumber+']); processAbstGoal?.();&lt;/script&gt;</code>').show();
-
-    }
-
-    else if(selectedValue == 'block'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").hide();
-
-      var conversion_code = "ab-" + window.abstpid + " ab-goal-" + goalNumber;
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Add these classes to any element, that when visible on the page, the goal will be triggered: <br><br> <code>'+conversion_code+'</code>').show();
-
-    }
-
-    else if(selectedValue == 'woo'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").hide();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('ab-'+window.abstpid+' ab-goal-'+goalNumber).show();
-
-    }
-
-    else if(selectedValue == 'scroll'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Triggers a goal when you scroll to a certain percentage of the test page. <br>Enter scroll depth as a percentage (0-100) e.g. 50').show();
-
-    }
-
-    else if(isOptgroup || selectedValue == ''){ // is not set or is a woocommerce / surecart special select
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").hide();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").hide();
-
-    }
-
-    //time
-
-    else if(selectedValue == 'time'){
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").html('Monitors user activity (scrolling, mouse movement, clicks, etc.)<br>Enter seconds of activity needed to trigger goal. e.g.  60').show();
-
-    }
-
-    else
-
-    {
-
-      jQuery( this ).parents('.subgoal').find(".select2-container").hide();
-
-      jQuery( this ).parents('.subgoal').find("input").show();
-
-      jQuery( this ).parents('.subgoal').find(".goal-value-label").text('Enter ' + selectedValue).show();    
-
-    }
-
-
-
-    
-
-  });
-
-
-
-  setTimeout(function(){ // why
-
-    jQuery('.goal-type').trigger('change').show();
-
-    if(!jQuery('.subgoal:hidden').length)  // hide if no more to add
-
-      jQuery('.add-goal').hide();
-
-  }, 10);
 
 
 
@@ -1613,236 +1048,6 @@ jQuery(document).ready(function() {
 
 
 
-  // Add event listener for conversion selector input to explain CSS selectors
-
-  jQuery("#bt_experiments_conversion_selector").on("input", explainCssSelector);
-
-
-
-  // Function to explain CSS selectors in human terms
-
-  function explainCssSelector() {
-
-    const selectorValue = jQuery(this).val().trim();
-
-    let explanation = "";
-
-    let selectorType = "Complex";
-
-    let selectorExplanation = "";
-
-    
-
-    if (!selectorValue) {
-
-      // Clear explanation if input is empty
-
-      jQuery("#selector_explanation").remove();
-
-      return;
-
-    }
-
-    
-
-    // Create explanation container if it doesn't exist
-
-    if (jQuery("#selector_explanation").length === 0) {
-
-      jQuery(this).after('<div id="selector_explanation" style="margin-top: 8px; padding: 10px; background-color: #f8f8f8; border-left: 4px solid #0073aa; font-size: 13px;"></div>');
-
-    }
-
-    
-
-    // Check if we have comma-separated selectors
-
-    if (selectorValue.includes(",")) {
-
-      const selectors = selectorValue.split(",").map(s => s.trim());
-
-      selectorType = "Group Selector";
-
-      let selectorDescriptions = [];
-
-      
-
-      // Analyze each selector in the group
-
-      selectors.forEach(selector => {
-
-        selectorDescriptions.push(`<code>${selector}</code>`);
-
-      });
-
-      
-
-      selectorExplanation = `Any element matching any of these selectors: ${selectorDescriptions.join(", ")}`;
-
-      explanation = `<strong>${selectorType}:</strong> ${selectorExplanation} will trigger a conversion when clicked.`;
-
-      
-
-      
-
-      // Update the explanation
-
-      jQuery("#selector_explanation").html(explanation);
-
-      return;
-
-    }
-
-    
-
-    // Analyze the selector - handle complex selectors better
-
-    
-
-    // Check for complex selectors with combinators first
-
-    if (selectorValue.includes(">")) {
-
-      const parts = selectorValue.split(">");
-
-      const parent = parts[0].trim();
-
-      const child = parts[1].trim();
-
-      selectorType = "Child Combinator";
-
-      selectorExplanation = `Elements matching <code>${child}</code> that are direct children of elements matching <code>${parent}</code>`;
-
-    } else if (selectorValue.includes(" ") && !selectorValue.includes("[")) {
-
-      const parts = selectorValue.split(" ").filter(p => p.trim() !== "");
-
-      const ancestor = parts[0].trim();
-
-      const descendant = parts[parts.length-1].trim();
-
-      selectorType = "Descendant Combinator";
-
-      selectorExplanation = `Elements matching <code>${descendant}</code> that are descendants of elements matching <code>${ancestor}</code>`;
-
-    } else if (selectorValue.includes("+")) {
-
-      const parts = selectorValue.split("+");
-
-      const previous = parts[0].trim();
-
-      const next = parts[1].trim();
-
-      selectorType = "Adjacent Sibling";
-
-      selectorExplanation = `Elements matching <code>${next}</code> that are immediately preceded by a sibling matching <code>${previous}</code>`;
-
-    } else if (selectorValue.includes("~")) {
-
-      const parts = selectorValue.split("~");
-
-      const previous = parts[0].trim();
-
-      const siblings = parts[1].trim();
-
-      selectorType = "General Sibling";
-
-      selectorExplanation = `Elements matching <code>${siblings}</code> that are preceded by a sibling matching <code>${previous}</code>`;
-
-    } else if (selectorValue.startsWith("#")) {
-
-      // ID selector
-
-      const idName = selectorValue.substring(1);
-
-      selectorType = "ID Selector";
-
-      selectorExplanation = `A single element with the ID "${idName}"`;
-
-    } else if (selectorValue.startsWith(".")) {
-
-      // Class selector
-
-      const className = selectorValue.substring(1);
-
-      selectorType = "Class Selector";
-
-      selectorExplanation = `Elements with the class "${className}". Multiple elements can have the same class`;
-
-    } else if (selectorValue.includes(".")) {
-
-      // Element with class
-
-      const parts = selectorValue.split(".");
-
-      const element = parts[0];
-
-      const className = parts[1].split(/[\s\[\]\+\~\>]/)[0]; // Get class name before any combinator
-
-      selectorType = "Element with Class";
-
-      selectorExplanation = `<code>&lt;${element}&gt;</code> elements with the class "${className}"`;
-
-    } else if (selectorValue.includes("#")) {
-
-      // Element with ID
-
-      const parts = selectorValue.split("#");
-
-      const element = parts[0];
-
-      const idName = parts[1].split(/[\s\[\]\+\~\>]/)[0]; // Get ID before any combinator
-
-      selectorType = "Element with ID";
-
-      selectorExplanation = `The <code>&lt;${element}&gt;</code> element with the ID "${idName}"`;
-
-    } else if (selectorValue.includes("[") && selectorValue.includes("]")) {
-
-      // Attribute selector
-
-      selectorType = "Attribute Selector";
-
-      selectorExplanation = `Elements based on the presence or value of the specified attribute`;
-
-    } else if (selectorValue.includes(":")) {
-
-      // Pseudo-class or pseudo-element
-
-      selectorType = "Pseudo-class/element";
-
-      selectorExplanation = `Elements based on a special state or position`;
-
-    } else {
-
-      // Element selector
-
-      selectorType = "Element Selector";
-
-      selectorExplanation = `All <code>&lt;${selectorValue}&gt;</code> elements on the website. <br><small>Did you mean to target a class or ID? Add a . for class or # for ID before the selector <br> Example: <code>.${selectorValue}</code> for class or <code>#${selectorValue}</code> for ID</small>`;
-
-    }
-
-    
-
-    explanation = `<strong>${selectorType}:</strong> ${selectorExplanation} will trigger a conversion when clicked.`;
-
-        
-
-    // Update the explanation
-
-    jQuery("#selector_explanation").html(explanation);
-
-  }
-
-
-
-
-
-
-
-
-
   jQuery(".results_variation.na").each(function(index,el){
 
     var magicVars = jQuery("#magic_definition").val();
@@ -1896,14 +1101,14 @@ jQuery(document).ready(function() {
 
 
 
-  createGraph(0, __abstInitialSize);
+  createGraph(__abstInitialSize);
 
   // Device-size filter: re-render results table + chart using the per-size observations slice
   jQuery(document).off('change.abstDeviceSize', '#abst-device-size-select').on('change.abstDeviceSize', '#abst-device-size-select', function(){
     var size = this.value;
     jQuery('#abst-results-table').empty();
     createTable(size);
-    createGraph(jQuery('#abst-goal-select').val() || 0, size);
+    createGraph(size);
 
     // Update URL without creating a history entry so back-button doesn't trap users.
     try {
@@ -1965,7 +1170,6 @@ if(deviceSize && abtestChartData.observations){
       var __abstDs = __abstSrc.device_size[deviceSize];
       __abstView.visit = __abstDs.visit || 0;
       __abstView.conversion = __abstDs.conversion || 0;
-      __abstView.goals = __abstDs.goals || {};
       __abstView.rate = (typeof __abstDs.rate !== 'undefined')
         ? __abstDs.rate
         : ((__abstView.visit > 0) ? Math.round(((__abstView.conversion / __abstView.visit) * 100) * 100) / 100 : 0);
@@ -1973,7 +1177,6 @@ if(deviceSize && abtestChartData.observations){
     } else {
       __abstView.visit = 0;
       __abstView.conversion = 0;
-      __abstView.goals = {};
       __abstView.rate = 0;
       __abstView.probability = 0;
     }
@@ -1983,8 +1186,7 @@ if(deviceSize && abtestChartData.observations){
 }
 
 // Evaluate sample-size / underpowered flags on whichever view is active (filtered or full).
-// Does not apply to Thompson mode, where the column shows traffic weight, not confidence.
-if (abtestChartData.conversion_style !== 'thompson' && abtestChartData.observations) {
+if (abtestChartData.observations) {
   var __abstMaxProb = 0;
   for (var __abstGateKey in abtestChartData.observations) {
     var __abstGateObs = abtestChartData.observations[__abstGateKey];
@@ -2017,39 +1219,11 @@ if (abtestChartData.conversion_style !== 'thompson' && abtestChartData.observati
   }
 })();
 
-const goalArray = [];
-
 //reset nevessarty vars
 
 var newTableData = [];
 
 var controlVariationRate = 0;
-
-
-
-//create goal array from abtestChartData.goals or thin air
-
-for (let i = 1; i < 11; i++) {
-
-  if(!window.abtestChartData.goals || !window.abtestChartData.goals[i]) {
-
-    goalArray[i] = ''; // Set empty string for missing goals
-
-    continue;
-
-  }
-
-  const goal = window.abtestChartData.goals[i];
-
-  const goalKeys = Object.keys(goal);
-
-  const goalValue = goalKeys.length > 0 && goal[goalKeys[0]] !== '' ? goal[goalKeys[0]] : '';
-
-  if(goalValue !== '')
-
-    goalArray[i] = "<small>Goal: " + goalKeys.toString().toUpperCase() + "</small><BR>" + goalValue;
-
-}
 
 
 
@@ -2136,14 +1310,6 @@ for (let observationKey in abtestChartData.observations) {
 
     var conversion_rate_display = observation.rate + "%";
 
-    if(abtestChartData.conversion_use_order_value == "1"){
-
-      conversion_rate_display = "$" + (observation.rate/100).toFixed(3); //3 decimal places
-
-      conversion_rate_raw = observation.rate/100; // Store as decimal for sorting
-
-    }
-
 
 
     // Ensure variation_meta exists before accessing it
@@ -2160,28 +1326,13 @@ for (let observationKey in abtestChartData.observations) {
 
     var chance_of_winning_display = chance_of_winning_raw + "%";
 
-    
-
-    // Safety check for variation_meta and weight
-
-    if(abtestChartData.conversion_style == "thompson" && observation.variation_meta && observation.variation_meta.weight){
-
-      chance_of_winning_raw = Math.round(observation.variation_meta.weight * 1000) / 10; // Convert decimal to percentage with 1 decimal place
-
-      chance_of_winning_display = chance_of_winning_raw + "%";
-
-    }
-
     // Sample-size gate: below 50 visits per variation, don't show confidence at all.
     // Between 50 visits and the 95% winner threshold, flag the row as Underpowered.
-    // Neither applies to Thompson weight (column represents real traffic allocation).
-    if (abtestChartData.conversion_style !== "thompson") {
-      if (__abstInsufficientData) {
-        chance_of_winning_raw = 0;
-        chance_of_winning_display = "—";
-      } else if (__abstUnderpowered) {
-        chance_of_winning_display = chance_of_winning_raw + "% <span class=\"abst-underpowered-icon\" title=\"Below the " + __abstConfidenceThreshold + "% confidence threshold. Keep the test running.\" aria-label=\"Underpowered\" role=\"img\">!</span>";
-      }
+    if (__abstInsufficientData) {
+      chance_of_winning_raw = 0;
+      chance_of_winning_display = "—";
+    } else if (__abstUnderpowered) {
+      chance_of_winning_display = chance_of_winning_raw + "% <span class=\"abst-underpowered-icon\" title=\"Below the " + __abstConfidenceThreshold + "% confidence threshold. Keep the test running.\" aria-label=\"Underpowered\" role=\"img\">!</span>";
     }
 
 
@@ -2226,12 +1377,6 @@ for (let observationKey in abtestChartData.observations) {
 
 
     var conversions = observation.conversion;
-
-    if(abtestChartData.conversion_use_order_value == "1"){
-
-      conversions = "$" + (Math.round(observation.conversion * 100) / 100).toFixed(2); // Properly format currency
-
-    }
 
 
 
@@ -2309,51 +1454,15 @@ for (let observationKey in abtestChartData.observations) {
 
 
 
-  // Safety check for observation goals
-
-  if(observation.goals) {
-
-    for (let goalId in observation.goals) {
-
-      const goal = observation.goals[goalId];
-
-      if(!goal) continue;
-
-      const goalProperties = Object.keys(goal);
-
-      const firstProperty = goalProperties[0];
-
-      formattedObservations['subgoal'+goalId] = goal;
-
-      formattedObservations['subgoal'+goalId+'rate'] = ((goal / observation.visit) * 100).toFixed(2) + "%";
-
-    }
-
-  }
-
   newTableData.push(formattedObservations);
 
 }
 
 
 
-conversion_rate_label = "Conversion<BR>Rate";
+var conversion_rate_label = "Conversion<BR>Rate";
 
-if(abtestChartData.conversion_use_order_value == "1"){
-
-  conversion_rate_label = "Revenue / <BR>Visit";
-
-}
-
-chance_of_winning_label = "Confidence";
-
-//if thompson
-
-if(abtestChartData.conversion_style == "thompson"){
-
-  chance_of_winning_label = "Weight";
-
-}
+var chance_of_winning_label = "Confidence";
 
 
 
@@ -2404,7 +1513,7 @@ var table = new Tabulator("#abst-results-table", {
 
           data: {
 
-            'action': 'save_variation_label',
+            'action': 'abst_save_variation_label',
 
             'pid': window.abstpid,
 
@@ -2485,48 +1594,6 @@ var table = new Tabulator("#abst-results-table", {
 
       {title:"Conversions", field:"conversions",  hozAlign:"left",headerHozAlign:"left", headerSortStartingDir:"desc"},
 
-      {title: goalArray[1], field:"subgoal1", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal1rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[2], field:"subgoal2", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal2rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[3], field:"subgoal3", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal3rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[4], field:"subgoal4", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal4rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[5], field:"subgoal5", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal5rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[6], field:"subgoal6", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal6rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[7], field:"subgoal7", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal7rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[8], field:"subgoal8", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal8rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[9], field:"subgoal9", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal9rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: goalArray[10], field:"subgoal10", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      {title: 'Subgoal<br> Rate', field:"subgoal10rate", hozAlign:"left",headerHozAlign:"left", sorter:"string", visible:false},
-
-      
-
   ],
 
   autoResizeColumns:true,
@@ -2571,134 +1638,6 @@ setTimeout(function() {
 
 
 
-//<select id="abst-goal-select" data-dashlane-rid="c47198ec68c30d70" data-dashlane-classification="other"><option value="">Primary Conversion</option><option value="subgoal1">Link absplittest.com</option><option value="subgoal2">Url pricing</option></select>
-
-
-
-//on select change hide all subgoals columns in the tabulator show column except the selected one
-
-jQuery('#abst-goal-select').off('change.abstGoal').on('change.abstGoal', function() {
-
-  table.hideColumn('subgoal1');
-
-  table.hideColumn('subgoal1rate');
-
-  table.hideColumn('subgoal2');
-
-  table.hideColumn('subgoal2rate');
-
-  table.hideColumn('subgoal3');
-
-  table.hideColumn('subgoal3rate');
-
-  table.hideColumn('subgoal4');
-
-  table.hideColumn('subgoal4rate');
-
-  table.hideColumn('subgoal5');
-
-  table.hideColumn('subgoal5rate');
-
-  table.hideColumn('subgoal6');
-
-  table.hideColumn('subgoal6rate');
-
-  table.hideColumn('subgoal7');
-
-  table.hideColumn('subgoal7rate');
-
-  table.hideColumn('subgoal8');
-
-  table.hideColumn('subgoal8rate');
-
-  table.hideColumn('subgoal9');
-
-  table.hideColumn('subgoal9rate');
-
-  table.hideColumn('subgoal10');
-
-  table.hideColumn('subgoal10rate');
-
-  
-
-  // Only show columns if a subgoal is selected (not empty value for Primary Conversion)
-
-  if (this.value && this.value !== '') {
-
-    table.showColumn(this.value);
-
-    table.showColumn(this.value+'rate');
-
-  }
-
-  
-
-  table.redraw(true);
-
-  createGraph(this.value, jQuery('#abst-device-size-select').val() || '');
-
-//also update chart data 
-
-});
-
-
-
-// Function to update table data when subgoal selection changes
-
-function updateTableData(selectedGoalId) {
-
-    if (!window.abtestChartData || !window.abtestChartData.observations) {
-
-        return;
-
-    }
-
-    
-
-    const tableData = [];
-
-    const observations = window.abtestChartData.observations;
-
-    
-
-    for (let variationKey in observations) {
-
-        if (variationKey === 'bt_bb_ab_stats') continue;
-
-        
-
-        const variation = observations[variationKey];
-
-        const goalConversions = variation.goals && variation.goals[selectedGoalId] ? variation.goals[selectedGoalId] : 0;
-
-        
-
-        tableData.push({
-
-            variation_label: variationKey,
-
-            visits: variation.visit || 0,
-
-            subgoal: selectedGoalId,
-
-            conversions: goalConversions,
-
-            conversion_rate: variation.rate ? variation.rate + '%' : '0%',
-
-            chance_of_winning: variation.probability  ? variation.probability + '%' : '0%'
-
-        });
-
-    }
-
-    console.log(tableData);
-
-    table.setData(tableData);
-
-}
-
-
-
 }
 
 /**
@@ -2719,7 +1658,7 @@ function updateTableData(selectedGoalId) {
 
  */
 
-function createGraph(goal=0, deviceSize){
+function createGraph(deviceSize){
 
 
 
@@ -2748,7 +1687,6 @@ if (deviceSize && abtestChartData.observations) {
       var __abstGraphDs = __abstGraphSrc.device_size[deviceSize];
       __abstGraphView.visit = __abstGraphDs.visit || 0;
       __abstGraphView.conversion = __abstGraphDs.conversion || 0;
-      __abstGraphView.goals = Object.assign({}, __abstGraphDs.goals || {});
       __abstGraphView.rate = (typeof __abstGraphDs.rate !== 'undefined')
         ? __abstGraphDs.rate
         : ((__abstGraphView.visit > 0) ? Math.round(((__abstGraphView.conversion / __abstGraphView.visit) * 100) * 100) / 100 : 0);
@@ -2756,7 +1694,6 @@ if (deviceSize && abtestChartData.observations) {
     } else {
       __abstGraphView.visit = 0;
       __abstGraphView.conversion = 0;
-      __abstGraphView.goals = {};
       __abstGraphView.rate = 0;
       __abstGraphView.probability = 0;
     }
@@ -2768,34 +1705,6 @@ if (deviceSize && abtestChartData.observations) {
 
 
 var observations = abtestChartData.observations;
-
-
-
-if(goal){
-
-  // Extract numeric part from goal (e.g., "subgoal1" -> "1")
-
-  const goalNumber = goal.replace('subgoal', '');
-
-  
-
-  for(var observation in observations){
-
-    if(observations[observation].goals && observations[observation].goals[goalNumber]) {
-
-      observations[observation].conversion = observations[observation].goals[goalNumber];
-
-    }
-
-  }
-
-}
-
-
-
-// Check if Thompson sampling mode is enabled
-
-var isThompsonSampling = observations.conversion_style === 'thompson';
 
 
 
@@ -2889,21 +1798,7 @@ for (var key in observations) {
 
       var currentConversions = variant.conversion;
 
-      
 
-      // For revenue/AOV tests, use rate instead of raw conversions for the graph
-
-      // BUT only for primary conversion - subgoals use raw conversion counts
-
-      if(abtestChartData.conversion_use_order_value == "1" && !goal) {
-
-        currentConversions = variant.rate || 0;
-
-      }
-
-
-
-      // Calculate average daily visits and conversions only if not Thompson sampling
 
       var avgDailyVisits, avgDailyConversions, projectedVisits, projectedConversions;
 
@@ -2921,7 +1816,7 @@ for (var key in observations) {
 
       
 
-      if (!isThompsonSampling && likelyDuration > 0) {
+      if (likelyDuration > 0) {
 
         // Calculate average daily visits and conversions
 
@@ -3064,7 +1959,7 @@ for (var key in observations) {
 
       // Add dataset for the projected data (dashed line)
 
-      if(likelyDuration > 0 && !isThompsonSampling && projectedDataPoints.length > 0)
+      if(likelyDuration > 0 && projectedDataPoints.length > 0)
 
         datasets.push({
 
@@ -3210,7 +2105,7 @@ abtestChart = new Chart(ctx, {
 
                   display: true,
 
-                  text: (abtestChartData.conversion_use_order_value == "1" && !goal) ? 'Revenue per Visit (cents)' : 'Conversions'
+                  text: 'Conversions'
 
               },
 
@@ -3298,7 +2193,7 @@ function refreshTestType(){
 
     jQuery("#configuration_settings>div").hide(); 
 
-    jQuery(".show_test_type, #magic_settings, .test_conversion_styles, .bt_experiments_inner_custom_box, " + sharedSettingsSelector).show();
+    jQuery(".show_test_type, #magic_settings, .bt_experiments_inner_custom_box, " + sharedSettingsSelector).show();
 
     jQuery('.show_css_classes').hide(); // show element css classes helper
 
@@ -3313,12 +2208,6 @@ function refreshTestType(){
     jQuery(".show_test_type").slideDown();
 
   }
-
-  if(jQuery("input:radio[name='test_type']:checked").length){
-    handleConversionStyleChange();
-  }
-
-  
 
 }
 
@@ -3366,11 +2255,11 @@ function refreshConversionPage(){
 
 
 
-  var conv_page = jQuery("#bt_experiments_conversion_page").val();
+  var conv_page = jQuery("#bt_experiments_conversion_page").val() || "page";
 
   
 
-  // Only show preview link when "Page or Post Visit" is selected AND a page is chosen
+  // Only show preview link when a goal page is chosen
 
   if(conv_page === "page") {
 
@@ -3387,8 +2276,6 @@ function refreshConversionPage(){
     }
 
   } else {
-
-    // Hide for all other conversion types (url, selector, javascript, time, etc.)
 
     jQuery("#bt_experiments_conversion_page_preview").hide();
 
@@ -3464,49 +2351,7 @@ function updateDescription(full = true) {
 
 
 
-// Function to handle conversion style changes
-
-function handleConversionStyleChange() {
-
-  var conversionStyle = jQuery('#conversion_style').val();
-
-  if (conversionStyle == 'thompson') {
-
-    jQuery('.show_autocomplete').hide();
-
-  } else {
-
-    jQuery('.show_autocomplete').show();
-
-  }
-
-}
-
-
-
-// Initialize conversion style handling on document ready
-
 jQuery(document).ready(function($) {
-
-  // Handle initial load
-
-  var conversionStyle = jQuery('#conversion_style').val();
-
-  if (conversionStyle == 'thompson') 
-
-    jQuery('.show_autocomplete').hide();
-
-
-
-  // Handle change events
-
-  $('body').on('change', '#conversion_style', handleConversionStyleChange);
-
-
-
-
-
-
 
   // onabst-export-data click
 
@@ -3554,9 +2399,7 @@ jQuery(document).ready(function($) {
 
         explain_csv += "<br/><strong>size:</strong> screen size of device (desktop, tablet, mobile)";
 
-        explain_csv += "<br/><strong>timestamp:</strong> timestamp of last visit/goal/conversion";
-
-        explain_csv += "<br/><strong>goals:</strong> array of goals, by ID. If goal is not set or met, it will be empty.</p>";
+        explain_csv += "<br/><strong>timestamp:</strong> timestamp of last visit/conversion";
 
         $('.abst-export-data').after('<p class="abst-export-data-response">' + response.data + '</p>' + explain_csv);
 

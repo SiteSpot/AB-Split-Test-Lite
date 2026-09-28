@@ -1,4 +1,4 @@
-/* Tabulator v6.3.1 (c) Oliver Folkerd 2025 */
+/*! Tabulator v6.3.1 | MIT License | Copyright (c) 2015-2025 Oli Folkerd | https://github.com/olifolkerd/tabulator */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :

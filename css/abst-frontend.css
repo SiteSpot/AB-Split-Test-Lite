@@ -1,0 +1,31 @@
+/* Variation visibility for tests on the page (prevents flicker and layout shift). */
+[bt_hidden=true] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+}
+/* Hide all variations by default - prevents flicker */
+[bt-variation]:not(.bt-show-variation),
+[data-bt-variation]:not(.bt-show-variation),
+[class*='ab-var-']:not(.bt-show-variation) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+/* Show the first variation of each experiment - prevents CLS */
+[bt-variation].bt-first-variation:not(.bt-show-variation),
+[data-bt-variation].bt-first-variation:not(.bt-show-variation),
+[class*='ab-var-'].bt-first-variation {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+/* After test setup complete, fully remove non-selected variations from DOM */
+body.ab-test-setup-complete [bt-variation]:not(.bt-show-variation),
+body.ab-test-setup-complete [data-bt-variation]:not(.bt-show-variation),
+body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
+    display: none !important;
+}
+/* Show selected variation */
+.bt-show-variation {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}

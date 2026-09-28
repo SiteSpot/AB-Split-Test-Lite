@@ -7,7 +7,6 @@ class ABST_Elementor
 	{	
     if(class_exists('\Elementor\Widget_Base')) {
       
-  		add_action( 'elementor/widgets/register', [ $this, 'init_widgets' ],10 );
       add_action( 'elementor/element/after_section_end', [$this, 'experiment_controls'], 99999999, 3 );
       add_action( 'elementor/editor/after_enqueue_scripts', [$this, 'enqueue_custom_script'] );
       add_action( 'elementor/editor/after_save', [$this, 'add_elementor_exp_meta'], 10, 2 );
@@ -35,17 +34,6 @@ class ABST_Elementor
     update_post_meta($post_id, 'bt_post_experiments_editor', 'elementor');
   }
 
-	/**
-	 * Init Widgets
-	 */
-	public function init_widgets( $widgets_manager) 
-	{
-		// Register conversion widget
-    $widgets_manager->register( new \ABST_Elementor_Conversion() );
-
-    // Register ab test redirect widget
-	}
-
   public function enqueue_custom_script()
   {
     wp_enqueue_style( 'bt_elementor', BT_AB_TEST_PLUGIN_URI .'css/elementor.css', array(), BT_AB_TEST_VERSION );
@@ -63,8 +51,6 @@ class ABST_Elementor
       if( !isset($args['tab'])){
         $args['tab'] = '';
       }
-      $fields   = BtConversionModule::get_fields();
-
       $element->start_controls_section(
         'bt_experiment_section',
         [
@@ -116,153 +102,9 @@ class ABST_Elementor
 $abst_elementor = new ABST_Elementor;
 
 
-/**
- * Conversion Widget.
- */
-if(class_exists('\Elementor\Widget_Base'))
-{
-
-  class ABST_Elementor_Conversion extends \Elementor\Widget_Base
-  {
-    /**
-     * Get conversion widget name.
-     */
-    public function get_name(): string {
-      return 'bt_conversion';
-    }
-
-    /**
-     * Get CONVERSION widget title.
-     */
-    public function get_title() 
-    {
-      return __( 'Split Test conversion', 'ab-split-test-lite' );
-    }
-
-    /**
-     * Get conversion widget icon.
-     */
-    public function get_icon() 
-    {
-      return 'eicon-plus';
-    }
-
-    /**
-     * Get conversion widget categories.
-     */
-    public function get_categories() 
-    {
-      return [ 'general' ];
-    }
-
-    protected function register_control_elements()
-    {
-      // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-      $experiments = apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'select' ) );
-      $fields      = BtConversionModule::get_fields();
-
-
-
-      $this->add_control(
-        'bt_experiment_id',
-        [
-          'label' => 'Split Test',
-          'type' => \Elementor\Controls_Manager::SELECT2,
-          'multiple' => false,
-          'options' => $experiments,
-          'default' => 0,
-          'description' => $fields['bt_experiment']['description']
-        ]
-      );
-
-      $this->add_control(
-        'bt_experiment_type',
-        [
-          'label' => __( 'Conversion Type', 'ab-split-test-lite' ),
-          'type' => \Elementor\Controls_Manager::SELECT,
-          'options' => [
-            'load'  => __( 'On Page Load', 'ab-split-test-lite' ),
-            'click' => __( 'On Element Click', 'ab-split-test-lite' )
-          ],
-          'default' => 'load',
-          'description' => $fields['bt_experiment_type']['description'],
-        ]
-      );
-
-      $this->add_control(
-        'bt_click_conversion_selector',
-        [
-          'label' => __( 'Selector', 'ab-split-test-lite' ),
-          'type' => \Elementor\Controls_Manager::TEXT,
-          'default' => '',
-          'conditions' => [
-            'relation' => 'or',
-            'terms' => [
-              [
-                'name' => 'bt_experiment_type',
-                'operator' => '=',
-                'value' => 'click',
-              ],
-            ],
-          ],
-          'description' => $fields['bt_click_conversion_selector']['description']
-        ]
-      );
-
-    }
-
-    /**
-     * Register Conversion widget controls.
-     */
-    protected function register_controls() 
-    {
-      $this->start_controls_section(
-        'conversion_section',
-        [
-          'label' => 'Split Test' . ' ' . __( 'Conversion Module', 'ab-split-test-lite' ),
-          'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
-        ]
-      );
-      $this->register_control_elements();
-      $this->end_controls_section();
-    }
-
-    /**
-     * Render Conversion widget output on the frontend.
-     */
-    protected function render() 
-    {
-      $settings = $this->get_settings_for_display();
-      $fields   = BtConversionModule::get_fields();
-      $attr     = '';
-
-      // The widget's test control is registered as `bt_experiment_id`, but the
-      // shared conversion fields (and the shortcode) use `bt_experiment`. Without
-      // this mapping the chosen test never reached the shortcode, so the widget
-      // rendered "Choose an experiment to complete setup" and recorded nothing.
-      if ( empty( $settings['bt_experiment'] ) && ! empty( $settings['bt_experiment_id'] ) ) {
-        $settings['bt_experiment'] = $settings['bt_experiment_id'];
-      }
-
-      foreach ($fields as $key => $value) {
-        $setting = isset( $settings[ $key ] ) ? $settings[ $key ] : '';
-        if ( $setting !== '' && $setting !== null && $setting !== 0 && $setting !== '0' ) {
-          $attr .= ' '. $key .'='. $setting;
-        }
-      }
-
-      echo do_shortcode('['. BT_BB_AB_Supports::$shortcode_name . $attr .']');
-    }	
-
-  }
-}
-
-
 add_action( 'elementor/frontend/before_render', 'abst_add_attributes_to_element',9999 );
 function abst_add_attributes_to_element( $element ) {
 
-  if( $element->get_name() === 'bt_conversion' )
-    return;
 
   // Get the settings
   $settings = $element->get_settings();

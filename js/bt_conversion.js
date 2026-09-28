@@ -174,8 +174,6 @@ window.bt_homeurl = window.ABST_CONFIG.homeurl || window.bt_homeurl || '';
 
 // Local aliases for backwards compatibility with existing code
 var ABST_CONFIG = window.ABST_CONFIG;
-// Conversion elements (block, shortcode, builder widgets) push into this list.
-window.bt_conversion_vars = window.bt_conversion_vars || [];
 var btab_vars = window.btab_vars;
 var bt_experiments = window.bt_experiments;
 var conversion_details = window.conversion_details;
@@ -185,11 +183,8 @@ var bt_adminurl = window.bt_adminurl;
 var bt_pluginurl = window.bt_pluginurl;
 var bt_homeurl = window.bt_homeurl;
 
-// is user active global vars
+// global vars
 window.abst = window.abst || {};
-// activity timer
-window.abst.eventQueue = [];
-window.abst.abconvertpartner = {};
 window.abst.ignoreSelectorPrefixes = ['abst-variation','stk-'];
 window.abst.clickRegister = window.abst.clickRegister || {};
 window.abst.heatScrollLastSent = window.abst.heatScrollLastSent || 0;
@@ -280,26 +275,9 @@ function setAbstApprovalStatus(approved) {
   }
 }
   
-// activity timer - initialize once as an object
-try {
-  window.abst.timer = localStorage.getItem('absttimer') === null ? {} : JSON.parse(localStorage.getItem('absttimer') || '{}');
-} catch (e) {
-  window.abst.timer = {};
-}
-
-window.abst.currscroll = window.scrollY;
-window.abst.currentMousePos = -1;
-window.abst.oldMousePos = -2;
-window.abst.abactive = true;
-window.abst.timeoutTime = 3000; // how much inactivity before we stop logging in milliseconds
-window.abst.intervals = {};
 // Only set to true if undefined, respecting any intentional false value
 if(window.abst.isTrackingAllowed === undefined) 
   window.abst.isTrackingAllowed = true;
-
-// Initialize service partners
-const services = ['abawp', 'clarity', 'gai', 'abmix', 'abumav', 'umami', 'cabin', 'plausible', 'fathom', 'ga4', 'posthog'];
-window.abst.abconvertpartner = Object.fromEntries(services.map((service) => [service, false]));
 
 //what size, mobile, tablet or desktop 
 var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
@@ -460,368 +438,6 @@ if(window.btab_vars && window.btab_vars.wait_for_approval == '1') {
   });
 }
 
-// add server events to cookie to be evented on next page load
-function addServerEvents(data) {
-  const serverEvents = abstGetCookie('abst_server_events');
-
-  if (serverEvents) {
-    try {
-      const events = JSON.parse(decodeURIComponent(serverEvents));
-      if (!events.some(event => event.eid === data.eid && event.variation === data.variation && event.type === data.type)) {
-        events.push(data);
-        abstSetCookie('abst_server_events', JSON.stringify(events), 2);
-        console.log('ABST: Server event added to existing', data);
-      }
-    } catch (e) {
-      // Cookie corrupted, start fresh
-      abstSetCookie('abst_server_events', JSON.stringify([data]), 2);
-    }
-  } else {
-    abstSetCookie('abst_server_events', JSON.stringify([data]), 2);
-    console.log('ABST: Server event added none existing creating', data);
-  }
-}
-
-function abstParseCurrencyValue(rawValue) {
-  if (rawValue === null || rawValue === undefined) {
-    return null;
-  }
-
-  let value = String(rawValue).trim();
-  if (!value) {
-    return null;
-  }
-
-  value = value.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
-
-  let negative = false;
-  if (/^\(.*\)$/.test(value)) {
-    negative = true;
-    value = value.slice(1, -1);
-  }
-
-  if (value.indexOf('-') !== -1) {
-    negative = true;
-  }
-
-  value = value.replace(/[^0-9,.\-]/g, '');
-  if (!/[0-9]/.test(value)) {
-    return null;
-  }
-
-  const lastComma = value.lastIndexOf(',');
-  const lastDot = value.lastIndexOf('.');
-  let normalized = value;
-
-  if (lastComma !== -1 && lastDot !== -1) {
-    if (lastComma > lastDot) {
-      normalized = normalized.replace(/\./g, '').replace(',', '.');
-    } else {
-      normalized = normalized.replace(/,/g, '');
-    }
-  } else if (lastComma !== -1) {
-    const decimals = normalized.length - lastComma - 1;
-    if (decimals > 0 && decimals <= 2) {
-      normalized = normalized.replace(/\./g, '').replace(',', '.');
-    } else {
-      normalized = normalized.replace(/,/g, '');
-    }
-  } else if (lastDot !== -1) {
-    const decimals = normalized.length - lastDot - 1;
-    if (decimals > 2) {
-      normalized = normalized.replace(/\./g, '');
-    }
-  }
-
-  normalized = normalized.replace(/(?!^)-/g, '');
-  let parsed = parseFloat(normalized);
-  if (!isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  if (negative) {
-    parsed = parsed * -1;
-  }
-
-  if (!isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return Math.round(parsed * 100) / 100;
-}
-
-function abstEscapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function abstRememberDetectedOrderValue(rawValue, source) {
-  const parsed = abstParseCurrencyValue(rawValue);
-  if (parsed === null) {
-    return null;
-  }
-
-  window.abst.abConversionValue = parsed.toFixed(2);
-  window.abst.abConversionValueSource = source || 'detected';
-  console.log('ABST: Detected order value', window.abst.abConversionValue, 'from', window.abst.abConversionValueSource);
-  return {
-    value: parsed,
-    formatted: parsed.toFixed(2),
-    source: window.abst.abConversionValueSource
-  };
-}
-
-function abstSetDetectedOrderValue(rawValue, source) {
-  return !!abstRememberDetectedOrderValue(rawValue, source);
-}
-
-function abstNeedsOrderValueDetection() {
-  if (typeof conversion_details !== 'undefined' && conversion_details) {
-    for (const detail of Object.values(conversion_details)) {
-      if (detail && (detail.use_order_value === true || detail.use_order_value === '1')) {
-        return true;
-      }
-    }
-  }
-
-  if (typeof bt_experiments !== 'undefined' && bt_experiments) {
-    for (const experiment of Object.values(bt_experiments)) {
-      if (experiment && (experiment.use_order_value === true || experiment.use_order_value === '1')) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-function abstGetCustomOrderValue() {
-  if (!window.abst) {
-    return null;
-  }
-
-  const parsed = abstParseCurrencyValue(window.abst.abConversionValue);
-  if (parsed === null || parsed <= 0) {
-    return null;
-  }
-
-  const source = window.abst.abConversionValueSource || 'preset';
-  if (source === 'default' && parsed === 1) {
-    return null;
-  }
-
-  return {
-    value: parsed,
-    formatted: parsed.toFixed(2),
-    source: source
-  };
-}
-
-function abstGetOrderValueFromQuery(preferredKey) {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const exactKeys = preferredKey
-      ? [String(preferredKey)]
-      : ['total_paid', 'amount_paid', 'payment_total', 'grand_total', 'order_total', 'ordertotal','total'];
-
-    for (const key of exactKeys) {
-      const lowerKey = key.toLowerCase();
-      for (const pair of params.entries()) {
-        if (String(pair[0] || '').toLowerCase() !== lowerKey) {
-          continue;
-        }
-
-        const remembered = abstRememberDetectedOrderValue(pair[1], 'query:' + pair[0]);
-        if (remembered) {
-          return remembered;
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('ABST: Failed to inspect query params for order value', e);
-  }
-
-  return null;
-}
-
-function abstDetectOrderValueFromQuery() {
-  return !!abstGetOrderValueFromQuery();
-}
-
-function abstDetectOrderValueFromDom() {
-  const selectorCandidates = [
-    '[data-order-total]',
-    '.woocommerce-order-overview__total .amount',
-    '.order-total .amount',
-    '.order-total .woocommerce-Price-amount',
-    '.edd_purchase_total',
-    '.edd-order-total',
-    '.surecart-order-total',
-    '.fluentcart-order-total'
-  ];
-
-  for (const selector of selectorCandidates) {
-    const nodes = document.querySelectorAll(selector);
-    for (const node of nodes) {
-      const text = (node.getAttribute('data-order-total') || node.getAttribute('data-total') || node.textContent || '').trim();
-      if (text && abstSetDetectedOrderValue(text, 'dom:' + selector)) {
-        return true;
-      }
-    }
-  }
-
-  try {
-    const bodyText = ((document.body && document.body.innerText) || '').slice(0, 150000);
-    const labelPatterns = [
-      /order total[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-      /grand total[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-      /amount paid[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-      /total paid[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-      /payment total[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i
-    ];
-
-    for (const pattern of labelPatterns) {
-      const match = bodyText.match(pattern);
-      if (match && match[1] && abstSetDetectedOrderValue(match[1], 'text')) {
-        return true;
-      }
-    }
-  } catch (e) {
-    console.warn('ABST: Failed to inspect page text for order value', e);
-  }
-
-  return false;
-}
-
-function abstDetectOrderValue() {
-  if (!window.abst || !abstNeedsOrderValueDetection()) {
-    return false;
-  }
-
-  const existingValue = abstParseCurrencyValue(window.abst.abConversionValue);
-  if (existingValue !== null && existingValue > 1 && window.abst.abConversionValueSource !== 'default') {
-    return true;
-  }
-
-  if (abstDetectOrderValueFromQuery()) {
-    return true;
-  }
-
-  if (abstDetectOrderValueFromDom()) {
-    return true;
-  }
-
-  return false;
-}
-
-function abstGetOrderValueFromSelector(selector) {
-  if (!selector) {
-    return null;
-  }
-
-  try {
-    const nodes = document.querySelectorAll(selector);
-    for (const node of nodes) {
-      const text = (node.getAttribute('data-order-total') || node.getAttribute('data-total') || node.textContent || '').trim();
-      if (!text) {
-        continue;
-      }
-
-      const remembered = abstRememberDetectedOrderValue(text, 'dom:' + selector);
-      if (remembered) {
-        return remembered;
-      }
-    }
-  } catch (e) {
-    console.warn('ABST: Failed to inspect selector for order value', selector, e);
-  }
-
-  return null;
-}
-
-function abstGetOrderValueFromTextLabel(label) {
-  try {
-    const bodyText = ((document.body && document.body.innerText) || '').slice(0, 150000);
-    const labelPatterns = label
-      ? [new RegExp(abstEscapeRegExp(label) + '[^\\d$€£]{0,30}([$€£]?\\s*[\\d.,]+)', 'i')]
-      : [
-          /order total[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-          /grand total[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-          /amount paid[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-          /total paid[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i,
-          /payment total[^\d$€£]{0,30}([$€£]?\s*[\d.,]+)/i
-        ];
-
-    for (const pattern of labelPatterns) {
-      const match = bodyText.match(pattern);
-      if (!match || !match[1]) {
-        continue;
-      }
-
-      const remembered = abstRememberDetectedOrderValue(match[1], label ? 'text:' + label : 'text');
-      if (remembered) {
-        return remembered;
-      }
-    }
-  } catch (e) {
-    console.warn('ABST: Failed to inspect page text for order value', e);
-  }
-
-  return null;
-}
-
-function abstGetAutoOrderValue() {
-  const queryMatch = abstGetOrderValueFromQuery();
-  if (queryMatch) {
-    return queryMatch;
-  }
-
-  const selectorCandidates = [
-    '[data-order-total]',
-    '.woocommerce-order-overview__total .amount',
-    '.order-total .amount',
-    '.order-total .woocommerce-Price-amount',
-    '.edd_purchase_total',
-    '.edd-order-total',
-    '.surecart-order-total',
-    '.fluentcart-order-total'
-  ];
-
-  for (const selector of selectorCandidates) {
-    const selectorMatch = abstGetOrderValueFromSelector(selector);
-    if (selectorMatch) {
-      return selectorMatch;
-    }
-  }
-
-  return abstGetOrderValueFromTextLabel('');
-}
-
-function abstResolveOrderValue(config) {
-  const customValue = abstGetCustomOrderValue();
-  if (customValue) {
-    return customValue;
-  }
-
-  if (!config || !(config.use_order_value === true || config.use_order_value === '1')) {
-    return null;
-  }
-
-  const fallbackMethod = config.order_value_fallback_method || 'auto';
-  if (fallbackMethod === 'url_parameter') {
-    return abstGetOrderValueFromQuery(config.order_value_url_parameter || '');
-  }
-
-  if (fallbackMethod === 'css_selector') {
-    return abstGetOrderValueFromSelector(config.order_value_css_selector || '');
-  }
-
-  if (fallbackMethod === 'page_text_label') {
-    return abstGetOrderValueFromTextLabel(config.order_value_text_label || '');
-  }
-
-  return abstGetAutoOrderValue();
-}
-
 // Main initialization function - can be called on DOMContentLoaded or when deferred config loads
 function abstMainInit() {
   // Prevent running twice
@@ -829,23 +445,9 @@ function abstMainInit() {
     return;
   }
   setupConsentPartners();
-  const serverEvents = abstGetCookie('abst_server_events');
-  if (serverEvents) {
-    //console.log('server events found, going to process them', serverEvents);
-    let events;
-    try {
-      events = JSON.parse(decodeURIComponent(serverEvents));
-    } catch (e) {
-      events = [];
-    }
-    if (Array.isArray(events)) {
-      events.forEach(event => {
-        //console.log('server event', event);
-        btab_track_event(event);
-      });
-    }
+  // Server-side redirect events are not replayed to analytics; just clear the cookie.
+  if (abstGetCookie('abst_server_events')) {
     abstDeleteCookie('abst_server_events');
-    console.log('ABST: Server events processed');
   }
 
   if (window.btab_vars && !window.btab_vars.is_preview) {
@@ -857,114 +459,35 @@ function abstMainInit() {
   btHiddenEls.forEach(function (el) { el.remove(); });
 
 
-  // update scroll status
-  document.addEventListener('mousemove', function (event) {
-    window.abst.currentMousePos = event.pageX;
-  });
-  // catch mouse / keyboard action
-  document.body.addEventListener('mousedown', userActiveNow);
-  document.body.addEventListener('keydown', userActiveNow);
-  document.body.addEventListener('touchstart', userActiveNow);
-
-  if (!('abConversionValue' in window.abst))
-    window.abst.abConversionValue = 1;
-  if (!('abConversionValueSource' in window.abst)) {
-    const existingValue = abstParseCurrencyValue(window.abst.abConversionValue);
-    window.abst.abConversionValueSource = (existingValue !== null && existingValue > 1) ? 'preset' : 'default';
-  }
-
-  window.abst.timerInterval = setInterval(function () {
-    //check if scroll's changed
-    if ((window.abst.currscroll != window.scrollY) || (window.abst.currentMousePos != window.abst.oldMousePos)) {
-      window.abst.currscroll = window.scrollY;
-      window.abst.oldMousePos = window.abst.currentMousePos;
-      userActiveNow();
-    }
-    // check for active class and decrement all active timers
-    if (window.abst.abactive) //for each active timer, increment
-      abstOneSecond();
-  }, 1000); // every second
-
-
-  //conversion things
+  // page goal: the visitor landed on a test's goal page
   if (typeof conversion_details !== 'undefined' && conversion_details) {
-    var eid = null;
-    var variation = null;
-
-    // current p info - use complete URL for user clarity
-    var page_url = window.location.href;
-    //loop through each conversion d
     Object.entries(conversion_details).forEach(function ([key, detail]) {
-
-      //wildcard + contains matching for url's with *   *about*
-      var urlMatched = abstUrlPatternMatches(detail.conversion_page_url, page_url);
-      if (urlMatched) {
-        console.log('ABST: ' + key + ' URL matched, converting: ' + detail.conversion_page_url + ' to ' + page_url);
-      }
-
-      if (urlMatched) {
-        eid = key;
-      }
-      else if ((detail.conversion_page_url === page_url) && (detail.conversion_page_url !== undefined) && (detail.conversion_page_url != '')) {
-        eid = key;
-      }
-      else if (typeof current_page !== 'undefined' && Array.isArray(current_page) && (current_page.includes(detail.conversion_page_id) || current_page.includes(parseInt(detail.conversion_page_id)))) {
-        eid = key;
-      }
-      else {
+      if (!detail || detail.conversion_page_id === undefined || detail.conversion_page_id === null || detail.conversion_page_id === '') {
         return true; // skip to the next one
       }
 
-      variation = abstGetCookie('btab_' + eid);
-
-      if (!variation)
-        return true; // skip to the next one
-
-      try {
-        variation = JSON.parse(variation);
-      } catch (e) {
-        return true; // skip - corrupted cookie
+      if (typeof current_page !== 'undefined' && Array.isArray(current_page) && (current_page.includes(detail.conversion_page_id) || current_page.includes(parseInt(detail.conversion_page_id)))) {
+        abstConvertPageGoal(key);
       }
-
-      //skip if its already converted
-      if (variation.conversion == 1)
-        return true; // skip to the next one
-      conversionValue = 1;
-      if (detail.use_order_value === true || detail.use_order_value === '1') {
-        const resolvedOrderValue = abstResolveOrderValue(detail);
-        if (resolvedOrderValue && resolvedOrderValue.formatted) {
-          conversionValue = resolvedOrderValue.formatted;
-        }
-      }
-
-      bt_experiment_w(eid, variation.variation, 'conversion', false, conversionValue);
     });
   }
-  
+
   //foreach experiment
   if (typeof bt_experiments !== 'undefined') {
-    
+
     // check for css classes, then add attributes
     document.querySelectorAll("[class^='ab-'],[class*=' ab-']").forEach(function (el, e) {
-      // ab-goal- must be in this guard too: a sub-goal element carries only
-      // "ab-{testID} ab-goal-{n}", so without it the goal branch below was unreachable.
-      if (el.className.includes('ab-var-') || el.className.includes('ab-convert') || el.className.includes('ab-goal-')) {
+      if (el.className.includes('ab-var-')) {
         var allClasses = el.className;
         allClasses = allClasses.split(" "); // into an array
         var thisTestVar = false;
-        var thisTestGoal = false;
         var thisTestId = false;
-        var thisTestConversion = false;
         allClasses.forEach(function (element) {
 
           if (element.startsWith('ab-var-'))
             thisTestVar = element;
-          else if (element.startsWith('ab-goal-'))
-            thisTestGoal = element;
-          else if (/^ab-\d+$/.test(element)) // the test ID class only; ab-click-convert-12 or a theme's ab-hero is not a test ID
+          else if (/^ab-\d+$/.test(element)) // the test ID class only; a theme's ab-hero is not a test ID
             thisTestId = element;
-          if (element == 'ab-convert')
-            thisTestConversion = true;
 
         });
 
@@ -979,22 +502,6 @@ function abstMainInit() {
             }
           });
         }
-
-        if (thisTestConversion == true && thisTestId !== false) {
-          // it's a conversion, convert!
-          abstConvert(thisTestId.replace("ab-", ""));
-        }
-
-        if (thisTestGoal == true && thisTestId !== false) {
-          //its a goal, record it!
-          abstGoal(thisTestId.replace("ab-", ""), thisTestGoal.replace("ab-goal-", ""));
-        }
-      }
-      if (el.className.includes('ab-click-convert-')) {
-        Array.from(el.classList).forEach(function (element) { // loop through all classes
-          if (element.trim().startsWith('ab-click-convert-'))
-            abClickListener(element.replace("ab-click-convert-", ""), "." + element);
-        });
       }
     });
 
@@ -1124,181 +631,6 @@ function abstMainInit() {
         });
       }
 
-
-      //add conversion click handlers
-      var conversionType = experiment.conversion_type || experiment.conversion_page || '';
-      var conversionPageId = experiment.conversion_page_id;
-      if ((conversionPageId === undefined || conversionPageId === null || conversionPageId === '') && experiment.conversion_page !== undefined && experiment.conversion_page !== null && experiment.conversion_page !== '' && !isNaN(experiment.conversion_page)) {
-        conversionPageId = parseInt(experiment.conversion_page, 10);
-      }
-
-      if (conversionType == 'selector') {
-        if (experiment.conversion_selector != '') {
-          var conversionSelector = experiment.conversion_selector;
-          abClickListener(experimentId, conversionSelector, 0);
-        }
-      }
-
-      //add conversion link handlers (fuzzy href match)
-      if (conversionType == 'link') {
-        if (experiment.conversion_link_pattern != '') {
-          var conversionLinkPattern = experiment.conversion_link_pattern;
-          abLinkPatternListener(experimentId, conversionLinkPattern);
-        }
-      }
-
-      //add conversion scroll handlers
-      if (conversionType == 'scroll') {
-        if (experiment.conversion_scroll !== undefined && experiment.conversion_scroll !== '') {
-          // Only set up scroll listener if contextually appropriate
-          if (shouldSetupScrollListener(experimentId, experiment)) {
-            abScrollListener(experimentId, experiment.conversion_scroll);
-          }
-        }
-      }
-
-      // Form submission conversion - inject hidden fields
-      if (typeof conversionType === 'string' && conversionType.indexOf('form-') === 0) {
-        abstInjectFormFields();
-      }
-
-
-      // if experiment goals exists
-      //loop through
-      if (experiment['goals'])
-      {
-        for (var i = 1; i < Object.keys(experiment['goals']).length; i++) {
-          // if experiment.goals[i] key is click
-          //get key name for goal
-          const firstKey = Object.keys(experiment['goals'][i])[0];
-
-          // click selector
-          // guarded: an empty value must not register a listener that matches everything.
-          if (firstKey === 'selector') {
-            if (experiment['goals'][i]['selector'] != '') {
-              abClickListener(experimentId, experiment['goals'][i]['selector'], i);
-            }
-          }
-
-          if(firstKey === 'link') {
-            if (experiment['goals'][i]['link'] != '') {
-              abLinkPatternListener(experimentId, experiment['goals'][i]['link'], i);
-            }
-          }
-
-          if (firstKey === 'scroll') {
-            // Only set up scroll listener if contextually appropriate
-            if (experiment['goals'][i]['scroll'] !== undefined && experiment['goals'][i]['scroll'] !== '' &&
-                shouldSetupScrollListener(experimentId, experiment)) {
-              abScrollListener(experimentId, experiment['goals'][i]['scroll'], i);
-            }
-          }
-          
-          // text subgoall
-          startInverval = false;
-          if (firstKey === 'text') {
-            startInverval = true;
-
-            convstatus = abstGetCookie('btab_' + experimentId);
-            if (startInverval && convstatus) // if test exists and not false
-            {
-              try {
-                convstatus = JSON.parse(convstatus);
-                if (convstatus && convstatus['goals'] && convstatus['goals'][i] == 1)
-                  startInverval = false;
-              } catch (e) {
-                // Skip - corrupted cookie
-              }
-            }
-
-            if (experiment['goals'][i]['text'] == '')
-              startInverval = false;
-
-            //if text exists and not complete
-            if (startInverval) {
-              startTextWatcher(experimentId, experiment['goals'][i]['text'], i);
-            }
-          }
-
-          if (firstKey === 'page') {
-            var goalPage = experiment['goals'][i]['page'];
-
-            if (goalPage == btab_vars.post_id) {
-              abstGoal(experimentId, i);
-            }
-          }
-
-          if (firstKey === 'url') {
-            page_url = normalizeUrl(window.location.href);
-
-            goal_url = normalizeUrl(experiment['goals'][i]['url']);
-
-            if (page_url == goal_url) {
-              abstGoal(experimentId, i);
-            }
-          }
-
-          // Form submission goal - inject hidden fields
-          var goalValue = experiment['goals'][i][firstKey];
-          if (typeof goalValue === 'string' && goalValue.indexOf('form-') === 0) {
-            abstInjectFormFields();
-          }
-
-        }
-      }
-
-
-      //text conversion
-      if (conversionType == 'text') {
-        startInverval = true;
-        if (!bt_experiments[experimentId])
-          startInverval = false; // not if not defined
-
-        convstatus = abstGetCookie('btab_' + experimentId);
-        if (startInverval && convstatus) // if test exists and not false
-        {
-          try {
-            convstatus = JSON.parse(convstatus);
-            if (convstatus.conversion == 1) // if its converted
-              startInverval = false;
-          } catch (e) {
-            // Skip - corrupted cookie
-          }
-        }
-
-        if (experiment.conversion_text == '')
-          startInverval = false;
-
-        //if text exists and not complete
-        if (startInverval) {
-          startTextWatcher(experimentId, experiment.conversion_text);
-        }
-      }
-
-      //text subgoals
-
-
-
-
-      if (conversionType == 'surecart-order-paid' && window.scData) // if surecart is slected and surecart js is detected
-      {
-        document.addEventListener('scOrderPaid', (function (e) { // add listener
-          console.log('surecart OrderPaid');
-          const checkout = e.detail;
-
-          if (checkout && checkout.amount_due) {
-            if (experiment.use_order_value == true)
-              window.abst.abConversionValue = (checkout.amount_due / 100).toFixed(2); // set value
-            abstConvert(experimentId, window.abst.abConversionValue);
-          }
-        }));
-      }
-
-
-      if (conversionType == 'fingerprint' && !localStorage.getItem("ab-uuid")) {
-        console.log("ab-uuid: set fingerprint");
-        setAbFingerprint();
-      }
 
 
       } catch (e) {
@@ -1445,47 +777,8 @@ function abstMainInit() {
         }
         else {
           var variations = current_exp[experimentId];
-          if (bt_experiments[experimentId]['conversion_style'] == 'thompson' && btab_vars.is_agency) {
-            //MAB
-            console.log('ABST MAB: starting selection for experiment', experimentId);
-            var meta = bt_experiments[experimentId]['variation_meta'] || {};
-            var weights = [];
-            variations.forEach(function(v){
-              var w = meta[v] && meta[v].weight ? parseFloat(meta[v].weight) : 1;
-              weights.push({variation:v, weight:w});
-            });
-            console.log('ABST MAB: raw weights', weights);
-            var total = weights.reduce(function(sum,w){ return sum + w.weight; }, 0);
-            weights.forEach(function(w){ w.weight = w.weight / total; });
-            console.log('ABST MAB: normalized weights', weights);
-            var minWeight = (variations.length==2)?0.1:0.05;
-            var deficit = 0;
-            weights.forEach(function(w){ if(w.weight < minWeight){ deficit += (minWeight - w.weight); w.weight = minWeight; }});
-            if(deficit>0){
-              var reducibles = weights.filter(function(w){ return w.weight > minWeight; });
-              var reducibleTotal = reducibles.reduce(function(s,w){ return s + w.weight; },0);
-              if(reducibleTotal > 0) {
-                reducibles.forEach(function(w){
-                  w.weight -= (w.weight/reducibleTotal)*deficit; 
-                });
-              }
-            }
-            console.log('ABST MAB: adjusted weights', weights);
-            var r = Math.random(), c = 0;
-            var randVar = 0; // capture the selected index
-            for(var i=0;i<weights.length;i++){ c += weights[i].weight; if(r <= c){ experimentVariation = weights[i].variation; randVar = i; console.log('ABST MAB: chose variation', experimentVariation); break; } }
-            if(!experimentVariation){ experimentVariation = weights[weights.length-1].variation; randVar = weights.length - 1; }
-          } else {
-            //Standard
-            var randVar = getRandomInt(0, variations.length - 1);
-            experimentVariation = variations[randVar];
-          }
-        }
-        // Free version: limit to 2 variations (1 variation + control)
-        if (current_exp[experimentId].length > 2) {
-          var randVar = getRandomInt(0, 1);  //limit to 2
-          console.info('Free version of AB Split Test is limited to 1 variation. Your others will not be shown. Upgrade: https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice');
-          experimentVariation = current_exp[experimentId][randVar];
+          var randVar = getRandomInt(0, variations.length - 1);
+          experimentVariation = variations[randVar];
         }
       }
       else //parse existing data
@@ -1710,7 +1003,6 @@ function abstMainInit() {
   if (btIsLocalhost())
     console.info("AB Split Test: It looks like you're on a localhost, using local storage instead of cookies. External Conversion Pixels and server side conversions will not work on local web servers.");
 
-  abst_find_analytics();
   window.dispatchEvent(new Event('resize')); // trigger a window resize event. Useful for sliders etc. that dynamically resize
   var event = new Event('ab-test-setup-complete' , {bubbles: true}); 
   //example usage
@@ -1723,8 +1015,6 @@ function abstMainInit() {
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ 'event': 'ab-test-setup-complete' }); // gtm trigger to get all data on page_view
 
-  processAbstConvert();
-  processAbstGoal();
   check_heatmap_tracking();
   
   // Initialize mutation observer for dynamically created test elements
@@ -1737,286 +1027,36 @@ document.addEventListener('DOMContentLoaded', abstMainInit);
 // Also run if config loads late (deferred by cache plugins like LiteSpeed)
 document.addEventListener('abst-config-ready', abstMainInit);
 
-function processAbstConvert() {
-  if (window.abConvert && window.abConvert.length > 0) {
-    var pending = window.abConvert.slice();
-    window.abConvert.length = 0;
-    pending.forEach(function (convert) {
-      abstConvert(convert);
-    });
-  }
-}
-
-function processAbstGoal() {
-  if (window.abGoal && window.abGoal.length > 0) {
-    var pending = window.abGoal.slice();
-    window.abGoal.length = 0;
-    pending.forEach(function (goal) {
-      console.log('processAbstGoal', goal);
-      abstGoal(goal[0], goal[1]);
-    });
-  }
-}
-
-function startTextWatcher(experimentId, word, goalId = null) {
-  if (!goalId)
-    goalId = 0;
-
-  if(!bt_experiments[experimentId]) return; 
-
-  if (bt_experiments[experimentId].test_status == 'draft') return;
-
-  if (typeof window.abst.intervals[experimentId] === 'undefined') {
-    window.abst.intervals[experimentId] = {};
+// Record the page-goal conversion for a test the visitor is already in.
+function abstConvertPageGoal(testId) {
+  if (!testId || !window.bt_experiments || !window.bt_experiments[testId]) {
+    return false;
   }
 
-  // Clear any existing interval for this goal to prevent duplicates
-  if (window.abst.intervals[experimentId] && window.abst.intervals[experimentId][goalId]) {
-    clearInterval(window.abst.intervals[experimentId][goalId]);
-
+  var btab = abstGetCookie('btab_' + testId);
+  try {
+    btab = JSON.parse(btab);
+  } catch (e) {
+    btab = null;
   }
 
-  // Split pipe-separated text strings into array for multiple text checks
-  var textArray = [];
-  if (word && typeof word === 'string') {
-    if (word.indexOf('|') >= 0) {
-      textArray = word.split('|').map(function(text) {
-        return text.trim();
-      }).filter(function(text) {
-        return text.length > 0;
-      });
-    } else {
-      textArray = [word.trim()];
-    }
+  if (!btab) {
+    return false;
   }
 
-  // If no valid text to search for, return early
-  if (textArray.length === 0) {
-    return;
+  if (btab.conversion != 0) {
+    console.log("ABST: " + bt_experiments[testId].name + ': Visitor has already converted');
+    return false;
   }
 
-  window.abst.intervals[experimentId][goalId] = setInterval(function() {
-    try {
-      let found = false;
-      var foundText = '';
-
-      // Loop through each text string to check
-      for (var textIndex = 0; textIndex < textArray.length && !found; textIndex++) {
-        var currentWord = textArray[textIndex];
-        if (!currentWord) continue;
-
-        var escapedWord = currentWord.replace(/'/g, "\\'"); // Escape single quotes
-
-        // Search within the main page more efficiently
-        var allElements = document.body.getElementsByTagName('*');
-        for (var i = 0; i < allElements.length; i++) {
-          var node = allElements[i];
-          if (node.textContent && node.textContent.indexOf(currentWord) >= 0 && node.offsetParent !== null) {
-            found = true;
-            foundText = currentWord;
-            //console.log('ABST: ' + experimentId + ' found text: ' + currentWord);
-            break;
-          }
-        }
-
-        // If not found in main page, check iframes
-        if (!found) {
-          var iframes = document.querySelectorAll('iframe');
-          for (var j = 0; j < iframes.length; j++) {
-            try {
-              var iframe = iframes[j];
-              var iframeBody = iframe.contentDocument ? iframe.contentDocument.body : null;
-              if (iframeBody) {
-                if (typeof jQuery !== 'undefined' && window.jQuery) {
-                  // Use jQuery if available
-                  if (jQuery(iframeBody).find('*').filter(function() { 
-                    return this.textContent && this.textContent.indexOf(currentWord) >= 0 && this.offsetParent !== null; 
-                  }).length > 0) {
-                    found = true;
-                    foundText = currentWord;
-                    //console.log('ABST: ' + experimentId + ' found text in iframe: ' + currentWord);
-                    break;
-                  }
-                } else {
-                  // Fallback to plain JavaScript
-                  var iframeElements = iframeBody.getElementsByTagName('*');
-                  for (var k = 0; k < iframeElements.length; k++) {
-                    var el = iframeElements[k];
-                    if (el.textContent && el.textContent.indexOf(currentWord) >= 0 && el.offsetParent !== null) {
-                      found = true;
-                      foundText = currentWord;
-                      //console.log('ABST: ' + experimentId + ' found text in iframe: ' + currentWord);
-                      break;
-                    }
-                  }
-                  if (found) break;
-                }
-              }
-            } catch (error) {
-              // Silently handle errors in iframe access
-              continue;
-            }
-          }
-        }
-      }
-
-      if (found) {
-        if (goalId == 0) {
-          abstConvert(experimentId);
-        } else {
-          abstGoal(experimentId, goalId);
-        }
-        stopTextWatcher(experimentId, goalId);
-      }
-    } catch (e) {
-      console.error('Error in text watcher:', e);
-      stopTextWatcher(experimentId, goalId);
-    }
-  }, 1000);
-}
-
-// abstConvert()/abstGoal() already clear and delete a test's watchers, so the entry may be gone.
-function stopTextWatcher(experimentId, goalId) {
-  var watchers = window.abst.intervals[experimentId];
-  if (watchers && watchers[goalId]) {
-    clearInterval(watchers[goalId]);
+  if (bt_experiments[testId].is_current_user_track == false || window.abst.isTrackingAllowed === false) {
+    return false;
   }
-}
 
-
-function abstConvert(testId = '', orderValue = 1) {
-    if (!window.bt_experiments[testId]) { // if no experiment, return
-        // console.log('no test with that ID found, ending conversion early.');
-        return true;
-    }
-
-    if (
-      orderValue == 1 &&
-      window.bt_experiments[testId] &&
-      (window.bt_experiments[testId].use_order_value === true || window.bt_experiments[testId].use_order_value === '1')
-    ) {
-      const resolvedOrderValue = abstResolveOrderValue(window.bt_experiments[testId]);
-      if (resolvedOrderValue && resolvedOrderValue.formatted) {
-        orderValue = resolvedOrderValue.formatted;
-      }
-    }
-
-    console.log('abstConvert', testId, orderValue);
-
-    if (testId !== '') {
-    var btab = abstGetCookie('btab_' + testId);
-    try {
-      btab = JSON.parse(btab);
-    } catch(e) {
-      btab = null;
-    }
-
-    if (btab) {
-      if (btab.conversion == 0) {
-        if(bt_experiments[testId].is_current_user_track == false || window.abst.isTrackingAllowed === false)
-        {
-          //skip this experiment
-          return false;
-        }
-        bt_experiment_w(testId, btab.variation, 'conversion', false, orderValue);
-        btab.conversion = 1;
-        var experiment_vars = JSON.stringify(btab);
-        abstSetCookie('btab_' + testId, experiment_vars, 1000);
-        
-        // Clear all intervals for this test (conversion timer and all goal timers)
-        if (window.abst.intervals && window.abst.intervals[testId]) {
-          // Clear conversion interval if exists
-          if (typeof window.abst.intervals[testId] === 'number') {
-            clearInterval(window.abst.intervals[testId]);
-          } else if (typeof window.abst.intervals[testId] === 'object') {
-            // Clear all goal intervals
-            Object.values(window.abst.intervals[testId]).forEach(function(intervalId) {
-              if (intervalId) clearInterval(intervalId);
-            });
-          } 
-          delete window.abst.intervals[testId];
-        }
-        
-        // Also clear any goal-based timer entries in window.abst.timer
-        if (window.abst.timer) {
-          Object.keys(window.abst.timer).forEach(function(key) {
-            if (key.startsWith('goal-' + testId + '-')) {
-              delete window.abst.timer[key];
-            }
-          });
-        }
-      }
-      else {
-        console.log("ABST: " + bt_experiments[testId].name + ': Visitor has already converted');
-      }
-    }
-    else {
-      if (!bt_experiments[testId])
-        console.log("ABST: " + 'Test ID not found or test not active');
-    }
-  }
-}
-
-function abstGoal(testId = '', goal = '') {
-  if (testId !== '' && goal !== '') {
-    var btab = abstGetCookie('btab_' + testId);
-    if (btab) {
-      try {
-        btab = JSON.parse(btab);
-      } catch (e) {
-        return false; // skip - corrupted cookie
-      }
-      if (btab.conversion !== 1) // no goals after conversion
-      {
-        // Safety check: ensure experiment exists before accessing properties
-        if (!bt_experiments || !bt_experiments[testId]) {
-          return false; // Test no longer active or not loaded on this page
-        }
-        if(bt_experiments[testId].is_current_user_track == false || window.abst.isTrackingAllowed === false)
-        {
-          //console.log('ABST: skipping experiment ' + experimentId + ' no tracking');
-          //skip this experiment
-          return false;
-        }
-        if (Array.isArray(btab.goals)) {
-          //if its not in the goal
-          if (!btab.goals[goal]) {
-            btab.goals[goal] = 1;
-            bt_experiment_w(testId, btab.variation, goal, false, 1);
-            
-            var experiment_vars = JSON.stringify(btab);
-            abstSetCookie('btab_' + testId, experiment_vars, 1000);
-            
-            // Clear interval for this specific goal
-            if (window.abst.intervals && window.abst.intervals[testId]) {
-              if (typeof window.abst.intervals[testId] === 'object' && window.abst.intervals[testId][goal]) {
-                clearInterval(window.abst.intervals[testId][goal]);
-                delete window.abst.intervals[testId][goal];
-              }
-            }
-            
-            // Clear timer entry for this goal
-            if (window.abst.timer) {
-              var timerKey = 'goal-' + testId + '-' + goal;
-              if (window.abst.timer[timerKey] !== undefined) {
-                delete window.abst.timer[timerKey];
-              }
-            }
-          }
-        }
-        else {
-          console.log("ABST: " + (bt_experiments[testId]?.name || testId) + ': Visitor has already goaled');
-        }
-      }
-      else {
-        console.log('ABST: Goals are not logged after primary conversion');
-      }
-    }
-    else {
-      if (!bt_experiments[testId])
-        console.log("ABST: " + 'Test ID not found or test not active');
-    }
-  }
+  bt_experiment_w(testId, btab.variation, 'conversion', false);
+  btab.conversion = 1;
+  abstSetCookie('btab_' + testId, JSON.stringify(btab), 1000);
+  return true;
 }
 
 function showSkippedVisitorDefault(eid, createCookie = false, variation = false, scrollto=false) {
@@ -2186,27 +1226,6 @@ function skippedCookie(eid, btv, reason) {
   return true;
 }
 
-// Shared URL trigger matcher. * is the only wildcard - every other character is
-// matched literally (case-insensitive) against the full href, by walking the
-// wildcard-separated pieces in order instead of compiling input as a RegExp.
-function abstUrlPatternMatches(pattern, page_url) {
-  if (!pattern || !page_url) return false;
-
-  var parts = String(pattern).toLowerCase().split('*');
-  var url = String(page_url).toLowerCase();
-  var position = 0;
-
-  for (var i = 0; i < parts.length; i++) {
-    if (parts[i] === '') continue;
-
-    var matchAt = url.indexOf(parts[i], position);
-    if (matchAt === -1) return false;
-    position = matchAt + parts[i].length;
-  }
-
-  return true;
-}
-
 // Merge the visitor's query string into a redirect target: parameters already on the
 // target win, every other visitor parameter is carried over. Plugin control
 // parameters (ssr, abst_pin, abst_uuid) are never carried.
@@ -2245,79 +1264,10 @@ function abRedirectUrl(url) {
   return abstMergeRedirectQuery(url, window.location.search, window.location.hash);
 }
 
-function abstOneSecond() {
-  if (Object.keys(window.abst.timer).length > 0) {
-    Object.entries(window.abst.timer).forEach(([index, item]) => {
-      if (window.abst.timer[index] > -1) // dont decrease below -1
-        window.abst.timer[index] = window.abst.timer[index] - 1;
-
-      if (window.abst.timer[index] == 0) {  // convert if its counted down, only fired once
-        //console.log('time active converting ' + index);
-        //index could be goal-eid-goalid
-        if (index.includes('goal-')) {
-          var parts = index.split('-');
-          abstGoal(parts[1], parts[2]);
-        }
-        else {
-          abstConvert(index);
-        }
-        
-        // Set to -1 after triggering to prevent repeated firing
-        window.abst.timer[index] = -1;
-      }
-    });
-
-    // update localstorage
-    localStorage.setItem('absttimer', JSON.stringify(window.abst.timer)); // localstorage need strings
-  }
-}
-
-
-function userActiveNow() {
-  window.abst.currscroll = window.scrollY; // update last known scroll n mouse
-  window.abst.abactive = true; // we active
-  clearTimeout(window.abst.timeoutTimer); // delete the old timout
-  window.abst.timeoutTimer = setTimeout(abstActiveTimeout, window.abst.timeoutTime); // create new timeout
-}
-
-function abstActiveTimeout() {
-  window.abst.abactive = false;
-}
-
-
 function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function normalRandom() {
-  var u = 0, v = 0;
-  while(u === 0) u = Math.random();
-  while(v === 0) v = Math.random();
-  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}
-function gammaRandom(shape) {
-  if (shape < 1) {
-    var u = Math.random();
-    return gammaRandom(1 + shape) * Math.pow(u, 1 / shape);
-  }
-  var d = shape - 1/3;
-  var c = 1/Math.sqrt(9*d);
-  while (true) {
-    var x = normalRandom();
-    var v = Math.pow(1 + c * x, 3);
-    if (v <= 0) continue;
-    var u = Math.random();
-    if (u < 1 - 0.331 * Math.pow(x,4) || Math.log(u) < 0.5*x*x + d*(1 - v + Math.log(v))) {
-      return d * v;
-    }
-  }
-}
-function betaRandom(alpha, beta) {
-  var x = gammaRandom(alpha);
-  var y = gammaRandom(beta);
-  return x / (x + y);
 }
 
 
@@ -2543,13 +1493,10 @@ function bt_get_variations(eid) {
     });
   
 
-  // Free version: only return first 2 variations
-  variation = variation.slice(0, 2);
-
   return variation;
 }
 
-function bt_experiment_w(eid, variation, type, url, orderValue = 1) {
+function bt_experiment_w(eid, variation, type, url) {
 
   // dont log it if its a skipper or malformed
   if (variation == '_bt_skip_' || btab_vars.is_preview || !eid || !variation) {
@@ -2566,33 +1513,21 @@ function bt_experiment_w(eid, variation, type, url, orderValue = 1) {
     variation = 'magic-' + variation.split('-').pop();
   }
   
-  // if its a fingerprinter and we dont have a uuid, then wait for it
-  var experimentConversionType = bt_experiments[eid].conversion_type || bt_experiments[eid].conversion_page || '';
-  if (experimentConversionType == 'fingerprint' && !localStorage.getItem('ab-uuid')) {
-    console.log('ABST: bt_exp_w: waiting for fingerprint');
-    setTimeout(bt_experiment_w, 500, eid, variation, type, url, orderValue);
-    return true; //back in 500ms
-  }
-  console.log('ABST: bt_experiment_w',eid,variation,type,url,orderValue);
-  if (bt_experiments[eid] && bt_experiments[eid].conversion_style == 'thompson') {
-    console.log('ABST: MAB: logging', type, 'for', variation);
-  }
+  console.log('ABST: bt_experiment_w',eid,variation,type,url);
 
   var data = {
-    'action': 'bt_experiment_w',
+    'action': 'abst_experiment_w',
     'eid': eid,
     'variation': variation,
     'type': type,
     'size': abst.size,
-    'location': btab_vars.post_id,
-    'orderValue': orderValue
+    'location': btab_vars.post_id
   };
 
   var experiment_vars = {
     eid: eid,
     variation: variation,
     conversion: 0,
-    goals: [],
     size: abst.size,
     location: btab_vars.post_id,
   };
@@ -2601,18 +1536,6 @@ function bt_experiment_w(eid, variation, type, url, orderValue = 1) {
   // set up conversion
   if (type == 'conversion')
     experiment_vars.conversion = 1;
-  else if (type == 'visit') { 
-    // not conversion or goal
-  }
-  else // goal
-  {
-    experiment_vars.goals[type] = 1; // add to goals list
-  } 
- 
-  //add uuid if necessary
-  if (experimentConversionType == 'fingerprint')
-    data.uuid = localStorage.getItem('ab-uuid');
-
 
   //add advanced id if necessary
   if (btab_vars.advanced_tracking == '1')
@@ -2624,52 +1547,12 @@ function bt_experiment_w(eid, variation, type, url, orderValue = 1) {
   queueEventData(data, url);
   
   abstSetCookie('btab_' + eid, experiment_vars, 1000);
-  
 
-  //start time watchers b4 redirecting
-  if (experimentConversionType == 'time') {
-    window.abst.timer[eid] = bt_experiments[eid]['conversion_time'];
-  }
-  // Process goals for timer setup
-  var goals = bt_experiments[eid].goals;
-  
-  // Handle different potential formats of goals data
-  if (type == 'visit' && goals) {
-    // If goals is a string, try to parse it as JSON
-    if (typeof goals === 'string') {
-      try {
-        goals = JSON.parse(goals);
-        console.log('ABST: Parsed goals from string:', goals);
-      } catch (e) {
-        console.error('ABST: Error parsing goals string:', e);
-        goals = [];
-      }
-    }
-    
-    // Handle different goal formats (could be array or object)
-    // If it's an object, iterate with Object.entries
-    Object.entries(goals).forEach(([idx, goalDef]) => {
-      const entries = Object.entries(goalDef);
-      // Handle time goals
-      if (entries[0][0] === 'time') {
-        window.abst.timer["goal-" + eid + "-" + idx] = entries[0][1];
-        console.log('ABST: Added timer for goal ' + eid + '-' + idx + ' with time: ' + entries[0][1]);
-      }
-    });
-  }
 
   if (url && url !== "ex") {
-    addServerEvents({
-      eid: eid,
-      variation: variation,
-      type: 'visit',
-    });
-    console.log('ABST: addServerEvents Redirecting to ' + url);
     abstRedirect(url);
   }
   else {
-    btab_track_event(data);
-
     abstShowPage(); // show the page
   }
 
@@ -2738,7 +1621,7 @@ function abst_process_approved_events() {
 
   try {
     const ok = navigator.sendBeacon(
-      bt_ajaxurl + '?action=abstdata',
+      bt_ajaxurl + '?action=abst_data',
       JSON.stringify(batch)
     );
     
@@ -2753,401 +1636,6 @@ function abst_process_approved_events() {
   }
 
   return true;
-}
-
-/**
- * Track an event
- * This function is used to track events in the analytics partners
- * @param {Object} data - The event data
- * @param {string} data.eid - The experiment ID
- * @param {string} data.variation - The variation
- * @param {string} data.type - The event type
- */
-async function btab_track_event(data) {
-  // Free version: event tracking disabled
-  return false;
-
-  if (btab_vars.tagging == '0') {
-    //console.log('event tagging turned off');
-    return false;
-  }
-
-  // Safety check for bt_experiments
-  if (typeof bt_experiments === 'undefined' || !bt_experiments || !bt_experiments[data.eid]) {
-    console.warn('ABST: bt_experiments not defined or experiment not found for eid:', data.eid);
-    return false;
-  }
-
-  const exp = bt_experiments[data.eid];
-
-  // Only add to clickRegister if journey tracking is enabled
-  if (btab_vars.abst_enable_user_journeys === '1') {
-    let typeFormatted;
-    if (data.type === 'visit') {
-      typeFormatted = 'tv-' + data.eid;
-    } else if (data.type === 'conversion') {
-      typeFormatted = 'tc-' + data.eid;
-    } else {
-      // It's a goal number (e.g., '1', '2', '3')
-      typeFormatted = 'tg-' + data.type + '-' + data.eid;
-    }
-
-    window.abst.clickRegister[new Date().toISOString()] = {
-      timestamp: new Date().toISOString(),
-      type: typeFormatted,
-      post_id: btab_vars.post_id,
-      uuid: abstGetAdvancedId(),
-      ab_advanced_id: abstGetAdvancedId(),
-      url: abstGetEventUrl(),
-      element_id_or_selector: '0',
-      click_x: 0,
-      click_y: 0,
-      screen_size: window.abstheatmapScreenSize,
-      meta: data.variation
-    };
-  }
-
-  window.abst.eventQueue.push(data);
-
-  trackName = exp.name || data.eid;
-  //gtag always
-  gtm_data = {
-    'event': 'ab_split_test',
-    'test_name': trackName,
-    'test_variation': data.variation,
-    'test_event': data.type,
-    'test_id': data.eid,
-  };
-  var expConversionType = exp.conversion_type || exp.conversion_page || '';
-  if (expConversionType == 'fingerprint')
-    gtm_data.abuuid = localStorage.getItem('ab-uuid');
-  else if (abstGetAdvancedId())
-    gtm_data.abuuid = abstGetAdvancedId();
-
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(gtm_data); // add to gtm data layer
-
-  if (window.abst.abconvertpartner.ga4) //ga4 add
-    gtag('event', 'ab_split_test', {
-      'test_name': data.eid,
-      'test_variation': data.variation,
-      'test_event': data.type,
-    });
-
-
-  if (window.abst.abconvertpartner.abawp) { //analyticswp
-    AnalyticsWP.event('Test: ' + exp.name, {
-      test_id: data.eid,
-      test_name: exp.name,
-      test_variation: data.variation,
-      test_visit_type: data.type
-    });
-  }
-
-  if (window.abst.abconvertpartner.clarity) { //clarity
-    clarity("set", exp.name + "-" + data.type, data.variation);
-  }
-
-  if (window.abst.abconvertpartner.gai) { //google analytics
-    if (typeof ga === "function" && typeof ga.getAll === "function") {
-      var trackers = ga.getAll();
-      var tracker = trackers && trackers[0];
-      if (tracker) {
-        tracker.send("event", exp.name, data.type, data.variation, { nonInteraction: true }); // send non interactive event to GA
-        window.abst.abconvertpartner.gai = true;
-      }
-    } else {
-      // Optionally log a warning for debugging
-      // console.warn("Google Analytics (Universal Analytics) not detected or ga.getAll unavailable.");
-    }
-  }
-
-  if (window.abst.abconvertpartner.abmix) { //abmix
-    mixpanel.track(exp.name, { 'type': data.type, 'variation': data.variation }, { send_immediately: true });
-  }
-
-  if (window.abst.abconvertpartner.abumav) { //umami
-    usermaven("track", exp.name, {
-      type: data.type,
-      variation: data.variation
-    });
-
-  }
-
-  if (window.abst.abconvertpartner.umami) { //umami
-    umami.track(exp.name, {
-      type: data.type,
-      variation: data.variation
-    });
-  }
-
-  if (window.abst.abconvertpartner.cabin) { //cabin
-    cabin.event(exp.name + ' | ' + data.type + ' | ' + data.variation);
-  }
-
-  if (window.abst.abconvertpartner.plausible) { //plausible
-    plausible(exp.name, {
-      props: {
-        type: data.type,
-        variation: data.variation
-      },
-      callback: {
-        interactive: false
-      }
-    });
-  }
-
-  if (window.abst.abconvertpartner.fathom) { //fathom
-    fathom.trackGoal(exp.name, {
-      type: data.type,
-      variation: data.variation
-    });
-  }
-  if (window.abst.abconvertpartner.posthog) {
-    posthog.capture(exp.name, {
-      type: data.type,
-      variation: data.variation
-    });
-  }
-}
-
-function abst_find_analytics() {
-  // Free version: analytics integration disabled
-  return false;
-
-  window.dataLayer || (window.dataLayer = []); //gtag
-
-  // Safety check for bt_experiments
-  if (typeof bt_experiments === 'undefined' || !bt_experiments) {
-    console.warn('ABST: bt_experiments not defined in abst_find_analytics');
-    return false;
-  }
-
-  // Define all analytics providers we want to check for
-  const analyticsProviders = [
-    {
-      name: 'ga4',
-      check: () => typeof gtag === "function",
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          gtag('event', 'ab_split_test', {
-            'test_name': (bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid,
-            'test_variation': element.variation,
-            'test_event': element.type,
-            'ab_uuid': element.uuid,
-          });
-        });
-      }
-    },
-    {
-      name: 'clarity',
-      check: () => typeof clarity === "function",
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          clarity("set", element.eid + "-" + element.type, element.variation);
-        });
-      }
-    },
-    {
-      name: 'gai',
-      check: () => {
-        if (typeof ga === "function" && typeof ga.getAll === "function") {
-          const trackers = ga.getAll();
-          const tracker = trackers && trackers[0];
-          return !!tracker;
-        }
-        return false;
-      },
-      process: () => {
-        if (typeof ga === "function" && typeof ga.getAll === "function") {
-          const trackers = ga.getAll();
-          const tracker = trackers && trackers[0];
-          if (tracker) {
-            window.abst.eventQueue.forEach((element) => {
-              tracker.send("event", element.eid, element.type, element.variation, { nonInteraction: true });
-            });
-          }
-        } else {
-          // Optionally log a warning for debugging
-          // console.warn("Google Analytics (Universal Analytics) not detected or ga.getAll unavailable.");
-        }
-      }
-    },
-    {
-      name: 'fathom',
-      check: () => !!window.fathom,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          window.fathom.trackEvent(element.eid + ", " + element.type + ": " + element.variation);
-        });
-      }
-    },
-    {
-      name: 'posthog',
-      check: () => !!window.posthog,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          posthog.capture((bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid, {
-            type: element.type,
-            variation: element.variation
-          });
-        });
-      }
-    },
-    {
-      name: 'abmix',
-      check: () => typeof mixpanel === "object",
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          mixpanel.track((bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid, { 'type': element.type, 'variation': element.variation }, { send_immediately: true });
-        });
-      }
-    },
-    {
-      name: 'abumav',
-      check: () => typeof usermaven === "function",
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          usermaven("track", (bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid, {
-            type: element.type,
-            variation: element.variation
-          });
-        });
-      }
-    },
-    {
-      name: 'umami',
-      check: () => !!window.umami,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          umami.track((bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid, {
-            type: element.type,
-            variation: element.variation
-          });
-        });
-      }
-    },
-    {
-      name: 'cabin',
-      check: () => !!window.cabin,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          cabin.event((bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid + ' | ' + element.type + ' | ' + element.variation);
-        });
-      }
-    },
-    {
-      name: 'plausible',
-      check: () => !!window.plausible,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          plausible((bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid, {
-            props: {
-              type: element.type,
-              variation: element.variation
-            },
-            callback: {
-              interactive: false
-            }
-          });
-        });
-      }
-    },
-    {
-      name: 'abawp',
-      check: () => typeof AnalyticsWP === "object",
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          AnalyticsWP.event('Test: ' + (bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid, {
-            test_id: element.eid,
-            test_name: (bt_experiments[element.eid] && bt_experiments[element.eid].name) || element.eid,
-            test_variation: element.variation,
-            test_visit_type: element.type
-          });
-        });
-      }
-    },
-    {
-      name: 'dom',
-      check: () => true,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          try {
-            var target = document.body || document;
-            var evt = new CustomEvent('abst_event', { detail: element, bubbles: true });
-            target.dispatchEvent(evt);
-          } catch (e) {
-          }
-        });
-      }
-    },
-    {
-      name: 'jquery',
-      check: () => !!window.jQuery,
-      process: () => {
-        window.abst.eventQueue.forEach((element) => {
-          jQuery('body').trigger('abst_event', [element]);
-        });
-      }
-    }
-  ];
-
-  // Initialize partner object if not exists
-  window.abst.abconvertpartner = window.abst.abconvertpartner || {};
-
-  // Maximum time to wait for analytics providers (in milliseconds)
-  const MAX_WAIT_TIME = 10000; // 10 seconds
-  const CHECK_INTERVAL = 500; // Check every 500ms
-
-  // Function to check a single analytics provider
-  const checkProvider = (provider) => {
-    // Skip if already processed
-    if (window.abst.abconvertpartner[provider.name]) {
-      return true;
-    }
-
-    // Check if provider is available
-    if (provider.check()) {
-      window.abst.abconvertpartner[provider.name] = true;
-      provider.process();
-      return true;
-    }
-
-    return false;
-  };
-
-  // Function to check all providers
-  const checkAllProviders = () => {
-    return analyticsProviders.map((provider) => checkProvider(provider));
-  };
-
-  // Start time to calculate timeout
-  const startTime = new Date().getTime();
-
-  // Create a promise that resolves when all providers are found or timeout
-  const findAnalyticsPromise = new Promise((resolve) => {
-    const checkAnalytics = () => {
-      // Check all providers
-      const results = checkAllProviders();
-
-      // If all providers are found or we've exceeded the max wait time, resolve
-      const allFound = results.every(result => result === true);
-      const timeElapsed = new Date().getTime() - startTime;
-
-      if (allFound || timeElapsed > MAX_WAIT_TIME) {
-        resolve();
-      } else {
-        // Check again after interval
-        setTimeout(checkAnalytics, CHECK_INTERVAL);
-      }
-    };
-
-    // Start checking
-    checkAnalytics();
-  });
-
-  // Return the promise for potential chaining
-  return findAnalyticsPromise;
 }
 
 // check for a full page test visit cookie
@@ -3219,159 +1707,6 @@ function bt_replace_all_html(find, replace, location = 'body') {
 
   // Start the HTML replacement process from the chosen element
   replaceHTML(element);
-}
-
-function abLinkPatternListener(experimentId, conversionLinkPattern, goalId = 0) {
-  abClickListener(experimentId, "a[href*='" + conversionLinkPattern + "']", goalId);
-}
-
-function abClickListener(experimentId, conversionSelector, goalId = 0) {
-  var testCookie = abstGetCookie('btab_' + experimentId);
-  if (testCookie) {
-    try {
-      testCookie = JSON.parse(testCookie);
-    } catch (e) {
-      return; // skip - corrupted cookie
-    }
-    if (goalId == 0) {
-      if (testCookie.conversion == 1) {
-        //console.log('abClickListener: already converted');
-        return;
-      }
-    }
-    else // issa goal
-    {
-      if (testCookie.goals[goalId] == 1) {
-        //console.log('abClickListener: goal already converted');
-        return;
-      }
-    }
-  }
-  var eventType = 'click'; // Default event type
-  // If a pipe symbol exists, split it into the conversion selector and the event type
-  if (conversionSelector.indexOf('|') !== -1) {
-    var conversionParts = conversionSelector.split('|');
-    // Check if there are at least two conversionParts
-    if (conversionParts.length >= 2) {
-      conversionSelector = conversionParts[0]; // First part is the conversion selector
-      eventType = conversionParts[1]; // Second part is the event type
-    }
-  }
-
-  var subselector  = "ab-click-convert-" + experimentId;
-
-  // Prevent duplicate event listeners: use a registry keyed by experimentId+eventType+selector+goalId
-  window.abst = window.abst || {};
-  window.abst._abstClickListenerRegistry = window.abst._abstClickListenerRegistry || {};
-  var registryKey = experimentId + '|' + eventType + '|' + conversionSelector + '|' + goalId;
-  if (window.abst._abstClickListenerRegistry[registryKey]) {
-    return;
-  }
-  window.abst._abstClickListenerRegistry[registryKey] = true;
-
-  try {
-    // Listen for clicks on elements matching the class selector
-    document.addEventListener(eventType, (function (event) {
-      var target = event.target;
-      while (target && target !== document) {
-        if(conversionSelector) //check main selector
-        {
-          if (
-  target instanceof Element &&
-  (
-    (typeof conversionSelector === 'string' && conversionSelector.trim() !== '' && target.matches(conversionSelector)) ||
-    (typeof conversionSelector === 'string' && conversionSelector.trim() === '' ? false : false) // disables target.matches() with no selector
-  )
-) { //check main selector
-            console.log(eventType + ' conversion on ' + conversionSelector + ' type ' + goalId);
-            if (goalId > 0)
-              abstGoal(experimentId, goalId);
-            else 
-              abstConvert(experimentId);
-            break;
-          }
-        }
-        if(subselector && typeof subselector === 'string' && subselector.trim() !== '' && target instanceof Element && target.matches(subselector)) //check subselector
-        {
-          console.log(eventType + ' subselector conversion on ' + conversionSelector + ' type ' + goalId);
-          if (goalId > 0)
-            abstGoal(experimentId, goalId);
-          else 
-            abstConvert(experimentId);
-          break;
-        }
-        target = target.parentNode;
-      }
-    }), true);
-
-    // Listen for clicks on any links with ab-click-convert- query parameter
-    document.addEventListener('click', (function (event) {
-      var target = event.target;
-      while (target && target !== document) {
-        if (target.tagName === 'A' && target.href) {
-          try {
-            var url = new URL(target.href);
-            var params = new URLSearchParams(url.search);
-
-            // Check for the ab-click-convert-ID parameter
-            for (const [key, value] of params.entries()) {
-              if (key.startsWith('ab-click-convert-')) {
-                var linkExperimentId = key.replace('ab-click-convert-', '');
-                if (linkExperimentId === experimentId) {
-                  event.preventDefault(); // Prevent default link behavior
-                  console.log('Query string conversion for experiment ID: ' + experimentId);
-                  if (goalId > 0)
-                    abstGoal(experimentId, goalId);
-                  else
-                    abstConvert(experimentId);
-
-                  // Continue to the link after a short delay to allow conversion to be processed
-                  setTimeout((function () {
-                    window.location.href = target.href;
-                  }), 300);
-                  break;
-                }
-              }
-            }
-          } catch (e) {
-            // Invalid URL, just continue
-          }
-        }
-        target = target.parentNode;
-      }
-    }), true);
-  } catch (error) {
-    console.info('ABST: Invalid conversion selector:' + conversionSelector + ' ' + error + ' ' + goalId);
-  }
-  var iframes = document.querySelectorAll('iframe');
-  iframes.forEach((function (iframe) {
-    try { 
-      var iframeDoc = iframe.contentWindow.document;
-      iframeDoc.addEventListener(eventType, (function (event) {
-        if (event.target.matches(conversionSelector)) {
-          console.log(eventType + ' IFRAME conversion on ' + conversionSelector);
-          abstConvert(experimentId);
-        }
-      }), true);
-    } catch (error) {
-      //console.error("Error accessing cross-origin iframe:", error); // CORS issue, the iframe is not in the same origin and does not allow cross origin access.
-    }
-  }));
-}
-async function setAbFingerprint() {
-  if (!localStorage.getItem("ab-uuid")) {
-    try {
-      const module = await import(window.bt_pluginurl + "/js/ab-fingerprint.js");
-      const fp = await ThumbmarkJS.getFingerprint();
-      localStorage.setItem("ab-uuid", fp);
-      console.log("ABST: set Fingerprint: " + fp);
-    } catch (error) {
-      console.error("ABST: Error setting fingerprint:", error);
-    }
-  }
-  else {
-    console.log("ab-uuid: already set: " + localStorage.getItem("ab-uuid"));
-  }
 }
 
 /**
@@ -3587,107 +1922,8 @@ function scrollAndHighlightElement(selector) {
 },2000);
 }
 
-/**
- * Setup conversion and goal listeners for all experiments
- */
-// Initialize btab_vars if it doesn't exist
 window.btab_vars = window.btab_vars || {};
 
-window.btab_vars.setupConversionListeners = function() {
-  // Loop through all experiments
-  if (!bt_experiments) return;
-  for (const eid in bt_experiments) {
-    if (!bt_experiments.hasOwnProperty(eid)) continue;
-    const exp = bt_experiments[eid];
-    const expConversionType = exp.conversion_type || exp.conversion_page || '';
-    let expConversionPageId = exp.conversion_page_id;
-    if ((expConversionPageId === undefined || expConversionPageId === null || expConversionPageId === '') && exp.conversion_page !== undefined && exp.conversion_page !== null && exp.conversion_page !== '' && !isNaN(exp.conversion_page)) {
-      expConversionPageId = parseInt(exp.conversion_page, 10);
-    }
-    
-    // Setup goal listeners if available
-    if (Array.isArray(exp.goals)) { 
-      exp.goals.forEach((goalDef, idx) => {
-        const [kind, value] = Object.entries(goalDef)[0];
-        switch (kind) {
-          case 'selector':
-            abClickListener(eid, value, idx);
-            break;
-          case 'text':
-            startTextWatcher(eid, value, idx);
-            break;
-          case 'url':
-            // Check if this goal has already been triggered
-            const existingCookie = abstGetCookie('btab_' + eid);
-            if (existingCookie) {
-              try {
-                const cookieData = JSON.parse(existingCookie);
-                if (cookieData.goals && cookieData.goals[idx] === 1) {
-                  console.log('Goal already triggered:', eid, 'Goal #', idx);
-                  break; // Skip further processing if goal already triggered
-                }
-              } catch (e) {
-                // Skip - corrupted cookie
-              }
-            }
-
-            // Only do URL comparison if value is a reasonable URL path
-            // This prevents comparisons with empty strings or invalid values
-            if (value && value.length > 1) {
-              if (normalizeUrl(location.href) === normalizeUrl(value)) {
-                console.log('URL MATCH! Firing goal for', eid, idx);
-                abstGoal(eid, idx);
-              } else {
-                //console.log('URL DID NOT MATCH for goal', eid, idx);
-              }
-            } else {
-              //console.log('Invalid URL value for goal', eid, idx, '- skipping check');
-            }
-            break;
-          case 'page':
-            if(window.btab_vars.post_id == value) {
-              abstGoal(eid, idx);
-            }
-            break;
-        }
-      });
-    }
-    
-    // Setup primary conversion listener
-    switch (expConversionType) {
-      case 'selector':
-        abClickListener(eid, exp.conversion_selector);
-        break;
-        case 'text':
-          startTextWatcher(eid, exp.conversion_text);
-          break;
-          case 'surecart-order-paid':
-            document.addEventListener('scOrderPaid', function (e) {
-              const amt = e.detail?.amount_due;
-              if (amt) {
-                if (exp.use_order_value) {
-                  window.abst.abConversionValue = (amt / 100).toFixed(2);
-                }
-                abstConvert(eid, window.abst.abConversionValue);
-              }
-            });
-            break;
-            default:
-              if (expConversionType == 'page' && window.btab_vars.post_id == expConversionPageId) {
-                abstConvert(eid);
-              }
-              break;
-            }
-            // time listeners are attached to the experiment when it is triggered
-    
-    // Check conversion URL if set
-    if (exp.conversion_url && exp.conversion_url !== '') {
-      if (normalizeUrl(location.href) === normalizeUrl(exp.conversion_url)) {
-        abstConvert(eid);
-      }
-    }
-  }
-};
 // For backward compatibility, restore original abtracker function
 window.btab_vars.abtracker = function(eid, selector, variation) {
   const tracker = ensureTrackerInitialized();
@@ -3873,174 +2109,6 @@ function watch_for_tag_event(eid, selector = '[bt-eid="' + eid + '"]', variation
   }
 }
 
-function normalizeUrl(url) {
-  let page_url = url.replace(window.location.origin, '');
-  if (page_url.charAt(0) == "/") page_url = page_url.substr(1);
-  if (page_url.charAt(page_url.length - 1) == "/") page_url = page_url.substr(0, page_url.length - 1);
-  return page_url;
-}
-
-
-// setup conversion listeners
-document.addEventListener('DOMContentLoaded', function() {
-  
-  window.btab_vars.setupConversionListeners();
-  if( !btab_vars.is_preview && document.querySelectorAll('.conversion-module').length > 0 ) {
-    document.querySelectorAll('.conversion-module').forEach(function(el) {
-      el.remove();
-    });
-  }
-
-  if( window.bt_conversion_vars ) {
-
-    Object.entries(bt_conversion_vars).forEach(function([key, conversion_el]) {
-
-      // page load conversion
-      if ( conversion_el.type !== 'click' )
-      {
-        var eid = conversion_el.eid;
-        var variationObj = abstGetCookie('btab_'+eid);
-
-        if( !variationObj ) {
-          return true;
-        }
-
-        try {
-          variationObj = JSON.parse(variationObj);
-        } catch (e) {
-          return true; // skip - corrupted cookie
-        }
-
-       if( bt_experiments[eid] === undefined ) {
-          return false;
-        }
-
-        // if its converted already
-        if( variationObj.conversion == 1 ) {
-            console.info('AB Split test already converted.');
-          return true;
-        }
-
-        // if its not an empty conversion URL or page, then it must be defined elsewhere
-        var moduleConversionType = bt_experiments[eid].conversion_type || bt_experiments[eid].conversion_page || '';
-        if( bt_experiments[eid].conversion_url != '' || moduleConversionType != '' ) {
-          if(bt_experiments[eid].conversion_url == 'embed')
-            console.info('AB Split Test conversion defined as external URL, but conversion module used. Please check your configuration settings. This is a soft error and a conversion event has not been blocked.');
-          else
-            return true;
-        }
-
-
-        variation = variationObj.variation;
-
-        var convertType = conversion_el.type;
-        var convertClickSelector = conversion_el.selector;
-       
-        if (typeof conversion_details !== 'undefined' ) // we have a conversion page URL set, 
-        {
-          if(typeof conversion_details[eid] !== 'undefined')
-          {
-            console.log('Possible duplicate conversion event. Check your set up.');
-          }
-        }
-        
-        if(variation){
-          bt_experiment_w(eid,variation,'conversion',false);
-          variationObj.conversion = 1;
-          variationObj = JSON.stringify(variationObj);
-          abstSetCookie('btab_'+eid, variationObj, 1000);
-        }
-      }
-
-      // click conversion
-      if( conversion_el.type == 'click' )
-      {
-        var convertClickSelector = conversion_el.selector;
-        //find link
-        if( document.querySelectorAll(convertClickSelector).length > 0 ) {
-          //cool
-        }
-        else if( document.querySelectorAll(convertClickSelector + " a").length > 0 ) {
-          //add the "a"
-          convertClickSelector += " a"; 
-        }
-        else if( document.querySelectorAll(convertClickSelector + " img").length > 0 ) {
-          //add the "a"
-          convertClickSelector += " img";
-        }
-        else
-        {
-          //console.log("no conversion elements found");
-        }
-        
-        if( document.querySelectorAll(convertClickSelector).length > 0 ) {
-
-          // Instead of using jQuery's event delegation, we'll create a proper event delegation handler
-          document.body.addEventListener('click', function(event) {
-            // Check if the click target matches or is a child of the selector
-            let clickTarget = event.target;
-            let convertElement = null;
-            
-            // Try to match the element or find a matching ancestor
-            try {
-              if (clickTarget.matches(convertClickSelector)) {
-                convertElement = clickTarget;
-              } else {
-                convertElement = clickTarget.closest(convertClickSelector);
-              }
-            } catch(e) {
-              // Invalid selector, ignore
-              return;
-            }
-            
-            // Not our target element
-            if (!convertElement) return;
-            
-            var url = convertElement.getAttribute('href');
-            var target = convertElement.getAttribute('target');
-            var eid = conversion_el.eid;
-
-            var variationObj = abstGetCookie('btab_'+eid);
-            try {
-              variationObj = JSON.parse(variationObj);
-            } catch (e) {
-              return; // skip - corrupted cookie
-            }
-
-            //console.log('variationObj', variationObj);
-
-            if( bt_experiments[eid] === undefined ) {
-              return false;
-            }
-
-            if( variationObj.conversion == 1 ) {
-                console.log('ab test already converted.');
-              return true;
-            }
-
-            variation = variationObj.variation;
-
-            if(url && (target !== '_blank'))
-            {
-              event.preventDefault();
-              bt_experiment_w(eid,variation,'conversion',url);
-            }
-            else
-            {
-              bt_experiment_w(eid,variation,'conversion',false);
-            }
-
-            variationObj.conversion = 1;
-            variationObj = JSON.stringify(variationObj);
-            abstSetCookie('btab_'+eid, variationObj, 1000);
-          });
-        }
-
-      }
-    });
-  }
-});
-
 function abstContainsHtml(str) {
   if (!str || typeof str !== 'string') {
     return false;
@@ -4049,96 +2117,6 @@ function abstContainsHtml(str) {
   // and eventually has a '>' character. This is a much more reliable
   // indicator of an HTML tag than just checking for the brackets separately.
   return /<[a-z][\s\S]*>/i.test(str);
-}
-
-function shouldSetupScrollListener(experimentId, experiment) {
-  // For full page tests: Only set up scroll listener if we're on a variation page
-  if (experiment.test_type === 'full_page') {
-    // Check if current page is the default page being tested (consistent with existing pattern)
-    if (typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.some(page => String(page) === String(experiment.full_page_default_page))) {
-      return true; // We're on the default page, scroll listener should be active
-    }
-    
-    // Check if we're on one of the variation pages by checking page IDs
-    if (experiment.page_variations && typeof current_page !== 'undefined' && Array.isArray(current_page)) {
-      for (const [varId, variationUrl] of Object.entries(experiment.page_variations)) {
-        if (current_page.some(page => String(page) === String(varId))) {
-          return true; // We're on a variation page
-        }
-      }
-    }  
-    return false; // Not on a page related to this full page test
-  }
-  
-  // For on-page tests (magic, ab_test, css_test): Only set up if test elements exist on current page
-  if (experiment.test_type === 'magic' || experiment.test_type === 'ab_test' || experiment.test_type === 'css_test') {
-    // Check if any test elements exist on the current page
-    const testElements = document.querySelectorAll('[bt-eid="' + experimentId + '"]');
-    if (testElements.length > 0) {
-      return true; // Test elements found, scroll listener should be active
-    }
-    
-    // For magic tests, check if magic definition elements exist
-    if (experiment.test_type === 'magic' && experiment.magic_definition) {
-      try {
-        const magicDef = Array.isArray(experiment.magic_definition) ? experiment.magic_definition : JSON.parse(experiment.magic_definition);
-        for (const def of magicDef) {
-          if (!matchesMagicScope(def.scope)) {
-            continue;
-          }
-          if (def.selector && document.querySelector(def.selector)) {
-            return true; // Magic test selector found on page
-          }
-        }
-      } catch (e) {
-        console.warn('ABST: Error parsing magic definition for experiment', experimentId, e);
-      }
-    }
-    
-    //console.log('ABST Scroll conversion will not watch. No test elements found on current page for experiment', experimentId);
-    return false; // No test elements found on current page
-  }
-  
-  // For other test types, default to true (maintain existing behavior)
-  return true;
-}
-
-function abScrollListener(experimentId, depth, goalId = 0) {
-  depth = parseInt(depth);
-  if (isNaN(depth)) return;
-  var testCookie = abstGetCookie('btab_' + experimentId);
-  if (testCookie) {
-    try {
-      testCookie = JSON.parse(testCookie);
-    } catch (e) {
-      return; // skip - corrupted cookie
-    }
-    if (goalId == 0) {
-      if (testCookie.conversion == 1) return;
-    } else {
-      if (testCookie.goals && testCookie.goals[goalId] == 1) return;
-    }
-  }
-  window.abst = window.abst || {};
-  window.abst._abstScrollListenerRegistry = window.abst._abstScrollListenerRegistry || {};
-  var registryKey = depth + '|' + experimentId + '|' + goalId;
-  if (window.abst._abstScrollListenerRegistry[registryKey]) {
-    return;
-  }
-  window.abst._abstScrollListenerRegistry[registryKey] = true;
-
-  function checkScroll() {
-    var scrollPos = window.scrollY + window.innerHeight;
-    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-    var percent = (scrollPos / docHeight) * 100;
-    if (percent >= depth) {
-      if (goalId > 0) abstGoal(experimentId, goalId);
-      else abstConvert(experimentId);
-      window.removeEventListener('scroll', checkScroll);
-    }
-  }
-  window.addEventListener('scroll', checkScroll);
-  checkScroll();
 }
 
 function abstRedirect(url) {
@@ -4795,7 +2773,6 @@ function enableClickTracking(){
   pv : page visit
   c  : click
   tv-1234 : test visit with test id
-  tg-1-1234 : test goal with goal id and test id
   tc-1234 : test conversion with test id
   s  : scroll : meta value is maxDepth as percentage (0-100)
   */
@@ -5375,147 +3352,6 @@ setInterval(function() {
 }, 15000); 
 
 
-// Inject hidden fields into forms for server-side form conversion tracking
-// Called only when a form- conversion or goal is detected
-function abstGetFormAttributionData() {
-  var cookies = document.cookie.split(';');
-  var abstData = {};
-
-  function addAttribution(name, value) {
-    if (name.indexOf('btab_') !== 0 || !value) return;
-
-    try {
-      var data = JSON.parse(value);
-    } catch(e) {
-      try {
-        data = JSON.parse(decodeURIComponent(value));
-      } catch(e) {
-        return;
-      }
-    }
-
-    if (data && data.variation) {
-      abstData[name.replace('btab_', '')] = data.variation;
-    }
-  }
-
-  for (var i = 0; i < cookies.length; i++) {
-    var cookie = cookies[i].trim();
-    if (cookie.indexOf('btab_') === 0) {
-      var parts = cookie.split('=');
-      // A cookie value can legitimately contain '=', so rejoin everything after the first one.
-      addAttribution(parts[0], parts.slice(1).join('='));
-    }
-  }
-
-  // Assignments are stored outside cookies when consent is unavailable and on localhost.
-  ['localStorage', 'sessionStorage'].forEach(function(storageName) {
-    try {
-      var storage = window[storageName];
-      Object.keys(storage).forEach(function(key) {
-        if (Object.prototype.hasOwnProperty.call(abstData, key.replace('btab_', ''))) return;
-        addAttribution(key, storage.getItem(key));
-      });
-    } catch(e) {
-      // Storage can be unavailable in privacy-restricted browser contexts.
-    }
-  });
-
-  return abstData;
-}
-
-function abstApplyFormAttributionData(form, abstData) {
-  if (!form || form.nodeType !== Node.ELEMENT_NODE || form.tagName !== 'FORM') return;
-  if (!abstData || Object.keys(abstData).length === 0) return;
-
-  var input = form.querySelector('input[name="abst_data"]');
-  if (!input) {
-    input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'abst_data';
-    form.appendChild(input);
-  }
-
-  input.value = JSON.stringify(abstData);
-}
-
-function abstSetupFormAttributionSubmitListener() {
-  window.abst = window.abst || {};
-  if (window.abst.formAttributionSubmitListener) return;
-
-  document.addEventListener('submit', function(event) {
-    abstInjectFormFields(event.target);
-  }, true);
-
-  if (window.jQuery && window.jQuery.fn && window.jQuery.fn.on) {
-    window.jQuery(document).on('wpformsBeforeFormSubmit', function(event, form) {
-      var formElement = form && form.jquery ? form[0] : form;
-      abstInjectFormFields(formElement);
-    });
-  }
-
-  window.abst.formAttributionSubmitListener = true;
-}
-
-function abstInjectFormFields(targetForm) {
-  abstSetupFormAttributionSubmitListener();
-
-  window.abst = window.abst || {};
-
-  // Use MutationObserver for dynamic forms instead of polling interval.
-  // This is installed BEFORE the empty-data early return below: a visitor with no
-  // assignment yet still needs the observer running for when one arrives.
-  if (window.MutationObserver && !window.abst.formObserver && document.body) {
-    window.abst.formObserver = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        mutation.addedNodes.forEach(function(node) {
-          if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-          // Check if the added node is a form
-          var latestAbstData = abstGetFormAttributionData();
-          if (node.tagName === 'FORM') {
-            abstApplyFormAttributionData(node, latestAbstData);
-          }
-
-          // Check for forms inside the added node
-          if (node.querySelectorAll) {
-            node.querySelectorAll('form').forEach(function(form) {
-              abstApplyFormAttributionData(form, latestAbstData);
-            });
-          }
-
-          // Some form builders add fields inside a form that already exists.
-          if (node.closest) {
-            abstApplyFormAttributionData(node.closest('form'), latestAbstData);
-          }
-        });
-      });
-    });
-
-    window.abst.formObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-  }
-
-  var abstData = abstGetFormAttributionData();
-
-  if (Object.keys(abstData).length === 0) return;
-
-  var forms = targetForm && targetForm.nodeType === Node.ELEMENT_NODE && targetForm.tagName === 'FORM'
-    ? [targetForm]
-    : document.querySelectorAll('form');
-
-  forms.forEach(function(form) {
-    abstApplyFormAttributionData(form, abstData);
-  });
-
-  window.abst.formFieldsInjected = true;
-}
-
-
-
-
 
 function mapTextElementsWithSelectors() {
   // Check for ?abhash=1 query parameter
@@ -5772,7 +3608,7 @@ function abstForgetMe(){
     for(let i = 0; i < cookies.length; i++){
       const cookie = cookies[i].trim();
       const cookieName = cookie.split('=')[0];
-      if(cookieName.startsWith('btab_') || cookieName === 'ab-advanced-id' || cookieName === 'absttimer'){
+      if(cookieName.startsWith('btab_') || cookieName === 'ab-advanced-id'){
         abstDeleteCookie(cookieName);
       }
     } 
@@ -5780,14 +3616,14 @@ function abstForgetMe(){
     // Also clear from localStorage and sessionStorage
     const storageKeys = Object.keys(localStorage);
     for(let i = 0; i < storageKeys.length; i++){
-      if(storageKeys[i].startsWith('btab_') ||  storageKeys[i] === 'ab-advanced-id' || storageKeys[i] === 'absttimer'){
+      if(storageKeys[i].startsWith('btab_') ||  storageKeys[i] === 'ab-advanced-id'){
         localStorage.removeItem(storageKeys[i]);
       }
     }
     
     const sessionKeys = Object.keys(sessionStorage);
     for(let i = 0; i < sessionKeys.length; i++){
-      if(sessionKeys[i].startsWith('btab_') || sessionKeys[i] === 'ab-advanced-id' || sessionKeys[i] === 'absttimer'){
+      if(sessionKeys[i].startsWith('btab_') || sessionKeys[i] === 'ab-advanced-id'){
         sessionStorage.removeItem(sessionKeys[i]);
       }
     }

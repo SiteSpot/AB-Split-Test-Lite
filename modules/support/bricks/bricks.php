@@ -14,7 +14,7 @@ class BT_BB_AB_Bricks
     add_filter('bricks/element/render_attributes',[$this,'add_bricks_attributes'],10,3);
 
     //get experiments
-    add_action( 'wp_ajax_all_experiments', [$this,'all_ab_tests_json'] );
+    add_action( 'wp_ajax_abst_all_experiments', [$this,'all_ab_tests_json'] );
 
     //add to all elements
     $this->addToBricks();
@@ -73,9 +73,9 @@ function add_bricks_attributes($attributes, $key, $element){
 
   function bricks_filter_builder_elements( $elements ) {
 
-    $stored = get_option('ab_bricks_elements');
+    $stored = get_option('abst_bricks_elements');
     if ($stored !== $elements) {
-        update_option('ab_bricks_elements', $elements);
+        update_option('abst_bricks_elements', $elements);
     }
     return $elements;
 
@@ -84,7 +84,7 @@ function add_bricks_attributes($attributes, $key, $element){
 
   function addToBricks(){
 
-      $allBricks = get_option('ab_bricks_elements');
+      $allBricks = get_option('abst_bricks_elements');
 
       if(!empty($allBricks))
       {

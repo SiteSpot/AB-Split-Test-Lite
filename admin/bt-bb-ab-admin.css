@@ -3851,3 +3851,77 @@ div#wpfooter {
 label.conversion_page_selector .select2-container {
   max-width: 25rem;
 }
+
+/* Logs screen */
+.abst-logs-wrap {
+max-width: 1200px;
+}
+.abst-logs-wrap .abst-page-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
+}
+.abst-logs-wrap .abst-page-header h1 {
+font-size: 24px;
+font-weight: 600;
+color: #1e293b;
+margin: 0;
+}
+.abst-logs-info {
+background: #f8fafc;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 16px 20px;
+margin-bottom: 16px;
+}
+.abst-logs-info p {
+margin: 0 0 8px 0;
+color: #475569;
+font-size: 14px;
+}
+.abst-logs-info p:last-child {
+margin-bottom: 0;
+}
+.abst-logs-info a {
+color: #3b82f6;
+text-decoration: none;
+}
+.abst-logs-info a:hover {
+text-decoration: underline;
+}
+.abst-logs-actions {
+margin-bottom: 16px;
+display: flex;
+gap: 8px;
+}
+.abst-logs-container {
+background: #1e293b;
+border-radius: 8px;
+padding: 20px;
+max-height: 600px;
+overflow-y: auto;
+}
+.abst-logs-container pre {
+margin: 0;
+font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+font-size: 12px;
+line-height: 1.6;
+color: #e2e8f0;
+white-space: pre-wrap;
+word-wrap: break-word;
+}
+.abst-logs-container .log-info {
+color: #60a5fa;
+}
+.abst-logs-container .log-warning {
+color: #fbbf24;
+}
+.abst-logs-container .log-error {
+color: #f87171;
+}
+.abst-logs-empty {
+color: #94a3b8;
+font-style: italic;
+margin: 0;
+}

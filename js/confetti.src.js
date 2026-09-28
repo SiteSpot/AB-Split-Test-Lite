@@ -1,6 +1,9 @@
-// canvas-confetti v1.4.0 built on 2021-03-10T12:32:33.488Z
+/*! canvas-confetti v1.9.4 | ISC License | Copyright (c) 2020, Kiril Vatev | https://github.com/catdad/canvas-confetti */
+// canvas-confetti v1.9.4 built on 2025-10-25T05:14:56.640Z
 !(function (window, module) {
 // source content
+/* globals Map */
+
 (function main(global, module, isWorker, workerSize) {
   var canUseWorker = !!(
     global.Worker &&
@@ -12,6 +15,26 @@
     global.HTMLCanvasElement.prototype.transferControlToOffscreen &&
     global.URL &&
     global.URL.createObjectURL);
+
+  var canUsePaths = typeof Path2D === 'function' && typeof DOMMatrix === 'function';
+  var canDrawBitmap = (function () {
+    // this mostly supports ssr
+    if (!global.OffscreenCanvas) {
+      return false;
+    }
+
+    try {
+      var canvas = new OffscreenCanvas(1, 1);
+      var ctx = canvas.getContext('2d');
+      ctx.fillRect(0, 0, 1, 1);
+      var bitmap = canvas.transferToImageBitmap();
+      ctx.createPattern(bitmap, 'no-repeat');
+    } catch (e) {
+      return false;
+    }
+
+    return true;
+  })();
 
   function noop() {}
 
@@ -29,6 +52,36 @@
 
     return null;
   }
+
+  var bitmapMapper = (function (skipTransform, map) {
+    // see https://github.com/catdad/canvas-confetti/issues/209
+    // creating canvases is actually pretty expensive, so we should create a
+    // 1:1 map for bitmap:canvas, so that we can animate the confetti in
+    // a performant manner, but also not store them forever so that we don't
+    // have a memory leak
+    return {
+      transform: function(bitmap) {
+        if (skipTransform) {
+          return bitmap;
+        }
+
+        if (map.has(bitmap)) {
+          return map.get(bitmap);
+        }
+
+        var canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0);
+
+        map.set(bitmap, canvas);
+
+        return canvas;
+      },
+      clear: function () {
+        map.clear();
+      }
+    };
+  })(canDrawBitmap, new Map());
 
   var raf = (function () {
     var TIME = Math.floor(1000 / 60);
@@ -102,6 +155,9 @@
             worker.removeEventListener('message', workerDone);
 
             prom = null;
+
+            bitmapMapper.clear();
+
             done();
             resolve();
           }
@@ -142,7 +198,7 @@
           '      }',
           '    });',
           '  } else if (msg.data.reset) {',
-          '    CONFETTI.reset();',
+          '    CONFETTI && CONFETTI.reset();',
           '  } else if (msg.data.resize) {',
           '    SIZE.width = msg.data.resize.width;',
           '    SIZE.height = msg.data.resize.height;',
@@ -157,7 +213,7 @@
           worker = new Worker(URL.createObjectURL(new Blob([code])));
         } catch (e) {
           // eslint-disable-next-line no-console
-          typeof console !== undefined && typeof console.warn === 'function' ? console.warn('🎊 Could not load worker', e) : null;
+          typeof console !== 'undefined' && typeof console.warn === 'function' ? console.warn('🎊 Could not load worker', e) : null;
 
           return null;
         }
@@ -290,37 +346,51 @@
       x: opts.x,
       y: opts.y,
       wobble: Math.random() * 10,
+      wobbleSpeed: Math.min(0.11, Math.random() * 0.1 + 0.05),
       velocity: (opts.startVelocity * 0.5) + (Math.random() * opts.startVelocity),
       angle2D: -radAngle + ((0.5 * radSpread) - (Math.random() * radSpread)),
-      tiltAngle: Math.random() * Math.PI,
+      tiltAngle: (Math.random() * (0.75 - 0.25) + 0.25) * Math.PI,
       color: opts.color,
       shape: opts.shape,
       tick: 0,
       totalTicks: opts.ticks,
       decay: opts.decay,
       drift: opts.drift,
-      random: Math.random() + 5,
+      random: Math.random() + 2,
       tiltSin: 0,
       tiltCos: 0,
       wobbleX: 0,
       wobbleY: 0,
       gravity: opts.gravity * 3,
       ovalScalar: 0.6,
-      scalar: opts.scalar
+      scalar: opts.scalar,
+      flat: opts.flat
     };
   }
 
   function updateFetti(context, fetti) {
     fetti.x += Math.cos(fetti.angle2D) * fetti.velocity + fetti.drift;
     fetti.y += Math.sin(fetti.angle2D) * fetti.velocity + fetti.gravity;
-    fetti.wobble += 0.1;
     fetti.velocity *= fetti.decay;
-    fetti.tiltAngle += 0.1;
-    fetti.tiltSin = Math.sin(fetti.tiltAngle);
-    fetti.tiltCos = Math.cos(fetti.tiltAngle);
-    fetti.random = Math.random() + 5;
-    fetti.wobbleX = fetti.x + ((10 * fetti.scalar) * Math.cos(fetti.wobble));
-    fetti.wobbleY = fetti.y + ((10 * fetti.scalar) * Math.sin(fetti.wobble));
+
+    if (fetti.flat) {
+      fetti.wobble = 0;
+      fetti.wobbleX = fetti.x + (10 * fetti.scalar);
+      fetti.wobbleY = fetti.y + (10 * fetti.scalar);
+
+      fetti.tiltSin = 0;
+      fetti.tiltCos = 0;
+      fetti.random = 1;
+    } else {
+      fetti.wobble += fetti.wobbleSpeed;
+      fetti.wobbleX = fetti.x + ((10 * fetti.scalar) * Math.cos(fetti.wobble));
+      fetti.wobbleY = fetti.y + ((10 * fetti.scalar) * Math.sin(fetti.wobble));
+
+      fetti.tiltAngle += 0.1;
+      fetti.tiltSin = Math.sin(fetti.tiltAngle);
+      fetti.tiltCos = Math.cos(fetti.tiltAngle);
+      fetti.random = Math.random() + 2;
+    }
 
     var progress = (fetti.tick++) / fetti.totalTicks;
 
@@ -330,12 +400,74 @@
     var y2 = fetti.wobbleY + (fetti.random * fetti.tiltSin);
 
     context.fillStyle = 'rgba(' + fetti.color.r + ', ' + fetti.color.g + ', ' + fetti.color.b + ', ' + (1 - progress) + ')';
+
     context.beginPath();
 
-    if (fetti.shape === 'circle') {
+    if (canUsePaths && fetti.shape.type === 'path' && typeof fetti.shape.path === 'string' && Array.isArray(fetti.shape.matrix)) {
+      context.fill(transformPath2D(
+        fetti.shape.path,
+        fetti.shape.matrix,
+        fetti.x,
+        fetti.y,
+        Math.abs(x2 - x1) * 0.1,
+        Math.abs(y2 - y1) * 0.1,
+        Math.PI / 10 * fetti.wobble
+      ));
+    } else if (fetti.shape.type === 'bitmap') {
+      var rotation = Math.PI / 10 * fetti.wobble;
+      var scaleX = Math.abs(x2 - x1) * 0.1;
+      var scaleY = Math.abs(y2 - y1) * 0.1;
+      var width = fetti.shape.bitmap.width * fetti.scalar;
+      var height = fetti.shape.bitmap.height * fetti.scalar;
+
+      var matrix = new DOMMatrix([
+        Math.cos(rotation) * scaleX,
+        Math.sin(rotation) * scaleX,
+        -Math.sin(rotation) * scaleY,
+        Math.cos(rotation) * scaleY,
+        fetti.x,
+        fetti.y
+      ]);
+
+      // apply the transform matrix from the confetti shape
+      matrix.multiplySelf(new DOMMatrix(fetti.shape.matrix));
+
+      var pattern = context.createPattern(bitmapMapper.transform(fetti.shape.bitmap), 'no-repeat');
+      pattern.setTransform(matrix);
+
+      context.globalAlpha = (1 - progress);
+      context.fillStyle = pattern;
+      context.fillRect(
+        fetti.x - (width / 2),
+        fetti.y - (height / 2),
+        width,
+        height
+      );
+      context.globalAlpha = 1;
+    } else if (fetti.shape === 'circle') {
       context.ellipse ?
         context.ellipse(fetti.x, fetti.y, Math.abs(x2 - x1) * fetti.ovalScalar, Math.abs(y2 - y1) * fetti.ovalScalar, Math.PI / 10 * fetti.wobble, 0, 2 * Math.PI) :
         ellipse(context, fetti.x, fetti.y, Math.abs(x2 - x1) * fetti.ovalScalar, Math.abs(y2 - y1) * fetti.ovalScalar, Math.PI / 10 * fetti.wobble, 0, 2 * Math.PI);
+    } else if (fetti.shape === 'star') {
+      var rot = Math.PI / 2 * 3;
+      var innerRadius = 4 * fetti.scalar;
+      var outerRadius = 8 * fetti.scalar;
+      var x = fetti.x;
+      var y = fetti.y;
+      var spikes = 5;
+      var step = Math.PI / spikes;
+
+      while (spikes--) {
+        x = fetti.x + Math.cos(rot) * outerRadius;
+        y = fetti.y + Math.sin(rot) * outerRadius;
+        context.lineTo(x, y);
+        rot += step;
+
+        x = fetti.x + Math.cos(rot) * innerRadius;
+        y = fetti.y + Math.sin(rot) * innerRadius;
+        context.lineTo(x, y);
+        rot += step;
+      }
     } else {
       context.moveTo(Math.floor(fetti.x), Math.floor(fetti.y));
       context.lineTo(Math.floor(fetti.wobbleX), Math.floor(y1));
@@ -360,6 +492,7 @@
         animationFrame = destroy = null;
 
         context.clearRect(0, 0, size.width, size.height);
+        bitmapMapper.clear();
 
         done();
         resolve();
@@ -417,6 +550,7 @@
   function confettiCannon(canvas, globalOpts) {
     var isLibCanvas = !canvas;
     var allowResize = !!prop(globalOpts || {}, 'resize');
+    var hasResizeEventRegistered = false;
     var globalDisableForReducedMotion = prop(globalOpts, 'disableForReducedMotion', Boolean);
     var shouldUseWorker = canUseWorker && !!prop(globalOpts || {}, 'useWorker');
     var worker = shouldUseWorker ? getWorker() : null;
@@ -437,6 +571,7 @@
       var ticks = prop(options, 'ticks', Number);
       var shapes = prop(options, 'shapes');
       var scalar = prop(options, 'scalar');
+      var flat = !!prop(options, 'flat');
       var origin = getOrigin(options);
 
       var temp = particleCount;
@@ -459,7 +594,8 @@
             decay: decay,
             gravity: gravity,
             drift: drift,
-            scalar: scalar
+            scalar: scalar,
+            flat: flat
           })
         );
       }
@@ -545,17 +681,21 @@
         animationObj = null;
 
         if (allowResize) {
+          hasResizeEventRegistered = false;
           global.removeEventListener('resize', onResize);
         }
 
         if (isLibCanvas && canvas) {
-          document.body.removeChild(canvas);
+          if (document.body.contains(canvas)) {
+            document.body.removeChild(canvas);
+          }
           canvas = null;
           initialized = false;
         }
       }
 
-      if (allowResize) {
+      if (allowResize && !hasResizeEventRegistered) {
+        hasResizeEventRegistered = true;
         global.addEventListener('resize', onResize, false);
       }
 
@@ -579,8 +719,156 @@
     return fire;
   }
 
-  module.exports = confettiCannon(null, { useWorker: true, resize: true });
+  // Make default export lazy to defer worker creation until called.
+  var defaultFire;
+  function getDefaultFire() {
+    if (!defaultFire) {
+      defaultFire = confettiCannon(null, { useWorker: true, resize: true });
+    }
+    return defaultFire;
+  }
+
+  function transformPath2D(pathString, pathMatrix, x, y, scaleX, scaleY, rotation) {
+    var path2d = new Path2D(pathString);
+
+    var t1 = new Path2D();
+    t1.addPath(path2d, new DOMMatrix(pathMatrix));
+
+    var t2 = new Path2D();
+    // see https://developer.mozilla.org/en-US/docs/Web/API/DOMMatrix/DOMMatrix
+    t2.addPath(t1, new DOMMatrix([
+      Math.cos(rotation) * scaleX,
+      Math.sin(rotation) * scaleX,
+      -Math.sin(rotation) * scaleY,
+      Math.cos(rotation) * scaleY,
+      x,
+      y
+    ]));
+
+    return t2;
+  }
+
+  function shapeFromPath(pathData) {
+    if (!canUsePaths) {
+      throw new Error('path confetti are not supported in this browser');
+    }
+
+    var path, matrix;
+
+    if (typeof pathData === 'string') {
+      path = pathData;
+    } else {
+      path = pathData.path;
+      matrix = pathData.matrix;
+    }
+
+    var path2d = new Path2D(path);
+    var tempCanvas = document.createElement('canvas');
+    var tempCtx = tempCanvas.getContext('2d');
+
+    if (!matrix) {
+      // attempt to figure out the width of the path, up to 1000x1000
+      var maxSize = 1000;
+      var minX = maxSize;
+      var minY = maxSize;
+      var maxX = 0;
+      var maxY = 0;
+      var width, height;
+
+      // do some line skipping... this is faster than checking
+      // every pixel and will be mostly still correct
+      for (var x = 0; x < maxSize; x += 2) {
+        for (var y = 0; y < maxSize; y += 2) {
+          if (tempCtx.isPointInPath(path2d, x, y, 'nonzero')) {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+
+      width = maxX - minX;
+      height = maxY - minY;
+
+      var maxDesiredSize = 10;
+      var scale = Math.min(maxDesiredSize/width, maxDesiredSize/height);
+
+      matrix = [
+        scale, 0, 0, scale,
+        -Math.round((width/2) + minX) * scale,
+        -Math.round((height/2) + minY) * scale
+      ];
+    }
+
+    return {
+      type: 'path',
+      path: path,
+      matrix: matrix
+    };
+  }
+
+  function shapeFromText(textData) {
+    var text,
+        scalar = 1,
+        color = '#000000',
+        // see https://nolanlawson.com/2022/04/08/the-struggle-of-using-native-emoji-on-the-web/
+        fontFamily = '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", "Twemoji Mozilla", "system emoji", sans-serif';
+
+    if (typeof textData === 'string') {
+      text = textData;
+    } else {
+      text = textData.text;
+      scalar = 'scalar' in textData ? textData.scalar : scalar;
+      fontFamily = 'fontFamily' in textData ? textData.fontFamily : fontFamily;
+      color = 'color' in textData ? textData.color : color;
+    }
+
+    // all other confetti are 10 pixels,
+    // so this pixel size is the de-facto 100% scale confetti
+    var fontSize = 10 * scalar;
+    var font = '' + fontSize + 'px ' + fontFamily;
+
+    var canvas = new OffscreenCanvas(fontSize, fontSize);
+    var ctx = canvas.getContext('2d');
+
+    ctx.font = font;
+    var size = ctx.measureText(text);
+    var width = Math.ceil(size.actualBoundingBoxRight + size.actualBoundingBoxLeft);
+    var height = Math.ceil(size.actualBoundingBoxAscent + size.actualBoundingBoxDescent);
+
+    var padding = 2;
+    var x = size.actualBoundingBoxLeft + padding;
+    var y = size.actualBoundingBoxAscent + padding;
+    width += padding + padding;
+    height += padding + padding;
+
+    canvas = new OffscreenCanvas(width, height);
+    ctx = canvas.getContext('2d');
+    ctx.font = font;
+    ctx.fillStyle = color;
+
+    ctx.fillText(text, x, y);
+
+    var scale = 1 / scalar;
+
+    return {
+      type: 'bitmap',
+      // TODO these probably need to be transfered for workers
+      bitmap: canvas.transferToImageBitmap(),
+      matrix: [scale, 0, 0, scale, -width * scale / 2, -height * scale / 2]
+    };
+  }
+
+  module.exports = function() {
+    return getDefaultFire().apply(this, arguments);
+  };
+  module.exports.reset = function() {
+    getDefaultFire().reset();
+  };
   module.exports.create = confettiCannon;
+  module.exports.shapeFromPath = shapeFromPath;
+  module.exports.shapeFromText = shapeFromText;
 }((function () {
   if (typeof window !== 'undefined') {
     return window;

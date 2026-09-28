@@ -1,4 +1,4 @@
-/*! shepherd.js 11.2.0 */
+/*! shepherd.js 11.2.0 | MIT License | Copyright (c) 2021 | https://github.com/shipshapecode/shepherd */
 
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :

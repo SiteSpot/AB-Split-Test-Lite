@@ -100,14 +100,6 @@ class ABST_Gutenberg
     	wp_localize_script( 'bt-gutenberg', 'bt_gutenberg', [
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
 			'experiments' 		=> json_encode(apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'all' ) )),
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-			'editor_html' 		=> apply_filters( 'abst_experiments_conversion_html', apply_filters( 'bt_experiments_conversion_html', '' ) ),
-			'conversion_fields' => json_encode( BtConversionModule::get_fields() ),
-			'nonce' 			=> wp_create_nonce('bt_gutenberg_ab_test_html'),
-			'shortcode_name'	=> BT_BB_AB_Supports::$shortcode_name,
-			'actions' 			=> [
-				'render_ab_test_html' => 'render_ab_test_html'
-			],
 			'ajax_url'			=> admin_url( "admin-ajax.php" ),
 			'admin_url'			=> get_admin_url(),
 			'blocks_list_nonce'	=> wp_create_nonce('abst_blocks_experiment_list')

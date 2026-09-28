@@ -23,33 +23,6 @@
     gap: 20px;
 }
 
-/* Upgrade Nudge */
-.abst-session-upgrade-nudge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: #f0f6fc;
-    border: 1px solid #c3d4e7;
-    border-radius: 4px;
-    font-size: 12.5px;
-    color: #1d2327;
-    line-height: 1.4;
-}
-
-.abst-session-upgrade-nudge a {
-    flex-shrink: 0;
-    margin-left: auto;
-    color: #2271b1;
-    text-decoration: none;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.abst-session-upgrade-nudge a:hover {
-    color: #135e96;
-}
-
 /* Session List */
 .abst-session-list {
     background: #fff;

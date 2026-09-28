@@ -15,7 +15,7 @@ function abst_rest_update_test_settings($request) {
     global $btab;
 
     $params = abst_normalize_api_input_params($request->get_json_params());
-    $params = abst_lite_apply_test_limits($params);
+    $params = abst_drop_unsupported_test_params($params);
     $guard_result = abst_apply_conversion_order_value_guard($params);
     $params = $guard_result['params'];
     $validation_warnings = $guard_result['warnings'];
@@ -418,7 +418,6 @@ function abst_rest_update_test_settings($request) {
         'success' => true,
         'test_id' => $test_id,
         'conversion_type' => $canonical_conversion_type,
-        'subgoals' => abst_storage_subgoals_to_api(get_post_meta($test_id, 'goals', true)),
         'applied_settings' => $applied_settings,
         'preview_urls' => $details['preview_urls'] ?? [],
         'test' => $details,

@@ -202,7 +202,7 @@
         magicTour.addStep({
             name: 'magic-goals',
             title: 'Set Your Goal',
-            text: 'Choose what you want to improve. This could be a purchase, form submission, page visit, or button click.',
+            text: 'Choose the page visitors reach when they convert, such as a thank-you or order-complete page.',
             attachTo: {
                 element: '.abst-goals-column',
                 on: 'left'

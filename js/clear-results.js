@@ -4,7 +4,7 @@ jQuery(document).ready(function(){
     event.preventDefault();
     if (jQuery('#restart-confirm').val().toLowerCase() == jQuery('#title').val().toLowerCase()) {
       var data = {
-        'action': 'bt_clear_experiment_results',
+        'action': 'abst_clear_experiment_results',
         'eid': eid,
         'bt_action': 'clear',
         'nonce': bt_exturl.clear_results_nonce,

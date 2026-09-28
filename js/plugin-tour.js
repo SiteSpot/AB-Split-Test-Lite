@@ -73,7 +73,7 @@ jQuery(function ($) {
                 type: 'POST',
                 data: {
                     action: 'abst_remove_heatmap_data',
-                    nonce: abstAgencyHubVars.clearHeatmapNonce
+                    nonce: abstTourVars.clearHeatmapNonce
                 },
                 success: function(response) {
                     alert(response.data);
@@ -99,7 +99,7 @@ function wizard1(){
     tour.addStep({
         name: 'welcome',
         title: '3 minute test setup wizard.',
-        text: "Let's get started with a quick setup to unlock all the features you need for success. Click 'Next' to start.",
+        text: "Let's get started with a quick setup of the settings you need. Click 'Next' to start.",
         buttons: [
             {
                 action: tour.next,
@@ -127,27 +127,6 @@ function wizard1(){
         ]
     });
 
-    if(jQuery('.ab-settings-open-ai').length > 0) {
-        tour.addStep({
-            title: 'Open AI',
-            text: 'Want AI suggestions on how to improve your content? Enable Open AI Here.',
-            attachTo: {
-                element: '.ab-settings-open-ai',
-                on: 'top'
-            },
-            buttons: [
-                {
-                    action: tour.back,
-                    text: 'Back'
-                },
-                {
-                    action: tour.next,
-                    text: 'Next'
-                }
-            ]
-        });
-    }
-    
     if(jQuery('.ab-settings-webhooks').length > 0) {
         tour.addStep({
             title: 'Webhooks',
@@ -170,33 +149,6 @@ function wizard1(){
     }
 
 
-    if(jQuery('.free-notice').length)
-    {
-        tour.addStep({
-            title: 'Upgrade to Pro',
-            text: 'You are more likely to create a winning test if you test more variations. Upgrade to AB Split Test Pro for unlimited tests with unlimited variations.',
-            attachTo: {
-                element: '.free-notice',
-                on: 'top'
-            },
-            buttons: [
-                {
-                    action: tour.back,
-                    text: 'Back'
-                },
-                {
-                    action: function() {
-                        window.location.href = 'https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=limit-notice';
-                    },
-                    text: 'Upgrade'
-                },
-                {
-                    action: tour.next,
-                    text: 'Next'
-                }
-            ]
-        });
-    }
     tour.addStep({
         title: 'Save Settings',
         text: 'Remember to save your settings.',
@@ -292,27 +244,6 @@ function wizard3(){
             {
                 action: tour.next,
                 text: 'Get Started'
-            }
-        ]
-    });
-    tour.addStep({
-        title: 'Need ideas?',
-        text: 'The built in AI analysis can help you find ideas for your tests.',
-        attachTo: {
-            element: 'h1',
-            on: 'bottom'
-        },
-        buttons: [
-            {
-                action: tour.next,
-                text: 'I know what to test'
-            },
-            {
-                action: function() {
-                    // open https://absplittest.com/ai/?website_url=absplittest.com in a new tab with the current domain home page
-                    window.open(bt_adminurl + 'edit.php?post_type=bt_experiments&page=bt_bb_ab_insights');
-                },
-                text: 'Get ideas for ' + window.location.hostname
             }
         ]
     });
@@ -421,7 +352,7 @@ tour = Shepherd.activeTour;
 
     tour.addStep({
         title: 'Choose Conversion / Goal Type',
-        text: "This is the thing we're trying to optimize.<br> Choose a page load, purchase, form submission or other goal.",
+        text: "This is the thing we're trying to optimize.<br> Choose the page visitors reach when they convert, such as a thank-you page.",
         attachTo: {
             element: '.bt_experiments_inner_custom_box',
             on: 'top'
@@ -642,20 +573,6 @@ function wizard4(){
 }
 
 
-jQuery(function($){
-    $(document).on('change','.ab-settings-subsection.ab-test-post-types.freelimit input[name="selected_post_types[]"]',function(){
-      var $w=$(this).closest('.ab-settings-subsection.ab-test-post-types.freelimit'),
-          $c=$w.find('input[name="selected_post_types[]"]:checked');
-      if(this.checked && $c.length>2){
-        $(this).prop('checked',false);
-        if(!$w.find('.abst-freelimit-notice').length)
-          $w.append('<div class="notice notice-warning abst-freelimit-notice"><p><strong>You can only test on 2 post types. </strong><a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">Upgrade</a>, or uncheck a post type to add more.</p></div>');
-      }else if($c.length===1){
-        $w.find('.abst-freelimit-notice').remove();
-      }
-    });
-  });
-  
   // heatmap settings handler
   jQuery(document).ready(function() {
     jQuery('body').on('change', '#heatmap_all_pages', function() {

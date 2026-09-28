@@ -14,11 +14,6 @@ if (!defined('ABSPATH')) {
     <div class="abst-session-replay-container">
         <!-- Left Sidebar: Session List -->
         <div class="abst-session-sidebar">
-            <!-- Upgrade Nudge -->
-            <div class="abst-session-upgrade-nudge">
-                <span><?php esc_html_e('Upgrade for session filters and multi-page replay', 'ab-split-test-lite'); ?></span>
-                <a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank"><?php esc_html_e('Try now', 'ab-split-test-lite'); ?> &rarr;</a>
-            </div>
 
             <!-- Session List -->
             <div class="abst-session-list">

@@ -10,88 +10,32 @@ function abst_get_supported_test_types() {
 }
 
 function abst_get_supported_test_statuses() {
-    return ['idea', 'draft', 'publish', 'pending', 'complete'];
+    return ['draft', 'publish', 'pending', 'complete'];
 }
 
 function abst_get_supported_conversion_types() {
-    return [
-        'selector', 'link', 'url', 'page', 'time', 'scroll', 'text', 'block', 'javascript',
-        'advanced',
-    ];
+    return ['page'];
 }
 
-function abst_get_value_capable_conversion_types() {
-    return [
-        'javascript',
 
-        'advanced',
-    ];
-}
 
-function abst_conversion_type_supports_order_value($conversion_type) {
-    $conversion_type = abst_normalize_conversion_type($conversion_type);
-    return in_array($conversion_type, abst_get_value_capable_conversion_types(), true);
-}
+
 
 function abst_apply_conversion_order_value_guard($params) {
-    $warnings = [];
-
+    // Conversions are counted, not valued, so an order-value flag is dropped.
     if (!is_array($params)) {
-        return [
-            'params' => [],
-            'warnings' => $warnings,
-        ];
+        $params = [];
     }
-
-    if (!isset($params['conversion_use_order_value'])) {
-        return [
-            'params' => $params,
-            'warnings' => $warnings,
-        ];
-    }
-
-    $requested_order_value = !empty($params['conversion_use_order_value']);
-    if (!$requested_order_value) {
-        $params['conversion_use_order_value'] = false;
-
-        return [
-            'params' => $params,
-            'warnings' => $warnings,
-        ];
-    }
-
-    // Lite: revenue-weighted conversions are Pro-only.
-    $params['conversion_use_order_value'] = false;
-    $warnings[] = 'conversion_use_order_value is a Pro feature and was ignored. Conversions will be counted equally.';
+    unset($params['conversion_use_order_value']);
 
     return [
         'params' => $params,
-        'warnings' => $warnings,
+        'warnings' => [],
     ];
 }
 
 function abst_normalize_conversion_type($conversion_type) {
-    $conversion_type = sanitize_text_field((string) $conversion_type);
-
-    if ($conversion_type === 'click') {
-        $conversion_type = 'selector';
-    }
-
-    $legacy_map = [
-        'woo_order_received' => 'woo-order-received',
-        'woo_order_pay' => 'woo-order-pay',
-        'edd_purchase' => 'edd-purchase',
-        'surecart_order_paid' => 'surecart-order-paid',
-        'fluentcart_order_paid' => 'fluentcart-order-paid',
-        'wp_pizza_is_checkout' => 'wp-pizza-is-checkout',
-        'wp_pizza_is_order_history' => 'wp-pizza-is-order-history',
-    ];
-
-    if (isset($legacy_map[$conversion_type])) {
-        $conversion_type = $legacy_map[$conversion_type];
-    }
-
-    return $conversion_type;
+    return sanitize_text_field((string) $conversion_type);
 }
 
 function abst_normalize_test_status($status, $context = 'write') {
@@ -334,13 +278,6 @@ function abst_normalize_magic_definition($magic_definition) {
     return $magic_definition;
 }
 
-/** Only trusted writers may store unfiltered Magic content. CLI without a user
- * retains its existing administrator-equivalent configuration workflow. */
-function abst_can_write_unfiltered_magic() {
-    return current_user_can('unfiltered_html')
-        || (defined('WP_CLI') && WP_CLI && !get_current_user_id());
-}
-
 /** Balance selector syntax before placing it inside :is(). */
 function abst_magic_selector_is_balanced($selector) {
     if (!is_string($selector) || $selector === '' || strpos($selector, '/*') !== false || strpos($selector, '*/') !== false) {
@@ -369,7 +306,8 @@ function abst_magic_selector_is_balanced($selector) {
     return $quote === '' && empty($stack);
 }
 
-/** The two target guards a stored selector can carry (trusted / untrusted author). */
+/** The target guards a stored selector can carry: [0] is the older, looser guard,
+ * [1] the one applied now; both are listed so the older one can be unwrapped. */
 function abst_magic_selector_target_guards($type, $property) {
     $guards = [
         ':not(script,svg,math):not(script *,svg *,math *)',
@@ -435,7 +373,7 @@ function abst_prepare_magic_definition_for_write($definition) {
                 $type = $element['type'] ?? '';
                 $property = $element['property'] ?? '';
                 $guards = abst_magic_selector_target_guards($type, $property);
-                $safe_targets = abst_can_write_unfiltered_magic() ? $guards[0] : $guards[1];
+                $safe_targets = $guards[1];
                 $element['selector'] = ':is(' . abst_magic_selector_unwrap($selector, $guards) . ')' . $safe_targets;
             }
         }
@@ -555,22 +493,17 @@ function abst_magic_kses_allowed_html() {
 }
 }
 
-/** Content policy for users without unfiltered_html. */
+/** Content policy for every Magic test, whoever saves it: variations may only hold
+ * the HTML WordPress allows in post content (no scripts, event handlers or iframes). */
 function abst_validate_magic_write_content($definition, $index) {
-    if (abst_can_write_unfiltered_magic()) {
-        return true;
-    }
     $type = $definition['type'];
     $property = $definition['property'] ?? '';
-    // On multisite only network administrators hold unfiltered_html, so a site
-    // administrator told to "ask a site administrator" has nobody to ask.
-    $who = is_multisite() ? 'a network administrator' : 'a site administrator';
-    $error = function($reason, $variation_index = null) use ($definition, $index, $who) {
+    $error = function($reason, $variation_index = null) use ($definition, $index) {
         return new WP_Error(
-            'unfiltered_html_required',
+            'magic_content_not_allowed',
             abst_magic_element_label($definition, $index, $variation_index) . ': ' . $reason
-                . ' Ask ' . $who . ' to save it with you — your content is untouched, not silently stripped.',
-            ['status' => 403, 'field' => 'magic_definition.' . $index]
+                . ' Nothing was saved; change it and save again.',
+            ['status' => 400, 'field' => 'magic_definition.' . $index]
         );
     };
     if (!abst_magic_selector_is_balanced($definition['selector'])) {
@@ -581,11 +514,11 @@ function abst_validate_magic_write_content($definition, $index) {
         return $error('the ' . abst_magic_quote_for_message($type) . ' change type rearranges existing page elements.');
     }
     if ($type === 'attribute' && (!is_string($property) || !preg_match('/^(?:aria-[a-z-]+|title|alt|role|class|id|href|src|srcset|width|height|placeholder|value|disabled|checked|rel|target)$/D', $property))) {
-        return $error('the ' . abst_magic_quote_for_message($property) . ' attribute is outside the set this account can set'
+        return $error('the ' . abst_magic_quote_for_message($property) . ' attribute is not one Magic tests can set'
             . ' (aria-*, title, alt, role, class, id, href, src, srcset, width, height, placeholder, value, disabled, checked, rel, target).');
     }
     if ($type === 'style' && (!is_string($property) || !preg_match('/^[a-zA-Z][a-zA-Z-]*$/D', $property) || $property === 'cssText')) {
-        return $error('the ' . abst_magic_quote_for_message($property) . ' style property is not a single CSS property this account can set.');
+        return $error('the ' . abst_magic_quote_for_message($property) . ' style property is not a single CSS property Magic tests can set.');
     }
     foreach ($definition['variations'] as $variation_index => $value) {
         if ($value === 'original') { continue; }
@@ -594,7 +527,7 @@ function abst_validate_magic_write_content($definition, $index) {
         // renders. Pure re-encoding ("Fish & Chips" -> "Fish &amp; Chips",
         // attribute quoting) leaves the content exactly as safe as the filtered copy.
         if ($safe_html !== $value && !abst_magic_html_equivalent($value, $safe_html)) {
-            return $error(abst_magic_removed_markup_hint($value, $safe_html) . ' not on the list WordPress allows this account to save.', $variation_index);
+            return $error(abst_magic_removed_markup_hint($value, $safe_html) . ' not HTML WordPress allows in Magic tests.', $variation_index);
         }
         if (($type === 'image' || ($type === 'attribute' && in_array($property, ['href', 'src', 'srcset'], true)))
             && wp_kses_bad_protocol($value, $property === 'href' ? ['http', 'https', 'mailto', 'tel'] : ['http', 'https']) !== $value) {
@@ -702,110 +635,19 @@ function abst_validate_magic_definition($magic_definition) {
     return true;
 }
 
-function abst_lite_limit_magic_definition($magic_definition) {
-    if (is_string($magic_definition)) {
-        $decoded = json_decode($magic_definition, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $magic_definition = $decoded;
-        } else {
-            return $magic_definition;
-        }
-    }
-
-    if (!is_array($magic_definition)) {
-        return $magic_definition;
-    }
-
-    foreach ($magic_definition as $index => $definition) {
-        if (!is_array($definition)) {
-            continue;
-        }
-
-        if (!empty($definition['variations']) && is_array($definition['variations']) && count($definition['variations']) > 2) {
-            $definition['variations'] = array_slice($definition['variations'], 0, 2);
-        }
-
-        $magic_definition[$index] = $definition;
-    }
-
-    return $magic_definition;
-}
-
-function abst_lite_apply_test_limits($params) {
+/** Drop settings this plugin has no code for (sub-goals, revenue weighting,
+ * auto-completion, and goal types other than a page visit), so API callers
+ * can't store them. */
+function abst_drop_unsupported_test_params($params) {
     if (!is_array($params)) {
         return $params;
     }
 
-    if (isset($params['magic_definition'])) {
-        $params['magic_definition'] = abst_lite_limit_magic_definition($params['magic_definition']);
-    }
-
-    if (isset($params['css_variations'])) {
-        // Lite: cap at 2 (control + 1 variation)
-        $params['css_variations'] = min(2, max(1, intval($params['css_variations'])));
-    }
-
-    if (isset($params['variations']) && is_array($params['variations'])) {
-        $params['variations'] = array_slice(array_values($params['variations']), 0, 1);
-    }
-
-    if (isset($params['variation_labels']) && is_array($params['variation_labels'])) {
-        $params['variation_labels'] = array_slice(array_values($params['variation_labels']), 0, 1);
-    }
-
-    if (isset($params['variation_images']) && is_array($params['variation_images'])) {
-        $params['variation_images'] = array_slice(array_values($params['variation_images']), 0, 1);
-    }
-
-    unset($params['subgoals'], $params['goals']);
-    $params['autocomplete_on'] = false;
-
-    if (!empty($params['conversion_use_order_value'])) {
-        $params['conversion_use_order_value'] = false;
-    }
+    unset($params['subgoals'], $params['goals'], $params['autocomplete_on'], $params['conversion_use_order_value'],
+        $params['conversion_selector'], $params['conversion_url'], $params['conversion_time'], $params['conversion_scroll'],
+        $params['conversion_text'], $params['conversion_link_pattern']);
 
     return $params;
-}
-
-function abst_lite_active_test_count($exclude_test_id = 0) {
-    $args = [
-        'post_type' => 'bt_experiments',
-        'post_status' => 'publish',
-        'posts_per_page' => -1,
-        'fields' => 'ids',
-        'suppress_filters' => false,
-    ];
-
-    if ($exclude_test_id) {
-        $args['post__not_in'] = [intval($exclude_test_id)];
-    }
-
-    $posts = get_posts($args);
-    if (!is_array($posts)) {
-        return 0;
-    }
-
-    $count = 0;
-    foreach ($posts as $post_id) {
-        if (function_exists('abst_lite_is_sample_test') && abst_lite_is_sample_test($post_id)) {
-            continue;
-        }
-        $count++;
-    }
-
-    return $count;
-}
-
-function abst_lite_validate_active_test_limit($status = 'draft', $exclude_test_id = 0) {
-    if ($status !== 'publish') {
-        return true;
-    }
-
-    if (abst_lite_active_test_count($exclude_test_id) >= 1) {
-        return new WP_Error('lite_active_test_limit', 'AB Split Test Lite is limited to one active test. Save this test as draft or pause the existing active test first.', ['status' => 403]);
-    }
-
-    return true;
 }
 
 function abst_validate_test_payload($params, $mode = 'create') {
@@ -885,38 +727,7 @@ function abst_validate_test_payload($params, $mode = 'create') {
     return true;
 }
 
-/**
- * Validation helper for conversion parameters.
- *
- * @param string $conversion_type The conversion type being validated.
- * @param array  $params          The parameters array.
- * @return true|WP_Error True if valid, WP_Error if validation fails.
- */
-/**
- * Convert API subgoals format to internal storage format.
- * Input:  [ ['type' => 'scroll', 'value' => '50'], ... ]
- * Output: [ 1 => ['scroll' => '50'], ... ]
- *
- * @param array $subgoals
- * @return array
- */
-function abst_normalize_subgoals_to_storage($subgoals) {
-    if (!is_array($subgoals)) {
-        return [];
-    }
-    $goals = [];
-    $i = 1;
-    foreach ($subgoals as $subgoal) {
-        if (!is_array($subgoal) || empty($subgoal['type'])) {
-            continue;
-        }
-        $type  = sanitize_text_field((string) $subgoal['type']);
-        $value = isset($subgoal['value']) ? sanitize_text_field((string) $subgoal['value']) : '';
-        $goals[$i] = [$type => $value];
-        $i++;
-    }
-    return $goals;
-}
+
 
 /**
  * Convert internal storage format back to the API subgoals format.
@@ -942,155 +753,33 @@ function abst_storage_subgoals_to_api($goals) {
     return $result;
 }
 
-/**
- * Validate a subgoals array from API input.
- * Returns true on success, WP_Error on failure.
- *
- * @param mixed $subgoals
- * @return true|WP_Error
- */
-function abst_validate_subgoals($subgoals) {
-    if (!is_array($subgoals)) {
-        return new WP_Error('invalid_subgoals', 'subgoals must be an array of subgoal objects.', ['status' => 400, 'field' => 'subgoals']);
-    }
-    $supported = abst_get_supported_conversion_types();
-    foreach ($subgoals as $index => $subgoal) {
-        if (!is_array($subgoal)) {
-            return new WP_Error('invalid_subgoal_item', 'Each subgoal must be an object with a "type" field.', ['status' => 400, 'field' => 'subgoals.' . $index]);
-        }
-        if (empty($subgoal['type'])) {
-            return new WP_Error('missing_subgoal_type', 'Each subgoal requires a "type" field.', ['status' => 400, 'field' => 'subgoals.' . $index . '.type']);
-        }
-        $type = sanitize_text_field((string) $subgoal['type']);
-        if (!in_array($type, $supported, true)) {
-            return new WP_Error(
-                'invalid_subgoal_type',
-                'Subgoal type "' . $type . '" is not supported. Must be one of: ' . implode(', ', $supported),
-                ['status' => 400, 'field' => 'subgoals.' . $index . '.type']
-            );
-        }
-        // Require a value for types that need one
-        $needs_value = in_array($type, ['scroll', 'url', 'page', 'text', 'selector', 'link', 'time'], true);
-        if ($needs_value && (!isset($subgoal['value']) || $subgoal['value'] === '')) {
-            return new WP_Error(
-                'missing_subgoal_value',
-                'Subgoal type "' . $type . '" requires a "value" field.',
-                ['status' => 400, 'field' => 'subgoals.' . $index . '.value']
-            );
-        }
-        if ($type === 'scroll') {
-            $val = intval($subgoal['value']);
-            if ($val < 1 || $val > 100) {
-                return new WP_Error('invalid_subgoal_scroll', 'Scroll subgoal value must be between 1 and 100.', ['status' => 400, 'field' => 'subgoals.' . $index . '.value']);
-            }
-        }
-    }
-    return true;
-}
+
 
 function abst_validate_conversion_parameters($conversion_type, $params) {
     $params = abst_normalize_api_input_params($params);
     $conversion_type = abst_normalize_conversion_type($conversion_type);
 
-    if (!in_array($conversion_type, abst_get_supported_conversion_types(), true)) {
+    if ($conversion_type !== 'page') {
         return new WP_Error(
             'invalid_conversion_type',
-            'conversion_type must be one of: ' . implode(', ', abst_get_supported_conversion_types()) . '. Use "selector" instead of "click".',
+            'conversion_type must be "page": a conversion is counted when a visitor reaches conversion_page_id.',
             ['status' => 400, 'field' => 'conversion_type']
         );
     }
 
-    switch ($conversion_type) {
-        case 'selector':
-            if (empty($params['conversion_selector'])) {
-                return new WP_Error(
-                    'missing_conversion_selector',
-                    'conversion_selector is required when using "selector" conversion type. Please provide a CSS selector for the element to track (e.g., ".buy-button", "#checkout-btn").',
-                    ['status' => 400, 'field' => 'conversion_selector']
-                );
-            }
-            break;
-
-        case 'link':
-            if (empty($params['conversion_link_pattern'])) {
-                return new WP_Error(
-                    'missing_conversion_link_pattern',
-                    'conversion_link_pattern is required when using "link" conversion type. Please provide a link pattern to match (e.g., "checkout", "buy-now").',
-                    ['status' => 400, 'field' => 'conversion_link_pattern']
-                );
-            }
-            break;
-
-        case 'url':
-            if (empty($params['conversion_url'])) {
-                return new WP_Error(
-                    'missing_conversion_url',
-                    'conversion_url is required when using "url" conversion type. Please provide the URL path to track (e.g., "thank-you", "success"). This should be a relative path without the domain.',
-                    ['status' => 400, 'field' => 'conversion_url']
-                );
-            }
-            break;
-
-        case 'page':
-            if (empty($params['conversion_page_id'])) {
-                return new WP_Error(
-                    'missing_conversion_page_id',
-                    'conversion_page_id is required when using "page" conversion type. Please provide the WordPress page ID to track.',
-                    ['status' => 400, 'field' => 'conversion_page_id']
-                );
-            }
-            if (!is_numeric($params['conversion_page_id']) || intval($params['conversion_page_id']) <= 0) {
-                return new WP_Error(
-                    'invalid_conversion_page_id',
-                    'conversion_page_id must be a positive integer WordPress page ID.',
-                    ['status' => 400, 'field' => 'conversion_page_id']
-                );
-            }
-            break;
-
-        case 'time':
-            if (empty($params['conversion_time'])) {
-                return new WP_Error(
-                    'missing_conversion_time',
-                    'conversion_time is required when using "time" conversion type. Please provide the number of seconds (e.g., 30 for 30 seconds, 120 for 2 minutes).',
-                    ['status' => 400, 'field' => 'conversion_time']
-                );
-            }
-            if (!is_numeric($params['conversion_time']) || intval($params['conversion_time']) <= 0) {
-                return new WP_Error(
-                    'invalid_conversion_time',
-                    'conversion_time must be a positive integer number of seconds.',
-                    ['status' => 400, 'field' => 'conversion_time']
-                );
-            }
-            break;
-
-        case 'scroll':
-            if (empty($params['conversion_scroll'])) {
-                return new WP_Error(
-                    'missing_conversion_scroll',
-                    'conversion_scroll is required when using "scroll" conversion type. Please provide the scroll percentage (0-100, e.g., 75 for 75% scroll depth).',
-                    ['status' => 400, 'field' => 'conversion_scroll']
-                );
-            }
-            if (!is_numeric($params['conversion_scroll']) || intval($params['conversion_scroll']) < 0 || intval($params['conversion_scroll']) > 100) {
-                return new WP_Error(
-                    'invalid_conversion_scroll',
-                    'conversion_scroll must be an integer between 0 and 100.',
-                    ['status' => 400, 'field' => 'conversion_scroll']
-                );
-            }
-            break;
-
-        case 'text':
-            if (empty($params['conversion_text'])) {
-                return new WP_Error(
-                    'missing_conversion_text',
-                    'conversion_text is required when using "text" conversion type. Please provide the text string to detect (e.g., "Thank you for your purchase", "Order confirmed").',
-                    ['status' => 400, 'field' => 'conversion_text']
-                );
-            }
-            break;
+    if (empty($params['conversion_page_id'])) {
+        return new WP_Error(
+            'missing_conversion_page_id',
+            'conversion_page_id is required. Please provide the WordPress page ID to track.',
+            ['status' => 400, 'field' => 'conversion_page_id']
+        );
+    }
+    if (!is_numeric($params['conversion_page_id']) || intval($params['conversion_page_id']) <= 0) {
+        return new WP_Error(
+            'invalid_conversion_page_id',
+            'conversion_page_id must be a positive integer WordPress page ID.',
+            ['status' => 400, 'field' => 'conversion_page_id']
+        );
     }
 
     return true;

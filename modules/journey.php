@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  * ✅ Logs include: timestamp, page URL, test variation UUID, element info (selector/text), and click coordinates
 
- * ✅ Stores daily logs in `/wp-content/uploads/ab-split-test/journeys/`
+ * ✅ Stores daily logs in the uploads directory (`uploads/abst/journeys/`)
 
  * ✅ Filters out non-meaningful interactions with front-end logic (class or data attribute check)
 
@@ -49,7 +49,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  * ✅ Optional admin view with iframe + journey playback highlighting clicked elements
 
- * ✅ Supports filtering by test variation for agency analysis
+ * ✅ Supports filtering by test variation
 
  * ✅ Future-ready: logs can be parsed into heatmaps via heatmap.js
 
@@ -155,13 +155,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  if ( ! defined( 'ABST_JOURNEY_DIR' ) ) {
 
-     // Store journey logs in wp-content (protected by .htaccess)
-
-     // This is the WordPress standard approach used by WooCommerce, Wordfence, etc.
-
-     define( 'ABST_JOURNEY_DIR', WP_CONTENT_DIR . '/abst-journeys' );
+     // Journey logs live in a dedicated folder inside the uploads directory
+     // (protected by index.php + .htaccess). Normally already defined by the core file.
+     define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
 
  }
+
+/**
+ * Write the files that stop the journey folder being listed or read over the web.
+ *
+ * @return void
+ */
+function abst_protect_journey_dir() {
+    // Prevent directory listing
+    abst_put_contents( ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>' );
+    if ( ! file_exists( dirname( ABST_JOURNEY_DIR ) . '/index.php' ) ) {
+        abst_put_contents( dirname( ABST_JOURNEY_DIR ) . '/index.php', '<?php //silence is golden ?>' );
+    }
+
+    // Block direct file access (Apache/LiteSpeed). Nginx sites require a
+    // server-level rule: location ~* /abst/journeys/ { deny all; }
+    abst_put_contents( ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all' );
+}
+
+/**
+ * One-time move of journey logs from the folder earlier versions used
+ * (wp-content/abst-journeys) into ABST_JOURNEY_DIR in the uploads directory.
+ *
+ * @return void
+ */
+function abst_maybe_migrate_legacy_journey_dir() {
+    if ( get_option( 'abst_journey_dir_migrated' ) ) {
+        return;
+    }
+    update_option( 'abst_journey_dir_migrated', 1, false );
+
+    // Legacy location: only used here to find and move old data.
+    $legacy_dir = trailingslashit( WP_CONTENT_DIR ) . 'abst-journeys';
+    if ( ! is_dir( $legacy_dir ) || file_exists( ABST_JOURNEY_DIR ) || ! wp_mkdir_p( dirname( ABST_JOURNEY_DIR ) ) ) {
+        return;
+    }
+
+    global $wp_filesystem;
+    $fs_ready = (bool) $wp_filesystem;
+    if ( ! $fs_ready ) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        $fs_ready = WP_Filesystem();
+    }
+    if ( $fs_ready && $wp_filesystem && $wp_filesystem->move( $legacy_dir, ABST_JOURNEY_DIR ) ) {
+        abst_protect_journey_dir();
+        abst_log( 'Moved journey directory to uploads' );
+    } else {
+        abst_log( 'Failed to move legacy journey directory' );
+    }
+}
 
  
 
@@ -191,6 +238,12 @@ class ABST_Journeys {
 
 
 
+        //move logs from the old wp-content location (runs once)
+
+        abst_maybe_migrate_legacy_journey_dir();
+
+
+
         //create journey dir if it doesn't exist
 
         if (!file_exists(ABST_JOURNEY_DIR)) {
@@ -199,12 +252,7 @@ class ABST_Journeys {
 
                 abst_log('Created journey directory');
 
-                // Prevent directory listing
-                abst_put_contents(ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>');
-
-                // Block direct file access (Apache/LiteSpeed). Nginx sites require a
-                // server-level rule: location ~* /abst-journeys/ { deny all; }
-                abst_put_contents(ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all');
+                abst_protect_journey_dir();
 
             }
 

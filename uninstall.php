@@ -112,10 +112,10 @@ function abst_lite_uninstall_cleanup_current_site() {
 		'abst_plugin_version',
 		'abst_plugin_test_ideas',
 		'abst_delete_data_on_uninstall',
-		'bt_conversion_pages',
+		'abst_conversion_pages',
 		'bt_bb_ab_settings',
-		'ab_test_canonical',
-		'ab_bricks_elements',
+		'abst_test_canonical',
+		'abst_bricks_elements',
 	);
 	foreach ( $abst_option_names as $abst_option_name ) {
 		delete_option( $abst_option_name );
@@ -124,11 +124,13 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- options table cleanup on uninstall.
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'abst\\_%'" );
 
-	// Journey / heatmap / session-replay files. Both locations the plugin may use.
+	// Journey / heatmap / session-replay files: the current folder (uploads/abst,
+	// holding abst/journeys) and the legacy wp-content/abst-journeys folder that
+	// earlier versions used, in case it was never migrated.
 	$abst_upload_base = trailingslashit( wp_upload_dir()['basedir'] );
 	abst_lite_uninstall_delete_dir( $abst_upload_base . 'abst' );
 	if ( defined( 'WP_CONTENT_DIR' ) ) {
-		abst_lite_uninstall_delete_dir( WP_CONTENT_DIR . '/abst-journeys' );
+		abst_lite_uninstall_delete_dir( trailingslashit( WP_CONTENT_DIR ) . 'abst-journeys' );
 	}
 
 	// Debug log files, which live outside the abst directory: abst_log_<hash>.log
@@ -149,15 +151,11 @@ function abst_lite_uninstall_cleanup_current_site() {
  * @return bool
  */
 function abst_lite_uninstall_full_plugin_installed() {
-	if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
-		return false;
+	if ( ! function_exists( 'get_plugins' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
-	foreach ( (array) glob( WP_PLUGIN_DIR . '/*/bt-bb-ab.php' ) as $abst_candidate ) {
-		if ( ! is_string( $abst_candidate ) || ! is_readable( $abst_candidate ) ) {
-			continue;
-		}
-		$abst_candidate_data = get_file_data( $abst_candidate, array( 'domain' => 'Text Domain' ) );
-		if ( 'bt-bb-ab' === $abst_candidate_data['domain'] ) {
+	foreach ( get_plugins() as $abst_plugin_file => $abst_plugin_data ) {
+		if ( 'bt-bb-ab.php' === basename( $abst_plugin_file ) && isset( $abst_plugin_data['TextDomain'] ) && 'bt-bb-ab' === $abst_plugin_data['TextDomain'] ) {
 			return true;
 		}
 	}
