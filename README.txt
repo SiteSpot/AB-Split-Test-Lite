@@ -115,8 +115,8 @@ This plugin bundles the following open-source libraries:
 * Shepherd (shepherd.js) 11.2.0, MIT License, https://github.com/shipshapecode/shepherd
 * Tabulator 6.3.1, MIT License, https://github.com/olifolkerd/tabulator
 * heatmap.js 2.0.5, MIT License, https://github.com/pa7/heatmap.js
-* Awesomplete, MIT License, https://github.com/LeaVerou/awesomplete
-* modern-screenshot, MIT License, https://github.com/qq15725/modern-screenshot
+* Awesomplete 1.1.5, MIT License, https://github.com/LeaVerou/awesomplete
+* modern-screenshot 4.x, MIT License, https://github.com/qq15725/modern-screenshot
 
 = Help translate =
 
