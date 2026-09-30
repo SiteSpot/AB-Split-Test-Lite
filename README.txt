@@ -9,19 +9,19 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Self-hosted A/B and split testing for WordPress: unlimited tests and variations, heatmaps, session replays, page-builder controls, MCP and REST.
+Self-hosted A/B and split testing for WordPress: unlimited tests, heatmaps, session replays, page-builder controls, MCP and REST.
 
 == Description ==
 
 **A/B testing that runs entirely on your own WordPress site. No external account, no traffic meter, and no visitor data leaving your server.**
 
-AB Split Test Lite is a **self-hosted** A/B and split testing plugin for WordPress. Tests, visits, conversions and heatmaps are all stored in your own database. Run as many tests and variations as you like, on as much traffic as your site serves.
+AB Split Test Lite is a **self-hosted** A/B and split testing plugin for WordPress. Tests, visits, conversions and heatmaps are all stored in your own database. Run as many tests as you like, on as much traffic as your site serves.
 
 It is built on the WordPress **Abilities API**, so AI agents such as Claude Code, Cursor and Windsurf can create and run tests over **MCP (Model Context Protocol)**.
 
 = Features =
 
-* **Unlimited tests and variations.** Run as many tests at once as you need, each with as many variations as you like. Traffic is split evenly between them.
+* **Unlimited tests.** Run as many A/B tests at once as you need. Each test compares your original with one variation, and traffic is split evenly between them.
 * **Self-hosted.** Tests, tracking and reporting all run on your server.
 * **No traffic meter.** No "tested page view" limit and no per-visitor billing.
 * **Heatmaps and session replays on every page.** Click maps, scroll maps and session replays, stored on your own server. You choose how many days of data to keep.
@@ -36,9 +36,9 @@ It is built on the WordPress **Abilities API**, so AI agents such as Claude Code
 
 **Full-page (split URL).** Send traffic between completely different pages and measure which one converts.
 
-**On-page.** Tag sections or blocks as variations inside your page builder or the block editor.
+**On-page.** Tag a section or block as the original and another as the variation, inside your page builder or the block editor.
 
-**CSS.** Test design changes: each variation adds its own class to the page body, which your theme's CSS can style.
+**CSS.** Test design changes: visitors get either the original or the variation class on the page body, which your theme's CSS can style.
 
 = What you can test =
 
@@ -64,9 +64,12 @@ AB Split Test adds **native controls inside each builder**, so you build variati
 
 Each builder can also create a new test without leaving the editor.
 
-= Conversion goal =
+= Conversion goals =
 
-A conversion is counted when a visitor in the test reaches the page you choose, for example your thank-you, order-received or sign-up confirmation page.
+Pick what counts as a win for each test:
+
+* **Page visit**: a visitor in the test reaches the page you choose, for example your thank-you, order-received or sign-up confirmation page.
+* **Element click**: a visitor clicks an element you choose with a CSS selector, such as a buy, sign-up or call button.
 
 = Heatmaps, session replays and visitor journeys =
 
@@ -85,7 +88,7 @@ AB Split Test registers WordPress Abilities. Install the official WordPress MCP 
 * `get-test-details`: read a test's full configuration
 * `get-test-results`: pull visits, conversions and statistical confidence
 * `update-test-status`: start, pause or complete a test
-* `update-test-settings`: change the goal, targeting and variations
+* `update-test-settings`: change the goal, targeting and variation
 * `get-heatmap-data`: read aggregated click and scroll data for a page
 * `list-heatmap-pages`: list the pages that have heatmap data
 
@@ -103,7 +106,7 @@ AB Split Test registers WordPress Abilities. Install the official WordPress MCP 
 
 = AB Split Test Pro =
 
-AB Split Test Pro is a separate plugin, available from [absplittest.com](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=pro), with more ways to measure a win: form submission goals, WooCommerce, Easy Digital Downloads and FluentCart purchase and revenue tracking, sub-goals for multi-step funnels, audiences and location targeting, automatic winner selection, AI test ideas, webhooks, email reports and WP-CLI commands. Your tests and results carry over if you switch.
+AB Split Test Pro is a separate plugin, available from [absplittest.com](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=pro), with multivariate tests (several variations per test) and more ways to measure a win: form submission goals, WooCommerce, Easy Digital Downloads and FluentCart purchase and revenue tracking, sub-goals for multi-step funnels, audiences and location targeting, automatic winner selection, AI test ideas, webhooks, email reports and WP-CLI commands. Your tests and results carry over if you switch.
 
 = Third-party libraries =
 
@@ -143,9 +146,9 @@ AB Split Test is translation-ready. Contribute a translation for your language a
 
 Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside your WordPress install and store data on your own server. There is no external account and no SaaS backend.
 
-= How many tests and variations can I run? =
+= How many tests can I run? =
 
-As many as you like. There is no limit on active tests, variations or traffic.
+As many as you like, at the same time, with no limit on traffic. Each test is an A/B test: your original against one variation.
 
 = Can an AI agent like Claude run A/B tests on WordPress? =
 
@@ -157,7 +160,7 @@ AB Split Test adds native controls to Elementor, Bricks, Beaver Builder, Oxygen,
 
 = What counts as a conversion? =
 
-A visit to the page you choose, such as your thank-you page. To count form submissions or WooCommerce purchases, choose the page visitors land on afterwards (the form's thank-you page, or the WooCommerce order-received page).
+A visit to the page you choose, such as your thank-you page, or a click on an element you choose with a CSS selector, such as a buy button. To count form submissions or WooCommerce purchases, choose the page visitors land on afterwards (the form's thank-you page, or the WooCommerce order-received page).
 
 = How long is heatmap data kept? =
 
@@ -189,7 +192,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 
 == Screenshots ==
 
-1. The point-and-click Magic Bar: click any element on your page, type a variation, and choose the conversion page.
+1. The point-and-click Magic Bar: click any element on your page, type a variation, and choose the goal.
 2. An AI agent running a test over MCP: from a one-line request, Claude finds the buttons, builds the variation and launches the test.
 3. Test results with uplift, confidence and conversion rates, calculated on your own server.
 4. Click heatmaps built from your own visitors, recorded on every page.
@@ -203,7 +206,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 
 = 1.0.0 =
 * First WordPress.org release of AB Split Test Lite, built on the AB Split Test engine used since 2019.
-* Self-hosted point-and-click, full-page, on-page and CSS tests, with unlimited tests and variations.
+* Self-hosted point-and-click, full-page, on-page and CSS A/B tests, with no limit on the number of tests.
 * MCP tools (via the WordPress Abilities API) and REST API for AI-agent and programmatic control.
 * Heatmaps and session replays on every page, with configurable data retention.
 * Native page-builder controls for Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg.
@@ -212,4 +215,4 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 == Upgrade Notice ==
 
 = 1.0.0 =
-First public release of AB Split Test Lite: self-hosted A/B testing with unlimited tests and variations, AI-agent (MCP) control, point-and-click editing, heatmaps and session replays.
+First public release of AB Split Test Lite: self-hosted A/B testing with unlimited tests, page-visit and click goals, AI-agent (MCP) control, point-and-click editing, heatmaps and session replays.

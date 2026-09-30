@@ -276,11 +276,12 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           <div class="ab-settings-subsection ab-settings-conversion-triggers">
             <label><strong>Conversion Goal</strong></label>
-            <p>A test counts a conversion when a visitor reaches a page you choose:</p>
+            <p>A test counts a conversion when a visitor does one of these:</p>
             <ul class="abst-trigger-list">
               <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Page or Post Visit</li>
+              <li class="abst-trigger-on"><span class="abst-trigger-check">&#10003;</span> Element Click (any CSS selector)</li>
             </ul>
-            <p>Choose the conversion page on each test.</p>
+            <p>Choose the goal on each test.</p>
           </div>
 
         </div><!-- end #tab-conversions -->
@@ -440,7 +441,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <li><strong>update-test-status</strong> - Change test status (publish, draft, pending, complete)</li>
 
-              <li><strong>update-test-settings</strong> - Update the conversion page and other settings on an existing test</li>
+              <li><strong>update-test-settings</strong> - Update the conversion goal and other settings on an existing test</li>
               <li><strong>get-test-details</strong> - Get the full configuration of a specific test</li>
 
               <li><strong>get-heatmap-data</strong> - Get click / scroll heatmap data for a page</li>
@@ -470,7 +471,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <li><strong>POST</strong> <code>/update-test-status</code> - Update test status</li>
 
-              <li><strong>POST</strong> <code>/update-test-settings</code> - Update the conversion page and settings</li>
+              <li><strong>POST</strong> <code>/update-test-settings</code> - Update the conversion goal and settings</li>
               <li><strong>GET</strong> <code>/test-details/{id}</code> - Get a test's full configuration</li>
 
               <li><strong>GET</strong> <code>/heatmap-data</code> - Aggregated heatmap / click / scroll data for a page</li>
@@ -490,7 +491,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <div style="margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 5px;">
 
-                <p><strong>Scenario:</strong> Create a magic test for the H1 headline on page ID 12 with 2 variations, counting a visit to the thank-you page (page ID 34) as the conversion.</p>
+                <p><strong>Scenario:</strong> Create a magic test for the H1 headline on page ID 12 with one variation, counting a visit to the thank-you page (page ID 34) as the conversion.</p>
 
                 
 
@@ -536,9 +537,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           "Original Headline",
 
-          "New Compelling Headline",
-
-          "Alternative Headline"
+          "New Compelling Headline"
 
         ]
 
@@ -602,9 +601,7 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
           'Original Headline',
 
-          'New Compelling Headline',
-
-          'Alternative Headline'
+          'New Compelling Headline'
 
         ]
 
@@ -634,9 +631,11 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
                   <li><strong>target_percentage:</strong> Percentage of visitors to include (0-100)</li>
 
-                  <li><strong>conversion_type:</strong> "page" - a conversion is counted when a visitor reaches the page in <strong>conversion_page_id</strong></li>
+                  <li><strong>conversion_type:</strong> "page" - a conversion is counted when a visitor reaches the page in <strong>conversion_page_id</strong>; "selector" - when a visitor clicks an element matching <strong>conversion_selector</strong></li>
 
-                  <li><strong>conversion_page_id:</strong> WordPress ID of the conversion page</li>
+                  <li><strong>conversion_page_id:</strong> WordPress ID of the conversion page (page goal)</li>
+
+                  <li><strong>conversion_selector:</strong> CSS selector of the element to click, e.g. <code>.buy-button</code> (selector goal)</li>
 
                   <li><strong>magic_definition:</strong> Array of elements to test with their variations</li>
 
@@ -644,13 +643,13 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
                   <li><strong>selector:</strong> CSS selector for the element to test</li>
 
-                  <li><strong>variations:</strong> Array of test variation strings only — do NOT include the control/original (it is always implicit)</li>
+                  <li><strong>variations:</strong> Two strings: the original text first, then the variation</li>
 
                 </ul>
 
                 
 
-                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. The control is always implicit for magic tests — do not include it in the variations array. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
+                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, the first entry in variations is the original text and the second is the variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
 
               </div>
 
@@ -885,7 +884,7 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
             <p><strong>Create a Magic Test:</strong></p>
 
-            <p><em>"Create a magic A/B test called 'Homepage Headline Test' that tests the h1 element with two variations: 'New Headline A' and 'New Headline B'. Count a visit to the thank-you page as the conversion."</em></p>
+            <p><em>"Create a magic A/B test called 'Homepage Headline Test' that tests the h1 element against a new headline, 'Start Free Today'. Count a visit to the thank-you page as the conversion."</em></p>
 
             
 

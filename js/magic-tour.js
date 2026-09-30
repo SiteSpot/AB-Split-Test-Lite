@@ -180,7 +180,7 @@
         magicTour.addStep({
             name: 'magic-toggle',
             title: 'Switch Variations',
-            text: 'Click here to toggle between your original and your new variation to preview both versions.',
+            text: 'Click here to switch between the original and your variation to preview both versions.',
             attachTo: {
                 element: '#version-value',
                 on: 'left'
@@ -202,7 +202,7 @@
         magicTour.addStep({
             name: 'magic-goals',
             title: 'Set Your Goal',
-            text: 'Choose the page visitors reach when they convert, such as a thank-you or order-complete page.',
+            text: 'Choose how a conversion is counted: a <strong>page visit</strong> (visitors reach a page such as a thank-you page) or an <strong>element click</strong> (visitors click an element such as a buy button).',
             attachTo: {
                 element: '.abst-goals-column',
                 on: 'left'

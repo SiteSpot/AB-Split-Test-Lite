@@ -143,15 +143,10 @@ function abst_rest_update_test_settings($request) {
         $params['magic_definition'] = $magic_definition_for_validation;
     }
 
-    if ($has_param('css_variations') && intval($params['css_variations']) < 1) {
-        return new WP_Error('invalid_css_variations', 'css_variations must be 1 or greater.', ['status' => 400, 'field' => 'css_variations']);
-    }
-
     $general_validation = abst_validate_test_payload(array_intersect_key($params, array_flip([
         'target_percentage',
         'target_device',
         'optimization_type',
-        'css_variations',
     ])), 'update');
     if (is_wp_error($general_validation)) {
         return $general_validation;
@@ -177,6 +172,10 @@ function abst_rest_update_test_settings($request) {
 
         if (empty($effective_variations)) {
             return new WP_Error('missing_variations', 'At least one variation page is required for full_page tests.', ['status' => 400, 'field' => 'variations']);
+        }
+
+        if (count($effective_variations) > 1) {
+            return new WP_Error('invalid_variation_count', 'A full page test compares the default page with one variation page: pass one page in variations.', ['status' => 400, 'field' => 'variations']);
         }
     }
 

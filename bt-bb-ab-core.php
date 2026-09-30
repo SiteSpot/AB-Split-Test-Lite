@@ -1818,7 +1818,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     //css test
 
-    $css_test_variations = intval($data['css_test_variations'] ?? 0);
+    // A CSS test adds one of two body classes: the original (-1) or the variation (-2).
+    $css_test_variations = intval($data['css_test_variations'] ?? 0) > 0 ? 2 : 0;
 
     update_post_meta( $post_id, 'css_test_variations', $css_test_variations );
 
@@ -1892,11 +1893,21 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    // The goal is a page visit: store the chosen page ID.
+    // The goal is a page visit (store the page ID) or an element click (store 'selector' and the CSS selector).
 
-    $conversion_page = intval($data['bt_experiments_conversion_page_selector'] ?? 0);
+    if (sanitize_text_field($data['bt_experiments_conversion_page'] ?? '') === 'selector') {
 
-    update_post_meta($post_id,'conversion_page', $conversion_page ? $conversion_page : '');
+      update_post_meta($post_id, 'conversion_page', 'selector');
+
+      update_post_meta($post_id, 'conversion_selector', sanitize_text_field($data['bt_experiments_conversion_selector'] ?? ''));
+
+    } else {
+
+      $conversion_page = intval($data['bt_experiments_conversion_page_selector'] ?? 0);
+
+      update_post_meta($post_id,'conversion_page', $conversion_page ? $conversion_page : '');
+
+    }
 
 
     $this->refresh_conversion_pages();
@@ -4099,20 +4110,14 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       // css test vars
 
-      $css_test_variations  = get_post_meta($pid,'css_test_variations',true);
-
-      if(empty($css_test_variations))
-
-        $css_test_variations = '2';      //not a test w 1
-
-      echo '<label class="css_test_variations" for="css_test_variations">Number of variations you want to test.</label><input class="css_test_variations" type="number" id="css_test_variations" min="1" max="2" name="css_test_variations" placeholder="2" value="' . esc_attr( $css_test_variations ) . '"  /><span class="css_test_variations" > variations</span>';
+      echo '<input type="hidden" id="css_test_variations" name="css_test_variations" value="2" />';
 
 
 
-      echo "<p class='css_test_variations'>The body will have one of the the following classes added. </p>";
+      echo "<p class='css_test_variations'>Each visitor's page body gets one of these classes: -1 shows the original, -2 the variation. Style the variation with -2 in your theme's CSS.</p>";
 
 
-      echo "<div class='css-test-helper-zone css_test_variations' style='display:flex; flex-wrap:wrap; gap:8px;'><code style='background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;'><span style='color:#64748b;'>body.</span>test-css-TESTID-1</code><code style='background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;'><span style='color:#64748b;'>body.</span>test-css-TESTID-2</code><code style='background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;'><span style='color:#64748b;'>body.</span>test-css-TESTID-3</code></div>";
+      echo "<div class='css-test-helper-zone css_test_variations' style='display:flex; flex-wrap:wrap; gap:8px;'><code style='background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;'><span style='color:#64748b;'>body.</span>test-css-TESTID-1</code><code style='background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;'><span style='color:#64748b;'>body.</span>test-css-TESTID-2</code></div>";
 
 
 
@@ -8201,7 +8206,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
       // Add an nonce field so we can check for it later.
       wp_nonce_field( 'myplugin_inner_custom_box', 'bt_experiments_inner_custom_box_nonce' );
 
-      $conversion_page = get_post_meta($post->ID,'conversion_page',true); // conversion page id
+      $conversion_page = get_post_meta($post->ID,'conversion_page',true); // page ID, or 'selector' for an element click
+
+      $conversion_selector = get_post_meta($post->ID,'conversion_selector',true);
+
+      $is_click_goal = ($conversion_page === 'selector');
 
       $allPublicPosts = abst_get_all_posts();
 
@@ -8209,12 +8218,14 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       echo '<p><label for="bt_experiments_conversion_page_selector">';
 
-      esc_html_e( "A conversion is counted when a visitor in the test reaches this page, for example a thank-you or order-complete page.", 'ab-split-test-lite' );
+      esc_html_e( "Choose what counts as a conversion: a visitor reaching a page (such as a thank-you or order-complete page), or clicking an element.", 'ab-split-test-lite' );
 
       echo '</label></p>';
 
-      // The goal is always a page visit; the select stays so the editor scripts keep working.
-      echo "<select id='bt_experiments_conversion_page' name='bt_experiments_conversion_page' style='display:none;'><option value='page' selected>" . esc_html__( 'Page or Post Visit', 'ab-split-test-lite' ) . "</option></select>";
+      echo "<select id='bt_experiments_conversion_page' name='bt_experiments_conversion_page'>"
+        . "<option value='page'" . selected( $is_click_goal, false, false ) . ">" . esc_html__( 'Page or post visit', 'ab-split-test-lite' ) . "</option>"
+        . "<option value='selector'" . selected( $is_click_goal, true, false ) . ">" . esc_html__( 'Element click', 'ab-split-test-lite' ) . "</option>"
+        . "</select>";
 
       echo '<label class="conversion_page_selector" for="bt_experiments_conversion_page_selector"><strong>Conversion Page</strong><BR>Choose the page that will trigger your test conversion on page load.<BR>';
 
@@ -8260,6 +8271,12 @@ function abst_cmp_by_conversion_rate($a, $b) {
       echo '</select></label>';
 
       echo '<a href="" id="bt_experiments_conversion_page_preview" target="_blank">view page →</a>';
+
+      // Element click: a click on anything matching the selector, or carrying the ab-click-convert-{id} class.
+      echo '<label class="conversion_selector_input" for="bt_experiments_conversion_selector"><strong>' . esc_html__( 'Element to click', 'ab-split-test-lite' ) . '</strong><br>'
+        . esc_html__( 'A CSS selector, for example .buy-button or #signup. Elements with this class also count:', 'ab-split-test-lite' )
+        . ' <code>ab-click-convert-' . esc_html( $post->ID ) . '</code></label>';
+      echo '<input class="conversion_selector_input" type="text" id="bt_experiments_conversion_selector" name="bt_experiments_conversion_selector" placeholder=".buy-button" value="' . esc_attr( $conversion_selector ) . '" />';
 
     }
 
@@ -11934,9 +11951,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $conversion_type_description =
 
-        'Conversion goal type. The only value is "page": a conversion is counted when a visitor in the test reaches conversion_page_id. ' .
+        'Conversion goal type: "page" counts a conversion when a visitor in the test reaches conversion_page_id (e.g. a thank-you or order-received page); ' .
 
-        'IMPORTANT: always ask the user which page counts as a conversion (for example a thank-you, order-received or sign-up confirmation page) before creating a test.';
+        '"selector" counts one when they click an element matching conversion_selector (e.g. a buy or sign-up button). ' .
+
+        'IMPORTANT: always ask the user what counts as a conversion before creating a test.';
 
       $meta = ['show_in_rest' => true, 'mcp' => ['public' => true]];
 
@@ -12099,7 +12118,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
                   'scope'      => ['type' => 'object', 'description' => 'Page scope: {"page_id": 42} or {"url": "path"} or wildcard {"page_id": "*"}'],
 
-                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Array of variation strings. The first entry (index 0) must be the original/control text. Subsequent entries are test variations. e.g. ["Original headline", "Variation B", "Variation C"]'],
+                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'maxItems' => 2, 'description' => 'Two strings: the original/control text first, then the variation. e.g. ["Original headline", "Variation B"]'],
 
                 ],
 
@@ -12111,17 +12130,18 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'default_page'     => ['type' => ['integer', 'string'], 'description' => 'For full_page tests: default page ID'],
 
-            'variations'       => ['type' => 'array', 'description' => 'For full_page tests: array of variation page IDs', 'items' => ['type' => ['integer', 'string']]],
+            'variations'       => ['type' => 'array', 'maxItems' => 1, 'description' => 'For full_page tests: the variation page ID, as a one-item array', 'items' => ['type' => ['integer', 'string']]],
 
             'variation_labels' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Optional labels for full_page variations, aligned by index with variations'],
 
             'variation_images' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Optional screenshot URLs for full_page variations, aligned by index with variations'],
 
-            'css_variations'   => ['type' => 'integer', 'description' => 'For css_test: number of variations (default: 2)'],
 
             'conversion_type'  => ['type' => 'string', 'enum' => $active_types, 'description' => $conversion_type_description],
 
             'conversion_page_id'      => ['type' => 'integer', 'description' => 'WordPress page ID for page conversion type'],
+
+            'conversion_selector'     => ['type' => 'string', 'description' => 'CSS selector for the selector (element click) conversion type. Example: ".buy-button"'],
 
             'target_percentage' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'description' => 'Percentage of traffic to include (default: 100)'],
 
@@ -12408,6 +12428,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'conversion_page_id'         => ['type' => 'integer', 'description' => 'Page ID for page conversion type'],
 
+            'conversion_selector'        => ['type' => 'string', 'description' => 'CSS selector for the selector (element click) conversion type'],
+
             'target_percentage'          => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'description' => 'Traffic allocation percentage'],
 
             'target_device'              => ['type' => 'string', 'enum' => ['all', 'desktop', 'mobile', 'tablet', 'desktop_tablet', 'tablet_mobile'], 'description' => 'Device targeting'],
@@ -12424,11 +12446,10 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'magic_definition'           => ['type' => 'array', 'description' => 'Replace the full magic test definition for magic tests'],
 
-            'css_variations'             => ['type' => 'integer', 'description' => 'Number of CSS variations for css_test'],
 
             'default_page'               => ['type' => ['integer', 'string'], 'description' => 'Control page ID or slug for full_page tests'],
 
-            'variations'                 => ['type' => 'array', 'items' => ['type' => ['integer', 'string']], 'description' => 'Variation page IDs or slugs for full_page tests'],
+            'variations'                 => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => ['integer', 'string']], 'description' => 'The variation page ID or slug for full_page tests, as a one-item array'],
 
             'variation_labels'           => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Labels for full_page variations, aligned by index with variations'],
 
@@ -14117,8 +14138,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     private function configure_css_test($test_id, $params) {
 
-      $css_variations = isset($params['css_variations']) ? intval($params['css_variations']) : 2;
-      update_post_meta($test_id, 'css_test_variations', max(1, $css_variations));
+      // Two body classes: the original (-1) and the variation (-2).
+      update_post_meta($test_id, 'css_test_variations', 2);
 
 
 
@@ -14168,7 +14189,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      $variations = array_slice(array_values($params['variations']), 0, 1);
+      $variations = array_values($params['variations']);
 
       foreach ($variations as $index => $variation) {
 
@@ -14235,81 +14256,16 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         
 
-        // Handle different conversion types
+        if ($conversion_type === 'selector' && !empty($params['conversion_selector'])) {
 
-        switch ($conversion_type) {
+          update_post_meta($test_id, 'conversion_selector', sanitize_text_field($params['conversion_selector']));
 
-          case 'selector':
+        } elseif ($conversion_type === 'page' && !empty($params['conversion_page_id'])) {
 
-            if (!empty($params['conversion_selector'])) {
-
-              update_post_meta($test_id, 'conversion_selector', $params['conversion_selector']);
-
-            }
-
-            break;
-
-          case 'link':
-
-            if (!empty($params['conversion_link_pattern'])) {
-
-              update_post_meta($test_id, 'conversion_link_pattern', $params['conversion_link_pattern']);
-
-            }
-
-            break;
-
-          case 'url':
-
-            if (!empty($params['conversion_url'])) {
-
-              update_post_meta($test_id, 'conversion_url', $params['conversion_url']);
-
-            }
-
-            break;
-
-          case 'page':
-
-            if (!empty($params['conversion_page_id'])) {
-
-              update_post_meta($test_id, 'conversion_page', intval($params['conversion_page_id']));
-
-            }
-
-            break;
-
-          case 'time':
-
-            if (!empty($params['conversion_time'])) {
-
-              update_post_meta($test_id, 'conversion_time', intval($params['conversion_time']));
-
-            }
-
-            break;
-
-          case 'scroll':
-
-            if (!empty($params['conversion_scroll'])) {
-
-              update_post_meta($test_id, 'conversion_scroll', intval($params['conversion_scroll']));
-
-            }
-
-            break;
-
-          case 'text':
-
-            if (!empty($params['conversion_text'])) {
-
-              update_post_meta($test_id, 'conversion_text', sanitize_text_field($params['conversion_text']));
-
-            }
-
-            break;
+          update_post_meta($test_id, 'conversion_page', intval($params['conversion_page_id']));
 
         }
+
 
       }
 
@@ -19243,8 +19199,11 @@ function abst_create_test_from_structured_data($data) {
   if ($test_id) {
 
     update_post_meta($test_id, '_abst_is_sample_test', 1);
-    // Goals are page visits: point the sample at the front page (or leave it unset).
-    $test_config['conversion_page'] = intval(get_option('page_on_front')) ?: '';
+    // Goals are a page visit or an element click; other sample goals become a visit to the front page.
+    if (($test_config['conversion_page'] ?? '') !== 'selector') {
+      $test_config['conversion_page'] = intval(get_option('page_on_front')) ?: '';
+      unset($test_config['conversion_selector']);
+    }
 
     // Apply test configuration with proper meta key mapping
 
@@ -19259,6 +19218,7 @@ function abst_create_test_from_structured_data($data) {
       'target_option_device_size' => 'target_option_device_size',
 
       'conversion_page' => 'conversion_page',
+      'conversion_selector' => 'conversion_selector',
 
 
 

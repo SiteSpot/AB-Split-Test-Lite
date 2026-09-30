@@ -14,7 +14,7 @@ function abst_get_supported_test_statuses() {
 }
 
 function abst_get_supported_conversion_types() {
-    return ['page'];
+    return ['page', 'selector'];
 }
 
 
@@ -620,6 +620,10 @@ function abst_validate_magic_definition($magic_definition) {
             return new WP_Error('missing_magic_variations', 'Each magic_definition item requires a non-empty variations array.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
         }
 
+        if (count($definition['variations']) > 2) {
+            return new WP_Error('invalid_magic_variation_count', 'Each magic_definition item compares the original with one variation: variations takes two entries, the original first.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
+        }
+
         foreach ($definition['variations'] as $variation_index => $variation) {
             if (!is_string($variation) || trim($variation) === '') {
                 return new WP_Error('invalid_magic_variation_value', 'Magic definition variations must be plain non-empty strings.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations.' . $variation_index]);
@@ -636,16 +640,16 @@ function abst_validate_magic_definition($magic_definition) {
 }
 
 /** Drop settings this plugin has no code for (sub-goals, revenue weighting,
- * auto-completion, and goal types other than a page visit), so API callers
- * can't store them. */
+ * auto-completion, goal types other than a page visit or element click, and a CSS
+ * test's class count, which is always two), so API callers can't store them. */
 function abst_drop_unsupported_test_params($params) {
     if (!is_array($params)) {
         return $params;
     }
 
     unset($params['subgoals'], $params['goals'], $params['autocomplete_on'], $params['conversion_use_order_value'],
-        $params['conversion_selector'], $params['conversion_url'], $params['conversion_time'], $params['conversion_scroll'],
-        $params['conversion_text'], $params['conversion_link_pattern']);
+        $params['conversion_url'], $params['conversion_time'], $params['conversion_scroll'],
+        $params['conversion_text'], $params['conversion_link_pattern'], $params['css_variations']);
 
     return $params;
 }
@@ -703,10 +707,6 @@ function abst_validate_test_payload($params, $mode = 'create') {
         return new WP_Error('invalid_optimization_type', 'optimization_type must be one of: bayesian, thompson.', ['status' => 400, 'field' => 'optimization_type']);
     }
 
-    if (isset($params['css_variations']) && $params['css_variations'] < 1) {
-        return new WP_Error('invalid_css_variations', 'css_variations must be 1 or greater.', ['status' => 400, 'field' => 'css_variations']);
-    }
-
     if (($params['test_type'] ?? '') === 'magic') {
         $magic_validation = abst_validate_magic_definition($params['magic_definition'] ?? null);
         if (is_wp_error($magic_validation)) {
@@ -721,6 +721,10 @@ function abst_validate_test_payload($params, $mode = 'create') {
 
         if (empty($params['variations']) || !is_array($params['variations'])) {
             return new WP_Error('missing_variations', 'At least one variation page is required for full page tests.', ['status' => 400, 'field' => 'variations']);
+        }
+
+        if (count($params['variations']) > 1) {
+            return new WP_Error('invalid_variation_count', 'A full page test compares the default page with one variation page: pass one page in variations.', ['status' => 400, 'field' => 'variations']);
         }
     }
 
@@ -759,18 +763,29 @@ function abst_validate_conversion_parameters($conversion_type, $params) {
     $params = abst_normalize_api_input_params($params);
     $conversion_type = abst_normalize_conversion_type($conversion_type);
 
-    if ($conversion_type !== 'page') {
+    if (!in_array($conversion_type, abst_get_supported_conversion_types(), true)) {
         return new WP_Error(
             'invalid_conversion_type',
-            'conversion_type must be "page": a conversion is counted when a visitor reaches conversion_page_id.',
+            'conversion_type must be "page" (a visitor reaches conversion_page_id) or "selector" (a visitor clicks an element matching conversion_selector).',
             ['status' => 400, 'field' => 'conversion_type']
         );
+    }
+
+    if ($conversion_type === 'selector') {
+        if (!isset($params['conversion_selector']) || trim((string) $params['conversion_selector']) === '') {
+            return new WP_Error(
+                'missing_conversion_selector',
+                'conversion_selector is required for the "selector" goal: the CSS selector of the element whose click counts as a conversion (e.g. ".buy-button", "#signup").',
+                ['status' => 400, 'field' => 'conversion_selector']
+            );
+        }
+        return true;
     }
 
     if (empty($params['conversion_page_id'])) {
         return new WP_Error(
             'missing_conversion_page_id',
-            'conversion_page_id is required. Please provide the WordPress page ID to track.',
+            'conversion_page_id is required for the "page" goal. Please provide the WordPress page ID to track.',
             ['status' => 400, 'field' => 'conversion_page_id']
         );
     }

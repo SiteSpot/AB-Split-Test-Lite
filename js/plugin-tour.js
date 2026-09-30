@@ -301,7 +301,7 @@ tour = Shepherd.activeTour;
     if(testType == 'full_page'){
         tour.addStep({
             title: 'Choose Pages',
-            text: "This is your existing page, or the page you will send traffic to. We will split the traffic between this page and the variations you choose in the next step.<br> Choose your starting page, then choose your test variation pages.",
+            text: "This is your existing page, or the page you will send traffic to. We will split the traffic between this page and the variation page you choose next.<br> Choose your starting page, then choose your variation page.",
             attachTo: {
                 element: '.show_full_page_test',
                 on: 'bottom'
@@ -318,7 +318,7 @@ tour = Shepherd.activeTour;
     if(testType == 'ab_test'){
         tour.addStep({
             title: 'On Page Test Setup',
-            text: "Swap out one or many on page elements in your page. We will split the traffic between these elements.",
+            text: "Swap out one or many on page elements in your page. We will split the traffic between the original and your variation.",
             attachTo: {
                 element: '.show_css_classes',
                 on: 'top'
@@ -336,7 +336,7 @@ tour = Shepherd.activeTour;
     if(testType == 'css_test'){
         tour.addStep({
             title: 'CSS Test Setup',
-            text: "Choose how many variations you want, then grab the CSS selectors to use to modify your designs.",
+            text: "Each visitor's page gets one of two body classes: the first for the original, the second for your variation. Use them in your CSS to style the variation.",
             attachTo: {
                 element: '.show_css_test',
                 on: 'top'
@@ -352,7 +352,7 @@ tour = Shepherd.activeTour;
 
     tour.addStep({
         title: 'Choose Conversion / Goal Type',
-        text: "This is the thing we're trying to optimize.<br> Choose the page visitors reach when they convert, such as a thank-you page.",
+        text: "This is the thing we're trying to optimize.<br> Choose a page visit (visitors reach a page such as a thank-you page) or an element click (visitors click an element such as a buy button).",
         attachTo: {
             element: '.bt_experiments_inner_custom_box',
             on: 'top'

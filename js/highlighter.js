@@ -1,5 +1,8 @@
 ﻿var ab_highlight_timer;
 
+// A magic test compares the original (A, slot 0) with one variation (B, slot 1).
+var ABST_MAGIC_VERSIONS = 2;
+
 (function() {
     if (window.abstConsoleGateLoaded) return;
     window.abstConsoleGateLoaded = true;
@@ -195,7 +198,8 @@ jQuery(function(){
             // used above for text matching, where it is never treated as markup.)
             const variationsArray = (variationsParam ? variationsParam.split('|') : [])
                 .map(function (v) { return abstSanitizeCreatedHtml(v); });
-            const allVariations = [abstSanitizeCreatedHtml(textToReplace)].concat(variationsArray);
+            // The original plus the first suggested variation.
+            const allVariations = [abstSanitizeCreatedHtml(textToReplace)].concat(variationsArray).slice(0, ABST_MAGIC_VERSIONS);
             
             // Initialize abmagic and create definition
             if (!window.abmagic) window.abmagic = {};
@@ -308,7 +312,7 @@ function abstBuildAdminBar() {
                 // Get variation display text
                 if (magicItem.variations && magicItem.variations.length > 0) {
                   const varName = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
-                  magicItem.variations.forEach((variation, ix) => {
+                  magicItem.variations.slice(0, ABST_MAGIC_VERSIONS).forEach((variation, ix) => {
                     let variationText = bt_variation_icon + " Variation " + varName[ix];
                     if(ix == 0)
                       variationText += " (Original)";
@@ -486,15 +490,143 @@ function removeTestClasses(element, testId) {
 
 
 
-// The conversion goal is a page visit: the visitor reaches a chosen page (stored as its page ID).
+// The conversion goal is either a page visit (conversion_page holds the page ID) or an
+// element click (conversion_page is 'selector' and conversion_selector holds the CSS selector).
 function getMagicPrimaryGoalFromExperiment(experiment) {
-    var pageId = experiment ? parseInt(experiment.conversion_page, 10) : NaN;
+    if (!experiment) {
+        return { type: 'page', value: '' };
+    }
+
+    if (experiment.conversion_page === 'selector') {
+        return { type: 'selector', value: String(experiment.conversion_selector || '') };
+    }
+
+    var pageId = parseInt(experiment.conversion_page, 10);
 
     if (!isNaN(pageId) && pageId > 0 && String(pageId) === String(experiment.conversion_page)) {
         return { type: 'page', value: String(pageId) };
     }
 
     return { type: 'page', value: '' };
+}
+
+function normalizeMagicGoalType(type) {
+    return type === 'selector' ? 'selector' : 'page';
+}
+
+// Read the goal card: the chosen goal type and the value for that type.
+function getMagicGoalFromContainer($goalContainer) {
+    if (!$goalContainer || !$goalContainer.length) {
+        return { type: 'page', value: '' };
+    }
+
+    var type = normalizeMagicGoalType($goalContainer.find('.abst-goal-type-radio:checked').val());
+    var value = type === 'selector'
+        ? String($goalContainer.find('.abst-goal-selector-input').val() || '').trim()
+        : String($goalContainer.find('.abst-goal-input-value').val() || '');
+
+    return { type: type, value: value };
+}
+
+// Show the fields for one goal type. Values typed for the other type are kept, so
+// switching back and forth loses nothing.
+function setMagicGoalType($goalContainer, type) {
+    if (!$goalContainer || !$goalContainer.length) {
+        return;
+    }
+
+    type = normalizeMagicGoalType(type);
+    $goalContainer.attr('data-goal-type', type);
+    $goalContainer.find('.abst-goal-type-radio').each(function() {
+        this.checked = this.value === type;
+    });
+    $goalContainer.find('.abst-goal-type-panel').each(function() {
+        jQuery(this).prop('hidden', jQuery(this).attr('data-goal-panel') !== type);
+    });
+
+    if (type !== 'selector') {
+        abstStopGoalPick();
+    }
+}
+
+// A click goal's selector may end in |eventname (e.g. ".signup|submit"); only the CSS part is checked.
+function abstIsValidGoalSelector(selector) {
+    var css = String(selector || '').split('|')[0].trim();
+    if (!css) {
+        return false;
+    }
+    try {
+        document.createDocumentFragment().querySelector(css);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function abstClearGoalNeeded($goalContainer) {
+    if (!$goalContainer || !$goalContainer.length) {
+        return;
+    }
+    $goalContainer.removeClass('abst-goal-needed').find('.abst-goal-needed-hint').remove();
+}
+
+/* Element-click goal: "Pick on page" (or switching to Element click with no selector yet)
+ * makes the next click on the page choose the goal element instead of an element to test. */
+window.abstGoalPicking = false;
+
+function abstStartGoalPick($goalContainer) {
+    window.abstGoalPicking = true;
+    jQuery('html').addClass('abst-goal-picking');
+    ($goalContainer && $goalContainer.length ? $goalContainer : jQuery('#abst-magic-bar .abst-goals-container'))
+        .find('.abst-goal-pick-element').addClass('is-picking').attr('aria-pressed', 'true').text('Cancel')
+        .end().find('.abst-goal-pick-hint').prop('hidden', false);
+}
+
+function abstStopGoalPick() {
+    if (!window.abstGoalPicking && !jQuery('html').hasClass('abst-goal-picking')) {
+        return;
+    }
+    window.abstGoalPicking = false;
+    jQuery('html').removeClass('abst-goal-picking');
+    jQuery('#abst-magic-bar .abst-goal-pick-element').removeClass('is-picking').attr('aria-pressed', 'false').text('Pick on page');
+    jQuery('#abst-magic-bar .abst-goal-pick-hint').prop('hidden', true);
+    jQuery('#selector-box').hide();
+}
+
+// The element a goal click lands on: the link or button around the click when there is
+// one (clicking the text inside a button picks the button), otherwise the element itself.
+function abstGoalPickTarget(target) {
+    if (!target || target.nodeType !== 1 || !target.closest) {
+        return null;
+    }
+    if (target === document.body || target === document.documentElement) {
+        return null;
+    }
+    if (target.closest('#abst-magic-bar, #wpadminbar, #selector-box, .abst-variation-marker, .shepherd-element, .shepherd-modal-overlay-container, .abst-magic-ignore, .media-modal')) {
+        return null;
+    }
+    return target.closest('a, button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]') || target;
+}
+
+function abstUseGoalElement(element) {
+    var selector = (element && typeof getUniqueSelector === 'function') ? getUniqueSelector(element) : '';
+    var $goalContainer = jQuery('#abst-magic-bar .abst-goals-container').first();
+    abstStopGoalPick();
+
+    if (!selector || !$goalContainer.length) {
+        return;
+    }
+
+    setMagicGoalType($goalContainer, 'selector');
+    var $input = $goalContainer.find('.abst-goal-selector-input');
+    $input.val(selector).trigger('change');
+    abstClearGoalNeeded($goalContainer);
+    bt_highlight(selector);
+
+    $input.css({ transition: 'box-shadow 0.2s ease', boxShadow: '0 0 0 3px #4CAF50' });
+    setTimeout(function() {
+        $input.css('box-shadow', '');
+    }, 1500);
 }
 
 // Look up a page title by ID and show it in the goal's page search box.
@@ -535,7 +667,15 @@ function applyMagicGoalToContainer($goalContainer, goal) {
         return;
     }
 
+    var goalType = normalizeMagicGoalType(goal.type);
     var goalValue = goal.value || '';
+    setMagicGoalType($goalContainer, goalType);
+
+    if (goalType === 'selector') {
+        $goalContainer.find('.abst-goal-selector-input').val(goalValue);
+        return;
+    }
+
     $goalContainer.find('.abst-goal-input-value').val(goalValue);
     $goalContainer.find('.abst-goal-page-input').val('');
 
@@ -544,11 +684,16 @@ function applyMagicGoalToContainer($goalContainer, goal) {
     }
 }
 
-// Build the page search box for the conversion goal. The chosen page ID is kept in
+// Build the page search box for the page-visit goal. The chosen page ID is kept in
 // the hidden .abst-goal-input-value field.
 function initMagicGoalPageSelector($goalContainer) {
     if (!$goalContainer || !$goalContainer.length || $goalContainer.find('.abst-page-select-container').length) {
         return;
+    }
+
+    var $pagePanel = $goalContainer.find('.abst-goal-page-panel').first();
+    if (!$pagePanel.length) {
+        $pagePanel = $goalContainer;
     }
 
     var inputId = 'page-search-' + Math.random().toString(36).substr(2, 9);
@@ -565,7 +710,7 @@ function initMagicGoalPageSelector($goalContainer) {
         placeholder: 'Type to search pages or click to see recent pages...',
         autocomplete: 'off'
     }));
-    $goalContainer.append($container);
+    $pagePanel.append($container);
 
     var input = document.getElementById(inputId);
     var awesomplete = new Awesomplete(input, {
@@ -708,6 +853,14 @@ function loadMagicTestFromUrl() {
     if (!Array.isArray(magicDefinition) || magicDefinition.length === 0) {
         return false;
     }
+
+    // Each element holds the original and one variation. Older tests may list more
+    // variations; only the first two are shown here and saved back.
+    magicDefinition.forEach(function(def) {
+        if (def && Array.isArray(def.variations) && def.variations.length > ABST_MAGIC_VERSIONS) {
+            def.variations = def.variations.slice(0, ABST_MAGIC_VERSIONS);
+        }
+    });
 
     if (!window.abmagic) window.abmagic = {};
     window.abmagic.definition = magicDefinition;
@@ -974,7 +1127,28 @@ function selectorDetection(){
         showBar = true;
 
         var element = e.target;
-        
+
+        // Choosing the goal element: outline whatever a click would pick.
+        if (window.abstGoalPicking) {
+            var pickElement = abstGoalPickTarget(element);
+            if (!pickElement) {
+                box.hide();
+                return;
+            }
+            var pickRect = pickElement.getBoundingClientRect();
+            box.css({
+                zIndex: '158000',
+                top: pickRect.top + window.scrollY - 10,
+                left: pickRect.left + window.scrollX - 10,
+                width: pickRect.width + 20,
+                height: pickRect.height + 20,
+                borderRadius: '10px'
+            });
+            box.show();
+            lastProcessedElement = null;
+            return;
+        }
+
         if(!canTestOnElement(element))
         {
             box.hide();
@@ -1138,6 +1312,29 @@ function selectorDetection(){
 
 
     
+    // Choosing the goal element: the click sets the Element click goal's selector and goes
+    // no further, so it neither follows a link nor selects the element for editing. Capture
+    // phase on the document runs before every other click handler on the page.
+    document.addEventListener('click', function(e) {
+        if (!window.abstGoalPicking) {
+            return;
+        }
+        var goalElement = abstGoalPickTarget(e.target);
+        if (!goalElement) {
+            return; // the Magic bar, admin bar and tour work as usual
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        abstUseGoalElement(goalElement);
+    }, true);
+
+    jQuery(document).on('keydown', function(e) {
+        if (window.abstGoalPicking && (e.key === 'Escape' || e.key === 'Esc')) {
+            abstStopGoalPick();
+        }
+    });
+
     // Prevent link clicks only when magic bar is active
     // This uses capture phase but only prevents when the class is present
     document.body.addEventListener('click', function(e) {
@@ -1670,10 +1867,10 @@ function abst_magic_bar(options = {}) {
             rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"><span>' + value + '</span></label>';
     });
 
+    // The original (A) and the variation (B).
     var variationOptions = [
         {  label: 'A Version - Control', selected: false, value: 0 },
         { label: 'B Version', selected: true, value: 1 },
-        { label: '+ Add Version', selected: false, value: 'addAnother' },
     ];
     var variationOptionsHtml = variationOptions.map(function(opt, index) {
         return '<option value="' + opt.value + '" ' + (opt.selected ? 'selected' : '') + '>' + opt.label + '</option>';
@@ -1683,10 +1880,10 @@ function abst_magic_bar(options = {}) {
     <div class="abst-magic-bar-container" data-llm-instructions="this div contains instructions for LLM assistance 
             #abst-magic-bar-title is the test name. add your descriptive title
             #abst-selector-input gives you the css selector of the selected element, if any is selected.
-            #variation-picker is the way to choose and add a variation to the test. 
-            #abst-variation-editor-container is the way to edit the variation after you have selected it. 
-            You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and add a variation. you'll see #abst-selector-input update to the new element. You can then edit the text in the editor and  swap the #variation-picker to other variations to edit those too. 
-            The conversion goal is the page visitors reach when they convert: search for it in the Goal box and pick it from the list. After saving test, you can go to /wp-admin/edit.php?post_type=bt_experiments to view all tests. do not edit other tests unless  specifically asked">
+            Each test compares the original (A version) with one variation (B version). #variation-picker switches between them; #abst-version-toggle does the same.
+            #abst-variation-editor-container is the way to edit the B version after you have selected an element.
+            You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and edit its B version. you'll see #abst-selector-input update to the new element. All elements switch together, so visitors see either every original or every B version.
+            The conversion goal is set in the Goal box and is one of two types. Page visit: a conversion counts when a visitor reaches a page, such as a thank-you page; search for it and pick it from the list. Element click: a conversion counts when a visitor clicks an element; type its CSS selector (e.g. #buy-now or .signup-button) or press Pick on page and click the element. After saving test, you can go to /wp-admin/edit.php?post_type=bt_experiments to view all tests. do not edit other tests unless  specifically asked">
         <div class="abst-magic-bar-header">
             <span class="abst-magic-bar-heading">Magic Test</span>
             <button type="button" id="abst-magic-bar-show-tour" class="abst-magic-tour-button" title="Show me how it works">How it works</button>
@@ -1762,12 +1959,26 @@ function abst_magic_bar(options = {}) {
                 </div>
             </div>
             <!-- Goal Column -->
-            <div class="abst-goals-column" data-llm-instructions="the conversion goal is defined here: the page visitors reach when they convert, such as a thank-you or order-complete page. Search for the page and pick it from the list.">
+            <div class="abst-goals-column" data-llm-instructions="the conversion goal is defined here. choose one of two types with the .abst-goal-type-radio inputs. Page visit (value page): a conversion counts when a visitor reaches a page, such as a thank-you or order-complete page; search for the page and pick it from the list. Element click (value selector): a conversion counts when a visitor clicks an element, such as a buy or sign-up button; type its CSS selector in .abst-goal-selector-input, or press Pick on page and click the element.">
                 <div class="abst-goals-title">Goal</div>
-                <div class="abst-goals-container" data-goal="0">
-                    <div class="abst-goal-card-header"><p class="abst-goal-card-title">Conversion Page</p></div>
-                    <div class="goal-value-label">Choose the page visitors reach when they convert, such as a thank-you page.</div>
-                    <input type="hidden" class="abst-goal-input-value" value="">
+                <div class="abst-goals-container" data-goal="0" data-goal-type="page">
+                    <div class="abst-goal-card-header"><p class="abst-goal-card-title">Conversion Goal</p></div>
+                    <div class="abst-goal-type-toggle" role="radiogroup" aria-label="Goal type">
+                        <label class="abst-goal-type-option"><input type="radio" class="abst-goal-type-radio" name="abst-goal-type" value="page" checked><span>Page visit</span></label>
+                        <label class="abst-goal-type-option"><input type="radio" class="abst-goal-type-radio" name="abst-goal-type" value="selector"><span>Element click</span></label>
+                    </div>
+                    <div class="abst-goal-type-panel abst-goal-page-panel" data-goal-panel="page">
+                        <div class="goal-value-label">Choose the page visitors reach when they convert, such as a thank-you page.</div>
+                        <input type="hidden" class="abst-goal-input-value" value="">
+                    </div>
+                    <div class="abst-goal-type-panel abst-goal-selector-panel" data-goal-panel="selector" hidden>
+                        <div class="goal-value-label" id="abst-goal-selector-help">A conversion counts when a visitor clicks an element that matches this CSS selector, such as a buy or sign-up button.</div>
+                        <div class="abst-goal-selector-row">
+                            <input type="text" id="abst-goal-selector" class="abst-goal-selector-input" placeholder="#buy-now or .signup-button" autocomplete="off" spellcheck="false" aria-label="CSS selector of the element visitors click" aria-describedby="abst-goal-selector-help">
+                            <button type="button" class="abst-goal-pick-element" aria-pressed="false">Pick on page</button>
+                        </div>
+                        <p class="abst-goal-pick-hint" role="status" hidden>Click the element on the page that visitors click to convert. Press Esc to cancel.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2016,9 +2227,8 @@ function abst_magic_bar(options = {}) {
         }).get();
         test.targeting.scope = getMagicScopeFromInputs();
         
-        // Goal: the conversion page ID
-        var primaryGoalValue = jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val() || '';
-        test.goals.primary = { type: 'page', value: primaryGoalValue };
+        // Goal: a page visit (page ID) or an element click (CSS selector)
+        test.goals.primary = getMagicGoalFromContainer(jQuery('.abst-goals-container').first());
         
         console.log('ABST: Synced from DOM', window.abmagic.test);
     };
@@ -2027,7 +2237,7 @@ function abst_magic_bar(options = {}) {
     window.abmagic.syncToDOM = function() {
         var test = window.abmagic.test;
         var primaryGoal = test.goals && test.goals.primary ? {
-            type: 'page',
+            type: normalizeMagicGoalType(test.goals.primary.type),
             value: test.goals.primary.value
         } : null;
 
@@ -2090,7 +2300,47 @@ function abst_magic_bar(options = {}) {
         window.abmagic.syncFromDOM();
     });
     jQuery(document).on('change', '.abst-goals-container .abst-goal-input-value', function() {
+        abstClearGoalNeeded(jQuery(this).closest('.abst-goals-container'));
         window.abmagic.syncFromDOM();
+    });
+
+    // Goal type: page visit or element click.
+    jQuery(document).on('change', '#abst-magic-bar .abst-goal-type-radio', function() {
+        var $goalContainer = jQuery(this).closest('.abst-goals-container');
+        var goalType = normalizeMagicGoalType(jQuery(this).val());
+
+        setMagicGoalType($goalContainer, goalType);
+        abstClearGoalNeeded($goalContainer);
+
+        if (goalType === 'selector') {
+            var $selectorInput = $goalContainer.find('.abst-goal-selector-input');
+            // No selector yet: the next click on the page chooses the element (typing works too).
+            if (!String($selectorInput.val() || '').trim()) {
+                abstStartGoalPick($goalContainer);
+            }
+            $selectorInput.trigger('focus');
+        }
+
+        window.abmagic.syncFromDOM();
+    });
+
+    jQuery(document).on('input change', '#abst-magic-bar .abst-goal-selector-input', function(e) {
+        if (e.type === 'input') {
+            abstStopGoalPick(); // typing a selector instead of picking one
+        }
+        if (String(jQuery(this).val() || '').trim()) {
+            abstClearGoalNeeded(jQuery(this).closest('.abst-goals-container'));
+        }
+        window.abmagic.syncFromDOM();
+    });
+
+    jQuery(document).on('click', '#abst-magic-bar .abst-goal-pick-element', function(e) {
+        e.preventDefault();
+        if (window.abstGoalPicking) {
+            abstStopGoalPick();
+        } else {
+            abstStartGoalPick(jQuery(this).closest('.abst-goals-container'));
+        }
     });
     updateUserRoleRowState();
     updateMagicScopeFormUi();
@@ -2264,12 +2514,9 @@ function adjustFixedElementsForMagicBar(activate) {
 
 
 
+        // 0 = the original (A), 1 = the variation (B).
         function getCurrentVariationIndex() {
-            var variationValue = jQuery("#variation-picker").val();
-            if (variationValue === 'addAnother') {
-                return 1;
-            }
-            return parseInt(variationValue, 10) || 0;
+            return parseInt(jQuery("#variation-picker").val(), 10) === 1 ? 1 : 0;
         }
 
         function getVariationVersionName(variationIndex) {
@@ -2293,17 +2540,15 @@ function adjustFixedElementsForMagicBar(activate) {
             jQuery("#abst-version-swap").attr('aria-label', 'Click to swap between variations').attr('title', 'Click to swap between variations');
         }
 
+        // Swap between the original and the variation.
         function cycleMagicVariation() {
-            var variationCount = Math.max(1, getMagicVariationCount());
-            var currentIndex = getCurrentVariationIndex();
-            var nextIndex = (currentIndex + 1) % variationCount;
+            var nextIndex = getCurrentVariationIndex() === 0 ? 1 : 0;
 
             jQuery("#variation-picker").val(String(nextIndex)).trigger('change');
         }
 
         jQuery('body').on('change', "#variation-picker", function() {
-            var variationIndexRaw = jQuery("#variation-picker").val();
-            var variationIndex = (variationIndexRaw === 'addAnother') ? 'addAnother' : (parseInt(variationIndexRaw) || 0);
+            var variationIndex = getCurrentVariationIndex();
             updateVersionValue();
 
             // if its 0 then make editor read-only
@@ -2322,48 +2567,6 @@ function adjustFixedElementsForMagicBar(activate) {
             } else {
                 jQuery("#imageSelector").prop('disabled', false).css('opacity', '1');
             }
-            
-            //if the variation index is the last one, then change the label to Variation C/d/e/f/g etc and add another option below with label " Add Variation"
-            
-            if(variationIndex === 'addAnother'){
-                //remove existing add another option
-                jQuery("#variation-picker option[value='addAnother']").remove();
-                console.log('add variation');
-                var nextIndex = jQuery("#variation-picker option").length;
-                var label = getVariationLabel(nextIndex);
-                var newOptions = '<option value="'+nextIndex+'">'+label+' Version</option><option value="addAnother"> + Add Version</option>';
-                jQuery("#variation-picker").append(newOptions);
-                jQuery("#variation-picker").val(nextIndex);
-                
-                // Add new variation to ALL elements in the definition using their original (control) text
-                if (window.abmagic && window.abmagic.definition) {
-                    window.abmagic.definition.forEach(function(def) {
-                        if (def.variations && def.variations.length < nextIndex + 1) {
-                            // Pad with the original (control) text for any missing variations
-                            while (def.variations.length < nextIndex + 1) {
-                                def.variations.push(def.variations[0]); // Use original/control text
-                            }
-                        }
-                    });
-                    console.log('Added variation to all elements:', window.abmagic.definition);
-                }
-                
-                jQuery("#variation-picker").trigger('change');
-
-                console.log(newOptions,jQuery("#variation-picker"),nextIndex,label);
-                //add remobe button below if theres more than 2 variations otherwise remove
-                // change text of variation picker
-            }
-
-
-            //remove button here if index not 0 or 1
-            if(variationIndex == 0 || variationIndex == 1){
-                jQuery(".abst-variation-remove").remove();
-            }
-            else if(!jQuery(".abst-variation-remove").length) {
-                jQuery("#variation-picker").after('<a class="abst-variation-remove" href="#">Remove Last Variation</a>');
-            }
-
 
             if(!window.abmagic)                window.abmagic = {};
             if(!window.abmagic.definition)                window.abmagic.definition = [];
@@ -2406,11 +2609,6 @@ function adjustFixedElementsForMagicBar(activate) {
             cycleMagicVariation();
         });
 
-        jQuery('body').on('click', ".abst-variation-remove", function(e) {
-            e.preventDefault();
-            removeMagicVariation(getMagicVariationCount() - 1);
-        });
-
 
         
         
@@ -2430,10 +2628,19 @@ function adjustFixedElementsForMagicBar(activate) {
                 return;
             }
 
-            if (!isDraftSave && !jQuery('.abst-goals-container').first().find('.abst-goal-input-value').val()) {
-                abstNeedGoal();
-                return;
+            if (!isDraftSave) {
+                var goalToCheck = getMagicGoalFromContainer(jQuery('.abst-goals-container').first());
+                if (!goalToCheck.value) {
+                    abstNeedGoal();
+                    return;
+                }
+                if (goalToCheck.type === 'selector' && !abstIsValidGoalSelector(goalToCheck.value)) {
+                    abstNeedGoal('invalid');
+                    return;
+                }
             }
+
+            abstStopGoalPick();
 
             // Sync from DOM one final time before save
             if (window.abmagic.syncFromDOM) {
@@ -2465,9 +2672,9 @@ function adjustFixedElementsForMagicBar(activate) {
                         sanitized.scope = normalizeMagicScope(selectedScope, true);
                     }
                     
-                    // Sanitize variations array
+                    // Sanitize variations array: the original (A) and the variation (B)
                     if (item.variations && Array.isArray(item.variations)) {
-                        sanitized.variations = item.variations.map(function(variation) {
+                        sanitized.variations = item.variations.slice(0, ABST_MAGIC_VERSIONS).map(function(variation) {
                             // Convert null/undefined to empty string
                             if (variation === null || variation === undefined) return '';
                             // Ensure it's a string
@@ -2475,6 +2682,10 @@ function adjustFixedElementsForMagicBar(activate) {
                         });
                     } else {
                         sanitized.variations = [''];
+                    }
+                    // An element never edited in B shows its original there.
+                    while (sanitized.variations.length < ABST_MAGIC_VERSIONS) {
+                        sanitized.variations.push(sanitized.variations[0]);
                     }
                     
                     return sanitized;
@@ -2485,8 +2696,9 @@ function adjustFixedElementsForMagicBar(activate) {
             
             // Read from unified test object (same data structure sent to server)
             var test = window.abmagic.test;
-            var primaryGoal = test.goals.primary;
-            
+            var primaryGoal = test.goals.primary || { type: 'page', value: '' };
+            var primaryGoalType = normalizeMagicGoalType(primaryGoal.type);
+
             var newTestData = {
                 action: 'abst_create_new_on_page_test',
                 nonce: (typeof btab_vars !== 'undefined' ? btab_vars.magic_nonce : ''),
@@ -2497,9 +2709,10 @@ function adjustFixedElementsForMagicBar(activate) {
                 magic_definition: JSON.stringify(sanitizedDefinition),
                 test_type: 'magic',
                 bt_experiments_url_query: test.url_query,
-                // The only goal is a page visit: send 'page' plus the chosen page ID.
-                bt_experiments_conversion_page: 'page',
-                bt_experiments_conversion_page_selector: primaryGoal.value || '',
+                // Goal type 'page' (page ID in _page_selector) or 'selector' (CSS selector in _selector).
+                bt_experiments_conversion_page: primaryGoalType,
+                bt_experiments_conversion_page_selector: primaryGoalType === 'page' ? (primaryGoal.value || '') : '',
+                bt_experiments_conversion_selector: primaryGoalType === 'selector' ? (primaryGoal.value || '') : '',
                 bt_experiments_full_page_default_page: '',
                 css_test_variations: '',
                 bt_experiments_target_option_device_size: test.targeting.device_size,
@@ -2588,11 +2801,21 @@ function adjustFixedElementsForMagicBar(activate) {
 window.abst_magic_bar = abst_magic_bar;
 
 /* Start Test without a goal: no alert. Bring the Goals card into view, flash its border and
- * put the cursor in the page search, since the goal is the page visitors reach when they convert. */
-function abstNeedGoal() {
+ * put the cursor in the field for the chosen goal type: the page search for a page visit,
+ * the CSS selector for an element click. reason 'invalid': the selector is not valid CSS. */
+function abstNeedGoal(reason) {
     var $col = jQuery('#abst-magic-bar .abst-goals-column');
     var $box = jQuery('.abst-goals-container').first();
-    if (!$box.length) { alert('Please choose the conversion page for this test'); return; }
+    if (!$box.length) { alert('Please choose the conversion goal for this test'); return; }
+    var goal = getMagicGoalFromContainer($box);
+    var message = 'Choose the page visitors reach when they convert before starting the test.';
+    var $field = $box.find('.abst-goal-page-input');
+    if (goal.type === 'selector') {
+        message = reason === 'invalid'
+            ? 'That CSS selector is not valid. Check it, or use Pick on page to choose the element.'
+            : 'Enter the CSS selector of the element visitors click to convert, or use Pick on page, before starting the test.';
+        $field = $box.find('.abst-goal-selector-input');
+    }
     if (window.setAbstMagicBarTab) window.setAbstMagicBarTab('test');
     var bar = document.getElementById('abst-magic-bar');
     if (typeof abstIsDrawer === 'function' && abstIsDrawer() && bar && bar.getBoundingClientRect().height < abstDrawerSnaps()[1] - 10) {
@@ -2605,10 +2828,10 @@ function abstNeedGoal() {
 
     $box.find('.abst-goal-needed-hint').remove();
     var $hint = jQuery('<div class="abst-goal-needed-hint" role="alert"></div>')
-        .append(jQuery('<p></p>').text('Choose the page visitors reach when they convert before starting the test.'));
+        .append(jQuery('<p></p>').text(message));
     var $head = $box.find('.abst-goal-card-header').first();
     if ($head.length) $head.after($hint); else $box.prepend($hint);
-    $box.find('input').not('.abst-goal-input-value').first().trigger('focus');
+    ($field.length ? $field : $box.find('input:visible').not('.abst-goal-input-value')).first().trigger('focus');
 }
 
 /* Phones: the bar is a bottom drawer (CSS, max-width 767px). The handle drags it between
@@ -2744,21 +2967,17 @@ function addVariationMarker($element, definition, defIndex) {
         $element.css('position', 'relative');
     }
     
-    // Build variation buttons
+    // Build the A (original) and B (variation) buttons
     var buttonsHtml = '';
-    var numVariations = definition.variations ? definition.variations.length : 2;
-    var currentVariation = parseInt(jQuery('#variation-picker').val()) || 0;
-    
-    for (var i = 0; i < numVariations; i++) {
+    var currentVariation = parseInt(jQuery('#variation-picker').val(), 10) === 1 ? 1 : 0;
+
+    for (var i = 0; i < ABST_MAGIC_VERSIONS; i++) {
         var label = getVariationLabel(i);
         var activeClass = (i === currentVariation) ? ' active' : '';
-        var title = 'Show ' + label + ' Version' + (i > 0 ? ' (right-click to remove)' : '');
+        var title = 'Show ' + label + ' Version' + (i === 0 ? ' (original)' : '');
         buttonsHtml += '<button class="abst-marker-var' + activeClass + '" data-var="' + i + '" data-def="' + defIndex + '" title="' + title + '">' + label + '</button>';
     }
-    
-    // Add "add variation" button
-    buttonsHtml += '<button class="abst-marker-add" data-def="' + defIndex + '" title="Add new variation">+</button>';
-    
+
     // Add remove button
     buttonsHtml += '<button class="abst-marker-remove" data-def="' + defIndex + '" title="Remove element from test">×</button>';
     
@@ -2856,42 +3075,6 @@ jQuery('body').on('click', '.abst-marker-var', function(e) {
     jQuery('.abst-variation-marker .abst-marker-var[data-var="' + varIndex + '"]').addClass('active');
 });
 
-// Handle right-click on a variation label - remove that variation across the test
-jQuery('body').on('contextmenu', '.abst-marker-var', function(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    var varIndex = parseInt(jQuery(this).data('var'), 10);
-    removeMagicVariation(varIndex);
-});
-
-// Handle add variation button clicks
-jQuery('body').on('click', '.abst-marker-add', function(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    
-    console.log('Add variation button clicked');
-    var defIndex = jQuery(this).data('def');
-    
-    // Get the definition for this element and set it as current
-    if (window.abmagic && window.abmagic.definition && window.abmagic.definition[defIndex]) {
-        var def = window.abmagic.definition[defIndex];
-
-        // Update selector input to this element
-        jQuery('#abst-selector-input').val(def.selector);
-
-        // Trigger the "Add Version" option in the picker
-        jQuery('#variation-picker').val('addAnother').trigger('change');
-
-        // Refresh the magic bar UI so correct tabs show (text toolbar vs image button)
-        var currentVar = parseInt(jQuery('#variation-picker').val(), 10) || 0;
-        var content = def.variations[currentVar] || def.variations[0] || '';
-        setMagicBar(def.selector, content, false, def.type || 'text');
-    } else {
-        jQuery('#variation-picker').val('addAnother').trigger('change');
-    }
-});
-
 // Handle remove button clicks
 jQuery('body').on('click', '.abst-marker-remove', function(e) {
     e.preventDefault();
@@ -2944,96 +3127,28 @@ function getVariationLabel(n) {
     return alphabet[n];
 }
 
-function getMagicVariationCount() {
-    var maxVariations = 1;
-
-    if (!window.abmagic || !window.abmagic.definition) {
-        return maxVariations;
-    }
-
-    window.abmagic.definition.forEach(function(def) {
-        if (def.variations && def.variations.length > maxVariations) {
-            maxVariations = def.variations.length;
-        }
-    });
-
-    return maxVariations;
-}
-
-function removeMagicVariation(variationIndex) {
-    if (!window.abmagic || !window.abmagic.definition || !Array.isArray(window.abmagic.definition)) {
-        return;
-    }
-
-    if (variationIndex === 0) {
-        alert('The Control version cannot be removed.');
-        return;
-    }
-
-    var variationCount = getMagicVariationCount();
-    if (variationCount <= 2) {
-        alert('A magic test needs at least one variation.');
-        return;
-    }
-
-    if (variationIndex < 1 || variationIndex >= variationCount) {
-        return;
-    }
-
-    var label = getVariationLabel(variationIndex);
-    if (!confirm('Remove Variation ' + label + ' from this magic test?')) {
-        return;
-    }
-
-    var currentValue = jQuery('#variation-picker').val();
-    var currentIndex = currentValue === 'addAnother' ? 1 : (parseInt(currentValue, 10) || 0);
-
-    window.abmagic.definition.forEach(function(def) {
-        if (def.variations && def.variations.length > variationIndex) {
-            def.variations.splice(variationIndex, 1);
-        }
-    });
-
-    var nextCount = getMagicVariationCount();
-    var nextIndex = currentIndex;
-    if (currentIndex === variationIndex) {
-        nextIndex = Math.min(variationIndex, nextCount - 1);
-    } else if (currentIndex > variationIndex) {
-        nextIndex = currentIndex - 1;
-    }
-    nextIndex = Math.max(1, Math.min(nextIndex, nextCount - 1));
-
-    jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
-    updateVariationPicker(nextIndex);
-}
-
 /**
- * Update the variation picker dropdown based on current definition
- * Rebuilds options to match the number of variations in the first definition entry
+ * Rebuild the variation picker: the original (A) and the variation (B).
+ * selectedIndex defaults to the variation.
  */
 function updateVariationPicker(selectedIndex) {
     if (!window.abmagic || !window.abmagic.definition || window.abmagic.definition.length === 0) {
         return;
     }
-    
-    var maxVariations = getMagicVariationCount();
-    selectedIndex = (typeof selectedIndex === 'number') ? selectedIndex : 1;
-    selectedIndex = Math.max(0, Math.min(selectedIndex, maxVariations - 1));
-    
+
+    selectedIndex = (selectedIndex === 0) ? 0 : 1;
+
     // Build options HTML
     var optionsHtml = '';
-    for (var i = 0; i < maxVariations; i++) {
+    for (var i = 0; i < ABST_MAGIC_VERSIONS; i++) {
         var label = getVariationLabel(i);
         var suffix = (i === 0) ? ' Version - Control' : ' Version';
         var selected = (i === selectedIndex) ? ' selected' : '';
         optionsHtml += '<option value="' + i + '"' + selected + '>' + label + suffix + '</option>';
     }
-    optionsHtml += '<option value="addAnother"> + Add Version</option>';
-    
+
     // Update the picker and trigger change to refresh editor
     jQuery('#variation-picker').html(optionsHtml).trigger('change');
-    
-    console.log('ABST: Variation picker updated with', maxVariations, 'variations');
 }
 
 /**

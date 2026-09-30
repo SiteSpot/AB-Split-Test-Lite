@@ -260,19 +260,6 @@ body[data-builder-window='iframe'] .brx-body [bt-eid],
   color: #fff !important;
 }
 
-.abst-variation-marker .abst-marker-add {
-  background: #e8f5e9 !important;
-  color: #2e7d32 !important;
-  margin-left: 4px !important;
-  font-size: 16px !important;
-  line-height: 22px !important;
-}
-
-.abst-variation-marker .abst-marker-add:hover {
-  background: #2e7d32 !important;
-  color: #fff !important;
-}
-
 .abst-variation-marker .abst-marker-remove {
   background: #ffebee !important;
   color: #c62828 !important;
@@ -583,88 +570,6 @@ p.ai-loading {
 }
 
 
-#abst-magic-upgrade-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgb(255 255 255 / 72%);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-#abst-magic-upgrade-overlay>*{
-  background: white;
-  padding: 15px;
-  border-radius: 15px;
-}
-
-#abst-magic-upgrade-overlay h3 {
-    color: #23282d;
-    font-size: 20px;
-    margin-bottom: 15px;
-}
-
-#abst-magic-upgrade-overlay p {
-    color: #646970;
-    margin-bottom: 15px;
-    line-height: 1.5;
-}
-
-#abst-magic-upgrade-overlay ul {
-    text-align: left;
-    margin: 0 auto 20px;
-    max-width: 80%;
-}
-
-#abst-magic-upgrade-overlay li {
-    margin-bottom: 6px;
-    position: relative;
-    padding-left: 20px;
-  list-style-type: none;
-}
-
-#abst-magic-upgrade-overlay .abst-button {
-    background: #2271b1;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: background 0.2s;
-    text-shadow: 0 0 3PX #313131;
-}
-
-#abst-magic-upgrade-overlay .abst-button:hover {
-    background: #135e96;
-    color: white;
-}
-
-#abst-magic-upgrade-overlay .upgrade-testy {
-    font-size: 13px;
-    color: #646970;
-    max-width: 80%;
-    margin: 20px auto 0;
-    padding-top: 15px;
-}
-
-#abst-magic-upgrade-overlay .upgrade-testy em {
-    display: block;
-    margin-top: 5px;
-    font-style: italic;
-    color: #8c8f94;
-}
-
 #abst-ideas-general {
   padding: 10px;
   background: whitesmoke;
@@ -903,9 +808,6 @@ p.ai-loading {
 
 .abst-selector button{
   background:white;
-}
-a.abst-variation-remove {
-  font-size: 12px;
 }
 /* checkboxes - see modern checkbox styles below */
 
@@ -2514,6 +2416,47 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
   background: var(--abst-mb-soft) !important; box-shadow: none !important;
 }
 #abst-magic-bar .abst-goal-card-title { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--abst-mb-ink); }
+
+/* Goal type: Page visit | Element click (segmented control; the radios stay focusable) */
+#abst-magic-bar .abst-goal-type-toggle {
+  display: flex; gap: 2px; margin: 0 0 10px; padding: 2px;
+  border: 1px solid var(--abst-mb-line); border-radius: var(--abst-mb-radius); background: #fff;
+}
+#abst-magic-bar .abst-goal-type-option { position: relative; flex: 1 1 0; min-width: 0; margin: 0 !important; cursor: pointer; }
+#abst-magic-bar .abst-goal-type-option input {
+  position: absolute !important; opacity: 0; width: 1px !important; height: 1px !important; min-width: 0 !important; min-height: 0 !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important; pointer-events: none;
+}
+#abst-magic-bar .abst-goal-type-option span {
+  display: block; padding: 6px 8px; border-radius: 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12px; font-weight: 600; line-height: 1.4; color: var(--abst-mb-muted); transition: background .15s ease, color .15s ease;
+}
+#abst-magic-bar .abst-goal-type-option:hover span { color: var(--abst-mb-ink); }
+#abst-magic-bar .abst-goal-type-option input:checked + span { background: var(--abst-mb-accent-soft); color: var(--abst-mb-accent-ink); }
+#abst-magic-bar .abst-goal-type-option input:focus-visible + span { outline: 2px solid var(--abst-mb-accent); outline-offset: -2px; }
+#abst-magic-bar .abst-goal-type-panel[hidden], #abst-magic-bar .abst-goal-pick-hint[hidden] { display: none !important; }
+
+/* Element click: CSS selector + "Pick on page" */
+#abst-magic-bar .abst-goal-selector-row { display: flex; align-items: center; gap: 6px; }
+#abst-magic-bar .abst-goals-container input.abst-goal-selector-input {
+  flex: 1 1 auto; min-width: 0; width: auto; margin: 0 !important;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+}
+#abst-magic-bar .abst-goal-pick-element {
+  flex: none; min-height: 34px; margin: 0; padding: 0 10px; white-space: nowrap; cursor: pointer;
+  border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background: #fff !important;
+  color: var(--abst-mb-accent) !important; font-size: 12px !important; font-weight: 600; line-height: 1.2; box-shadow: none !important;
+}
+#abst-magic-bar .abst-goal-pick-element:hover { border-color: var(--abst-mb-accent) !important; }
+#abst-magic-bar .abst-goal-pick-element.is-picking { background: var(--abst-mb-accent-soft) !important; border-color: var(--abst-mb-accent) !important; color: var(--abst-mb-accent-ink) !important; }
+#abst-magic-bar .abst-goal-pick-hint {
+  margin: 8px 0 0 !important; padding: 8px 10px; border-radius: 6px; background: var(--abst-mb-accent-soft);
+  color: var(--abst-mb-accent-ink); font-size: 12px; line-height: 1.45;
+}
+/* While picking the goal element, the hover outline turns green */
+html.abst-goal-picking body { cursor: crosshair; }
+html.abst-goal-picking #abst-magic-bar { cursor: auto; }
+html.abst-goal-picking #selector-box { border-color: #16a34a; }
 #abst-magic-bar .abst-button-container { margin-top: 10px; }
 #abst-magic-bar .abst-add-goal-button {
   padding: 6px 12px; border: 1px dashed #cbd5e1 !important; border-radius: 6px; background: #fff !important;

@@ -269,6 +269,9 @@ jQuery(document).ready(function() {
     };
     jQuery( '#bt_experiments_conversion_page_selector' ).select2(conversionPageAttrs);
 
+    // select2 has just added its box: show or hide it for the current goal type.
+    refreshConversionGoalType();
+
 
 
     
@@ -276,6 +279,15 @@ jQuery(document).ready(function() {
 
 
     window.acattrs.multiple=true;
+
+    // A full page test compares the original page with one variation page.
+    window.acattrs.maximumSelectionLength = 1;
+
+    window.acattrs.language = {
+      maximumSelected: function () {
+        return 'A test compares the original page with one variation page. Remove the selected page to choose a different one.';
+      }
+    };
 
     window.acattrs['ajax'] = {
 
@@ -422,8 +434,11 @@ jQuery(document).ready(function() {
 
   function validateExperimentCanLaunch() {
     var hasTestType = jQuery('#full_page').is(':checked') || jQuery('#ab_test').is(':checked') || jQuery('#css_test').is(':checked') || jQuery('#magic').is(':checked');
-    // The conversion goal is a page visit, so a goal page must be chosen.
-    var hasConversion = jQuery.trim(jQuery('#bt_experiments_conversion_page_selector').val() || '') !== '';
+    // Page visit: a goal page must be chosen. Element click: a valid CSS selector is needed.
+    var goalType = getConversionGoalType();
+    var $goalField = goalType === 'selector' ? jQuery('#bt_experiments_conversion_selector') : jQuery('#bt_experiments_conversion_page_selector');
+    var goalValue = String($goalField.val() || '').trim();
+    var hasConversion = goalValue !== '' && (goalType !== 'selector' || isValidGoalSelector(goalValue));
 
     if (hasTestType && hasConversion) {
       return true;
@@ -434,9 +449,13 @@ jQuery(document).ready(function() {
     }
 
     if (!hasConversion) {
-      jQuery('#bt_experiments_conversion_page_selector')
+      $goalField
         .closest('.conversion-goal, .bt_experiments_inner_custom_box')
         .addClass('err');
+
+      if (goalType === 'selector') {
+        $goalField.trigger('focus');
+      }
     }
 
     setTimeout(function(){
@@ -843,21 +862,34 @@ jQuery(document).ready(function() {
 
 
 
-  jQuery('#css_test_variations').on('change',function(e){
+  // Code test body classes: test-css-{id}-1 marks the original, test-css-{id}-2 the variation.
+  // #css_test_variations is a hidden input fixed at 2; the two classes are listed whatever it holds.
+  function renderCssTestClasses(){
 
-    jQuery('.css-test-helper-zone').empty();
+    var $zone = jQuery('.css-test-helper-zone');
+
+    if(!$zone.length)
+      return;
 
     var testId = jQuery("#post_ID").val();
 
-    for (var i = 1; i <= parseInt(jQuery('#css_test_variations').val()); i++) {
+    var count = 2;
 
-        jQuery(".css-test-helper-zone").append('<code style="background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;"><span style="color:#64748b;">body.</span>test-css-'+testId+'-'+i+'</code>');
+    $zone.empty();
+
+    for (var i = 1; i <= count; i++) {
+
+        jQuery('<code style="background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;"><span style="color:#64748b;">body.</span></code>')
+          .append(document.createTextNode('test-css-' + testId + '-' + i))
+          .appendTo($zone);
 
     }
 
-  });
+  }
 
-  jQuery('#css_test_variations').trigger('change');
+  jQuery('#css_test_variations').on('change', renderCssTestClasses);
+
+  renderCssTestClasses();
 
 
 
@@ -939,14 +971,14 @@ jQuery(document).ready(function() {
 
   });
 
-  // The conversion goal is a page visit.
-  jQuery("#bt_experiments_conversion_page").change(function(){
+  // The conversion goal is a page visit ('page') or an element click ('selector').
+  jQuery("#bt_experiments_conversion_page").on('change', function(){
 
-    refreshConversionPage();
+    refreshConversionGoalType();
 
-    jQuery('.conversion_page_selector').toggle(jQuery(this).val() === 'page');
+  });
 
-  }).change();
+  refreshConversionGoalType();
 
 
 
@@ -2251,11 +2283,57 @@ function refreshTestPages(){
 
 
 
+// The conversion goal type: 'page' (a visitor reaches a page) or 'selector' (a visitor clicks an element).
+function getConversionGoalType(){
+
+  return jQuery("#bt_experiments_conversion_page").val() === "selector" ? "selector" : "page";
+
+}
+
+
+
+// Element-click goals are matched with Element.matches(); a selector may end in |eventname.
+function isValidGoalSelector(selector){
+
+  var css = String(selector || '').split('|')[0].trim();
+
+  if(!css)
+    return false;
+
+  try {
+    document.createDocumentFragment().querySelector(css);
+    return true;
+  } catch (e) {
+    return false;
+  }
+
+}
+
+
+
+// Show the page picker for a page-visit goal, the CSS selector field for an element-click goal.
+function refreshConversionGoalType(){
+
+  var isSelectorGoal = getConversionGoalType() === "selector";
+
+  jQuery(".conversion_page_selector").toggle(!isSelectorGoal);
+
+  // The select2 box sits next to the page select; hide it too when it is not inside the label.
+  jQuery("#bt_experiments_conversion_page_selector").next(".select2-container").toggle(!isSelectorGoal);
+
+  jQuery(".conversion_selector_input").toggle(isSelectorGoal);
+
+  refreshConversionPage();
+
+}
+
+
+
 function refreshConversionPage(){
 
 
 
-  var conv_page = jQuery("#bt_experiments_conversion_page").val() || "page";
+  var conv_page = getConversionGoalType();
 
   
 
@@ -2327,19 +2405,10 @@ function updateDescription(full = true) {
 
     {
 
-      description += "<BR>Traffic split examples:";
+      // Each test splits its traffic between the original and one variation.
+      var splitamount =  Math.round(percentage/2);
 
-      var splitamount =  Math.round(percentage/2,0);
-
-      description += "<BR>2 variations: "+ splitamount + "% of your total traffic will see each variation.";
-
-      splitamount =  Math.round(percentage/3,0);
-
-      description += "<BR> 3 variations: "+ splitamount + "% of your total traffic will see each variation.";
-
-      splitamount =  Math.round(percentage/4,0);
-
-      description += "<BR> 4 variations: "+ splitamount + "% of your total traffic will see each variation.";
+      description += "<BR>The original and the variation are each shown to about " + splitamount + "% of your total traffic.";
 
     }
 

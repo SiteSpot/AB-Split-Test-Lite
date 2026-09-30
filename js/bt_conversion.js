@@ -467,7 +467,7 @@ function abstMainInit() {
       }
 
       if (typeof current_page !== 'undefined' && Array.isArray(current_page) && (current_page.includes(detail.conversion_page_id) || current_page.includes(parseInt(detail.conversion_page_id)))) {
-        abstConvertPageGoal(key);
+        abstRecordConversion(key);
       }
     });
   }
@@ -609,6 +609,12 @@ function abstMainInit() {
         }
       }
 
+      // Element-click goal: a click on the goal selector, or on an element with the
+      // ab-click-convert-{test id} class, records the conversion.
+      if (experiment.conversion_page === 'selector') {
+        abClickListener(experimentId, experiment.conversion_selector || '');
+      }
+
       //full page test handler //if experiment.full_page_default_page in array current_page
       if (experiment.test_type == 'full_page' && typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.some(page => String(page) === String(experiment.full_page_default_page))) {
         //console.log('Full Page Test: ' + experimentId);
@@ -688,6 +694,11 @@ function abstMainInit() {
           exp_redirect[experimentId]['magic-' + experimentId + '-' + i] = '';
         }
       }
+    });
+
+    // A test compares the original with one variation: the first two versions found.
+    Object.keys(current_exp).forEach(function (experimentId) {
+      current_exp[experimentId] = current_exp[experimentId].slice(0, 2);
     });
 
     // Sort so full_page experiments are processed first, and within full_page, published (active)
@@ -1027,8 +1038,8 @@ document.addEventListener('DOMContentLoaded', abstMainInit);
 // Also run if config loads late (deferred by cache plugins like LiteSpeed)
 document.addEventListener('abst-config-ready', abstMainInit);
 
-// Record the page-goal conversion for a test the visitor is already in.
-function abstConvertPageGoal(testId) {
+// Record the conversion (page visit or element click) for a test the visitor is already in.
+function abstRecordConversion(testId) {
   if (!testId || !window.bt_experiments || !window.bt_experiments[testId]) {
     return false;
   }
@@ -1057,6 +1068,47 @@ function abstConvertPageGoal(testId) {
   btab.conversion = 1;
   abstSetCookie('btab_' + testId, JSON.stringify(btab), 1000);
   return true;
+}
+
+// Element-click goal. One delegated listener per test; a selector may end in |eventname
+// (e.g. ".signup|submit") to listen for another event instead of click.
+function abClickListener(experimentId, conversionSelector) {
+  var eventType = 'click';
+  if (conversionSelector.indexOf('|') !== -1) {
+    var parts = conversionSelector.split('|');
+    conversionSelector = parts[0];
+    eventType = parts[1] || 'click';
+  }
+  var classSelector = '.ab-click-convert-' + experimentId;
+
+  window.abst = window.abst || {};
+  window.abst._abstClickListenerRegistry = window.abst._abstClickListenerRegistry || {};
+  var registryKey = experimentId + '|' + eventType + '|' + conversionSelector;
+  if (window.abst._abstClickListenerRegistry[registryKey]) {
+    return;
+  }
+  window.abst._abstClickListenerRegistry[registryKey] = true;
+
+  document.addEventListener(eventType, function (event) {
+    var target = event.target;
+    while (target && target !== document) {
+      if (target instanceof Element) {
+        var matched = false;
+        try {
+          matched = (conversionSelector.trim() !== '' && target.matches(conversionSelector)) || target.matches(classSelector);
+        } catch (e) {
+          console.warn('ABST: invalid goal selector for test ' + experimentId + ': ' + conversionSelector);
+          return;
+        }
+        if (matched) {
+          console.log('ABST: ' + eventType + ' conversion on ' + (conversionSelector || classSelector));
+          abstRecordConversion(experimentId);
+          return;
+        }
+      }
+      target = target.parentNode;
+    }
+  }, true);
 }
 
 function showSkippedVisitorDefault(eid, createCookie = false, variation = false, scrollto=false) {

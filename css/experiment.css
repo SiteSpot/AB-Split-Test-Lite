@@ -219,6 +219,20 @@ input[type=date],input[type=datetime-local],input[type=datetime],input[type=emai
     line-height: 16px;
 }
 
+/* Conversion goal: type (page visit / element click) and the element-click CSS selector.
+   experiment.js shows the page picker or the selector field for the chosen type. */
+select#bt_experiments_conversion_page {
+    width: 100%;
+    max-width: 25rem;
+    margin-bottom: 8px;
+}
+input#bt_experiments_conversion_selector {
+    width: 100%;
+    max-width: 25rem;
+    margin-top: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 /* Legacy results rows (replaced by the results table) */
 .results_variation { display: none; }
 
