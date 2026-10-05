@@ -8,7 +8,7 @@
 
  * Plugin URI:        https://absplittest.com
 
- * Description:       Self-hosted A/B split testing for WordPress. Test pages, blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and more, with heatmaps and session replays.
+ * Description:       Self-hosted A/B split testing for WordPress. Test pages, blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and more, with heatmaps.
 
  * Version:           1.0.0
 

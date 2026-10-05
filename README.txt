@@ -9,7 +9,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Self-hosted A/B and split testing for WordPress: unlimited tests, heatmaps, session replays, page-builder controls, MCP and REST.
+Self-hosted A/B and split testing for WordPress: unlimited tests, heatmaps, page-builder controls, MCP and REST.
 
 == Description ==
 
@@ -24,7 +24,7 @@ It is built on the WordPress **Abilities API**, so AI agents such as Claude Code
 * **Unlimited tests.** Run as many A/B tests at once as you need. Each test compares your original with one variation, and traffic is split evenly between them.
 * **Self-hosted.** Tests, tracking and reporting all run on your server.
 * **No traffic meter.** No "tested page view" limit and no per-visitor billing.
-* **Heatmaps and session replays on every page.** Click maps, scroll maps and session replays, stored on your own server. You choose how many days of data to keep.
+* **Heatmaps on every page.** Click maps and scroll maps, stored on your own server. You choose how many days of data to keep.
 * **Built for AI agents.** An MCP integration and a matching REST API let Claude, Cursor or any MCP client create, launch and read tests on your site.
 * **Page-builder integrations.** Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg all get native test controls inside the builder.
 * **Privacy-first.** No device fingerprinting and no third-party services. Visitors are assigned to variations with first-party cookies on your own domain, and you can wait for cookie consent before anything is stored.
@@ -71,9 +71,9 @@ Pick what counts as a win for each test:
 * **Page visit**: a visitor in the test reaches the page you choose, for example your thank-you, order-received or sign-up confirmation page.
 * **Element click**: a visitor clicks an element you choose with a CSS selector, such as a buy, sign-up or call button.
 
-= Heatmaps, session replays and visitor journeys =
+= Heatmaps and scroll maps =
 
-See *why* a variation wins. Click heatmaps show where visitors click, and scroll maps show how far down each page they read. Session replays reconstruct real visits: cursor movement, clicks and scrolling. Everything is recorded on every page of your site and stored on your own server. Data is kept for 3 days by default; change it under **Settings → Heatmaps**.
+See *why* a variation wins. Click heatmaps show where visitors click, and scroll maps show how far down each page they read. Everything is recorded on every page of your site and stored on your own server. Data is kept for 3 days by default; change it under **Settings → Heatmaps**.
 
 = Trustworthy results =
 
@@ -207,11 +207,11 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 * First WordPress.org release of AB Split Test Lite, built on the AB Split Test engine used since 2019.
 * Self-hosted point-and-click, full-page, on-page and CSS A/B tests, with no limit on the number of tests.
 * MCP tools (via the WordPress Abilities API) and REST API for AI-agent and programmatic control.
-* Heatmaps and session replays on every page, with configurable data retention.
+* Click heatmaps and scroll maps on every page, with configurable data retention.
 * Native page-builder controls for Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg.
 * Bayesian statistical analysis with device breakdown.
 
 == Upgrade Notice ==
 
 = 1.0.0 =
-First public release of AB Split Test Lite: self-hosted A/B testing with unlimited tests, page-visit and click goals, AI-agent (MCP) control, point-and-click editing, heatmaps and session replays.
+First public release of AB Split Test Lite: self-hosted A/B testing with unlimited tests, page-visit and click goals, AI-agent (MCP) control, point-and-click editing and heatmaps.

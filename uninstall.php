@@ -124,7 +124,7 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- options table cleanup on uninstall.
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'abst\\_%'" );
 
-	// Journey / heatmap / session-replay files: the current folder (uploads/abst,
+	// Journey / heatmap files: the current folder (uploads/abst,
 	// holding abst/journeys) and the legacy wp-content/abst-journeys folder that
 	// earlier versions used, in case it was never migrated.
 	$abst_upload_base = trailingslashit( wp_upload_dir()['basedir'] );

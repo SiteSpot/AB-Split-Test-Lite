@@ -59,14 +59,12 @@ class ABST_Admin {
     $abst_enable_logging = 1;
     $abst_enable_heatmaps = (isset($_POST['abst_enable_heatmaps']) && absint(wp_unslash($_POST['abst_enable_heatmaps'])) === 1) ? 1 : 0;
     $wait_for_approval = (isset($_POST['wait_for_approval']) && absint(wp_unslash($_POST['wait_for_approval'])) === 1) ? 1 : 0;
-    // heatmap and session replay data retention, in days
+    // heatmap data retention, in days
     $heatmap_retention_length = isset($_POST['heatmap_retention_length']) ? max(1, intval($_POST['heatmap_retention_length'])) : 3;
 
     // store the user journey logging preference
     $enable_user_journeys = (isset($_POST['enable_user_journeys']) && absint(wp_unslash($_POST['enable_user_journeys'])) === 1) ? 1 : 0;
 
-    // store session replays preference
-    $enable_session_replays = (isset($_POST['enable_session_replays']) && absint(wp_unslash($_POST['enable_session_replays'])) === 1) ? 1 : 0;
 
     // Heatmaps record on every page; the saved page is only the default
     // page shown when the heatmap viewer opens.
@@ -92,7 +90,6 @@ class ABST_Admin {
     $this->abst_update_admin_setting( 'selected_post_types', $selected_post_types );
     $this->abst_update_admin_setting( 'ab_change_canonicals', $change_canonicals );
     $this->abst_update_admin_setting( 'abst_enable_user_journeys', $enable_user_journeys );
-    $this->abst_update_admin_setting( 'abst_enable_session_replays', $enable_session_replays );
     $this->abst_update_admin_setting( 'abst_heatmap_pages', $heatmap_pages );
     $this->abst_update_admin_setting( 'abst_heatmap_all_pages', $heatmap_all_pages );
     $this->abst_update_admin_setting( 'ab_dont_clear_cache_on_update', $dont_clear_cache );
@@ -198,7 +195,6 @@ class ABST_Admin {
       'post-new.php?post_type=bt_experiments',
       $parent_slug,
       'abst-heatmaps',
-      'abst-session-replay',
       'abst-logs',
       self::$page_slug,
     ];

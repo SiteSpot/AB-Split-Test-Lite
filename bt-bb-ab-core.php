@@ -1440,13 +1440,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         include_once ( plugin_dir_path( __FILE__ ) . 'modules/journey.php');
 
-        // Session replay depends on journey module AND session replays being enabled
 
-        if(abst_get_admin_setting('abst_enable_session_replays') == 1) {
-
-          include_once ( plugin_dir_path( __FILE__ ) . 'modules/session-replay/session-replay.php');
-
-        }
+        
 
       }
 
@@ -9250,7 +9245,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
       // The tour and select2 are only used on this plugin's own screens (tests, settings,
-      // heatmaps, replays, logs). Loading them on every admin page clashed with other
+      // heatmaps, logs). Loading them on every admin page clashed with other
       // plugins' select2 copies.
       $abst_screen = function_exists('get_current_screen') ? get_current_screen() : null;
       $abst_screen_id = $abst_screen ? $abst_screen->id : '';
@@ -10772,7 +10767,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       // Enqueue admin styles for experiments screen and custom admin pages
 
       // bt_bb_ab_test: the settings form posts to options-general.php, which has no post_type.
-      $abst_admin_pages = ['abst-heatmaps', 'bt_bb_ab_insights', 'abst-session-replay', 'bt_bb_ab_test'];
+      $abst_admin_pages = ['abst-heatmaps', 'bt_bb_ab_test'];
 
       $is_abst_page = isset($_GET['page']) && in_array($_GET['page'], $abst_admin_pages);
 
@@ -11976,8 +11971,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'description' => 'Get aggregated heatmap, click-map and scroll-map data for a page: ' .
                          'per-element click counts (including rage and dead clicks), raw click ' .
                          'points for overlay rendering, screen-size distribution, scroll-depth ' .
-                         'distribution and average fold, plus deep links to view the rendered ' .
-                         'heatmap and the session replays in wp-admin. Filterable by device, ' .
+                         'distribution and average fold, plus a deep link to view the rendered ' .
+                         'heatmap in wp-admin. Filterable by device, ' .
                          'test variation, date range, referrer and UTM. Call list-heatmap-pages ' .
                          'first to discover valid page_id values.',
         'input_schema' => [
@@ -12963,7 +12958,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     /**
      * GET /bt-bb-ab/v1/heatmap-data — aggregated heatmap/click/scroll data for a
-     * page, plus deep links to view the rendered heatmap and session replays.
+     * page, plus a deep link to view the rendered heatmap.
      */
     function rest_get_heatmap_data($request) {
       $page_id_raw = $request->get_param('page_id');
@@ -14681,7 +14676,7 @@ function abst_add_inline_css( $css ) {
   wp_add_inline_style( 'abst-inline', $css );
 }
 
-/** Days of heatmap and session replay data kept (settings > Heatmaps). */
+/** Days of heatmap data kept (settings > Heatmaps). */
 function abst_heatmap_retention_days() {
   return max(1, intval(abst_get_admin_setting('abst_heatmap_retention_length') ?: 3));
 }
@@ -14976,7 +14971,7 @@ function abst_get_admin_setting($setting){
     return '1';
   }
 
-  // Heatmap and session replay data retention in days (settings > Heatmaps), 3 unless changed.
+  // Heatmap data retention in days (settings > Heatmaps), 3 unless changed.
   if ($setting === 'abst_heatmap_retention_length') {
     $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
     $value = $network ? get_site_option($setting, 3) : get_option($setting, 3);
@@ -14988,7 +14983,6 @@ function abst_get_admin_setting($setting){
   // '0' written by the settings form is preserved so users can still opt out.
   $default_on = array(
     'abst_enable_user_journeys'   => '1', // powers journey tracking + heatmaps
-    'abst_enable_session_replays' => '1',
     'abst_enable_heatmaps'        => '1',
   );
 
@@ -15154,27 +15148,8 @@ function abst_add_logs_page() {
 
     
 
-    // Session Replay - only if both journeys AND session replays are enabled
 
-    if (abst_get_admin_setting('abst_enable_user_journeys') == '1' && abst_get_admin_setting('abst_enable_session_replays') == '1') {
-
-      add_submenu_page(
-
-        'edit.php?post_type=bt_experiments',
-
-        'Session Replays',
-
-        'Session Replays',
-
-        'manage_options',
-
-        'abst-session-replay',
-
-        'abst_session_replay_page_content'
-
-      );
-
-    }
+    
 
   }
 
@@ -15229,25 +15204,7 @@ add_filter( 'plugin_row_meta', 'abst_lite_plugin_row_meta', 10, 2 );
 
 
 
-/**
 
- * Session Replay page content callback
-
- * Delegates to the ABST_Session_Replay class
-
- */
-
-function abst_session_replay_page_content() {
-
-  if (class_exists('ABST_Session_Replay')) {
-
-    $replay = new ABST_Session_Replay();
-
-    $replay->render_admin_page();
-
-  }
-
-}
 
 
 
@@ -16459,13 +16416,6 @@ function abst_heatmaps_page_content() {
 
       
 
-      echo '<div class="abst-heatmap-toolbar" style="max-width: '.intval($screenWidth).'px; width:calc(100% - 20px);">';
-
-      echo '<button id="abst-rerender-btn" class="abst-rerender-floating-btn" type="button" title="Re-render heatmap after resizing or animated elements move">&#8635; Re-render</button>';
-
-      echo '<button id="abst-rerender-auto" class="abst-rerender-auto-label" type="button" aria-pressed="false" title="Automatically re-render after scrolling stops or the window is resized"><span class="abst-rerender-auto-box" aria-hidden="true"></span><span>Auto</span></button>';
-
-      echo '</div>';
 
       echo '<div class="abst-heatmap-wrapper" style="position: relative; max-width: '.intval($screenWidth).'px; width:calc(100% - 20px); margin: 0 auto 40px; border: 10px solid #d9d9d9; box-shadow: 0 1px 10px -4px black;">';
 
@@ -17428,13 +17378,13 @@ function abst_build_heatmap_payload($page_id, $filters = [], $point_limit = 5000
 }
 
 /**
- * Build authenticated wp-admin deep links to view the rendered heatmap and the
- * session replays for a page, pre-applying the given filters. No public surface
- * is created — both admin screens restore filter state from these URL params.
+ * Build an authenticated wp-admin deep link to view the rendered heatmap for a page,
+ * pre-applying the given filters. No public surface is created — the heatmap screen
+ * restores filter state from these URL params.
  *
  * @param int|string $page_id Numeric post ID or archive key.
  * @param array      $filters Same filter array passed to abst_build_heatmap_payload().
- * @return array{heatmap:string,session_replay:string}
+ * @return array{heatmap:string}
  */
 function abst_heatmap_view_urls($page_id, $filters = []) {
   $page_id = is_numeric($page_id) ? (int) $page_id : (is_string($page_id) ? trim($page_id) : $page_id);
@@ -17451,18 +17401,8 @@ function abst_heatmap_view_urls($page_id, $filters = []) {
   if (!empty($filters['utm_medium']))   { $hm['utm_medium'] = $filters['utm_medium']; }
   if (!empty($filters['utm_campaign'])) { $hm['utm_campaign'] = $filters['utm_campaign']; }
 
-  $sr = ['post_type' => 'bt_experiments', 'page' => 'abst-session-replay'];
-  if (is_int($page_id))                 { $sr['page_id'] = $page_id; }
-  if (!empty($filters['screen']))       { $sr['device'] = $filters['screen']; }
-  if (!empty($filters['eid']))          { $sr['test_id'] = intval($filters['eid']); }
-  if (!empty($filters['referrer']))     { $sr['referrer'] = $filters['referrer']; }
-  if (!empty($filters['utm_source']))   { $sr['utm_source'] = $filters['utm_source']; }
-  if (!empty($filters['utm_medium']))   { $sr['utm_medium'] = $filters['utm_medium']; }
-  if (!empty($filters['utm_campaign'])) { $sr['utm_campaign'] = $filters['utm_campaign']; }
-
   return [
-    'heatmap'        => admin_url('edit.php?' . http_build_query($hm)),
-    'session_replay' => admin_url('edit.php?' . http_build_query($sr)),
+    'heatmap' => admin_url('edit.php?' . http_build_query($hm)),
   ];
 }
 

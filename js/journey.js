@@ -187,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeMode = typeof window.abstHeatmapMode === 'string' ? window.abstHeatmapMode : (modeSelectEl ? modeSelectEl.value : '');
   const isScrollMode = activeMode === 'scroll';
   const hasHeatmapLibrary = typeof h337 !== 'undefined';
-  const autoRerenderToggle = document.getElementById('abst-rerender-auto');
   let autoRerenderTimer = null;
   let lastAutoRenderSize = {
     width: window.innerWidth,
@@ -201,19 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
-  const isAutoRerenderEnabled = () => {
-    return autoRerenderToggle && autoRerenderToggle.getAttribute('aria-pressed') === 'true';
-  };
-
   const runAutoRerender = async () => {
     if (typeof window.abstRerenderHeatmap !== 'function') return;
     await window.abstRerenderHeatmap({ skipAnimations: true });
     updateAutoRenderSize();
   };
 
+  // Re-render once scrolling stops or the window is resized, so the overlay follows the layout.
   const scheduleAutoRerender = (reason) => {
-    if (!isAutoRerenderEnabled()) return;
-
     if (reason === 'resize') {
       const sizeChanged = window.innerWidth !== lastAutoRenderSize.width || window.innerHeight !== lastAutoRenderSize.height;
       if (!sizeChanged) return;
@@ -221,20 +215,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clearTimeout(autoRerenderTimer);
     autoRerenderTimer = setTimeout(async () => {
-      if (!isAutoRerenderEnabled()) return;
       await runAutoRerender();
     }, 1000);
   };
 
-  if (autoRerenderToggle) {
-    autoRerenderToggle.addEventListener('click', () => {
-      const enabled = !isAutoRerenderEnabled();
-      autoRerenderToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-      updateAutoRenderSize();
-    });
-    window.addEventListener('scroll', () => scheduleAutoRerender('scroll'), { passive: true });
-    window.addEventListener('resize', () => scheduleAutoRerender('resize'), { passive: true });
-  }
+  window.addEventListener('scroll', () => scheduleAutoRerender('scroll'), { passive: true });
+  window.addEventListener('resize', () => scheduleAutoRerender('resize'), { passive: true });
 
   if (!wrapper || !iframe || !heatmapContainer) {
     console.log('Heatmap init aborted - missing required elements');
@@ -1004,22 +990,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.abstRerenderHeatmap = requestRender;
-
-    const rerenderBtn = document.getElementById('abst-rerender-btn');
-
-    if (rerenderBtn) {
-      rerenderBtn.addEventListener('click', async () => {
-        rerenderBtn.disabled = true;
-        rerenderBtn.textContent = 'Re-rendering...';
-        try {
-          await requestRender({ skipAnimations: true });
-          updateAutoRenderSize();
-        } finally {
-          rerenderBtn.disabled = false;
-          rerenderBtn.textContent = '\u21ba Re-render';
-        }
-      });
-    }
 
     await requestRender();
     updateAutoRenderSize();

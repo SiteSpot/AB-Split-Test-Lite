@@ -45,21 +45,11 @@ $detected_caches = !empty(abst_get_detected_caches()) ? implode(', ', abst_get_d
 // Don't send events until cookie consent is given; saves to session storage until approved.
 $wait_for_approval = abst_get_admin_setting('abst_wait_for_approval') ? 'checked' : '';
 
-// Heatmap and session replay data retention, in days (minimum 1, default 3).
+// Heatmap data retention, in days (minimum 1, default 3).
 $heatmap_retention_length = max(1, intval(abst_get_admin_setting('abst_heatmap_retention_length')));
 
 $enable_user_journeys = abst_get_admin_setting('abst_enable_user_journeys');
 $enable_user_journeys = ($enable_user_journeys && $enable_user_journeys !== '0') ? 'checked' : '';
-
-// Session replays default to ON when heatmaps are enabled.
-$enable_session_replays = abst_get_admin_setting('abst_enable_session_replays');
-if ($enable_session_replays === null || $enable_session_replays === '') {
-  $enable_session_replays = $enable_user_journeys ? 'checked' : '';
-} elseif ($enable_session_replays && $enable_session_replays !== '0') {
-  $enable_session_replays = 'checked';
-} else {
-  $enable_session_replays = '';
-}
 
 $mcpServerName = str_replace('.', '-', get_bloginfo('url'));
 $mcpServerName = str_replace(array('http://', 'https://'), '', $mcpServerName);
@@ -134,7 +124,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle></svg>
 
-          Heatmaps & Replays
+          Heatmaps
 
         </button>
 
@@ -338,7 +328,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
         <div class="abst-tab-panel" id="tab-heatmaps">
 
-          <h2>Heatmaps & Session Recording</h2>
+          <h2>Heatmaps</h2>
 
 
 
@@ -358,21 +348,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
 
 
-              <label><strong>Session Replays</strong></label>
-
-              <p>Watch recordings of user sessions to understand how visitors interact with your site.</p>
-
-              <p><input type="checkbox" class="ab-toggle" id="abst_enable_session_replays" name="enable_session_replays" value="1" <?php echo esc_attr($enable_session_replays); ?> /> <strong>Enable session replays</strong></p>
-
-
-
-              <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-
-
-
               <label><strong>Default Viewer Page</strong></label>
 
-              <p>Heatmaps and session replays are recorded anonymously on every page of your site. Choose the page shown first when you open the heatmap viewer.</p>
+              <p>Heatmaps are recorded anonymously on every page of your site. Choose the page shown first when you open the heatmap viewer.</p>
               <p><select id="heatmap_page_select" name="heatmap_pages[]" style="width: 25rem;"></select></p>
 
 
@@ -384,7 +362,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <strong>Data Retention</strong>
 
-              <p><label for="heatmap_retention_length">Days to keep heatmap and session replay data</label></p>
+              <p><label for="heatmap_retention_length">Days to keep heatmap data</label></p>
 
               <p><input type="number" name="heatmap_retention_length" id="heatmap_retention_length" min="1" step="1" value="<?php echo esc_attr($heatmap_retention_length); ?>" style="width: 6rem;" /> days</p>
 
@@ -396,7 +374,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <label><strong>Data Management</strong></label>
 
-              <p><button type="button" id="remove_heatmap_data" class="button-secondary">Remove all Heatmap & Session Replay Data</button></p>
+              <p><button type="button" id="remove_heatmap_data" class="button-secondary">Remove all Heatmap Data</button></p>
 
             </div>
 
