@@ -9908,7 +9908,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             if($post->post_status == 'idea')
 
-              $newstate = '<span>⬆️ Upgrade Required</span>';
+              $newstate = '<span>💡 Idea</span>';
 
             else if($post->post_status == 'draft')
 
