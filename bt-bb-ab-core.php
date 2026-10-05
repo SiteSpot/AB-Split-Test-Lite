@@ -14972,8 +14972,8 @@ function abst_sanitize($value) {
  */
 
 /**
- * Secret part of the plugin's file names in uploads (the debug log and journey files),
- * so they cannot be downloaded by guessing a URL. Derived from AUTH_KEY.
+ * Secret part of journey file names, so they cannot be downloaded by guessing a URL.
+ * Derived from AUTH_KEY.
  */
 function abst_file_hash() {
   return substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
@@ -14984,35 +14984,103 @@ function abst_journey_file($date, $compressed = false) {
   return trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . abst_file_hash() . '_' . $date . ($compressed ? '.txt.gz' : '.txt');
 }
 
-// The debug log is kept under this size by dropping its oldest lines.
-if (!defined('ABST_LOG_MAX_BYTES')) define('ABST_LOG_MAX_BYTES', 5 * MB_IN_BYTES);
+// Debug log bounds, the same as AB Split Test Pro: the newest 500 lines, at most 512 KB.
+if (!defined('ABST_LOG_MAX_LINES')) define('ABST_LOG_MAX_LINES', 500);
+if (!defined('ABST_LOG_MAX_BYTES')) define('ABST_LOG_MAX_BYTES', 512 * KB_IN_BYTES);
 
-/** Keep the newest $keep_bytes of a log file, cut at a line break. */
-function abst_trim_log_file($log_file, $keep_bytes) {
-  $size = @filesize($log_file);
-  if (!$size || $size <= $keep_bytes) {
-    return;
+/**
+ * The debug log: a plain .log file with an unguessable name (an HMAC of the site URL
+ * with the auth salt) in uploads/abst/logs, behind a blank index and "Deny from all".
+ * It is the file AB Split Test Pro writes, so the log carries over when a site switches.
+ * False until WordPress has loaded wp_salt().
+ */
+function abst_debug_log_file() {
+  static $file = null;
+  if ($file !== null) {
+    return $file;
   }
-  $tail = @file_get_contents($log_file, false, null, $size - $keep_bytes);
-  if ($tail === false) {
-    return;
+  if (!function_exists('wp_salt')) {
+    return false;
   }
-  $break = strpos($tail, "\n");
-  abst_put_contents($log_file, $break === false ? '' : substr($tail, $break + 1));
+  $upload_dir = wp_upload_dir();
+  $log_dir = empty($upload_dir['basedir']) ? '' : trailingslashit($upload_dir['basedir']) . 'abst/logs';
+  if ($log_dir === '' || !wp_mkdir_p($log_dir)) {
+    return $file = false;
+  }
+  if (!file_exists($log_dir . '/index.html')) {
+    abst_put_contents($log_dir . '/index.html', '');
+  }
+  if (!file_exists($log_dir . '/.htaccess')) {
+    abst_put_contents($log_dir . '/.htaccess', "Deny from all\n");
+  }
+  return $file = $log_dir . '/debug-' . hash_hmac('sha256', home_url('/'), wp_salt('auth')) . '.log';
 }
 
+/** The newest lines of a log file, within ABST_LOG_MAX_LINES and ABST_LOG_MAX_BYTES. */
+function abst_debug_log_tail($log_file) {
+  $size = @filesize($log_file);
+  if (!$size) {
+    return '';
+  }
+  $offset = max(0, $size - ABST_LOG_MAX_BYTES);
+  $text = @file_get_contents($log_file, false, null, $offset);
+  if ($text === false) {
+    return false;
+  }
+  if ($offset > 0) {
+    $break = strpos($text, "\n"); // Skip the partial first line.
+    $text = $break === false ? '' : substr($text, $break + 1);
+  }
+  return implode("\n", array_slice(explode("\n", $text), -(ABST_LOG_MAX_LINES + 1)));
+}
+
+/** Cut a log file back to its newest lines. */
+function abst_trim_log_file($log_file) {
+  $tail = abst_debug_log_tail($log_file);
+  if ($tail !== false) {
+    abst_put_contents($log_file, $tail);
+  }
+}
+
+/** Move the log from where earlier versions kept it (uploads/abst_log_<hash>.log, abst_log.txt). */
+function abst_migrate_debug_log() {
+  if (get_option('abst_debug_log_moved')) {
+    return;
+  }
+  $log_file = abst_debug_log_file();
+  if (!$log_file) {
+    return;
+  }
+  $base = trailingslashit(wp_upload_dir()['basedir']);
+  $old_logs = array_merge(file_exists($base . 'abst_log.txt') ? array($base . 'abst_log.txt') : array(), glob($base . 'abst_log_*.log') ?: array());
+  $merged = '';
+  foreach ($old_logs as $old_log) {
+    $merged .= (string) abst_debug_log_tail($old_log);
+  }
+  if ($merged !== '') {
+    // Older lines first, then anything already logged to the new file.
+    $current = file_exists($log_file) ? (string) @file_get_contents($log_file) : '';
+    if (!abst_put_contents($log_file, $merged . $current)) {
+      return;
+    }
+    abst_trim_log_file($log_file);
+  }
+  foreach ($old_logs as $old_log) {
+    wp_delete_file($old_log);
+  }
+  update_option('abst_debug_log_moved', 1, false);
+}
+add_action('init', 'abst_migrate_debug_log');
+
 function abst_log($message, $level = 'info') {
-  
 
-  // Get WordPress uploads directory
+  $log_file = abst_debug_log_file();
 
-  $upload_dir = wp_upload_dir();
+  if (!$log_file) {
 
-  $log_dir = $upload_dir['basedir'];
+    return;
 
-  $log_file = $log_dir . '/abst_log_' . abst_file_hash() . '.log';
-
-  
+  }
 
   // if message is array or object then stringify it
 
@@ -15022,24 +15090,17 @@ function abst_log($message, $level = 'info') {
 
   }
 
-  // Format the log entry
-
-  $timestamp = current_time('mysql');
+  // One line per entry, so a message cannot forge another entry.
 
   $message = substr(str_replace(["\r", "\n", "\0"], ' ', (string) $message), 0, 4096);
-  $log_entry = "[$timestamp] $message\n";
+  $log_entry = '[' . current_time('mysql') . '] ' . $message . "\n";
 
-  
+  // Append, so each line stays cheap; past the size cap, cut back to the newest lines.
 
-  // Write to log file
-
-  // Past the cap, drop the oldest lines (down to 80% of it) rather than clearing the log.
-  if (file_exists($log_file) && filesize($log_file) > ABST_LOG_MAX_BYTES) {
-    abst_trim_log_file($log_file, (int) (ABST_LOG_MAX_BYTES * 0.8));
+  if (@filesize($log_file) > ABST_LOG_MAX_BYTES) {
+    abst_trim_log_file($log_file);
   }
   abst_put_contents($log_file, $log_entry, true);
-
-
 
 }
 
@@ -18206,7 +18267,7 @@ function abst_logs_page_content() {
 
   $log_dir = $upload_dir['basedir'];
 
-  $log_file = $log_dir . '/abst_log_' . abst_file_hash() . '.log';
+  $log_file = abst_debug_log_file();
 
   
 
@@ -18225,7 +18286,7 @@ function abst_logs_page_content() {
     wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['abst_clear_logs_nonce'])), 'abst_clear_logs')
   ) {
 
-    abst_put_contents($log_file, '');
+    if ($log_file) abst_put_contents($log_file, '');
 
     echo '<div class="notice notice-success"><p>Logs cleared successfully.</p></div>';
 
@@ -18245,7 +18306,7 @@ function abst_logs_page_content() {
 
   echo '<div class="abst-logs-info">';
 
-  echo '<p>Debug logs help troubleshoot issues with your A/B tests. Once the log reaches 5 MB, its oldest lines are dropped automatically.</p>';
+  echo '<p>Debug logs help troubleshoot issues with your A/B tests. The newest 500 lines are kept.</p>';
 
   echo '</div>';
 
@@ -18272,9 +18333,9 @@ function abst_logs_page_content() {
 
   
 
-  if (file_exists($log_file)) {
+  if ($log_file && file_exists($log_file)) {
 
-    $logs = file_get_contents($log_file);
+    $logs = abst_debug_log_tail($log_file);
 
     if (!empty($logs)) {
 
@@ -18344,35 +18405,13 @@ alert("SORRY, clipboard requires HTTPS. Please select the logs manually and use 
 
 function abst_trim_abst_log() {
 
-  // Get WordPress uploads directory
+  // Keep the newest lines, the same bounds as each write.
 
-  $upload_dir = wp_upload_dir();
+  $log_file = abst_debug_log_file();
 
-  $log_dir = $upload_dir['basedir'];
+  if ($log_file && file_exists($log_file)) {
 
-  $log_file = $log_dir . '/abst_log_' . abst_file_hash() . '.log';
-
-
-
-  // Check if log file exists
-
-  if (file_exists($log_file)) {
-
-    // Keep the log under its size cap by dropping the oldest lines.
-
-    $size = filesize($log_file);
-
-    if ($size > ABST_LOG_MAX_BYTES) {
-
-      abst_trim_log_file($log_file, (int) (ABST_LOG_MAX_BYTES * 0.8));
-
-      abst_log('Log trimmed from ' . size_format($size) . ' to ' . size_format(filesize($log_file)));
-
-    }
-
-  } else {
-
-    abst_log('Log file does not exist yet, nothing to trim');
+    abst_trim_log_file($log_file);
 
   }
 

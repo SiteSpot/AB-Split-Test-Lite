@@ -134,8 +134,8 @@ function abst_lite_uninstall_cleanup_current_site() {
 		abst_lite_uninstall_delete_dir( trailingslashit( WP_CONTENT_DIR ) . 'abst-journeys' );
 	}
 
-	// Debug log files, which live outside the abst directory: abst_log_<hash>.log
-	// (named from AUTH_KEY) and the older abst_log.txt.
+	// The debug log lives in uploads/abst/logs (removed above). Older versions kept it
+	// outside the abst directory: abst_log_<hash>.log (named from AUTH_KEY) and abst_log.txt.
 	foreach ( array_merge( (array) glob( $abst_upload_base . 'abst_log_*.log' ), array( $abst_upload_base . 'abst_log.txt' ) ) as $abst_log_file ) {
 		if ( $abst_log_file && file_exists( $abst_log_file ) ) {
 			wp_delete_file( $abst_log_file );

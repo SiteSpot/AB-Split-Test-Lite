@@ -302,7 +302,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
                 <p>Tests still run. Pending assignments stay in page memory; tracking cookies, browser storage and data transmission wait for consent. Withdrawing consent clears tracking identifiers and history.</p>
 
-                <p>Works automatically with Cookiebot, CookieConsent (Orestbida), WP Consent API, CookieYes, Complianz, and Cookies and Content Security Policy.</p>
+                <p>Works automatically with Cookiebot, CookieConsent (Orestbida), Usercentrics (including Termageddon), WP Consent API, CookieYes, Complianz, and Cookies and Content Security Policy. In Usercentrics, a service named "AB Split Test" controls it directly; otherwise it follows the statistics category, or marketing if there is none.</p>
 
                 <p>Custom banners call <code>setAbstApprovalStatus(true)</code> when the visitor accepts (it is remembered on later pages) and <code>setAbstApprovalStatus(false)</code> when consent is withdrawn.</p>
 

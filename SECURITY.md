@@ -2,13 +2,13 @@
 
 ## Directory Protection
 
-Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_<hash>_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The debug log is `wp-content/uploads/abst_log_<hash>.log` and is kept under 5 MB by dropping its oldest lines. `<hash>` is derived from `AUTH_KEY`, so file URLs cannot be guessed. The plugin writes no PHP files into uploads. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
+Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_<hash>_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The journey `<hash>` is derived from `AUTH_KEY`, so file URLs cannot be guessed. The debug log is `wp-content/uploads/abst/logs/debug-<hmac>.log`, named with an HMAC of the site URL keyed with the auth salt; it keeps the newest 500 lines (at most 512 KB) and is the same file AB Split Test Pro uses. The plugin writes no PHP files into uploads. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
 
 ### 1. Index Files
-The journey directory and its parent receive empty `index.html` files to discourage directory listing. Configure directory browsing on the web server as well.
+The journey directory, its parent and the log directory receive empty `index.html` files to discourage directory listing. Configure directory browsing on the web server as well.
 
 ### 2. .htaccess Rules
-The journey directory receives a `Deny from all` rule, which blocks direct downloads on servers that honor `.htaccess` (Apache, LiteSpeed). Other servers need the rules under **Server Configuration**.
+The journey and log directories receive a `Deny from all` rule, which blocks direct downloads on servers that honor `.htaccess` (Apache, LiteSpeed). Other servers need the rules under **Server Configuration**.
 
 ## Consent
 

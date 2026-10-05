@@ -178,7 +178,7 @@ Tests work on cached pages, including host-level page caches, because each visit
 
 AB Split Test uses first-party cookies and browser storage on your own domain to remember which variation a visitor saw. It does not fingerprint devices and sends nothing to a third party.
 
-If you need consent first, turn on **Wait for cookie consent**. Tests still run, but nothing is stored or sent until the visitor agrees. It works with Cookiebot, CookieConsent and any consent plugin that supports the WP Consent API (such as Complianz or CookieYes), or call `setAbstApprovalStatus(true)` from your own banner when the visitor accepts; it is remembered on later pages. Call `setAbstApprovalStatus(false)` when consent is withdrawn; this clears tracking identifiers and pending history. Until consent is confirmed, assignments stay in page memory. As with any analytics tool, check your own consent requirements.
+If you need consent first, turn on **Wait for cookie consent**. Tests still run, but nothing is stored or sent until the visitor agrees. It works with Cookiebot, CookieConsent, Usercentrics (including Termageddon) and any consent plugin that supports the WP Consent API (such as Complianz or CookieYes), or call `setAbstApprovalStatus(true)` from your own banner when the visitor accepts; it is remembered on later pages. Call `setAbstApprovalStatus(false)` when consent is withdrawn; this clears tracking identifiers and pending history. Until consent is confirmed, assignments stay in page memory. As with any analytics tool, check your own consent requirements.
 
 = What happens to my data if I delete the plugin? =
 

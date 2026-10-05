@@ -349,6 +349,8 @@ function abstSyncConsent() {
     }
   }
   setAbstApprovalStatus(approved);
+  // Usercentrics answers asynchronously; this covers a banner that loaded before us.
+  if (btab_vars.wait_for_approval == '1') abstCheckUsercentricsConsent();
 }
 
 // Only set to true if undefined, respecting any intentional false value
@@ -425,6 +427,140 @@ function setupConsentPartners() {
     if (event.detail.category === 'statistics' || (Array.isArray(event.detail.categories) && event.detail.categories.indexOf('statistics') !== -1)) apply(true);
   });
   document.addEventListener('cmplz_revoke', function() { apply(false); });
+  // Usercentrics (also Termageddon's banner) loads async: check when it is ready and on every change.
+  function usercentrics() {
+    if (btab_vars.wait_for_approval == '1') abstCheckUsercentricsConsent();
+  }
+  window.addEventListener('UC_UI_INITIALIZED', usercentrics);
+  window.addEventListener('UC_CONSENT', usercentrics);
+  // Legacy Browser UI "Window Event" ('ucEvent' is the conventional default name).
+  window.addEventListener('ucEvent', function(event) {
+    if (event.detail && event.detail.event == 'consent_status') usercentrics();
+  });
+}
+
+// Usercentrics support. Two generations are in the wild:
+//  - Web CMP (v3+ / web.cmp.usercentrics.eu): window.__ucCmp with a promise API
+//    (getConsentDetails) and UC_CONSENT / UC_UI_INITIALIZED window events.
+//  - Browser UI (v2/v3 legacy, app.usercentrics.eu): window.UC_UI where
+//    getServicesBaseInfo() returns an array (or a Promise behind the newer loader
+//    facade) of {name, categorySlug, consent: {status}}.
+// Approval rule, in precedence order: a service entry named for this plugin decides
+// directly; otherwise an accepted statistics/analytics category counts; otherwise an
+// accepted marketing category counts (A/B testing is conventionally classed as
+// marketing, and Usercentrics' default categories are essential/functional/marketing
+// with no statistics — this tier makes unconfigured setups work); otherwise only a
+// full accept-all grants approval. Sites wanting per-service control add an
+// "AB Split Test" service entry in the Usercentrics admin.
+function abstUsercentricsServiceNameMatches(name) {
+  return typeof name === 'string' && /ab ?split ?test|absplittest/i.test(name);
+}
+
+// Evaluate a Web CMP ConsentDetails object. Returns true/false, or null when the
+// details carry no usable signal.
+function abstUsercentricsEvaluateDetails(details) {
+  if (!details || typeof details !== 'object') {
+    return null;
+  }
+
+  var services = details.services || {};
+  for (var sid in services) {
+    var svc = services[sid];
+    if (svc && abstUsercentricsServiceNameMatches(svc.name)) {
+      return !!(svc.consent && svc.consent.given);
+    }
+  }
+
+  var categories = details.categories || {};
+  var marketingState = null;
+  for (var cid in categories) {
+    var cat = categories[cid] || {};
+    var catKey = (cid + ' ' + (cat.name || '')).toLowerCase();
+    if (catKey.indexOf('statistic') !== -1 || catKey.indexOf('analytic') !== -1) {
+      return cat.state === 'ALL_ACCEPTED';
+    }
+    if (marketingState === null && catKey.indexOf('marketing') !== -1) {
+      marketingState = cat.state === 'ALL_ACCEPTED';
+    }
+  }
+  if (marketingState !== null) {
+    return marketingState;
+  }
+
+  if (details.consent && details.consent.status) {
+    return details.consent.status === 'ALL_ACCEPTED';
+  }
+
+  return null;
+}
+
+// Evaluate a legacy getServicesBaseInfo() array. Same return contract as above.
+function abstUsercentricsEvaluateServices(services) {
+  if (!Array.isArray(services) || !services.length) {
+    return null;
+  }
+
+  var statisticsGranted = null;
+  var marketingGranted = null;
+  var allAccepted = true;
+  var hasNonEssentialService = false;
+
+  for (var i = 0; i < services.length; i++) {
+    var svc = services[i] || {};
+    var given = !!(svc.consent && svc.consent.status);
+    if (abstUsercentricsServiceNameMatches(svc.name)) {
+      return given;
+    }
+    var slug = String(svc.categorySlug || '').toLowerCase();
+    if (slug === 'essential' || svc.isEssential) {
+      continue;
+    }
+    hasNonEssentialService = true;
+    if (slug.indexOf('statistic') !== -1 || slug.indexOf('analytic') !== -1) {
+      statisticsGranted = (statisticsGranted === null ? true : statisticsGranted) && given;
+    } else if (slug.indexOf('marketing') !== -1) {
+      marketingGranted = (marketingGranted === null ? true : marketingGranted) && given;
+    }
+    if (!given) {
+      allAccepted = false;
+    }
+  }
+
+  if (statisticsGranted !== null) {
+    return statisticsGranted;
+  }
+  if (marketingGranted !== null) {
+    return marketingGranted;
+  }
+  return hasNonEssentialService ? allAccepted : null;
+}
+
+function abstApplyUsercentricsDecision(approved) {
+  if (approved === true && !window.abst.hasApproval) {
+    setAbstApprovalStatus(true);
+  } else if (approved === false && window.abst.hasApproval) {
+    setAbstApprovalStatus(false);
+  }
+}
+
+function abstCheckUsercentricsConsent() {
+  try {
+    if (window.__ucCmp && typeof window.__ucCmp.getConsentDetails === 'function') {
+      Promise.resolve(window.__ucCmp.getConsentDetails()).then(function (details) {
+        abstApplyUsercentricsDecision(abstUsercentricsEvaluateDetails(details));
+      }).catch(function () {});
+      return;
+    }
+    if (window.UC_UI && typeof window.UC_UI.getServicesBaseInfo === 'function') {
+      // May be a plain array (legacy) or a Promise (newer loader facade)
+      Promise.resolve(window.UC_UI.getServicesBaseInfo()).then(function (services) {
+        abstApplyUsercentricsDecision(abstUsercentricsEvaluateServices(services));
+      }).catch(function () {});
+    }
+  } catch (e) {
+    // CMP objects can be replaced mid-flight while the banner boots; never let a
+    // consent probe break tracking setup
+  }
 }
 
 setupConsentPartners();
