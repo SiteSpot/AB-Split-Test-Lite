@@ -167,18 +167,48 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return void
  */
 function abst_protect_journey_dir() {
-    // Prevent directory listing
-    if (!file_exists(ABST_JOURNEY_DIR . '/index.php')) {
-        abst_put_contents( ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>' );
-    }
-    if ( ! file_exists( dirname( ABST_JOURNEY_DIR ) . '/index.php' ) ) {
-        abst_put_contents( dirname( ABST_JOURNEY_DIR ) . '/index.php', '<?php //silence is golden ?>' );
+    // Prevent directory listing with an empty index.html. No PHP files are written to
+    // uploads: security plugins flag them. Earlier versions wrote a one-line index.php.
+    foreach ( array( ABST_JOURNEY_DIR, dirname( ABST_JOURNEY_DIR ) ) as $dir ) {
+        if ( ! file_exists( $dir . '/index.html' ) ) {
+            abst_put_contents( $dir . '/index.html', '' );
+        }
+        $old_index = $dir . '/index.php';
+        if ( file_exists( $old_index ) && trim( (string) @file_get_contents( $old_index ) ) === '<?php //silence is golden ?>' ) {
+            wp_delete_file( $old_index );
+        }
     }
 
     // Block direct file access (Apache/LiteSpeed). Nginx sites require a
     // server-level rule: location ~* /abst/journeys/ { deny all; }
     if (!file_exists(ABST_JOURNEY_DIR . '/.htaccess')) {
         abst_put_contents( ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all' );
+    }
+}
+
+/**
+ * Give journey files written before names carried the hash (abst_journeys_YYYYMMDD.txt)
+ * their hashed name. A day with both keeps one file: the old lines are appended.
+ */
+function abst_hash_legacy_journey_files() {
+    foreach ( glob( ABST_JOURNEY_DIR . '/abst_journeys_*' ) ?: array() as $file ) {
+        if ( ! preg_match( '/^abst_journeys_(\d{8})\.txt(\.gz)?$/', basename( $file ), $m ) ) {
+            continue;
+        }
+        $compressed = ! empty( $m[2] );
+        $target     = abst_journey_file( $m[1], $compressed );
+        if ( ! file_exists( $target ) ) {
+            $content = @file_get_contents( $file );
+            if ( $content !== false && abst_put_contents( $target, $content ) ) {
+                wp_delete_file( $file );
+            }
+        } elseif ( ! $compressed ) {
+            $content = @file_get_contents( $file );
+            if ( $content !== false && abst_put_contents( $target, $content, true ) ) {
+                wp_delete_file( $file );
+            }
+        }
+        // A compressed day that already has a hashed file is left for retention to delete.
     }
 }
 
@@ -245,6 +275,13 @@ class ABST_Journeys {
         //move logs from the old wp-content location (runs once)
 
         abst_maybe_migrate_legacy_journey_dir();
+
+        // Once per upgrade: hashed journey file names and no index.php in uploads.
+        if ( file_exists( ABST_JOURNEY_DIR ) && get_option( 'abst_journey_storage_version' ) !== '2' ) {
+            abst_protect_journey_dir();
+            abst_hash_legacy_journey_files();
+            update_option( 'abst_journey_storage_version', '2', false );
+        }
 
 
 
@@ -422,7 +459,7 @@ class ABST_Journeys {
 
     public function delete_journey_data($retention_days =  false) {
 
-        //file format abst_journeys_yyyymmdd.txt
+        //file format abst_journeys_<hash>_yyyymmdd.txt
 
         //delete all journey data older than retention_days
 
@@ -434,15 +471,15 @@ class ABST_Journeys {
 
             $retention_days = abst_get_admin_setting('abst_heatmap_retention_length');
 
-        $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt'); // get all txt files in format abst_journeys_20251009.txt
+        abst_hash_legacy_journey_files(); // older unhashed names, e.g. written by another version
 
-        $journey_files_gz = glob(ABST_JOURNEY_DIR . '/*.gz'); // get all gz files in formaT abst_journeys_20251009.txt.gz
+        $journey_files = glob(ABST_JOURNEY_DIR . '/*.txt'); // abst_journeys_<hash>_20251009.txt
+
+        $journey_files_gz = glob(ABST_JOURNEY_DIR . '/*.gz'); // abst_journeys_<hash>_20251009.txt.gz
 
         foreach ($journey_files as $journey_file) {
 
-            $file_date = str_replace('abst_journeys_', '', basename($journey_file));
-
-            $file_date = str_replace('.txt', '', $file_date);
+            $file_date = substr(basename($journey_file, '.txt'), -8);
 
             if ($delete_all || strtotime($file_date) < strtotime('-' . $retention_days . ' days')) {
 
@@ -458,9 +495,7 @@ class ABST_Journeys {
 
         foreach ($journey_files_gz as $journey_file) {
 
-            $file_date = str_replace('abst_journeys_', '', basename($journey_file));
-
-            $file_date = str_replace('.txt.gz', '', $file_date);
+            $file_date = substr(basename($journey_file, '.txt.gz'), -8);
 
             if ($delete_all || strtotime($file_date) < strtotime('-' . $retention_days . ' days')) {
 
@@ -482,9 +517,9 @@ class ABST_Journeys {
 
             $yesterday = gmdate('Ymd', strtotime('-1 day')); // ✅ Fixed format
 
-            $yesterday_file = trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . $yesterday . '.txt'; // ✅ Fixed path
+            $yesterday_file = abst_journey_file($yesterday);
 
-            $gz_file = trailingslashit( ABST_JOURNEY_DIR) . 'abst_journeys_' . $yesterday . '.txt.gz'; // ✅ .txt.gz extension
+            $gz_file = abst_journey_file($yesterday, true);
 
             
 
@@ -611,9 +646,9 @@ class ABST_Journeys {
 
         }
 
-        $file_txt = trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . $date . '.txt';
+        $file_txt = abst_journey_file($date);
 
-        $file_gz = trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . $date . '.txt.gz';
+        $file_gz = abst_journey_file($date, true);
 
         
 
@@ -1101,9 +1136,9 @@ class ABST_Journeys {
 
         //append to file , create folder file if it doesn't exist
 
-        //file format abst_journeys_yyyymmdd.txt
+        //file format abst_journeys_<hash>_yyyymmdd.txt
 
-        $journey_file = ABST_JOURNEY_DIR . '/abst_journeys_' . gmdate('Ymd') . '.txt';
+        $journey_file = abst_journey_file(gmdate('Ymd'));
 
 
 

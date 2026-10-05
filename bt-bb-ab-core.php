@@ -14971,6 +14971,36 @@ function abst_sanitize($value) {
 
  */
 
+/**
+ * Secret part of the plugin's file names in uploads (the debug log and journey files),
+ * so they cannot be downloaded by guessing a URL. Derived from AUTH_KEY.
+ */
+function abst_file_hash() {
+  return substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
+}
+
+/** A day's journey file: abst_journeys_<hash>_YYYYMMDD.txt, or .txt.gz once compressed. */
+function abst_journey_file($date, $compressed = false) {
+  return trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . abst_file_hash() . '_' . $date . ($compressed ? '.txt.gz' : '.txt');
+}
+
+// The debug log is kept under this size by dropping its oldest lines.
+if (!defined('ABST_LOG_MAX_BYTES')) define('ABST_LOG_MAX_BYTES', 5 * MB_IN_BYTES);
+
+/** Keep the newest $keep_bytes of a log file, cut at a line break. */
+function abst_trim_log_file($log_file, $keep_bytes) {
+  $size = @filesize($log_file);
+  if (!$size || $size <= $keep_bytes) {
+    return;
+  }
+  $tail = @file_get_contents($log_file, false, null, $size - $keep_bytes);
+  if ($tail === false) {
+    return;
+  }
+  $break = strpos($tail, "\n");
+  abst_put_contents($log_file, $break === false ? '' : substr($tail, $break + 1));
+}
+
 function abst_log($message, $level = 'info') {
   
 
@@ -14980,8 +15010,7 @@ function abst_log($message, $level = 'info') {
 
   $log_dir = $upload_dir['basedir'];
 
-  $hash = substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
-  $log_file = $log_dir . '/abst_log_' . $hash . '.log';
+  $log_file = $log_dir . '/abst_log_' . abst_file_hash() . '.log';
 
   
 
@@ -15004,8 +15033,9 @@ function abst_log($message, $level = 'info') {
 
   // Write to log file
 
-  if (file_exists($log_file) && filesize($log_file) > 1024 * 1024) {
-    abst_put_contents($log_file, '');
+  // Past the cap, drop the oldest lines (down to 80% of it) rather than clearing the log.
+  if (file_exists($log_file) && filesize($log_file) > ABST_LOG_MAX_BYTES) {
+    abst_trim_log_file($log_file, (int) (ABST_LOG_MAX_BYTES * 0.8));
   }
   abst_put_contents($log_file, $log_entry, true);
 
@@ -17345,7 +17375,7 @@ function abst_heatmap_pages_data($days = 30) {
   $pages = [];
   foreach ($files as $file) {
     $base = basename($file);
-    if (!preg_match('/(\d{8})/', $base, $m)) {
+    if (!preg_match('/(\d{8})\.txt(?:\.gz)?$/', $base, $m)) {
       continue;
     }
     $file_date = strtotime(substr($m[1], 0, 4) . '-' . substr($m[1], 4, 2) . '-' . substr($m[1], 6, 2));
@@ -17494,7 +17524,7 @@ function abst_search_all_journey_logs($post_id, $filters = [], $on_row = null) {
 
   foreach ($journey_files as $journey_file) {
 
-    // Extract date from filename: abst_journeys_20250109.txt -> 20250109
+    // Extract date from filename: abst_journeys_<hash>_20250109.txt -> 20250109
 
     $filename = pathinfo($journey_file, PATHINFO_FILENAME);
 
@@ -17811,7 +17841,7 @@ function abst_search_all_journey_logs($post_id, $filters = [], $on_row = null) {
 
   foreach ($journey_files_gz as $journey_file) {
 
-    // Extract date from filename: abst_journeys_20250109.txt.gz -> 20250109
+    // Extract date from filename: abst_journeys_<hash>_20250109.txt.gz -> 20250109
 
     $filename = basename($journey_file, '.txt.gz');
 
@@ -18176,8 +18206,7 @@ function abst_logs_page_content() {
 
   $log_dir = $upload_dir['basedir'];
 
-  $hash = substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
-  $log_file = $log_dir . '/abst_log_' . $hash . '.log';
+  $log_file = $log_dir . '/abst_log_' . abst_file_hash() . '.log';
 
   
 
@@ -18216,7 +18245,7 @@ function abst_logs_page_content() {
 
   echo '<div class="abst-logs-info">';
 
-  echo '<p>Debug logs help troubleshoot issues with your A/B tests. Logs are automatically trimmed to the most recent 500 lines.</p>';
+  echo '<p>Debug logs help troubleshoot issues with your A/B tests. Once the log reaches 5 MB, its oldest lines are dropped automatically.</p>';
 
   echo '</div>';
 
@@ -18321,8 +18350,7 @@ function abst_trim_abst_log() {
 
   $log_dir = $upload_dir['basedir'];
 
-  $hash = substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
-  $log_file = $log_dir . '/abst_log_' . $hash . '.log';
+  $log_file = $log_dir . '/abst_log_' . abst_file_hash() . '.log';
 
 
 
@@ -18330,31 +18358,15 @@ function abst_trim_abst_log() {
 
   if (file_exists($log_file)) {
 
-    // Trim oldest lines to keep 500 newest lines
+    // Keep the log under its size cap by dropping the oldest lines.
 
-    $lines = file($log_file);
+    $size = filesize($log_file);
 
-    if ($lines !== false) {
+    if ($size > ABST_LOG_MAX_BYTES) {
 
-      $line_count = count($lines);
+      abst_trim_log_file($log_file, (int) (ABST_LOG_MAX_BYTES * 0.8));
 
-      if ($line_count > 500) {
-
-        $lines = array_slice($lines, -500);
-
-        abst_put_contents($log_file, implode('', $lines));
-
-        abst_log('Log trimmed from ' . $line_count . ' to 500 lines');
-
-      } else {
-
-        abst_log('Log file has ' . $line_count . ' lines, no trimming needed');
-
-      }
-
-    } else {
-
-      abst_log('Could not read log file for trimming');
+      abst_log('Log trimmed from ' . size_format($size) . ' to ' . size_format(filesize($log_file)));
 
     }
 

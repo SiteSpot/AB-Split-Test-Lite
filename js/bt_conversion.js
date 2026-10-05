@@ -339,10 +339,14 @@ function abstSyncConsent() {
   if (!Object.prototype.hasOwnProperty.call(btab_vars, 'wait_for_approval')) return;
   var approved = btab_vars.wait_for_approval != '1';
   if (!approved) {
-    // A previous grant cannot tell us whether a banner withdrew consent while offline.
-    // Providers (or a custom banner) must confirm the current decision on each page.
+    // A consent plugin's current answer wins, so a withdrawal made in it is respected.
+    // Without one (a custom banner), an earlier approval is remembered until
+    // setAbstApprovalStatus(false) clears it.
     var partnerStatus = abstPartnerConsentStatus();
     if (partnerStatus !== null) approved = partnerStatus;
+    else {
+      try { approved = localStorage.getItem('abstApprovalStatus') === 'approved'; } catch (e) {}
+    }
   }
   setAbstApprovalStatus(approved);
 }

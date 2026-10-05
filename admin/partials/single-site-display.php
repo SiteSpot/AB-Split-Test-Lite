@@ -304,7 +304,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
                 <p>Works automatically with Cookiebot, CookieConsent (Orestbida), WP Consent API, CookieYes, Complianz, and Cookies and Content Security Policy.</p>
 
-                <p>Custom banners must call <code>setAbstApprovalStatus(true)</code> on each page after confirming current consent, and <code>setAbstApprovalStatus(false)</code> when it is withdrawn.</p>
+                <p>Custom banners call <code>setAbstApprovalStatus(true)</code> when the visitor accepts (it is remembered on later pages) and <code>setAbstApprovalStatus(false)</code> when consent is withdrawn.</p>
 
               </div>
 

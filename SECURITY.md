@@ -2,17 +2,17 @@
 
 ## Directory Protection
 
-Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The debug log is `wp-content/uploads/abst_log_<hash>.log`, named from `AUTH_KEY`. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
+Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_<hash>_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The debug log is `wp-content/uploads/abst_log_<hash>.log` and is kept under 5 MB by dropping its oldest lines. `<hash>` is derived from `AUTH_KEY`, so file URLs cannot be guessed. The plugin writes no PHP files into uploads. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
 
 ### 1. Index Files
-The journey directory and its parent receive `index.php` files to discourage directory listing. Configure directory browsing on the web server as well.
+The journey directory and its parent receive empty `index.html` files to discourage directory listing. Configure directory browsing on the web server as well.
 
 ### 2. .htaccess Rules
 The journey directory receives a `Deny from all` rule, which blocks direct downloads on servers that honor `.htaccess` (Apache, LiteSpeed). Other servers need the rules under **Server Configuration**.
 
 ## Consent
 
-When **Wait for cookie consent** is enabled, the script waits for current provider consent or `setAbstApprovalStatus(true)` before persisting tracking cookies, browser storage, or sending events. Custom banners must confirm consent on each page load and call `setAbstApprovalStatus(false)` on withdrawal. Withdrawal clears identifiers and pending history; subsequent approval starts fresh.
+When **Wait for cookie consent** is enabled, the script waits for current provider consent or `setAbstApprovalStatus(true)` before persisting tracking cookies, browser storage, or sending events. Consent plugins are re-checked on every page load and their current answer wins. Without one, an approval from `setAbstApprovalStatus(true)` is remembered until `setAbstApprovalStatus(false)` withdraws it. Withdrawal clears identifiers and pending history; subsequent approval starts fresh.
 
 ## Recommended robots.txt Additions
 
