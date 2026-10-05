@@ -894,8 +894,9 @@ function abstMainInit() {
       // if its css, add it to body   
 
       if (bt_experiments[experimentId]['test_type'] == 'magic') {
-        // randvar is the int after the last - in experimentVariation
-        randVar = experimentVariation.split('-').pop();
+        // A number: the string "0" wrote the stored original back over the page's live
+        // content (translations, later edits) for first-visit control visitors.
+        randVar = abstMagicIndexFromVariation(experimentVariation);
         showMagicTest(experimentId, randVar);
       }
 
@@ -1780,6 +1781,15 @@ function matchesMagicScope(scope) {
   }
 
   return true;
+}
+
+// Variation key -> slot index: 'magic-2' -> 2, 'magic-123-4' -> 4, '3' -> 3, anything
+// unparseable -> 0 (the original). Visitor paths must pass showMagicTest a number:
+// it skips slot 0 only for the number 0, while the Magic bar passes the string "0"
+// on purpose to put the original back after previewing a variation.
+function abstMagicIndexFromVariation(variation) {
+  var index = parseInt(String(variation === undefined || variation === null ? '' : variation).split('-').pop(), 10);
+  return isNaN(index) ? 0 : index;
 }
 
 function showMagicTest(eid, index,scroll = false) { // called from magic bar so we arent logging anything
