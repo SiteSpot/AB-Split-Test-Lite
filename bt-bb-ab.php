@@ -164,3 +164,4 @@ if ( '' !== $abst_lite_reason ) {
 define( 'ABST_LITE_MAIN_FILE', __FILE__ );
 
 require_once __DIR__ . '/bt-bb-ab-core.php';
+require_once __DIR__ . '/modules/winner-notify.php';

@@ -656,6 +656,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       abst_log('bt_ab_uninstall');
       wp_clear_scheduled_hook('abst_plugin_version_check');
       wp_clear_scheduled_hook('abst_refresh_conversion_pages_deferred');
+      wp_clear_scheduled_hook('abst_winner_check');
 
     }
 
@@ -5059,26 +5060,16 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     {
 
-      if( class_exists('Ab_Tests_Autocomplete') )  {
+      // The same minimums the editor saves (7 days, 50 visits per variation) and
+      // REST/MCP can raise. The old 1 day / 10 visits called winners far too early.
+      $min_days = (int) get_post_meta( $id, 'ac_min_days', true );
+      $ac_data = [
 
-        $ac_data = Ab_Tests_Autocomplete::get_data($id);  
+        'min_days'  => $min_days > 0 ? $min_days : 7,
 
-      } else {
+        'min_views' => abst_test_min_views( $id )
 
-        // The same minimums the editor saves (7 days, 50 visits per variation) and
-        // REST/MCP can raise. The old 1 day / 10 visits called winners far too early.
-        $min_days = (int) get_post_meta( $id, 'ac_min_days', true );
-        $ac_data = [
-
-          'autocomplete_on' => false,
-
-          'min_days'  => $min_days > 0 ? $min_days : 7,
-
-          'min_views' => abst_test_min_views( $id )
-
-        ];
-
-      }
+      ];
 
       
 
@@ -5922,17 +5913,9 @@ function abst_show_experiment_results($test,$asTable = false){
 
   $goals = get_post_meta($test->ID,'goals',true);
 
-  $test_winner = get_post_meta($test->ID,'test_winner',true);
-
-  $webhook_url = get_post_meta($test->ID,'webhook_url',true);
-
   $conversion_use_order_value = false;
 
-  $autocomplete_on = get_post_meta($test->ID,'autocomplete_on',true);
-
   $conversion_style = get_post_meta($test->ID,'conversion_style',true);
-
-  if($conversion_style == 'thompson') $autocomplete_on = 0;
 
   $test_age = intval((time() - get_post_time('U',true,$test))/60/60/24); 
 
@@ -6644,28 +6627,8 @@ function abst_show_experiment_results($test,$asTable = false){
           }
 
         }
-
-        
-
-        //save winner test_winner if autocomplete is on
-
-        //is this the first time its been observed?
-
-        if(empty($test_winner) && $autocomplete_on)
-
-        {
-
-          wp_update_post(array('ID' => $test->ID, 'post_status' => 'complete')); // upd status
-
-          update_post_meta($test->ID,'test_winner',$likeylwinner); // save it!
-
-          $abst_notification_emails = abst_get_admin_setting('abst_notification_emails');
-          $notify_to = !empty($abst_notification_emails) ? array_map('trim', explode(',', $abst_notification_emails)) : get_option('admin_email');
-          require_once plugin_dir_path(__FILE__) . 'includes/email-test-complete.php';
-          abst_send_test_complete_email($notify_to, $test, $observations, $conversion_use_order_value == '1');
-
-
-        }
+        // The test keeps running with a winner. The daily check in modules/winner-notify.php
+        // emails the admin about it; nothing on the site changes.
 
       }
 
@@ -10283,31 +10246,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     }
 
-    private function winner_is_variation($test_type, $test_winner, $full_page_default_page) {
-
-      if ($test_winner === '' || $test_winner === null) {
-
-        return false;
-
-      }
-
-      switch ($test_type) {
-
-        case 'magic':
-
-          return $test_winner !== 'magic-0';
-
-        case 'full_page':
-
-          return (string) $test_winner !== (string) $full_page_default_page;
-
-        default:
-
-          return true;
-
-      }
-
-    }
 
 
 
@@ -10404,11 +10342,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         $full_page_default_page = $meta['bt_experiments_full_page_default_page'][0] ?? '';
 
-        $test_winner = $meta['test_winner'][0] ?? '';
-
-        $autocomplete_on = (($meta['autocomplete_on'][0] ?? '') === '1') ? '1' : '0';
-
-        if ($val->post_status === 'complete' && ($autocomplete_on !== '1' || !$this->winner_is_variation($test_type, $test_winner, $full_page_default_page))) {
+        // A completed test is not served: every visitor sees the original again.
+        if ($val->post_status === 'complete') {
 
           continue;
 
@@ -10462,10 +10397,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'test_status' => $val->post_status,
 
-          'test_winner' => $test_winner,
-
-          'autocomplete_on' => $autocomplete_on,
-
           'target_option_device_size' => ($meta['target_option_device_size'][0] ?? '') ?: 'all',
 
           'log_on_visible' => ($meta['log_on_visible'][0] ?? '0') === '1',
@@ -10478,15 +10409,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         $experiments[$val->ID]['use_order_value'] = '';
 
-        // Generate hide CSS for published tests, and for completed full-page tests that have a
+        // Generate hide CSS for published tests only.
 
-        // winner set (autocomplete declared a winner). The JS winner-redirect fires when
-
-        // test_winner is non-empty, so those pages need hiding regardless of status.
-
-        $is_complete_with_winner = ($val->post_status === 'complete' && $test_type === 'full_page' && $autocomplete_on === '1' && $this->winner_is_variation($test_type, $test_winner, $full_page_default_page));
-
-        if($val->post_status !== 'publish' && !$is_complete_with_winner) continue;
+        if($val->post_status !== 'publish') continue;
 
         
 
@@ -10505,18 +10430,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
           }
-
-        }
-
-        
-
-        // Show winner variation for on-page tests via CSS (autocomplete)
-
-        // revert = browser default for element type (block for div, inline for span, etc.)
-
-        if($test_winner && $autocomplete_on === '1' && $test_type == 'ab_test') {
-
-          $hide_css .= '[bt-variation="'.$test_winner.'"][bt-eid="'.$val->ID.'"]{display:revert !important;}';
 
         }
 
@@ -12832,8 +12745,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'type' => get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian',
 
-          'autocomplete_on' => get_post_meta($test_id, 'autocomplete_on', true) == '1',
-
           'ac_min_days' => intval(get_post_meta($test_id, 'ac_min_days', true)),
 
           'ac_min_views' => intval(get_post_meta($test_id, 'ac_min_views', true)),
@@ -14365,28 +14276,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       }
 
-      
-
-      // Set autocomplete settings
-
-      if (isset($params['autocomplete_on'])) {
-
-        update_post_meta($test_id, 'autocomplete_on', intval($params['autocomplete_on']));
-
-        if ($params['autocomplete_on']) {
-
-          $min_days = isset($params['ac_min_days']) ? absint($params['ac_min_days']) : 7;
-
-          $min_views = isset($params['ac_min_views']) ? absint($params['ac_min_views']) : 50;
-
-          update_post_meta($test_id, 'ac_min_days', $min_days);
-
-          update_post_meta($test_id, 'ac_min_views', $min_views);
-
-        }
-
-      }
-
       return true;
 
     }
@@ -14459,6 +14348,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
           update_post_meta($eid,'test_winner',false);
 
           update_post_meta($eid,'ab-test-winner',false);
+
+          delete_post_meta($eid,'abst_winner_found_notified');
 
 
 

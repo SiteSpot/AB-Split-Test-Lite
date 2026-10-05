@@ -57,6 +57,7 @@ function abst_lite_uninstall_clear_scheduled_hooks() {
 	wp_clear_scheduled_hook( 'abst_delete_journey_data' );
 	wp_clear_scheduled_hook( 'abst_plugin_version_check' );
 	wp_clear_scheduled_hook( 'abst_refresh_conversion_pages_deferred' );
+	wp_clear_scheduled_hook( 'abst_winner_check' );
 }
 
 /**

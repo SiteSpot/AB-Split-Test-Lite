@@ -79,6 +79,8 @@ See *why* a variation wins. Click heatmaps show where visitors click, and scroll
 
 Results use Bayesian statistical analysis, so you know when a winner is really a winner and not just noise. A winner needs enough visits and conversions before it is called. Filter results by device to see how each variation performs.
 
+When a running test finds a winner, the site admin gets an email about it. The test keeps running and nothing on your site changes until you end it.
+
 = The A/B testing plugin your AI agent can drive =
 
 AB Split Test registers WordPress Abilities. Install the official WordPress MCP Adapter and they appear as **MCP tools**. The same actions are available over the **REST API**.
@@ -213,6 +215,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 * Click heatmaps and scroll maps on every page, with configurable data retention.
 * Native page-builder controls for Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg.
 * Bayesian statistical analysis with device breakdown.
+* An email to the site admin when a running test finds a winner. The test keeps running until you end it.
 
 == Upgrade Notice ==
 

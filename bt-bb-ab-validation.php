@@ -120,7 +120,7 @@ function abst_normalize_api_input_params($params) {
         }
     }
 
-    foreach (['conversion_use_order_value', 'log_on_visible', 'autocomplete_on'] as $bool_key) {
+    foreach (['conversion_use_order_value', 'log_on_visible'] as $bool_key) {
         if (isset($params[$bool_key])) {
             $value = filter_var($params[$bool_key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             $params[$bool_key] = $value === null ? false : $value;

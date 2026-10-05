@@ -550,53 +550,8 @@ function abstMainInit() {
 
 
 
-    //TEST WINNER FUNCTIONS
     Object.entries(bt_experiments).forEach((([experimentId, experiment]) => {
       try {
-      // A winner is only implemented when autocomplete is on.
-      if (experiment.test_winner && experiment.autocomplete_on == '1') {
-        if (experiment.test_type == 'full_page' && (experiment.full_page_default_page == btab_vars.post_id)) // if full p and the p is this page
-        {
-          if (experiment.test_winner !== btab_vars.post_id) // if its not the current page
-          {
-            if (experiment.page_variations[experiment.test_winner] == undefined) // if its not defined
-            {
-              //console.log('split test winner is not found, not redirecting');
-              return false; // skip
-            }
-
-            //console.log('Split Test winner is page redirect. Redirecting to '+ experiment.page_variations[experiment.test_winner]);
-            abstRedirect(experiment.page_variations[experiment.test_winner]);
-
-            return false;
-          }
-          else // it is the current page so show it
-          {
-            //('Test winner is current page. Showing ' + experiment.test_winner);
-            abstShowPage();
-            return false; // skip 2 next experiment
-          }
-
-        }
-        else if (experiment.test_type == 'magic') {
-          console.log('Magic winner is ' + experiment.test_winner + ' showing magic test');
-          showMagicTest(experimentId, experiment.test_winner);
-        }
-        else if (experiment.test_type == 'css_test') {
-          console.log('Split Test CSS winner. Showing ' + experiment.test_winner);
-          document.body.classList.add(experiment.test_winner);
-        } // text test winner todo
-        else // on page test
-        {
-          //show variation
-          //console.log('Split Test winner is on this page. Showing '+ experiment.test_winner);
-          document.querySelectorAll('[bt-eid="' + experimentId + '"][bt-variation="' + experiment.test_winner + '"]').forEach(function (el) { el.classList.add('bt-show-variation'); });
-        }
-        return true;
-        //skip this experiment
-      } // end of if there is a winner
-
-      //
 
       if (experiment.test_type == "css_test") {
         for (var i = 0; i < experiment.css_test_variations; i++) {
@@ -727,10 +682,6 @@ function abstMainInit() {
         showSkippedVisitorDefault(experimentId);
         return true; // continue to next exp
       }
-
-      // if there is an implemented winner for the test, then do no more - its already done above
-      if (bt_experiments[experimentId].test_winner && bt_experiments[experimentId].autocomplete_on == '1')
-        return true; // continue to next exp
 
 
       if (bt_experiments[experimentId]['is_current_user_track'] == false || window.abst.isTrackingAllowed === false ) { // if we arent tracking the user show default
@@ -1191,36 +1142,6 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     return true;
   }
 
-  if (bt_experiments[eid].test_winner !== '' && bt_experiments[eid].autocomplete_on == '1') { // if we have an implemented winner
-
-    if (bt_experiments[eid].test_type == "full_page") // full page winner
-    {
-      url = bt_experiments[eid].page_variations[bt_experiments[eid].test_winner];
-      if (url !== undefined) {
-        abstRedirect(url); // follow the link w search params
-
-        return true;
-      }
-      else {
-        console.log("ABST: " + 'Full page test complete without matching page winner. Showing current page.');
-      }
-      abstShowPage();
-    }
-
-    if (bt_experiments[eid].test_type == "css_test") // css winner
-    {
-      console.log('ABST: css test winner, showing ver ' + bt_experiments[eid]['test_winner']);
-      document.body.classList.add('test-css-' + eid + '-' + bt_experiments[eid]['test_winner']);
-      return true; // next
-    }
-
-    if (bt_experiments[eid].test_type == "magic") // magic winner
-    {
-      console.log('ABST: magic test winner, showing ver ' + bt_experiments[eid]['test_winner']);
-      showMagicTest(eid, bt_experiments[eid]['test_winner']);
-      return true; // next
-    }
-  }
 
   if (bt_experiments[eid].test_type == "full_page") {
     abstShowPage();

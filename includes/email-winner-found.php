@@ -1,12 +1,13 @@
 <?php
 /**
- * "Test complete" notification email.
+ * "Winner found" notification email.
  *
- * Replaces the plain-text three-liner the autocompleter used to send with
- * a styled HTML email that mirrors the in-app report: hero, summary stats,
- * variation table, projected annual impact, and a link back to the full report.
+ * Sent once when a running test reaches a winner (see modules/winner-notify.php).
+ * It mirrors the in-app report: hero, summary stats, variation table and projected
+ * annual impact. The test itself is not changed: it keeps running until the site
+ * owner ends it.
  *
- * Public entrypoint: abst_send_test_complete_email().
+ * Public entrypoint: abst_send_winner_found_email().
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,43 +16,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! function_exists( 'abst_email_brand_name' ) ) {
     /**
-     * Name shown in test-complete emails. Honors a white-label BT_AB_TEST_WL_NAME set
+     * Name shown in winner emails. Honors a white-label BT_AB_TEST_WL_NAME set
      * in wp-config.php, without defining that unprefixed global here.
      */
     function abst_email_brand_name() {
         if ( defined( 'BT_AB_TEST_WL_NAME' ) ) {
             return BT_AB_TEST_WL_NAME;
         }
-        return defined( 'BT_AB_TEST_WL_ABTEST' ) ? BT_AB_TEST_WL_ABTEST : 'AB Split Test';
+        return 'AB Split Test';
     }
 }
 
 /**
- * Build, format and send the "test complete" email.
+ * Build, format and send the "winner found" email to the site admin.
  *
- * @param mixed  $notify_to                 String or array of recipient addresses.
- * @param WP_Post $experiment               The completed test post.
- * @param array  $observations              Analyzed observations (includes bt_bb_ab_stats).
- * @param bool   $conversion_use_order_value Revenue mode flag.
+ * @param WP_Post $experiment   The running test.
+ * @param array   $observations Analyzed observations (includes bt_bb_ab_stats).
  * @return bool wp_mail() result.
  */
-function abst_send_test_complete_email( $notify_to, $experiment, $observations, $conversion_use_order_value ) {
-    $data = abst_build_test_complete_email_data( $experiment, $observations, (bool) $conversion_use_order_value );
+function abst_send_winner_found_email( $experiment, $observations ) {
+    $data = abst_build_winner_email_data( $experiment, $observations );
     if ( empty( $data ) ) {
         return false;
     }
 
-    $subject = abst_email_brand_name() . ': ' . $experiment->post_title . ', Complete.';
-    $subject = apply_filters( 'abst_email_complete_subject', $subject, $data, $experiment );
+    $notify_to = apply_filters( 'abst_winner_email_recipients', get_option( 'admin_email' ), $experiment );
+    if ( empty( $notify_to ) ) {
+        return false;
+    }
 
-    $html = abst_render_test_complete_email_html( $data );
-    $html = apply_filters( 'abst_email_complete_html', $html, $data, $experiment );
+    $subject = abst_email_brand_name() . ': ' . $experiment->post_title . ' has a winner';
+    $subject = apply_filters( 'abst_winner_email_subject', $subject, $data, $experiment );
 
-    $text = abst_render_test_complete_email_text( $data );
-    $text = apply_filters( 'abst_email_complete_text', $text, $data, $experiment );
+    $html = abst_render_winner_email_html( $data );
+    $html = apply_filters( 'abst_winner_email_html', $html, $data, $experiment );
+
+    $text = abst_render_winner_email_text( $data );
+    $text = apply_filters( 'abst_winner_email_text', $text, $data, $experiment );
 
     $headers = array( 'Content-Type: text/html; charset=UTF-8' );
-    $headers = apply_filters( 'abst_email_complete_headers', $headers, $data, $experiment );
+    $headers = apply_filters( 'abst_winner_email_headers', $headers, $data, $experiment );
 
     // Attach plain-text alternative once PHPMailer is initialised.
     $attach_alt_body = function( $phpmailer ) use ( $text ) {
@@ -70,7 +74,7 @@ function abst_send_test_complete_email( $notify_to, $experiment, $observations, 
  * Returns an array shaped for the renderer; null if the data is too
  * incomplete to email about.
  */
-function abst_build_test_complete_email_data( $experiment, $observations, $is_revenue ) {
+function abst_build_winner_email_data( $experiment, $observations ) {
     if ( ! is_object( $experiment ) || empty( $observations['bt_bb_ab_stats']['best'] ) ) {
         return null;
     }
@@ -95,19 +99,12 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
         }
         $visits      = isset( $row['visit'] ) ? (int) $row['visit'] : 0;
         $conversions = isset( $row['conversion'] ) ? (float) $row['conversion'] : 0.0;
-        // For revenue tests `rate` is stored as RPV * 100; the report divides by 100
-        // (see bt-bb-ab.php:4047). For conv-rate tests we recompute from conversions/visits.
-        if ( $is_revenue ) {
-            $rate = isset( $row['rate'] ) ? (float) $row['rate'] / 100.0 : 0.0;
-        } else {
-            $rate = ( $visits > 0 ) ? ( $conversions / $visits ) : 0.0;
-        }
         $variations[ (string) $key ] = array(
             'key'         => (string) $key,
             'label'       => abst_get_variation_label( $key, $variation_meta ),
             'visits'      => $visits,
             'conversions' => $conversions,
-            'rate'        => $rate, // fraction (0..1) for conv-rate tests; dollars-per-visit for revenue
+            'rate'        => ( $visits > 0 ) ? ( $conversions / $visits ) : 0.0, // fraction (0..1)
             'confidence'  => isset( $row['probability'] ) ? (float) $row['probability'] : 0.0,
         );
     }
@@ -117,10 +114,10 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
     }
 
     // Identify the control via the same helper the report uses.
-    global $btab;
+    global $abst_btab;
     $control_key = null;
-    if ( is_object( $btab ) && method_exists( $btab, 'identify_control_variation' ) ) {
-        $control_key = $btab->identify_control_variation( $variations, $experiment );
+    if ( is_object( $abst_btab ) && method_exists( $abst_btab, 'identify_control_variation' ) ) {
+        $control_key = $abst_btab->identify_control_variation( $variations, $experiment );
     }
     if ( ! $control_key || ! isset( $variations[ $control_key ] ) ) {
         // Fall back to the first variation.
@@ -148,16 +145,9 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
         $total_visits      += $v['visits'];
         $total_conversions += $v['conversions'];
     }
-    $overall_rate = 0.0;
-    if ( $total_visits > 0 ) {
-        if ( $is_revenue ) {
-            $overall_rate = $total_conversions / $total_visits;
-        } else {
-            $overall_rate = $total_conversions / $total_visits;
-        }
-    }
+    $overall_rate = ( $total_visits > 0 ) ? ( $total_conversions / $total_visits ) : 0.0;
 
-    // Winner uplift and projected annual impact (mirrors report-template.php:304-322).
+    // Winner uplift and projected annual impact.
     $winner_uplift = 0.0;
     $winner_is_control = ( (string) $winner_key === (string) $control_key );
     if ( ! $winner_is_control && $control_rate > 0 && isset( $variations[ $winner_key ] ) ) {
@@ -168,15 +158,15 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
     $impact_value = 0.0;
     $runner_up_key = null;
 
+    // Same projection as the results screen: a year of the busier arm's daily traffic.
+    $annual_visits = 0.0;
+    if ( isset( $variations[ $winner_key ] ) ) {
+        $annual_visits = max( $variations[ $winner_key ]['visits'], $variations[ $control_key ]['visits'] ) / $test_age_days * 365;
+    }
+
     if ( ! $winner_is_control && $winner_uplift > 0 && $total_visits > 0 ) {
         $impact_kind  = 'extra';
-        $impact_value = abst_compute_projected_annual_impact(
-            $winner_uplift,
-            $total_visits,
-            $total_conversions,
-            $test_age_days,
-            $is_revenue
-        );
+        $impact_value = round( ( $variations[ $winner_key ]['rate'] - $control_rate ) * $annual_visits );
     } elseif ( $winner_is_control && $total_visits > 0 ) {
         // Avoided loss: pick the runner-up (highest-rate non-control variant).
         $runner_up_rate = -INF;
@@ -188,47 +178,14 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
             }
         }
         if ( $runner_up_key !== null && $control_rate > 0 && $runner_up_rate < $control_rate ) {
-            $loss_pct = ( ( $control_rate - $runner_up_rate ) / $control_rate ) * 100.0;
             $impact_kind  = 'avoided';
-            $impact_value = abst_compute_projected_annual_impact(
-                $loss_pct,
-                $total_visits,
-                $total_conversions,
-                $test_age_days,
-                $is_revenue
-            );
+            $impact_value = round( ( $control_rate - $runner_up_rate ) * $annual_visits );
         }
     }
-
-    // Currency symbol for revenue tests.
-    $currency_symbol = '$';
-    if ( $is_revenue && is_object( $btab ) && method_exists( $btab, 'value_currency_symbol' ) ) {
-        $currency_symbol = $btab->value_currency_symbol();
-    } elseif ( $is_revenue && function_exists( 'ab_get_admin_setting' ) ) {
-        $saved_currency_symbol = trim( (string) ab_get_admin_setting( 'abst_revenue_currency_symbol' ) );
-        if ( $saved_currency_symbol !== '' ) {
-            $currency_symbol = html_entity_decode( $saved_currency_symbol, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
-        }
-    }
-
-    // Report and edit URLs.
-    $report_url = null;
-    global $abst_public_reports;
-    if ( class_exists( 'ABST_Public_Reports' ) && isset( $abst_public_reports ) && is_object( $abst_public_reports ) ) {
-        if ( method_exists( $abst_public_reports, 'is_shareable_reports_enabled' ) && $abst_public_reports->is_shareable_reports_enabled() ) {
-            $share = $abst_public_reports->get_or_create_share_link( $test_id );
-            $report_url = isset( $share['url'] ) ? $share['url'] : null;
-        }
-    }
-    $edit_url = admin_url( 'post.php?post=' . $test_id . '&action=edit' );
-
-    $settings_url = admin_url( 'edit.php?post_type=bt_experiments&page=bt_bb_ab_test' );
 
     return array(
         'test_id'           => $test_id,
         'test_name'         => $experiment->post_title,
-        'is_revenue'        => $is_revenue,
-        'currency_symbol'   => $currency_symbol,
         'test_age_days'     => $test_age_days,
         'total_visits'      => $total_visits,
         'total_conversions' => $total_conversions,
@@ -244,42 +201,15 @@ function abst_build_test_complete_email_data( $experiment, $observations, $is_re
         'impact_value'      => $impact_value,
         'runner_up_key'     => $runner_up_key,
         'runner_up_label'   => $runner_up_key ? $variations[ $runner_up_key ]['label'] : null,
-        'report_url'        => $report_url,
-        'edit_url'          => $edit_url,
-        'settings_url'      => $settings_url,
+        'edit_url'          => admin_url( 'post.php?post=' . $test_id . '&action=edit' ),
         'wl_name'           => abst_email_brand_name(),
     );
 }
 
 /**
- * Project a percentage uplift forward to a yearly figure using the test's
- * observed daily rate. Matches modules/public-reports/templates/report-template.php:304-322.
- *
- * @param float $pct          Percentage (e.g. 38.9 for +38.9%, or 14.5 for a -14.5% loss).
- * @param int   $total_visits Total visits across all variations.
- * @param float $total_value  Total conversions, or total revenue for revenue tests.
- * @param int   $test_age     Days the test has been running (must be >= 1).
- * @param bool  $is_revenue   True if `$total_value` is revenue (dollars), not conversion count.
- * @return float Conversions/year or revenue/year, depending on $is_revenue.
- */
-function abst_compute_projected_annual_impact( $pct, $total_visits, $total_value, $test_age, $is_revenue ) {
-    $test_age = max( 1, (int) $test_age );
-    if ( $is_revenue ) {
-        $daily_visits   = $total_visits / $test_age;
-        $annual_visits  = $daily_visits * 365;
-        $avg_per_visit  = $total_visits > 0 ? ( $total_value / $total_visits ) : 0.0;
-        $baseline       = $annual_visits * $avg_per_visit;
-        return $baseline * ( $pct / 100.0 );
-    }
-    $daily_conversions  = $total_value / $test_age;
-    $annual_conversions = $daily_conversions * 365;
-    return round( $annual_conversions * ( $pct / 100.0 ) );
-}
-
-/**
  * Render the HTML body. Inline CSS only - email clients strip <style>.
  */
-function abst_render_test_complete_email_html( $d ) {
+function abst_render_winner_email_html( $d ) {
     $font   = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
     $green  = '#10b981';
     $red    = '#ef4444';
@@ -290,30 +220,10 @@ function abst_render_test_complete_email_html( $d ) {
 
     $esc = function( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); };
 
-    // Format helpers.
-    $fmt_rate_or_currency = function( $value ) use ( $d ) {
-        if ( $d['is_revenue'] ) {
-            return $d['currency_symbol'] . number_format( $value, 2 );
-        }
-        return number_format( $value * 100, 2 ) . '%';
-    };
-    $fmt_conv_or_rev = function( $value ) use ( $d ) {
-        if ( $d['is_revenue'] ) {
-            return $d['currency_symbol'] . number_format( $value, 0 );
-        }
-        return number_format( $value, 0 );
-    };
-    $fmt_impact = function( $value ) use ( $d ) {
-        if ( $d['is_revenue'] ) {
-            return $d['currency_symbol'] . number_format( $value, 0 );
-        }
-        return number_format( $value, 0 ) . ' conversions';
-    };
-
     // ---- Hero lines ----
     $hero_lines = array();
     $hero_lines[] = sprintf(
-        '<span style="font-size:16px;color:%s;">%s won with <strong>%s%% confidence</strong></span>',
+        '<span style="font-size:16px;color:%s;">%s is winning with <strong>%s%% confidence</strong></span>',
         $esc( $text ),
         $esc( $d['winner_label'] ),
         $esc( number_format( $d['winner_conf'], 0 ) )
@@ -321,46 +231,35 @@ function abst_render_test_complete_email_html( $d ) {
 
     if ( $d['winner_is_control'] ) {
         $hero_lines[] = sprintf(
-            '<span style="color:%s;">&#128737;&#65039; Control beat all variants &mdash; keep it</span>',
+            '<span style="color:%s;">&#128737;&#65039; The original beat the variation &mdash; keep it</span>',
             $esc( $text )
         );
     } else {
-        $label = $d['is_revenue'] ? 'revenue per visit' : 'conversion rate';
         $hero_lines[] = sprintf(
-            '<span style="color:%s;">&#128200; <strong style="color:%s;">+%s%%</strong> %s vs. control</span>',
+            '<span style="color:%s;">&#128200; <strong style="color:%s;">+%s%%</strong> conversion rate vs. the original</span>',
             $esc( $text ),
             $esc( $green ),
-            $esc( number_format( $d['winner_uplift'], 1 ) ),
-            $esc( $label )
+            $esc( number_format( $d['winner_uplift'], 1 ) )
         );
     }
 
     if ( $d['impact_kind'] === 'extra' && $d['impact_value'] > 0 ) {
         $hero_lines[] = sprintf(
-            '<span style="color:%s;">&#128176; <strong>Extra %s per year</strong></span>',
+            '<span style="color:%s;">&#128176; <strong>About %s extra conversions per year</strong></span>',
             $esc( $text ),
-            $esc( $fmt_impact( $d['impact_value'] ) )
+            $esc( number_format( $d['impact_value'], 0 ) )
         );
     } elseif ( $d['impact_kind'] === 'avoided' && $d['impact_value'] > 0 ) {
         $runner = $d['runner_up_label'] ? ' (' . $esc( $d['runner_up_label'] ) . ')' : '';
         $hero_lines[] = sprintf(
-            '<span style="color:%s;">&#128737;&#65039; Avoided losing <strong>%s per year</strong> to the next best variant%s</span>',
+            '<span style="color:%s;">&#128737;&#65039; Keeping the original avoids losing <strong>about %s conversions per year</strong> to the variation%s</span>',
             $esc( $text ),
-            $esc( $fmt_impact( $d['impact_value'] ) ),
+            $esc( number_format( $d['impact_value'], 0 ) ),
             $runner
         );
     }
 
     // ---- Summary cards ----
-    $card1_label = 'Visitors';
-    $card1_value = number_format( $d['total_visits'] );
-    $card2_label = $d['is_revenue'] ? 'Revenue' : 'Conversions';
-    $card2_value = $fmt_conv_or_rev( $d['total_conversions'] );
-    $card3_label = $d['is_revenue'] ? 'Revenue / visit' : 'Conv. rate';
-    $card3_value = $fmt_rate_or_currency( $d['overall_rate'] );
-    $card4_label = 'Duration';
-    $card4_value = $d['test_age_days'] . ( $d['test_age_days'] === 1 ? ' day' : ' days' );
-
     $card_cell = function( $label, $value ) use ( $muted, $text, $border, $esc ) {
         return sprintf(
             '<td align="center" valign="middle" style="padding:16px 8px;border:1px solid %s;border-radius:8px;background:#ffffff;width:25%%;">'
@@ -377,32 +276,24 @@ function abst_render_test_complete_email_html( $d ) {
 
     $summary_table = '<table role="presentation" cellpadding="0" cellspacing="6" border="0" width="100%" style="border-collapse:separate;">'
         . '<tr>'
-        . $card_cell( $card1_label, $card1_value )
-        . $card_cell( $card2_label, $card2_value )
-        . $card_cell( $card3_label, $card3_value )
-        . $card_cell( $card4_label, $card4_value )
+        . $card_cell( 'Visitors', number_format( $d['total_visits'] ) )
+        . $card_cell( 'Conversions', number_format( $d['total_conversions'], 0 ) )
+        . $card_cell( 'Conv. rate', number_format( $d['overall_rate'] * 100, 2 ) . '%' )
+        . $card_cell( 'Running for', $d['test_age_days'] . ( $d['test_age_days'] === 1 ? ' day' : ' days' ) )
         . '</tr></table>';
 
     // ---- Variation table ----
-    $rate_header = $d['is_revenue'] ? 'RPV' : 'Rate';
-    $value_header = $d['is_revenue'] ? 'Revenue' : 'Conv.';
-    $thead = sprintf(
-        '<thead><tr style="background:%s;">'
-        . '<th align="left"  style="padding:10px 12px;font-size:11px;color:%s;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid %s;">Variation</th>'
-        . '<th align="right" style="padding:10px 12px;font-size:11px;color:%s;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid %s;">Visitors</th>'
-        . '<th align="right" style="padding:10px 12px;font-size:11px;color:%s;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid %s;">%s</th>'
-        . '<th align="right" style="padding:10px 12px;font-size:11px;color:%s;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid %s;">%s</th>'
-        . '<th align="right" style="padding:10px 12px;font-size:11px;color:%s;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid %s;">vs. Ctrl</th>'
-        . '<th align="right" style="padding:10px 12px;font-size:11px;color:%s;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid %s;">Conf.</th>'
-        . '</tr></thead>',
-        $esc( $bg ),
-        $esc( $muted ), $esc( $border ),
-        $esc( $muted ), $esc( $border ),
-        $esc( $muted ), $esc( $border ), $esc( $value_header ),
-        $esc( $muted ), $esc( $border ), $esc( $rate_header ),
-        $esc( $muted ), $esc( $border ),
-        $esc( $muted ), $esc( $border )
-    );
+    $th = function( $label, $align ) use ( $esc, $muted, $border ) {
+        return '<th align="' . $align . '" style="padding:10px 12px;font-size:11px;color:' . $esc( $muted ) . ';text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid ' . $esc( $border ) . ';">' . $esc( $label ) . '</th>';
+    };
+    $thead = '<thead><tr style="background:' . $esc( $bg ) . ';">'
+        . $th( 'Variation', 'left' )
+        . $th( 'Visitors', 'right' )
+        . $th( 'Conv.', 'right' )
+        . $th( 'Rate', 'right' )
+        . $th( 'vs. Original', 'right' )
+        . $th( 'Conf.', 'right' )
+        . '</tr></thead>';
 
     // Sort: winner first, then by rate desc.
     uasort( $d['variations'], function( $a, $b ) use ( $d ) {
@@ -419,7 +310,7 @@ function abst_render_test_complete_email_html( $d ) {
 
         $badges = '';
         if ( $is_control ) {
-            $badges .= '<span style="display:inline-block;background:#eef2ff;color:#4338ca;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;">CONTROL</span>';
+            $badges .= '<span style="display:inline-block;background:#eef2ff;color:#4338ca;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;">ORIGINAL</span>';
         }
         if ( $is_winner ) {
             $badges .= '<span style="display:inline-block;background:#dcfce7;color:#065f46;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;">WINNER</span>';
@@ -452,8 +343,8 @@ function abst_render_test_complete_email_html( $d ) {
             $esc( $row_bg ),
             $esc( $border ), $esc( $text ), $esc( $v['label'] ), $badges,
             $esc( $border ), $esc( $text ), $esc( number_format( $v['visits'] ) ),
-            $esc( $border ), $esc( $text ), $esc( $fmt_conv_or_rev( $v['conversions'] ) ),
-            $esc( $border ), $esc( $text ), $esc( $fmt_rate_or_currency( $v['rate'] ) ),
+            $esc( $border ), $esc( $text ), $esc( number_format( $v['conversions'], 0 ) ),
+            $esc( $border ), $esc( $text ), $esc( number_format( $v['rate'] * 100, 2 ) . '%' ),
             $esc( $border ), $uplift_cell,
             $esc( $border ), $esc( $text ), $conf_cell
         );
@@ -462,18 +353,10 @@ function abst_render_test_complete_email_html( $d ) {
     $variation_table = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid ' . $esc( $border ) . ';border-radius:8px;border-collapse:separate;overflow:hidden;">' . $thead . '<tbody>' . $rows_html . '</tbody></table>';
 
     // ---- CTA ----
-    $cta_block = '';
-    if ( ! empty( $d['report_url'] ) ) {
-        $cta_block = sprintf(
-            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td align="center" style="border-radius:6px;background:%s;"><a href="%s" style="display:inline-block;padding:12px 24px;color:#ffffff;font-weight:600;font-size:15px;text-decoration:none;border-radius:6px;">View full report</a></td></tr></table>',
-            $esc( $green ),
-            $esc( $d['report_url'] )
-        );
-    }
-    $edit_link = sprintf(
-        '<p style="margin:16px 0 0;text-align:center;font-size:13px;"><a href="%s" style="color:%s;text-decoration:none;">Edit this test</a></p>',
-        $esc( $d['edit_url'] ),
-        $esc( $muted )
+    $cta_block = sprintf(
+        '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td align="center" style="border-radius:6px;background:%s;"><a href="%s" style="display:inline-block;padding:12px 24px;color:#ffffff;font-weight:600;font-size:15px;text-decoration:none;border-radius:6px;">Open the test</a></td></tr></table>',
+        $esc( $green ),
+        $esc( $d['edit_url'] )
     );
 
     // ---- Assemble ----
@@ -492,6 +375,9 @@ function abst_render_test_complete_email_html( $d ) {
     foreach ( $hero_lines as $line ) {
         $html .= '<p style="margin:8px 0 0;font-size:15px;line-height:1.5;">' . $line . '</p>';
     }
+    $html .= '<p style="margin:14px 0 0;font-size:14px;line-height:1.5;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;color:' . $esc( $text ) . ';">';
+    $html .= 'The test is <strong>still running</strong> and nothing has changed on your site: visitors still see both versions. When you are ready, end the test and keep the version you want.';
+    $html .= '</p>';
     $html .= '</td></tr>';
 
     // Stats
@@ -504,12 +390,11 @@ function abst_render_test_complete_email_html( $d ) {
     $html .= '</td></tr>';
 
     // CTA
-    $html .= '<tr><td style="padding:8px 24px 28px;text-align:center;">' . $cta_block . $edit_link . '</td></tr>';
+    $html .= '<tr><td style="padding:8px 24px 28px;text-align:center;">' . $cta_block . '</td></tr>';
 
     // Footer
     $html .= '<tr><td style="padding:16px 24px;background:' . $esc( $bg ) . ';border-top:1px solid ' . $esc( $border ) . ';font-size:12px;color:' . $esc( $muted ) . ';">';
-    $html .= 'You received this because autocomplete found a winner for this test. ';
-    $html .= '<a href="' . $esc( $d['settings_url'] ) . '" style="color:' . $esc( $muted ) . ';">Manage notification settings</a>.';
+    $html .= 'You received this because you are the admin of this site. You get one email each time a test finds a winner.';
     $html .= '</td></tr>';
 
     $html .= '</table>';
@@ -522,50 +407,31 @@ function abst_render_test_complete_email_html( $d ) {
 /**
  * Plain-text fallback for clients that strip HTML.
  */
-function abst_render_test_complete_email_text( $d ) {
+function abst_render_winner_email_text( $d ) {
     $lines = array();
-    $lines[] = $d['wl_name'] . ': ' . $d['test_name'] . ' is complete.';
+    $lines[] = $d['wl_name'] . ': ' . $d['test_name'] . ' has a winner.';
     $lines[] = '';
-    $lines[] = 'Winner: ' . $d['winner_label'] . ' (' . number_format( $d['winner_conf'], 0 ) . '% confidence)';
+    $lines[] = 'Winning: ' . $d['winner_label'] . ' (' . number_format( $d['winner_conf'], 0 ) . '% confidence)';
 
     if ( $d['winner_is_control'] ) {
-        $lines[] = 'Control beat all variants - keep it.';
+        $lines[] = 'The original beat the variation - keep it.';
     } else {
-        $label = $d['is_revenue'] ? 'revenue per visit' : 'conversion rate';
-        $lines[] = '+' . number_format( $d['winner_uplift'], 1 ) . '% ' . $label . ' vs. control over ' . $d['test_age_days'] . ' days';
+        $lines[] = '+' . number_format( $d['winner_uplift'], 1 ) . '% conversion rate vs. the original over ' . $d['test_age_days'] . ' days';
     }
 
     if ( $d['impact_kind'] === 'extra' && $d['impact_value'] > 0 ) {
-        if ( $d['is_revenue'] ) {
-            $lines[] = 'Projected annual impact: extra ' . $d['currency_symbol'] . number_format( $d['impact_value'], 0 ) . '/year';
-        } else {
-            $lines[] = 'Projected annual impact: extra ' . number_format( $d['impact_value'], 0 ) . ' conversions/year';
-        }
+        $lines[] = 'Projected: about ' . number_format( $d['impact_value'], 0 ) . ' extra conversions per year';
     } elseif ( $d['impact_kind'] === 'avoided' && $d['impact_value'] > 0 ) {
-        $tail = $d['runner_up_label'] ? ' to the next best variant (' . $d['runner_up_label'] . ')' : ' to the next best variant';
-        if ( $d['is_revenue'] ) {
-            $lines[] = 'Avoided losing ' . $d['currency_symbol'] . number_format( $d['impact_value'], 0 ) . '/year' . $tail;
-        } else {
-            $lines[] = 'Avoided losing ' . number_format( $d['impact_value'], 0 ) . ' conversions/year' . $tail;
-        }
+        $tail = $d['runner_up_label'] ? ' to the variation (' . $d['runner_up_label'] . ')' : ' to the variation';
+        $lines[] = 'Keeping the original avoids losing about ' . number_format( $d['impact_value'], 0 ) . ' conversions per year' . $tail;
     }
 
-    $totals_value = $d['is_revenue']
-        ? $d['currency_symbol'] . number_format( $d['total_conversions'], 0 ) . ' revenue'
-        : number_format( $d['total_conversions'], 0 ) . ' conversions';
-    $totals_rate = $d['is_revenue']
-        ? $d['currency_symbol'] . number_format( $d['overall_rate'], 2 ) . ' / visit'
-        : number_format( $d['overall_rate'] * 100, 2 ) . '% rate';
-    $lines[] = number_format( $d['total_visits'] ) . ' visitors, ' . $totals_value . ', ' . $totals_rate;
-
+    $lines[] = number_format( $d['total_visits'] ) . ' visitors, ' . number_format( $d['total_conversions'], 0 ) . ' conversions, ' . number_format( $d['overall_rate'] * 100, 2 ) . '% rate';
     $lines[] = '';
-    if ( ! empty( $d['report_url'] ) ) {
-        $lines[] = 'View the full report:';
-        $lines[] = $d['report_url'];
-    } else {
-        $lines[] = 'Edit this test:';
-        $lines[] = $d['edit_url'];
-    }
+    $lines[] = 'The test is still running and nothing has changed on your site: visitors still see both versions. When you are ready, end the test and keep the version you want.';
+    $lines[] = '';
+    $lines[] = 'Open the test:';
+    $lines[] = $d['edit_url'];
 
     return implode( "\n", $lines );
 }

@@ -266,30 +266,14 @@ function abst_rest_update_test_settings($request) {
     // Lite supports one primary conversion only.
     delete_post_meta($test_id, 'goals');
 
-    if ($has_param('autocomplete_on')) {
-        update_post_meta($test_id, 'autocomplete_on', !empty($params['autocomplete_on']) ? 1 : 0);
-    }
-
-    if ($has_param('autocomplete_on') || $has_param('ac_min_days') || $has_param('ac_min_views')) {
-        $autocomplete_enabled = $has_param('autocomplete_on')
-            ? !empty($params['autocomplete_on'])
-            : (get_post_meta($test_id, 'autocomplete_on', true) == '1');
-
+    // Minimum days and visits before a winner is called (and emailed about).
+    if ($has_param('ac_min_days') || $has_param('ac_min_views')) {
         $min_days = $has_param('ac_min_days')
             ? absint($params['ac_min_days'])
             : intval(get_post_meta($test_id, 'ac_min_days', true));
         $min_views = $has_param('ac_min_views')
             ? absint($params['ac_min_views'])
             : intval(get_post_meta($test_id, 'ac_min_views', true));
-
-        if ($autocomplete_enabled) {
-            if ($min_days <= 0) {
-                $min_days = 7;
-            }
-            if ($min_views <= 0) {
-                $min_views = 50;
-            }
-        }
 
         update_post_meta($test_id, 'ac_min_days', $min_days);
         update_post_meta($test_id, 'ac_min_views', $min_views);
@@ -396,7 +380,6 @@ function abst_rest_update_test_settings($request) {
         'webhook_url' => $details['webhook_url'] ?? get_post_meta($test_id, 'webhook_url', true),
         'log_on_visible' => $details['targeting']['log_on_visible'] ?? (get_post_meta($test_id, 'log_on_visible', true) === '1'),
         'optimization_type' => $details['optimization']['type'] ?? (get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian'),
-        'autocomplete_on' => $details['optimization']['autocomplete_on'] ?? (get_post_meta($test_id, 'autocomplete_on', true) == '1'),
         'ac_min_days' => $details['optimization']['ac_min_days'] ?? intval(get_post_meta($test_id, 'ac_min_days', true)),
         'ac_min_views' => $details['optimization']['ac_min_views'] ?? intval(get_post_meta($test_id, 'ac_min_views', true)),
         'magic_definition' => $details['magic_definition'] ?? null,
