@@ -234,7 +234,7 @@ input#bt_experiments_conversion_selector {
 }
 
 /* Legacy results rows (replaced by the results table) */
-.results_variation { display: none; }
+.results_variation { display: none !important; } /* superseded by the results table; admin/bt-bb-ab-admin.css styles these rows and loads later */
 
 /* Magic test summary */
 .code { font-family: monospace; white-space: pre; }.abst-magic-summary{display:flex;flex-direction:column;gap:16px;}.abst-magic-summary-row{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:#f8fafc;border:1px solid #dcdcde;border-radius:8px;}.abst-magic-summary-label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#646970;}.abst-magic-summary-actions{margin-top:4px;}.abst-magic-advanced{margin-top:6px;}.abst-magic-advanced summary{cursor:pointer;font-weight:500;color:#2271b1;}.abst-magic-advanced[open] summary{margin-bottom:12px;}

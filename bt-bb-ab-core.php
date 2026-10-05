@@ -4825,7 +4825,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     <input type="radio" id="full_page" name="test_type" value="full_page" '. esc_attr( $full_page_test_selected ).'>
 
-    <label for="full_page"><h5>Full Page</h5><p>Swap between unlimited pages or posts to see the best performer.</p></label>
+    <label for="full_page"><h5>Full Page</h5><p>Send visitors to one of two pages or posts to see which performs better.</p></label>
 
   </div>
 
