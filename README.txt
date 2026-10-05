@@ -144,7 +144,7 @@ AB Split Test is translation-ready. Contribute a translation for your language a
 
 = Is AB Split Test a self-hosted A/B testing plugin? =
 
-Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside your WordPress install and store data on your own server. There is no external account and no SaaS backend.
+Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside your WordPress install and store data on your own server. There is no external account and no SaaS backend. Heatmap data and debug logs use PHP-protected files in your uploads directory. Your web server must execute PHP files or deny direct access to them; Apache access rules provide additional protection. Existing text logs migrate automatically, and collection pauses with an admin notice if journey files cannot be protected.
 
 = How many tests can I run? =
 
@@ -176,7 +176,7 @@ Tests work on cached pages, including host-level page caches, because each visit
 
 AB Split Test uses first-party cookies and browser storage on your own domain to remember which variation a visitor saw. It does not fingerprint devices and sends nothing to a third party.
 
-If you need consent first, turn on **Wait for cookie consent**. Tests still run, but nothing is stored or sent until the visitor agrees. It works with Cookiebot, CookieConsent and any consent plugin that supports the WP Consent API (such as Complianz or CookieYes), or call `setAbstApprovalStatus(true)` from your own banner. As with any analytics tool, check your own consent requirements.
+If you need consent first, turn on **Wait for cookie consent**. Tests still run, but nothing is stored or sent until the visitor agrees. It works with Cookiebot, CookieConsent and any consent plugin that supports the WP Consent API (such as Complianz or CookieYes), or call `setAbstApprovalStatus(true)` from your own banner after confirming current consent on each page load. Call `setAbstApprovalStatus(false)` when consent is withdrawn; this clears tracking identifiers and pending history. Until consent is confirmed, assignments stay in page memory. As with any analytics tool, check your own consent requirements.
 
 = What happens to my data if I delete the plugin? =
 
@@ -196,10 +196,13 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 2. Test results with uplift, confidence and conversion rates, calculated on your own server.
 3. Click heatmaps built from your own visitors, recorded on every page.
 4. Scroll maps show how far down each page your visitors actually read.
-5. Native page-builder controls: tag any Elementor element as the original or the variation from its Advanced tab. Bricks, Breakdance, Beaver Builder, Oxygen, WP Bakery and Gutenberg have their own native controls too.
-6. Every test at a glance: visits, conversions and conversion rate for the original and the variation, with its status.
-7. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
-8. Creating a test: choose point-and-click, full-page, on-page elements or code.
+5. Elementor: tag any element as the original or the variation from its Advanced tab.
+6. The block editor: an AB Split Test panel on every block, under Advanced.
+7. Bricks: AB Split Test controls on every element, under Style.
+8. Beaver Builder: split-test settings in each module's Advanced tab. Oxygen, Breakdance and WP Bakery have native controls too.
+9. Every test at a glance: visits, conversions and conversion rate for the original and the variation, with its status.
+10. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
+11. Creating a test: choose point-and-click, full-page, on-page elements or code.
 
 == Changelog ==
 
