@@ -25,10 +25,8 @@
         "conversion_url": "thank-you",
         "conversion_link_pattern": "",
         "url_query": "",
-        "webhook_url": "",
         "bt_allowed_roles": [],
         "conversion_style": "bayesian",
-        "autocomplete_on": "0",
         "ac_min_days": "14",
         "ac_min_views": "500"
     },

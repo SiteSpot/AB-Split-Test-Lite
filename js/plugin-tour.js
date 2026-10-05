@@ -127,26 +127,6 @@ function wizard1(){
         ]
     });
 
-    if(jQuery('.ab-settings-webhooks').length > 0) {
-        tour.addStep({
-            title: 'Webhooks',
-            text: 'Send a webhook to your favourite automation tool when a test is created & complete.',
-            attachTo: {
-                element: '.ab-settings-webhooks',
-                on: 'top'
-            },
-            buttons: [
-                {
-                    action: tour.back,
-                    text: 'Back'
-                },
-                {
-                    action: tour.next,
-                    text: 'Next'
-                }
-            ]
-        });
-    }
 
 
     tour.addStep({
@@ -405,27 +385,6 @@ tour = Shepherd.activeTour;
         ]
     });
 
-    if(jQuery('.show_autocomplete').length)
-    {
-        tour.addStep({
-            title: 'Autocomplete',
-            text: 'End the test as soon as a winner is found. All existing users will see the winning variation as soon as possible. <BR>Recommeded.',
-            attachTo: {
-                element: '.show_autocomplete',
-                on: 'bottom'
-            },
-            buttons: [
-                {
-                    action: tour.back,
-                    text: 'Back'
-                },
-                {
-                    action: tour.next,
-                    text: 'Next'
-                }
-            ]
-        });
-    }
 
 
     tour.addStep({

@@ -27,12 +27,10 @@
         "conversion_url": "",
         "conversion_link_pattern": "",
         "url_query": "",
-        "webhook_url": "",
         "bt_allowed_roles": [],
         "css_test_variations": "0",
         "conversion_style": "bayesian",
         "test_winner": "variation-b",
-        "autocomplete_on": "0",
         "ac_min_days": "7",
         "ac_min_views": "500"
     },

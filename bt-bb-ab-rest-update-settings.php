@@ -250,15 +250,6 @@ function abst_rest_update_test_settings($request) {
         }
     }
 
-    if ($has_param('webhook_url')) {
-        $webhook_url = esc_url_raw((string) $params['webhook_url']);
-        if ($webhook_url === '') {
-            delete_post_meta($test_id, 'webhook_url');
-        } else {
-            update_post_meta($test_id, 'webhook_url', $webhook_url);
-        }
-    }
-
     if ($has_param('log_on_visible')) {
         update_post_meta($test_id, 'log_on_visible', !empty($params['log_on_visible']) ? '1' : '0');
     }
@@ -377,7 +368,6 @@ function abst_rest_update_test_settings($request) {
         'target_device' => $details['targeting']['device'] ?? (get_post_meta($test_id, 'target_option_device_size', true) ?: 'all'),
         'allowed_roles' => $details['targeting']['allowed_roles'] ?? (array) get_post_meta($test_id, 'bt_allowed_roles', true),
         'url_query' => $details['targeting']['url_query'] ?? get_post_meta($test_id, 'url_query', true),
-        'webhook_url' => $details['webhook_url'] ?? get_post_meta($test_id, 'webhook_url', true),
         'log_on_visible' => $details['targeting']['log_on_visible'] ?? (get_post_meta($test_id, 'log_on_visible', true) === '1'),
         'optimization_type' => $details['optimization']['type'] ?? (get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian'),
         'ac_min_days' => $details['optimization']['ac_min_days'] ?? intval(get_post_meta($test_id, 'ac_min_days', true)),

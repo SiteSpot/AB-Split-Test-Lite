@@ -261,9 +261,6 @@ select {
 #bt_experiments_target_option_device_size {
     margin-top: 4px;
 }
-.show_goals {
-    margin-bottom: 30px;
-}
 
 /* Goal cards - flat cards, as on the main test editor */
 .conversion-goal,
@@ -526,18 +523,6 @@ button.button.button-small.add-goal:hover,
     margin: 0 0 10px;
     font-size: 12px;
     line-height: 1.45;
-}
-
-/* Autocomplete toggle sits beside its label, inside the card padding */
-.show_autocomplete > input.ab-toggle {
-    margin: 0 10px 0 16px !important;
-}
-
-.show_autocomplete > input.ab-toggle + label {
-    display: inline-block;
-    margin: 0;
-    padding: 0;
-    vertical-align: middle;
 }
 
 /* Submit button */

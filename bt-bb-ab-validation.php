@@ -139,10 +139,6 @@ function abst_normalize_api_input_params($params) {
         $params['url_query'] = sanitize_textarea_field((string) $params['url_query']);
     }
 
-    if (isset($params['webhook_url'])) {
-        $params['webhook_url'] = esc_url_raw((string) $params['webhook_url']);
-    }
-
     $decode_array_param = static function($value) {
         if (is_array($value)) {
             return $value;
@@ -640,14 +636,14 @@ function abst_validate_magic_definition($magic_definition) {
 }
 
 /** Drop settings this plugin has no code for (sub-goals, revenue weighting,
- * auto-completion, goal types other than a page visit or element click, and a CSS
- * test's class count, which is always two), so API callers can't store them. */
+ * auto-completion, webhooks, goal types other than a page visit or element click, and
+ * a CSS test's class count, which is always two), so API callers can't store them. */
 function abst_drop_unsupported_test_params($params) {
     if (!is_array($params)) {
         return $params;
     }
 
-    unset($params['subgoals'], $params['goals'], $params['autocomplete_on'], $params['conversion_use_order_value'],
+    unset($params['subgoals'], $params['goals'], $params['autocomplete_on'], $params['webhook_url'], $params['conversion_use_order_value'],
         $params['conversion_url'], $params['conversion_time'], $params['conversion_scroll'],
         $params['conversion_text'], $params['conversion_link_pattern'], $params['css_variations']);
 

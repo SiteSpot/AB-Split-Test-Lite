@@ -229,7 +229,7 @@ jQuery(document).ready(function() {
 
   // Only make specific sections collapsible - NOT the main card sections
 
-  jQuery('#configuration_settings > div.show_targeting_options > h3, #configuration_settings > div.show_autocomplete > h3, #configuration_settings > div.webhooks_settings > h3, #configuration_settings > div.restart_test > h3').on('click', function() {
+  jQuery('#configuration_settings > div.show_targeting_options > h3, #configuration_settings > div.restart_test > h3').on('click', function() {
 
     var $section = jQuery(this).parent();
     var $content = $section.children().not('h3');
@@ -758,19 +758,6 @@ jQuery(document).ready(function() {
 
 
 
-  jQuery('[href="#webhooks"]').on('click',function(e){
-
-    jQuery('.tab-active').removeClass('tab-active');
-
-    jQuery(this).addClass('tab-active');
-
-    e.preventDefault();
-
-    showExperimentTab('#config');
-
-    jQuery(".webhooks_settings").show();
-
-  });
 
   jQuery('[name="abst_idea_impact"], [name="abst_idea_reach"], [name="abst_idea_confidence"], [name="abst_idea_effort"]').on('change', function(){
 
@@ -1056,27 +1043,6 @@ jQuery(document).ready(function() {
 
 
 
- jQuery('#autocomplete_on').on('change', function() {
-
-
-
-  if(jQuery(this).is(":checked")){
-
-    jQuery('.ac_options').show();
-
-  }
-
-  else
-
-  {
-
-    jQuery('.ac_options').hide();
-
-  }
-
-  
-
-  }).trigger('change');
 
 
 
@@ -2173,7 +2139,7 @@ function refreshTestType(){
 
 
   jQuery("#postbox-container-1, .bt_experiments_inner_custom_box").show();
-  var sharedSettingsSelector = ".show_targeting_options, .show_autocomplete, .webhooks_settings, .restart_test";
+  var sharedSettingsSelector = ".show_targeting_options, .restart_test";
 
 
 
