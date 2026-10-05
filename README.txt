@@ -146,7 +146,7 @@ AB Split Test is translation-ready. Contribute a translation for your language a
 
 = Is AB Split Test a self-hosted A/B testing plugin? =
 
-Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside your WordPress install and store data on your own server. There is no external account and no SaaS backend. Heatmap data and debug logs use PHP-protected files in your uploads directory. Your web server must execute PHP files or deny direct access to them; Apache access rules provide additional protection. Existing text logs migrate automatically, and collection pauses with an admin notice if journey files cannot be protected.
+Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside your WordPress install and store data on your own server. There is no external account and no SaaS backend. Heatmap data is kept in daily text files in your uploads directory, blocked from direct download by an .htaccess rule on Apache and LiteSpeed. On Nginx, deny `/wp-content/uploads/abst/` in your server configuration.
 
 = How many tests can I run? =
 

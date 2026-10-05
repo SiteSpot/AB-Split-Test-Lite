@@ -300,11 +300,11 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
                 <h4>Cookie Consent Information</h4>
 
-                <p>Tests will run as expected, except that data will be stored in session storage and not transmitted or saved until cookie consent is given.</p>
+                <p>Tests still run. Pending assignments stay in page memory; tracking cookies, browser storage and data transmission wait for consent. Withdrawing consent clears tracking identifiers and history.</p>
 
-                <p>Works automatically with: Borlabs v3, CookieBot, Cookie Consent (Orestbida), WP Consent API, CookieYES, Complianz, Termageddon, GDPR Cookie Consent (WebToffee)</p>
+                <p>Works automatically with Cookiebot, CookieConsent (Orestbida), WP Consent API, CookieYes, Complianz, and Cookies and Content Security Policy.</p>
 
-                <p>Developers can call <code>setAbstApprovalStatus(true)</code> when consent has been granted.</p>
+                <p>Custom banners must call <code>setAbstApprovalStatus(true)</code> on each page after confirming current consent, and <code>setAbstApprovalStatus(false)</code> when it is withdrawn.</p>
 
               </div>
 
@@ -952,4 +952,3 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 <?php 
 
 // thin air
-

@@ -2,17 +2,17 @@
 
 ## Directory Protection
 
-This plugin includes security measures to prevent directory browsing and unauthorized access:
+Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The debug log is `wp-content/uploads/abst_log_<hash>.log`, named from `AUTH_KEY`. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
 
 ### 1. Index Files
-All directories contain `index.php` files with "Silence is golden" to prevent directory listing.
+The journey directory and its parent receive `index.php` files to discourage directory listing. Configure directory browsing on the web server as well.
 
 ### 2. .htaccess Rules
-The plugin includes `.htaccess` rules that:
-- Disable directory indexes (`Options -Indexes`)
-- Block direct access to PHP files (except the main plugin file)
-- Block access to sensitive files (`.md`, `.json`, `.log`, `.txt`)
-- Allow CSS, JS, and image files for frontend functionality
+The journey directory receives a `Deny from all` rule, which blocks direct downloads on servers that honor `.htaccess` (Apache, LiteSpeed). Other servers need the rules under **Server Configuration**.
+
+## Consent
+
+When **Wait for cookie consent** is enabled, the script waits for current provider consent or `setAbstApprovalStatus(true)` before persisting tracking cookies, browser storage, or sending events. Custom banners must confirm consent on each page load and call `setAbstApprovalStatus(false)` on withdrawal. Withdrawal clears identifiers and pending history; subsequent approval starts fresh.
 
 ## Recommended robots.txt Additions
 
@@ -44,21 +44,19 @@ If Google has already indexed plugin URLs:
 
 ## Server Configuration
 
-### Apache (via .htaccess - included)
-The `.htaccess` file in this plugin handles protection automatically.
+### Apache / LiteSpeed
+The journey directory's `.htaccess` blocks direct access. Make sure `AllowOverride` permits it.
 
 ### Nginx
-Add to your server block:
+Nginx ignores `.htaccess`, so deny the journey directory in your server block (adjust the path if uploads uses a different URL):
 ```nginx
-location ~* /wp-content/plugins/bt-bb-ab/ {
-    location ~* \.(css|js|svg|png|jpg|jpeg|gif|ico|webp)$ {
-        allow all;
-    }
+location ^~ /wp-content/uploads/abst/ {
     deny all;
 }
 ```
 
 ### IIS (web.config)
+Deny `/wp-content/uploads/abst/` through request filtering. Disabling directory browsing alone does not prevent direct file access:
 ```xml
 <configuration>
   <system.webServer>

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  * - Log interactions such as button clicks, accordion opens, and form engagements
 
- * - Enable click journey playback and eventual heatmap generation
+ * - Generate heatmaps from visitor interactions
 
  * - Keep plugin lightweight and privacy-friendly by avoiding real-time database writes
 
@@ -47,7 +47,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  * ✅ JS collects clicks into buffer and sends via `navigator.sendBeacon()` or AJAX on blur/unload
 
- * ✅ Optional admin view with iframe + journey playback highlighting clicked elements
+ * ✅ Optional admin heatmap view highlighting clicked elements
 
  * ✅ Supports filtering by test variation
 
@@ -69,9 +69,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  * - Server-side rate limiting prevents excessive logging from same user/session
 
- * - All data is anonymous and only tracked when a test UUID is active
+ * - Visitor identifiers are pseudonymous; collecting data requires enabled tracking and any configured consent
 
- * - Front-end code adds data only if the page is part of a running split test and tracking is enabled
+ * - Front-end code adds data only when journey tracking is enabled and consent permits it
 
  *
 
@@ -168,14 +168,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function abst_protect_journey_dir() {
     // Prevent directory listing
-    abst_put_contents( ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>' );
+    if (!file_exists(ABST_JOURNEY_DIR . '/index.php')) {
+        abst_put_contents( ABST_JOURNEY_DIR . '/index.php', '<?php //silence is golden ?>' );
+    }
     if ( ! file_exists( dirname( ABST_JOURNEY_DIR ) . '/index.php' ) ) {
         abst_put_contents( dirname( ABST_JOURNEY_DIR ) . '/index.php', '<?php //silence is golden ?>' );
     }
 
     // Block direct file access (Apache/LiteSpeed). Nginx sites require a
     // server-level rule: location ~* /abst/journeys/ { deny all; }
-    abst_put_contents( ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all' );
+    if (!file_exists(ABST_JOURNEY_DIR . '/.htaccess')) {
+        abst_put_contents( ABST_JOURNEY_DIR . '/.htaccess', 'Deny from all' );
+    }
 }
 
 /**
@@ -865,14 +869,14 @@ class ABST_Journeys {
             $record_valid = true;
             foreach ($required_fields as $field) {
 
-                if (!isset($record[$field]) || $record[$field] === '' || $record[$field] === null) {
+                if (!isset($record[$field]) || !is_scalar($record[$field]) || $record[$field] === '') {
 
                     abst_log('Missing field ' . $field . ' in journey record');
                     $record_valid = false;
                     break;
 
                 }
-                $sanitized[$field] = sanitize_text_field($record[$field]);
+                $sanitized[$field] = str_replace('|', '', sanitize_text_field($record[$field]));
             }
 
             if (!$record_valid) {
@@ -909,7 +913,7 @@ class ABST_Journeys {
 
 
 
-                $experiments = isset($record['experiments']) ? sanitize_text_field($record['experiments']) : '';
+                $experiments = isset($record['experiments']) ? str_replace('|', '', sanitize_text_field($record['experiments'])) : '';
 
                 $user_id = isset($record['user_id']) ? intval($record['user_id']) : 0;
 
@@ -1053,7 +1057,7 @@ class ABST_Journeys {
 
             $element_id_or_selector = isset($record['element_id_or_selector']) ? self::sanitize_css_selector($record['element_id_or_selector']) : '';
 
-            $url = isset($record['url']) ? sanitize_text_field($record['url']) : '';
+            $url = isset($record['url']) ? str_replace('|', '', sanitize_text_field($record['url'])) : '';
 
 
 
@@ -1150,6 +1154,3 @@ class ABST_Journeys {
 
 
 new ABST_Journeys();
-
-
-

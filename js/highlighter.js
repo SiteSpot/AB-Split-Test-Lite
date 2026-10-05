@@ -261,6 +261,8 @@ jQuery(function(){
   document.addEventListener('abst-config-ready', abstBuildAdminBar);
 
 function abstBuildAdminBar() {
+  // Authored DOM attributes can contain decoded HTML entities.
+  const escapeMenuValue = value => String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   // Clear previous admin bar content if re-running after late config load
   jQuery("#wp-admin-bar-ab-test ul.ab-submenu").empty();
 
@@ -305,7 +307,7 @@ function abstBuildAdminBar() {
             magicItem = magicDefs[0];
             if(jQuery(magicItem.selector).length > 0) {
                 if(!shownPrimary) {
-                  submenus += '<li><a class="ab-item" target="_blank" href="'+bt_adminurl+'post.php?post='+index+'&action=edit">'+bt_split_test_icon+'<strong>'+ test.name +'</strong></a></li>';
+                  submenus += '<li><a class="ab-item" target="_blank" href="'+escapeMenuValue(bt_adminurl+'post.php?post='+index+'&action=edit')+'">'+bt_split_test_icon+'<strong>'+ escapeMenuValue(test.name) +'</strong></a></li>';
                   shownPrimary = true;
                   magicResults = true;
                 }
@@ -320,7 +322,7 @@ function abstBuildAdminBar() {
                     let preview_url = new URL(window.location.href);
                     preview_url.searchParams.set('abtid', index);
                     preview_url.searchParams.set('abtv', 'magic-'+ix);
-                    let link_html = '<span title="Copy Preview URL" class="ab-copy-link" data-preview="'+preview_url.toString()+'">'+bt_link_icon+'</span>';
+                    let link_html = '<span title="Copy Preview URL" class="ab-copy-link" data-preview="'+escapeMenuValue(preview_url.toString())+'">'+bt_link_icon+'</span>';
 
                     submenus += '<li><a class="ab-item" magic-eid="' + index + '" magic-index="' + ix + '"> '+ variationText + link_html + '</a></li>';
                   });
@@ -334,7 +336,7 @@ function abstBuildAdminBar() {
         }
       } // end magic test
       else
-        submenus += '<li><a class="ab-item" target="_blank" href="'+bt_adminurl+'post.php?post='+index+'&action=edit">'+bt_split_test_icon+'<strong>'+ test.name +'</strong></a></li>';
+        submenus += '<li><a class="ab-item" target="_blank" href="'+escapeMenuValue(bt_adminurl+'post.php?post='+index+'&action=edit')+'">'+bt_split_test_icon+'<strong>'+ escapeMenuValue(test.name) +'</strong></a></li>';
 
       let variations = [];
       //list test variations
@@ -350,11 +352,15 @@ function abstBuildAdminBar() {
         if( variations.indexOf(jQuery(this).attr('bt-variation')) === -1)
         {
           variations.push(jQuery(this).attr('bt-variation'));
-          var preview_url = new URL(jQuery(this).attr('bt-url') || window.location.href);
+          var preview_url;
+          try {
+            preview_url = new URL(jQuery(this).attr('bt-url') || window.location.href, window.location.href);
+            if (preview_url.protocol !== 'http:' && preview_url.protocol !== 'https:') return;
+          } catch (e) { return; }
           preview_url.searchParams.set('abtid', jQuery(this).attr('bt-eid'));
           preview_url.searchParams.set('abtv', jQuery(this).attr('bt-variation'));
-          var link_html = '<span title="Copy Preview URL" class="ab-copy-link" data-preview="'+preview_url.toString()+'">'+bt_link_icon+'</span>';
-          submenus += '<li><a class="ab-item ab-test" show-css="'+jQuery(this).attr('bt-variation')+'" show-url="' + jQuery(this).attr('bt-url') + '" show-eid="' + jQuery(this).attr('bt-eid') + '" show-variation="' + jQuery(this).attr('bt-variation') + '"> ' + bt_variation_icon + ' <span class="variation-tag-button">' + spantext + '</span>' + link_html + '</a></li>';
+          var link_html = '<span title="Copy Preview URL" class="ab-copy-link" data-preview="'+escapeMenuValue(preview_url.toString())+'">'+bt_link_icon+'</span>';
+          submenus += '<li><a class="ab-item ab-test" show-css="'+escapeMenuValue(jQuery(this).attr('bt-variation'))+'" show-url="' + escapeMenuValue(jQuery(this).attr('bt-url') || '') + '" show-eid="' + escapeMenuValue(jQuery(this).attr('bt-eid')) + '" show-variation="' + escapeMenuValue(jQuery(this).attr('bt-variation')) + '"> ' + bt_variation_icon + ' <span class="variation-tag-button">' + escapeMenuValue(spantext) + '</span>' + link_html + '</a></li>';
         }
       });
     });
@@ -386,7 +392,7 @@ function abstBuildAdminBar() {
         jQuery('body').addClass(showevar);
       }
 
-      if(showurl != 'undefined')
+      if(showurl && showurl != 'undefined')
       {
         var win = window.open(showurl, '_blank');
         if (win) {
@@ -398,9 +404,11 @@ function abstBuildAdminBar() {
         }
       }
 
-      jQuery('[bt-eid="'+showeid+'"]').removeClass('bt-show-variation');
-      jQuery('[bt-eid="'+showeid+'"][bt-variation="'+showevar+'"]').addClass('bt-show-variation');
-      bt_highlight('[bt-eid="'+showeid+'"][bt-variation="'+showevar+'"]');
+      const experimentSelector = '[bt-eid="'+CSS.escape(showeid)+'"]';
+      const variationSelector = experimentSelector+'[bt-variation="'+CSS.escape(showevar)+'"]';
+      jQuery(experimentSelector).removeClass('bt-show-variation');
+      jQuery(variationSelector).addClass('bt-show-variation');
+      bt_highlight(variationSelector);
       jQuery('body').trigger('ab-test-setup-complete');
       window.dispatchEvent(new Event('resize')); // trigger a window resize event. Useful for sliders etc. that dynamically resize
 
@@ -3343,4 +3351,3 @@ function getElementIndexFromMagic(selector) {
     });
     return foundIndex;
 }
-

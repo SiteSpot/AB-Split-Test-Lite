@@ -2896,10 +2896,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      if (!current_user_can('edit_posts'))
-
-        wp_die('You do not have the correct permissions to edit this label.');
-
       if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_save_variation_label')) {
 
         wp_die('Security check failed');
@@ -2926,7 +2922,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-        if (!current_user_can('edit_posts'))
+        if (!current_user_can('edit_post', $pid))
 
           wp_die('You do not have the correct permissions to edit this label.');
 
@@ -4949,14 +4945,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function abst_delete_variation(){
 
-      // if user has ability to edit bt_Experiments post type
-
-      if (!current_user_can('edit_posts')) {
-
-        wp_die('You do not have the correct permissions to delete this variation.');
-
-      }
-
       if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_delete_variation')) {
 
         wp_die('Security check failed');
@@ -4968,6 +4956,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       $eid = isset( $_POST['pid'] ) ? intval( wp_unslash( $_POST['pid'] ) ) : 0;
 
       $variation = isset( $_POST['variation'] ) ? sanitize_text_field( wp_unslash( $_POST['variation'] ) ) : '';
+
+      if (get_post_type($eid) !== 'bt_experiments' || !current_user_can('edit_post', $eid)) {
+        wp_die('You do not have the correct permissions to delete this variation.');
+      }
 
       //get observations
 
@@ -10317,6 +10309,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       foreach($posts as $val) {
 
+        // Permission decisions must remain outside the shared posts cache.
+        if ($val->post_status === 'draft' && !current_user_can('edit_post', $val->ID)) {
+          continue;
+        }
+
         // Never expose bundled sample/demo tests in the front-end config.
         if (abst_lite_is_sample_test($val->ID)) {
           continue;
@@ -10783,6 +10780,12 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         }
 
+        // This is public telemetry even though the callee returns an API response.
+        if (get_post_type($eid) !== 'bt_experiments' || get_post_status($eid) !== 'publish' || !$this->is_tracking_allowed($eid)) {
+            $errors[] = "Event {$idx} is not eligible for tracking";
+            continue;
+        }
+
 
 
         // Call existing per‑event handler.
@@ -11105,6 +11108,20 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             $test_type = $test_meta['test_type'][0]; 
 
+            if ($test_type === 'magic') {
+              $definition = maybe_unserialize($test_meta['magic_definition'][0] ?? []);
+              if (is_string($definition)) $definition = json_decode($definition, true);
+              $slots = is_array($definition) && isset($definition[0]['variations']) && is_array($definition[0]['variations']) ? count($definition[0]['variations']) : 0;
+              if (!preg_match('/^magic-(0|[1-9]\d*)$/', (string) $variation, $slot) || (int) $slot[1] >= $slots) {
+                $error = 'Invalid Magic variation.';
+              }
+            } elseif ($test_type === 'css_test') {
+              $slots = (int) ($test_meta['css_test_variations'][0] ?? 0);
+              if (!preg_match('/^test-css-' . (int) $eid . '-([1-9]\d*)$/', (string) $variation, $slot) || (int) $slot[1] > $slots) {
+                $error = 'Invalid code-test variation.';
+              }
+            }
+
   
 
             if($test_type == 'full_page')
@@ -11230,6 +11247,14 @@ function abst_cmp_by_conversion_rate($a, $b) {
         if(!isset($obs[$variation]) || (isset($obs[$variation]) && !is_array($obs[$variation])))
 
         {
+
+          // Builder-authored on-page labels have no central definition. Bound new keys
+          // while allowing existing historical labels to continue receiving events.
+          if (count($obs) >= 32 && !array_key_exists($variation, $obs)) {
+            $this->observations_lock($eid, 'release');
+            if ($from_api) return new WP_REST_Response(['error' => 'Too many variation labels.'], 400);
+            wp_send_json_error('Too many variation labels.', 400);
+          }
 
           $obs[$variation] = array(
 
@@ -11520,7 +11545,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           {
 
-            if (!in_array($location, $obs[$variation]['location'][$type]))
+            if (count($obs[$variation]['location'][$type]) < 1000 && !in_array($location, $obs[$variation]['location'][$type]))
 
             {
 
@@ -11853,11 +11878,14 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $meta = ['show_in_rest' => true, 'mcp' => ['public' => true]];
 
-      $permission = function() { return current_user_can('edit_posts'); };
+      $permission = function() {
+        $post_type = get_post_type_object('bt_experiments');
+        return $post_type && current_user_can($post_type->cap->edit_posts);
+      };
       // Heatmap and session data needs the same capability as its REST endpoints.
       $permission_heatmaps = function() { return current_user_can('manage_options'); };
 
-      $permission_write = function() { return current_user_can('edit_posts'); };
+      $permission_write = $permission;
 
 
 
@@ -13101,7 +13129,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          return current_user_can('edit_posts');
+          $post_type = get_post_type_object('bt_experiments');
+          return $post_type && current_user_can($post_type->cap->create_posts);
 
         }
 
@@ -13119,7 +13148,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          return current_user_can('edit_posts');
+          $post_type = get_post_type_object('bt_experiments');
+          return $post_type && current_user_can($post_type->cap->edit_posts);
 
         }
 
@@ -13137,7 +13167,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          return current_user_can('edit_posts');
+          $post_type = get_post_type_object('bt_experiments');
+          return $post_type && current_user_can($post_type->cap->edit_posts);
 
         },
 
@@ -13167,7 +13198,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          return current_user_can('edit_posts');
+          $post_type = get_post_type_object('bt_experiments');
+          return $post_type && current_user_can($post_type->cap->edit_posts);
 
         },
 
@@ -13199,7 +13231,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          return current_user_can('edit_posts');
+          $post_type = get_post_type_object('bt_experiments');
+          return $post_type && current_user_can($post_type->cap->edit_posts);
 
         }
 
@@ -13217,7 +13250,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          return current_user_can('edit_posts');
+          $post_type = get_post_type_object('bt_experiments');
+          return $post_type && current_user_can($post_type->cap->edit_posts);
 
         }
 
@@ -13375,6 +13409,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       // Update the post status
 
+      $post_type = get_post_type_object('bt_experiments');
+      if (!(defined('WP_CLI') && WP_CLI) && $status === 'publish' && (!$post_type || !current_user_can($post_type->cap->publish_posts))) {
+        return new WP_Error('forbidden', 'You do not have permission to publish this test.', ['status' => 403]);
+      }
+
       $result = wp_update_post([
 
         'ID' => $test_id,
@@ -13501,6 +13540,10 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
       foreach ($tests as $test) {
+
+        if (!(defined('WP_CLI') && WP_CLI) && !current_user_can('edit_post', $test->ID)) {
+          continue;
+        }
 
         $test_type = get_post_meta($test->ID, 'test_type', true);
 
@@ -13759,7 +13802,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
       $validation_warnings = $guard_result['warnings'];
 
       $requested_status = $params['status'] ?? ($params['post_status'] ?? 'draft');
-      if (!(defined('WP_CLI') && WP_CLI) && $requested_status === 'publish' && !current_user_can('publish_posts')) {
+      $post_type = get_post_type_object('bt_experiments');
+      if (!(defined('WP_CLI') && WP_CLI) && (!$post_type || !current_user_can($post_type->cap->create_posts))) {
+        return new WP_Error('forbidden', 'You do not have permission to create tests.', ['status' => 403]);
+      }
+      if (!(defined('WP_CLI') && WP_CLI) && $requested_status === 'publish' && !current_user_can($post_type->cap->publish_posts)) {
         return new WP_Error('forbidden', 'You do not have permission to publish this test.', ['status' => 403]);
       }
 
@@ -14268,7 +14315,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $post = $_POST;
 
-      $eid = intval($post['eid']);
+      $eid = isset($post['eid']) ? absint(wp_unslash($post['eid'])) : 0;
 
       $response = array(
 
@@ -14280,11 +14327,18 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      if(isset($eid) && $eid !== '' && $post['bt_action'] == 'clear')
+      if($eid && isset($post['bt_action']) && $post['bt_action'] === 'clear')
 
       {
 
-        if(!current_user_can('delete_posts', $eid))
+        $experiment = get_post($eid);
+        $post_type = get_post_type_object('bt_experiments');
+        if(!$experiment || $experiment->post_type !== 'bt_experiments') {
+          $response['text'] = 'Not found.';
+          wp_send_json($response);
+        }
+
+        if(!current_user_can('edit_post', $eid) || !$post_type || !current_user_can($post_type->cap->publish_posts))
 
         {
 
@@ -14943,12 +14997,16 @@ function abst_log($message, $level = 'info') {
 
   $timestamp = current_time('mysql');
 
+  $message = substr(str_replace(["\r", "\n", "\0"], ' ', (string) $message), 0, 4096);
   $log_entry = "[$timestamp] $message\n";
 
   
 
   // Write to log file
 
+  if (file_exists($log_file) && filesize($log_file) > 1024 * 1024) {
+    abst_put_contents($log_file, '');
+  }
   abst_put_contents($log_file, $log_entry, true);
 
 

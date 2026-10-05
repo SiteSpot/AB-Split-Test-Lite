@@ -120,7 +120,7 @@
           // already have executed with ZERO experiments and latched the
           // setup-complete class - that run did no test work, so lift the latch
           // and let the init process for real this time.
-          if (document.readyState !== 'loading' && hasExperiments()) {
+          if (document.readyState !== 'loading') {
             console.log('ABST: Running delayed experiment initialization...');
             if (document.body) {
               document.body.classList.remove('ab-test-setup-complete');
@@ -157,6 +157,7 @@ window.abstInitConfig = function() {
   bt_adminurl = window.bt_adminurl;
   bt_pluginurl = window.bt_pluginurl;
   bt_homeurl = window.bt_homeurl;
+  abstSyncConsent();
 };
 
 // Extract config from wp_localize_script output (new method)
@@ -223,58 +224,129 @@ function abstWarnOnUnsafeExperimentIds() {
   });
 }
 
-if(btab_vars && btab_vars.wait_for_approval == '1') {
-  window.abst.hasApproval = localStorage.getItem('abstApprovalStatus') === 'approved';
+// Unknown or delayed configuration cannot grant tracking consent.
+window.abst.hasApproval = false;
+window.abst.memoryStorage = Object.create(null);
+window.abst.sessionMemory = Object.create(null);
+window.abst.pendingCookies = Object.create(null);
+window.abst.assignments = Object.create(null);
+window.abst.forgetting = !!new URLSearchParams(window.location.search).get('abstforgetme');
+
+function abstSessionGet(key) {
+  if (window.abst.hasApproval) {
+    try {
+      var stored = sessionStorage.getItem(key);
+      if (stored !== null) return stored;
+    } catch (e) {}
+  }
+  return Object.prototype.hasOwnProperty.call(window.abst.sessionMemory, key) ? window.abst.sessionMemory[key] : null;
 }
-else {
-  window.abst.hasApproval = true;
+
+function abstSessionSet(key, value) {
+  window.abst.sessionMemory[key] = String(value);
+  if (window.abst.hasApproval) {
+    try { sessionStorage.setItem(key, value); } catch (e) {}
+  }
+}
+
+function abstSessionDelete(key) {
+  delete window.abst.sessionMemory[key];
+  try { sessionStorage.removeItem(key); } catch (e) {}
 }
 
 function setAbCrypto() {
   if (!abstGetAdvancedId()) {
-    let fp;
-    if(crypto.randomUUID) {
-      try {
-        fp = crypto.randomUUID();
-      } catch (e) { // localhost, http
-        fp = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16));
-      }
-    }
-    else {
+    var fp;
+    try { fp = crypto.randomUUID(); } catch (e) {
       fp = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16));
     }
     window.abst.visitorId = fp;
-    if (window.abst.hasApproval) {
-      abstSetCookie("ab-advanced-id", fp, 365);
-    }
-    else {
-      //session it
-      sessionStorage.setItem("ab-advanced-id", fp);
-    }
+    abstSetCookie('ab-advanced-id', fp, 365);
   }
 }
 
-// Helper function to set approval status
 function setAbstApprovalStatus(approved) {
+  approved = approved === true && !window.abst.forgetting;
+  var wasApproved = window.abst.hasApproval;
+  if (!approved && window.abst.consentRevoked && !wasApproved) return;
   window.abst.hasApproval = approved;
-  if (window.abst.hasApproval) {
-    localStorage.setItem('abstApprovalStatus', 'approved');
-    
-    // Migrate ab-advanced-id from sessionStorage to cookie when consent is given
-    var sessionId = sessionStorage.getItem('ab-advanced-id');
-    if (sessionId && !abstGetCookie('ab-advanced-id')) {
-      abstSetCookie('ab-advanced-id', sessionId, 365);
-      sessionStorage.removeItem('ab-advanced-id'); // Clean up sessionStorage
-      console.log('ABST: Migrated UUID from session to cookie after consent');
-    }
-    
-    // Process any queued events now that we have approval
-    abst_process_approved_events();
-  } else {
-    localStorage.removeItem('abstApprovalStatus');
+  if (!approved) {
+    // Keep only presentation choices in page memory, with conversion history reset.
+    var assignments = Object.assign(Object.create(null), window.abst.assignments);
+    var cookies = document.cookie.split(';');
+    cookies.forEach(function(cookie) {
+      var name = cookie.split('=')[0].trim();
+      if (name.indexOf('btab_') === 0 || name === 'ab-advanced-id' || name === 'abst_server_events') abstDeleteCookie(name);
+    });
+    [function() { return localStorage; }, function() { return sessionStorage; }].forEach(function(getStorage) {
+      try {
+        var storage = getStorage();
+        Object.keys(storage).forEach(function(key) {
+          if (key.indexOf('btab_') === 0 || key === 'ab-advanced-id' || key === 'abst_server_events' || key === 'abstApprovalStatus' || key === 'abstTestDataQueue' || key === 'abst_original_utm' || key === 'abst_original_referrer') storage.removeItem(key);
+        });
+      } catch (e) {}
+    });
+    window.abst.memoryStorage = Object.create(null);
+    window.abst.sessionMemory = Object.create(null);
+    window.abst.pendingCookies = Object.create(null);
+    window.abst.assignments = Object.create(null);
+    Object.keys(assignments).forEach(function(name) {
+      try {
+        var assignment = JSON.parse(assignments[name]);
+        assignment.conversion = 0;
+        window.abst.assignments[name] = JSON.stringify(assignment);
+        window.abst.memoryStorage[name] = window.abst.assignments[name];
+      } catch (e) {}
+    });
+    window.abst.visitorId = null;
+    window.abst.clickRegister = {};
+    window.abst.heatScrollMax = 0;
+    window.abst.heatScrollLastSent = 0;
+    if (window.abst.resetRageClicks) window.abst.resetRageClicks();
+    window.abst.consentRevoked = true;
+    return;
   }
+  if (btab_vars.wait_for_approval == '1') {
+    try { localStorage.setItem('abstApprovalStatus', 'approved'); } catch (e) {}
+  }
+  if (wasApproved) return;
+  Object.keys(window.abst.pendingCookies).forEach(function(name) {
+    var pending = window.abst.pendingCookies[name];
+    abstSetCookie(name, pending.value, pending.days);
+  });
+  window.abst.pendingCookies = Object.create(null);
+  Object.keys(window.abst.sessionMemory).forEach(function(key) {
+    abstSessionSet(key, window.abst.sessionMemory[key]);
+  });
+  if (window.abst.consentRevoked) {
+    Object.keys(window.abst.assignments).forEach(function(name) {
+      try {
+        var assignment = JSON.parse(window.abst.assignments[name]);
+        var experiment = bt_experiments[assignment.eid];
+        if (!experiment || experiment.test_status !== 'publish' || !experiment.is_current_user_track || window.abst.isTrackingAllowed === false) return;
+        abstSetCookie(name, JSON.stringify(assignment), 1000);
+        queueEventData({ action: 'abst_experiment_w', eid: assignment.eid, variation: assignment.variation, type: 'visit', size: assignment.size, location: assignment.location }, false);
+      } catch (e) {}
+    });
+  }
+  window.abst.consentRevoked = false;
+  if (btab_vars.advanced_tracking === '1' || btab_vars.abst_enable_user_journeys === '1') setAbCrypto();
+  abst_process_approved_events();
+  if (window.abst.mainInitialized) check_heatmap_tracking();
 }
-  
+
+function abstSyncConsent() {
+  if (!Object.prototype.hasOwnProperty.call(btab_vars, 'wait_for_approval')) return;
+  var approved = btab_vars.wait_for_approval != '1';
+  if (!approved) {
+    // A previous grant cannot tell us whether a banner withdrew consent while offline.
+    // Providers (or a custom banner) must confirm the current decision on each page.
+    var partnerStatus = abstPartnerConsentStatus();
+    if (partnerStatus !== null) approved = partnerStatus;
+  }
+  setAbstApprovalStatus(approved);
+}
+
 // Only set to true if undefined, respecting any intentional false value
 if(window.abst.isTrackingAllowed === undefined) 
   window.abst.isTrackingAllowed = true;
@@ -302,141 +374,57 @@ if (window.btab_vars && window.btab_vars.advanced_tracking && window.btab_vars.a
     setAbCrypto();
   }
 
-function setupConsentPartners() {
-  if(window.btab_vars.wait_for_approval == '1' && window.abst.hasApproval == false) {
-    console.log('ABST: Setting up cookie consent partners');
-
-    // Cookiebot
-    if(window.Cookiebot && window.Cookiebot.consent && window.Cookiebot.consent.statistics) {
-      console.log('ABST: Cookiebot consent granted for statistics');
-      setAbstApprovalStatus(true);
-    }
-    // Always listen for consent accept event (works even if Cookiebot loads later)
-    window.addEventListener('CookiebotOnAccept', function() {
-      if (window.Cookiebot && window.Cookiebot.consent && window.Cookiebot.consent.statistics) {
-        console.log('ABST: Cookiebot consent granted (after accept)');
-        setAbstApprovalStatus(true);
-      }
-    });
-
-
-    // CookieConsent (Orestbida)
-    if(window.CookieConsent && window.CookieConsent.acceptedCategory) {
-      if (window.CookieConsent.acceptedCategory('analytics')) {
-        console.log('ABST: CookieConsent consent granted for analytics');
-        setAbstApprovalStatus(true);
-      }
-    }
-    // Always listen for consent changes
-    document.addEventListener('cc:onConsent', function(event) {
-      if (event.detail && event.detail.cookie && event.detail.cookie.acceptedCategory) {
-        if (event.detail.cookie.acceptedCategory('analytics')) {
-          console.log('ABST: CookieConsent consent granted for analytics (after change)');
-          setAbstApprovalStatus(true);
-        }
-      }
-    });
-
-
-    // WP Consent API
-    if (typeof wp_has_consent !== 'undefined' && wp_has_consent('statistics')){
-      console.log('ABST: WP consent api consent granted saving stats');
-      setAbstApprovalStatus(true);
-    }
-    // Always listen to consent change event
-    document.addEventListener("wp_listen_for_consent_change", function (e) {
-      var changedConsentCategory = e.detail;
-      for (var key in changedConsentCategory) {
-        if (changedConsentCategory.hasOwnProperty(key)) {
-          if (key === 'statistics' && changedConsentCategory[key] === 'allow') {
-            console.log("ABST: WP consent api consent granted (after change)");
-            setAbstApprovalStatus(true);
-          }
-        }
-      }
-    });
-
-
-    // CookieYes
-    if (window.getCkyCConsent) {
-      const consent = getCkyCConsent();
-      if (consent && consent.categories && consent.categories.analytics) {
-        console.log('ABST: CookieYes consent granted for analytics');
-        setAbstApprovalStatus(true);
-      }
-    }
-    
-    // Listen for consent updates
-    document.addEventListener('cookieyes_consent_update', function(e) {
-      if (window.getCkyCConsent) {
-        const consent = getCkyCConsent();
-        if (consent && consent.categories && consent.categories.analytics) {
-          console.log('ABST: CookieYes consent granted for analytics (after update)');
-          setAbstApprovalStatus(true);
-        }
-      }
-    });
-    
-
-    //complianz
-    if(typeof cmplz_has_consent === 'function') {
-      if(cmplz_has_consent('statistics')) {
-        console.log('ABST: Complianz consent granted for statistics');
-        setAbstApprovalStatus(true);
-      }
-    }
-	
-
-    // Cookies and Content Security Policy plugin reloads after granting concent so check once on load
-    if (typeof Cookies !== 'undefined') {
-      // Check for main cookie name
-      let cacspCookie = Cookies.get('cookies_and_content_security_policy');
-      
-      // Check for WP Engine compatibility mode
-      if (!cacspCookie) {
-        cacspCookie = Cookies.get('wpe-us');
-      }
-      
-      if (cacspCookie) {
-        try {
-          const acceptedCookies = JSON.parse(cacspCookie);
-          if (acceptedCookies.includes('statistics')) {
-            console.log('ABST: Cookies and Content Security Policy plugin consent granted for statistics');
-            setAbstApprovalStatus(true);
-          }
-        } catch (e) {
-          console.warn('ABST: Error parsing Cookies and Content Security Policy consent cookie:', e);
-        }
-      }
+function abstPartnerConsentStatus() {
+  var states = [];
+  if (window.Cookiebot && window.Cookiebot.consent) states.push(window.Cookiebot.consent.statistics === true);
+  if (window.CookieConsent && typeof window.CookieConsent.acceptedCategory === 'function') states.push(window.CookieConsent.acceptedCategory('analytics') === true);
+  if (typeof window.wp_has_consent === 'function') states.push(window.wp_has_consent('statistics') === true);
+  if (typeof window.getCkyCConsent === 'function') {
+    var consent = window.getCkyCConsent();
+    if (consent && consent.categories) states.push(consent.categories.analytics === true);
+  }
+  if (typeof window.cmplz_has_consent === 'function') states.push(window.cmplz_has_consent('statistics') === true);
+  if (typeof Cookies !== 'undefined') {
+    var cookie = Cookies.get('cookies_and_content_security_policy') || Cookies.get('wpe-us');
+    if (cookie) {
+      try { states.push(JSON.parse(cookie).includes('statistics')); } catch (e) { states.push(false); }
     }
   }
+  return states.length ? states.every(Boolean) : null;
 }
-  
 
-// Complianz: always register these listeners unconditionally so they fire for returning
-// visitors too (Complianz fires cmplz_enable_category before DOMContentLoaded for users
-// who already have consent stored, which would miss the listener if it were inside
-// setupConsentPartners' hasApproval==false guard).
-if(window.btab_vars && window.btab_vars.wait_for_approval == '1') {
-  document.addEventListener("cmplz_enable_category", function(consentData) {
-    if (!consentData.detail) return;
-    let category = consentData.detail.category;
-    let acceptedCategories = consentData.detail.categories;
-    // category is 'statistics' on direct grant; also check acceptedCategories array
-    // for cases where category is null (service-only consent path)
-    let statisticsGranted = category === 'statistics' ||
-      (Array.isArray(acceptedCategories) && acceptedCategories.indexOf('statistics') !== -1);
-    if (statisticsGranted) {
-      console.log('ABST: Complianz consent granted for statistics');
-      setAbstApprovalStatus(true);
+function setupConsentPartners() {
+  if (window.abst.consentListenersReady) return;
+  window.abst.consentListenersReady = true;
+  function apply(approved) {
+    if (btab_vars.wait_for_approval == '1') setAbstApprovalStatus(approved);
+  }
+  function sync() {
+    if (btab_vars.wait_for_approval == '1') {
+      var approved = abstPartnerConsentStatus();
+      if (approved !== null) apply(approved);
     }
+  }
+  ['CookiebotOnAccept', 'CookiebotOnDecline', 'CookiebotOnConsentReady'].forEach(function(event) {
+    window.addEventListener(event, sync);
   });
-
-  document.addEventListener("cmplz_revoke", function() {
-    console.log('ABST: Complianz consent revoked');
-    setAbstApprovalStatus(false);
+  ['cc:onConsent', 'cc:onChange'].forEach(function(event) {
+    window.addEventListener(event, sync);
+    document.addEventListener(event, sync);
   });
+  document.addEventListener('wp_listen_for_consent_change', function(event) {
+    if (event.detail && Object.prototype.hasOwnProperty.call(event.detail, 'statistics')) apply(event.detail.statistics === 'allow');
+  });
+  document.addEventListener('cookieyes_consent_update', sync);
+  document.addEventListener('cmplz_enable_category', function(event) {
+    if (!event.detail) return;
+    if (event.detail.category === 'statistics' || (Array.isArray(event.detail.categories) && event.detail.categories.indexOf('statistics') !== -1)) apply(true);
+  });
+  document.addEventListener('cmplz_revoke', function() { apply(false); });
 }
+
+setupConsentPartners();
+abstSyncConsent();
 
 // Main initialization function - can be called on DOMContentLoaded or when deferred config loads
 function abstMainInit() {
@@ -444,6 +432,7 @@ function abstMainInit() {
   if (document.body && document.body.classList.contains('ab-test-setup-complete')) {
     return;
   }
+  window.abst.mainInitialized = true;
   setupConsentPartners();
   // Server-side redirect events are not replayed to analytics; just clear the cookie.
   if (abstGetCookie('abst_server_events')) {
@@ -959,6 +948,7 @@ function abstMainInit() {
     document.body.classList.add('ab-test-setup-complete');
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ 'event': 'ab-test-setup-complete' }); // gtm trigger - always fire even if no tests
+    check_heatmap_tracking();
     return;
   }
 
@@ -984,14 +974,19 @@ function abstMainInit() {
   initAbstDynamicElementObserver();
 }
 
-// Run on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', abstMainInit);
+// Delayed scripts can execute after DOMContentLoaded. Initialize after this script finishes.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', abstMainInit);
+} else {
+  setTimeout(abstMainInit, 0);
+}
 
 // Also run if config loads late (deferred by cache plugins like LiteSpeed)
 document.addEventListener('abst-config-ready', abstMainInit);
 
 // Record the conversion (page visit or element click) for a test the visitor is already in.
 function abstRecordConversion(testId) {
+  if (!window.abst.hasApproval && window.abst.consentRevoked) return false;
   if (!testId || !window.bt_experiments || !window.bt_experiments[testId]) {
     return false;
   }
@@ -1246,6 +1241,11 @@ function getRandomInt(min, max) {
 
 
 function abstSetCookie(c_name, value, exdays) {
+  if (c_name.indexOf('btab_') === 0) window.abst.assignments[c_name] = String(value);
+  if (!window.abst.hasApproval) {
+    window.abst.pendingCookies[c_name] = { value: value, days: exdays };
+    return btSetLocal(c_name, value);
+  }
   if (btIsLocalhost())
     return btSetLocal(c_name, value);
  
@@ -1357,7 +1357,7 @@ function abstSetCookie(c_name, value, exdays) {
   console.log('ABST: Cookie set on localStorage backup. ALERT COOKIES ARE BEING BLOCKED.');
   console.log('ABST: Server side conversions will not work. Client side conversions will work.');
   
-  // All failed - use localStorage or session if not approved
+  // All failed - use browser storage after consent, or page memory while pending.
   return btSetLocal(c_name, value);
 }
 
@@ -1378,6 +1378,10 @@ function abstDeleteCookie(c_name) {
     }
   } catch (e) { }
 
+  delete window.abst.memoryStorage[c_name];
+  delete window.abst.pendingCookies[c_name];
+  delete window.abst.assignments[c_name];
+
   // abstSetCookie falls back to browser storage when cookies are unavailable.
   // Remove both copies regardless of the current consent state.
   try {
@@ -1389,6 +1393,7 @@ function abstDeleteCookie(c_name) {
 }
 
 function abstGetCookie(c_name) {
+  if (!window.abst.hasApproval) return btGetLocal(c_name) || false;
   if (!c_name)
     return false;
 
@@ -1398,7 +1403,9 @@ function abstGetCookie(c_name) {
     y = ARRcookies[i].substr(ARRcookies[i].indexOf('=') + 1);
     x = x.replace(/^\s+|\s+$/g, '');
     if (x == c_name) {
-      return unescape(y);
+      var value = unescape(y);
+      if (c_name.indexOf('btab_') === 0) window.abst.assignments[c_name] = value;
+      return value;
     }
   }
 
@@ -1425,29 +1432,26 @@ function abstShowPage(force = false) {
 }
 
 function btSetLocal(c_name, value) {
-  //session if not approved
-  if (window.abst.hasApproval == false) {
-    sessionStorage.setItem(c_name, value);
-    return;
+  window.abst.memoryStorage[c_name] = String(value);
+  if (window.abst.hasApproval) {
+    try { localStorage.setItem(c_name, value); } catch (e) {}
   }
-  localStorage.setItem(c_name, value);
 }
 
 function btGetLocal(c_name) {
-  //session if not approved
-  if (window.abst.hasApproval == false) {
-    return sessionStorage.getItem(c_name);
+  if (window.abst.hasApproval) {
+    try {
+      var stored = localStorage.getItem(c_name);
+      if (stored !== null) return stored;
+    } catch (e) {}
   }
-  return localStorage.getItem(c_name);
+  return Object.prototype.hasOwnProperty.call(window.abst.memoryStorage, c_name) ? window.abst.memoryStorage[c_name] : null;
 }
 
 function btDeleteLocal(c_name) {
-  //session if not approved
-  if (window.abst.hasApproval == false) {
-    sessionStorage.removeItem(c_name);
-    return;
-  }
-  localStorage.removeItem(c_name);
+  delete window.abst.memoryStorage[c_name];
+  try { localStorage.removeItem(c_name); } catch (e) {}
+  try { sessionStorage.removeItem(c_name); } catch (e) {}
 }
 
 function btIsLocalhost() {
@@ -1534,10 +1538,11 @@ function bt_experiment_w(eid, variation, type, url) {
 }
 
 /**
- * Helper function to queue event data in localStorage
+ * Queue event data in page memory, persisting to sessionStorage only after approval.
  */
 function queueEventData(data, url) {
-  // Add to queue in localStorage
+  if (!window.abst.hasApproval && window.abst.consentRevoked) return;
+  // Add to the consent-gated queue.
   const queueData = {
     data: data,
     timestamp: new Date().getTime(),
@@ -1547,9 +1552,10 @@ function queueEventData(data, url) {
   // Get existing queue or initialize empty array
   let queue = [];
   try {
-    const queueString = sessionStorage.getItem('abstTestDataQueue');
+    const queueString = abstSessionGet('abstTestDataQueue');
     if (queueString) {
-      queue = JSON.parse(queueString);
+      var parsed = JSON.parse(queueString);
+      queue = Array.isArray(parsed) ? parsed : [];
     }
   } catch (e) {
     console.error('Error parsing abstTestDataQueue', e);
@@ -1562,7 +1568,7 @@ function queueEventData(data, url) {
  
   // Save updated queue
   try {
-    sessionStorage.setItem('abstTestDataQueue', JSON.stringify(queue));
+    abstSessionSet('abstTestDataQueue', JSON.stringify(queue));
   } catch (e) {
     console.warn('ABST: Unable to persist event queue', e);
   }
@@ -1573,13 +1579,15 @@ function queueEventData(data, url) {
  * This function should be called when cookie consent or other approval is given
  */
 function abst_process_approved_events() {
+  if (!window.abst.hasApproval || !bt_ajaxurl) return false;
 
   // Get queued events
   let queue = [];
   try {
-    const queueString = sessionStorage.getItem('abstTestDataQueue');
+    const queueString = abstSessionGet('abstTestDataQueue');
     if (queueString) {
-      queue = JSON.parse(queueString);
+      var parsed = JSON.parse(queueString);
+      queue = Array.isArray(parsed) ? parsed : [];
     }
   } catch (e) {
     console.error('Error parsing abstTestDataQueue', e);
@@ -1600,7 +1608,7 @@ function abst_process_approved_events() {
     );
     
     if (ok) {
-      sessionStorage.removeItem('abstTestDataQueue');
+      abstSessionDelete('abstTestDataQueue');
       //console.log('ABST: Batch sent successfully');
     } else {
       console.info('ABST: Beacon rejected by browser, will retry');
@@ -1688,7 +1696,7 @@ function bt_replace_all_html(find, replace, location = 'body') {
  */
 function abst_revoke_approval() {
   setAbstApprovalStatus(false);
-  console.log('ABST: Approval revoked, events will be queued until approval is given again');
+  console.log('ABST: Approval revoked; tracking history cleared and collection stopped');
   return true;
 }
 
@@ -2708,7 +2716,7 @@ function isIgnored(type, value) {
 // On landing page, URL has ?utm_source=...&utm_medium=...&utm_campaign=...
 // On subsequent pages, these are lost from the URL - we want to keep them for the whole session
 try {
-  var storedUtm = sessionStorage.getItem('abst_original_utm');
+  var storedUtm = abstSessionGet('abst_original_utm');
   if (!storedUtm) {
     var utmParams = new URLSearchParams(window.location.search);
     var utmData = {};
@@ -2717,7 +2725,7 @@ try {
       if (val) utmData[key] = val;
     });
     // Store as JSON - even if empty, mark session as initialized
-    sessionStorage.setItem('abst_original_utm', JSON.stringify(utmData));
+    abstSessionSet('abst_original_utm', JSON.stringify(utmData));
   }
 } catch(e) {
   // sessionStorage not available - UTMs only captured from current URL
@@ -2727,7 +2735,7 @@ try {
 function abstGetEventUrl() {
   var search = window.location.search;
   try {
-    var stored = sessionStorage.getItem('abst_original_utm');
+    var stored = abstSessionGet('abst_original_utm');
     if (stored) {
       var utmData = JSON.parse(stored);
       var params = new URLSearchParams(search);
@@ -2746,9 +2754,28 @@ function abstGetEventUrl() {
   return search;
 }
 
+function abstRecordJourneyPageView() {
+  if (!window.abst.hasApproval) return;
+  window.abst.clickRegister[new Date().toISOString()] = {
+    timestamp: new Date().toISOString(),
+    type: 'pv',
+    post_id: btab_vars.post_id,
+    uuid: abstGetAdvancedId(),
+    ab_advanced_id: abstGetAdvancedId(),
+    url: abstGetEventUrl(),
+    element_id_or_selector: '0',
+    click_x: 0,
+    click_y: 0,
+    screen_size: window.abstheatmapScreenSize,
+    meta: '',
+  };
+}
+
 function enableClickTracking(){
+  if (!window.abst.hasApproval) return;
 
   if(window.abstheatmapScreenSize){
+    abstRecordJourneyPageView();
     return; // already enabled
   }
   /*
@@ -2774,7 +2801,7 @@ function enableClickTracking(){
   // On first arrival from an external site, document.referrer has the source (e.g. google.com)
   // On subsequent internal page loads, document.referrer becomes your own domain - we don't want that
   try {
-    var storedReferrer = sessionStorage.getItem('abst_original_referrer');
+    var storedReferrer = abstSessionGet('abst_original_referrer');
     if (!storedReferrer) {
       // First page of this session - check if referrer is external
       var ref = document.referrer || '';
@@ -2784,16 +2811,16 @@ function enableClickTracking(){
           var currentHost = window.location.hostname;
           // Only store if it's from a different domain (external referrer)
           if (refHost !== currentHost) {
-            sessionStorage.setItem('abst_original_referrer', ref);
+            abstSessionSet('abst_original_referrer', ref);
           }
         } catch(e) {
           // Invalid URL in referrer, store as-is
-          sessionStorage.setItem('abst_original_referrer', ref);
+          abstSessionSet('abst_original_referrer', ref);
         }
       }
       // If no referrer at all (direct traffic), store empty string to mark session as initialized
-      if (!sessionStorage.getItem('abst_original_referrer')) {
-        sessionStorage.setItem('abst_original_referrer', '');
+      if (!abstSessionGet('abst_original_referrer')) {
+        abstSessionSet('abst_original_referrer', '');
       }
     }
   } catch(e) {
@@ -2802,19 +2829,7 @@ function enableClickTracking(){
 
   
   //sample line [timestamp | uuid | url | element_id_or_selector | click_x | click_y | screen_size | meta]
-  window.abst.clickRegister[new Date().toISOString()] = {
-    timestamp: new Date().toISOString(),
-    type: 'pv',
-    post_id: btab_vars.post_id,
-    uuid: abstGetAdvancedId(),
-    ab_advanced_id: abstGetAdvancedId(),
-    url: abstGetEventUrl(),
-    element_id_or_selector: '0',
-    click_x: 0,
-    click_y: 0,
-    screen_size: window.abstheatmapScreenSize,
-    meta: '',
-  };
+  abstRecordJourneyPageView();
 
   var trackable_elements = ['a','button','input','textarea','select']; // todo filter this to reduce filesize
 
@@ -2843,6 +2858,8 @@ function enableClickTracking(){
       return sameElementClicks.length >= this.threshold;
     }
   };
+
+  window.abst.resetRageClicks = function() { rageClickTracker.clicks = []; };
 
   // Helper function to detect if an element is interactive
   function isInteractive(element) {
@@ -2885,6 +2902,7 @@ function enableClickTracking(){
 
   //watch for click events on trackable elements  in the dom now or later
     document.addEventListener('click', function(event) {
+      if (!window.abst.hasApproval) return;
 
       var rect = event.target.getBoundingClientRect();
       var xval = (event.clientX - rect.left) / rect.width;
@@ -2944,6 +2962,7 @@ function enableClickTracking(){
     window.abst.heatViewport = window.innerHeight;
     var scrollEventLock = false;
     document.addEventListener('scroll', function() {
+      if (!window.abst.hasApproval) return;
       if (scrollEventLock) return;
       
       scrollEventLock = true;
@@ -2981,7 +3000,7 @@ function enableClickTracking(){
     
     window.addEventListener('pageshow', function(event) {
       // bfcache restore - user hit back/forward button
-      if (event.persisted) {
+      if (event.persisted && window.abst.hasApproval) {
         // Reset scroll tracking for fresh measurement
         window.abst.heatScrollMax = 0;
         window.abst.heatScrollLastSent = 0;
@@ -3039,6 +3058,7 @@ var abstJourneyAdminLogged = false;
 var abstJourneyConsentLogged = false;
   
 function check_heatmap_tracking() {
+  if (!window.abst.hasApproval || btab_vars.abst_enable_user_journeys !== '1') return;
 
   if(typeof btab_vars !== 'undefined' && typeof btab_vars.abst_enable_user_journeys !== 'undefined' && btab_vars.abst_enable_user_journeys === '0') {
     enable_click_tracking = false;
@@ -3115,9 +3135,10 @@ function flushJourneyData() {
   // this page.
   if (!hasJourneyEvents && !hasNewScrollDepth) return;
 
+  if (!window.abst.hasApproval) return;
+
   // Ensure UUID exists before sending — journeys require one for attribution.
-  // setAbCrypto() is consent-aware (sessionStorage until consent, then cookie).
-  // If storage is fully blocked it will still return null, in which case skip.
+  // setAbCrypto() keeps a page-memory identifier when approved cookies are unavailable.
   if (!abstGetAdvancedId()) {
     setAbCrypto();
   }
@@ -3166,7 +3187,7 @@ function flushJourneyData() {
     // drains the click buffer before pagehide can fire.
     meta: window.abst.heatScrollMax,
     experiments: getActiveExperiments(),
-    referrer: (function() { try { return sessionStorage.getItem('abst_original_referrer') || ''; } catch(e) { return document.referrer || ''; } })(),
+    referrer: (function() { try { return abstSessionGet('abst_original_referrer') || ''; } catch(e) { return document.referrer || ''; } })(),
     viewport_height: (window.abst.heatViewport || window.innerHeight)
   };
   if (!hasJourneyEvents && hasNewScrollDepth) {
@@ -3297,15 +3318,7 @@ function processNodeForTests(node, activeTests) {
 }
 
 function abstGetAdvancedId() {
-  if (sessionStorage.getItem('ab-advanced-id')) {
-    return sessionStorage.getItem('ab-advanced-id');
-  } else if (abstGetCookie('ab-advanced-id')) {
-    return abstGetCookie('ab-advanced-id');
-  } else if (window.abst && window.abst.visitorId) {
-    return window.abst.visitorId;
-  } else {
-    return null;
-  }
+  return abstGetCookie('ab-advanced-id') || window.abst.visitorId || null;
 }
 //pagehide
 window.addEventListener('pagehide', function() {
@@ -3586,30 +3599,9 @@ function abstForgetMe(){
   if(urlParams.get('abstforgetme')){
     console.log('ABST: forgetting you, reloading page');
     
-    // Get all cookies/localStorage/sessionStorage items starting with btab_ or ab-
-    const cookies = document.cookie.split(';');
-    for(let i = 0; i < cookies.length; i++){
-      const cookie = cookies[i].trim();
-      const cookieName = cookie.split('=')[0];
-      if(cookieName.startsWith('btab_') || cookieName === 'ab-advanced-id'){
-        abstDeleteCookie(cookieName);
-      }
-    } 
-    
-    // Also clear from localStorage and sessionStorage
-    const storageKeys = Object.keys(localStorage);
-    for(let i = 0; i < storageKeys.length; i++){
-      if(storageKeys[i].startsWith('btab_') ||  storageKeys[i] === 'ab-advanced-id'){
-        localStorage.removeItem(storageKeys[i]);
-      }
-    }
-    
-    const sessionKeys = Object.keys(sessionStorage);
-    for(let i = 0; i < sessionKeys.length; i++){
-      if(sessionKeys[i].startsWith('btab_') || sessionKeys[i] === 'ab-advanced-id'){
-        sessionStorage.removeItem(sessionKeys[i]);
-      }
-    }
+    setAbstApprovalStatus(false);
+    window.abst.assignments = Object.create(null);
+    window.abst.memoryStorage = Object.create(null);
     
     //reload without the forgetme parameter
     const url = new URL(window.location.href);
