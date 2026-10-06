@@ -71,7 +71,7 @@ class BT_BB_AB_Supports
 		}
 
 		$posts = get_posts([
-			'post_type' 	 => 'bt_experiments',
+			'post_type' 	 => 'abst_experiments',
 			'post_status' 	 => 'publish',
 			'posts_per_page' => -1
 		]);

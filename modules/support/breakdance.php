@@ -24,7 +24,7 @@ function abst_bd($controls, $element)
             control('test_name', 'Split Test',         
                 ['type' => 'post_chooser', 
                 'layout' => 'inline', 
-                'postChooserOptions' => ['multiple' => false, 'showThumbnails' => false, 'postType' => 'bt_experiments']],
+                'postChooserOptions' => ['multiple' => false, 'showThumbnails' => false, 'postType' => 'abst_experiments']],
             ),
             control('test_var_name', 'Variation Name',
                 ['type' => 'text',

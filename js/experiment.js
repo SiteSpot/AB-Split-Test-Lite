@@ -1396,7 +1396,7 @@ for (let observationKey in abtestChartData.observations) {
 
         if(varMeta.eid && varMeta.variation && varMeta.page_id) {
 
-          var heatmapUrl = window.location.origin + '/wp-admin/edit.php?post_type=bt_experiments&page=abst-heatmaps';
+          var heatmapUrl = window.location.origin + '/wp-admin/edit.php?post_type=abst_experiments&page=abst-heatmaps';
 
           heatmapUrl += '&post=' + varMeta.page_id;
 

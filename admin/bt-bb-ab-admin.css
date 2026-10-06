@@ -50,11 +50,11 @@
 }
 
 /* Global Resets for our context */
-.post-type-bt_experiments #wpcontent {
+.post-type-abst_experiments #wpcontent {
     background-color: var(--abst-bg);
 }
 
-.post-type-bt_experiments #poststuff {
+.post-type-abst_experiments #poststuff {
     padding-top: 20px;
 }
 
@@ -63,7 +63,7 @@
    ===================================================== */
 
 /* Transform WP Postboxes into Modern Cards */
-.post-type-bt_experiments .postbox {
+.post-type-abst_experiments .postbox {
     background: var(--abst-card-bg);
     border: 1px solid var(--abst-border);
     border-radius: var(--abst-radius);
@@ -72,13 +72,13 @@
 }
 
 /* Hide default WP handles/borders we don't want */
-.post-type-bt_experiments .postbox .postbox-header {
+.post-type-abst_experiments .postbox .postbox-header {
     background: transparent;
     border-bottom: 1px solid var(--abst-border);
     padding: 15px 20px;
 }
 
-.post-type-bt_experiments .postbox .postbox-header h2 {
+.post-type-abst_experiments .postbox .postbox-header h2 {
     font-size: 16px;
     font-weight: 600;
     color: var(--abst-dark);
@@ -86,17 +86,17 @@
     letter-spacing: 0.5px;
 }
 
-.post-type-bt_experiments .postbox .handle-actions {
+.post-type-abst_experiments .postbox .handle-actions {
     display: none; /* Clean look, no toggle arrows unless needed */
 }
 
-.post-type-bt_experiments .postbox .inside {
+.post-type-abst_experiments .postbox .inside {
     padding: 20px 30px;
     margin: 0 !important;
 }
 
 /* Clean up the Title Input */
-.post-type-bt_experiments #titlediv #title {
+.post-type-abst_experiments #titlediv #title {
     background: transparent;
     border: none;
     box-shadow: none;
@@ -106,7 +106,7 @@
     color: var(--abst-dark);
 }
 
-.post-type-bt_experiments #titlediv #title-prompt-text {
+.post-type-abst_experiments #titlediv #title-prompt-text {
     font-size: 24px;
     padding: 10px 0;
     color: #bbb;
@@ -123,27 +123,27 @@
    Sidebar boxes (Publish, etc.) should RETAIN the standard .postbox styling 
    defined in the "CARD UI COMPONENT" section above.
 */
-.post-type-bt_experiments #all_boxes.postbox {
+.post-type-abst_experiments #all_boxes.postbox {
     background: transparent;
     border: none;
     box-shadow: none;
 }
 
-.post-type-bt_experiments #all_boxes.postbox .postbox-header {
+.post-type-abst_experiments #all_boxes.postbox .postbox-header {
     display: none; /* Hide header for main config box */
 }
 
-.post-type-bt_experiments #all_boxes.postbox .inside {
+.post-type-abst_experiments #all_boxes.postbox .inside {
     padding: 0;
 }
 
 /* Define the sections INSIDE the main box that should look like cards */
-.post-type-bt_experiments .show_test_type,
-.post-type-bt_experiments .show_full_page_test,
-.post-type-bt_experiments #magic_settings,
-.post-type-bt_experiments .show_css_test,
-.post-type-bt_experiments .show_css_classes,
-.post-type-bt_experiments .bt_experiments_inner_custom_box {
+.post-type-abst_experiments .show_test_type,
+.post-type-abst_experiments .show_full_page_test,
+.post-type-abst_experiments #magic_settings,
+.post-type-abst_experiments .show_css_test,
+.post-type-abst_experiments .show_css_classes,
+.post-type-abst_experiments .bt_experiments_inner_custom_box {
     background: var(--abst-card-bg);
     border: 1px solid var(--abst-border);
     border-radius: var(--abst-radius);
@@ -155,7 +155,7 @@
 }
 
 /* Reset card styles for child elements inside css test section */
-.post-type-bt_experiments .show_css_test .css_test_variations {
+.post-type-abst_experiments .show_css_test .css_test_variations {
     background: transparent;
     border: none;
     border-radius: 0;
@@ -165,8 +165,8 @@
 }
 
 /* Collapsible sections - no card wrapper, just the h3 header */
-.post-type-bt_experiments .show_targeting_options,
-.post-type-bt_experiments .restart_test {
+.post-type-abst_experiments .show_targeting_options,
+.post-type-abst_experiments .restart_test {
     background: transparent;
     border: none;
     box-shadow: none;
@@ -175,8 +175,8 @@
 }
 
 /* Collapsible section headers */
-.post-type-bt_experiments .show_targeting_options > h3,
-.post-type-bt_experiments .restart_test > h3 {
+.post-type-abst_experiments .show_targeting_options > h3,
+.post-type-abst_experiments .restart_test > h3 {
     font-size: 14px;
     font-weight: 500;
     color: var(--abst-text);
@@ -192,15 +192,15 @@
     align-items: center;
 }
 
-.post-type-bt_experiments .show_targeting_options > h3:hover,
-.post-type-bt_experiments .restart_test > h3:hover {
+.post-type-abst_experiments .show_targeting_options > h3:hover,
+.post-type-abst_experiments .restart_test > h3:hover {
     border-color: #D1D5DB;
     box-shadow: var(--abst-shadow);
 }
 
 /* Chevron indicator for collapsible headers */
-.post-type-bt_experiments .show_targeting_options > h3:after,
-.post-type-bt_experiments .restart_test > h3:after {
+.post-type-abst_experiments .show_targeting_options > h3:after,
+.post-type-abst_experiments .restart_test > h3:after {
     content: "▾";
     font-size: 18px;
     font-weight: 400;
@@ -210,8 +210,8 @@
 }
 
 /* Collapsed state - chevron points right */
-.post-type-bt_experiments .show_targeting_options.collapsed > h3:after,
-.post-type-bt_experiments .restart_test.collapsed > h3:after {
+.post-type-abst_experiments .show_targeting_options.collapsed > h3:after,
+.post-type-abst_experiments .restart_test.collapsed > h3:after {
     content: "▸";
 }
 
@@ -219,10 +219,10 @@
    FORM ELEMENTS
    ===================================================== */
 
-.post-type-bt_experiments input[type="text"],
-.post-type-bt_experiments input[type="number"],
-.post-type-bt_experiments select,
-.post-type-bt_experiments textarea {
+.post-type-abst_experiments input[type="text"],
+.post-type-abst_experiments input[type="number"],
+.post-type-abst_experiments select,
+.post-type-abst_experiments textarea {
     background: #F8F8F8;
     border: 1px solid #DDD;
     border-radius: 4px;
@@ -233,9 +233,9 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.post-type-bt_experiments input:focus,
-.post-type-bt_experiments select:focus,
-.post-type-bt_experiments textarea:focus {
+.post-type-abst_experiments input:focus,
+.post-type-abst_experiments select:focus,
+.post-type-abst_experiments textarea:focus {
     border-color: var(--abst-primary);
     background: #FFF;
     outline: none;
@@ -243,7 +243,7 @@
 }
 
 /* Buttons */
-.post-type-bt_experiments .button.button-primary {
+.post-type-abst_experiments .button.button-primary {
     background: var(--abst-primary);
     border-color: var(--abst-primary);
     color: #FFF;
@@ -255,12 +255,12 @@
     transition: all 0.2s ease;
 }
 
-.post-type-bt_experiments .button.button-primary:hover {
+.post-type-abst_experiments .button.button-primary:hover {
     background: var(--abst-primary-hover);
     border-color: var(--abst-primary-hover);
 }
 
-.post-type-bt_experiments .button.button-secondary {
+.post-type-abst_experiments .button.button-secondary {
     background: #FFF;
     border: 1px solid var(--abst-border);
     color: var(--abst-text-secondary);
@@ -357,7 +357,7 @@ span.css_test_variations {
 }
 
 /* Code Test section styling */
-.post-type-bt_experiments .show_css_test h3.css_test_variations {
+.post-type-abst_experiments .show_css_test h3.css_test_variations {
     font-size: 16px;
     font-weight: 600;
     color: var(--abst-text);
@@ -368,12 +368,12 @@ span.css_test_variations {
     box-shadow: none;
 }
 
-.post-type-bt_experiments .show_css_test label.css_test_variations {
+.post-type-abst_experiments .show_css_test label.css_test_variations {
     display: inline;
     margin-right: 8px;
 }
 
-.post-type-bt_experiments .show_css_test p.css_test_variations {
+.post-type-abst_experiments .show_css_test p.css_test_variations {
     margin: 16px 0 8px 0;
     color: var(--abst-text-secondary);
     font-size: 13px;
@@ -446,7 +446,7 @@ span.css_test_variations {
     display:inherit;
 }
 
-.post-type-bt_experiments .show_css_test > label.css_test_variations {
+.post-type-abst_experiments .show_css_test > label.css_test_variations {
     display: inline;
     margin-right: 8px;
 }
@@ -937,30 +937,30 @@ div#all_boxes {
     display: flow-root !important;
 }
 
-.post-type-bt_experiments #submitdiv #major-publishing-actions,
-.post-type-bt_experiments #submitdiv #minor-publishing-actions,
-.post-type-bt_experiments #submitdiv #misc-publishing-actions > .misc-pub-section:not(#abst-status-lifecycle) {
+.post-type-abst_experiments #submitdiv #major-publishing-actions,
+.post-type-abst_experiments #submitdiv #minor-publishing-actions,
+.post-type-abst_experiments #submitdiv #misc-publishing-actions > .misc-pub-section:not(#abst-status-lifecycle) {
     display: none;
 }
 
-.post-type-bt_experiments #submitdiv #misc-publishing-actions {
+.post-type-abst_experiments #submitdiv #misc-publishing-actions {
     padding: 0;
 }
 
-.post-type-bt_experiments #submitdiv #abst-status-lifecycle {
+.post-type-abst_experiments #submitdiv #abst-status-lifecycle {
     display: block;
     margin: 0;
     padding: 0;
     border: 0;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__card {
+.post-type-abst_experiments .abst-status-lifecycle__card {
     background: #fff;
     border-radius: 10px;
     overflow: hidden;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__header {
+.post-type-abst_experiments .abst-status-lifecycle__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -970,7 +970,7 @@ div#all_boxes {
     border-bottom: 1px solid #dcdcde;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__eyebrow {
+.post-type-abst_experiments .abst-status-lifecycle__eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -981,14 +981,14 @@ div#all_boxes {
     color: #2271b1;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__dot {
+.post-type-abst_experiments .abst-status-lifecycle__dot {
     width: 8px;
     height: 8px;
     border-radius: 999px;
     background: currentColor;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__badge {
+.post-type-abst_experiments .abst-status-lifecycle__badge {
     display: inline-flex;
     align-items: center;
     padding: 4px 8px;
@@ -1000,11 +1000,11 @@ div#all_boxes {
     color: #1d2327;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__body {
+.post-type-abst_experiments .abst-status-lifecycle__body {
     padding: 12px 16px 8px;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__row {
+.post-type-abst_experiments .abst-status-lifecycle__row {
     display: grid;
     grid-template-columns: 18px minmax(0, 1fr) auto;
     gap: 10px;
@@ -1014,32 +1014,32 @@ div#all_boxes {
     font-size: 13px;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__row + .abst-status-lifecycle__row {
+.post-type-abst_experiments .abst-status-lifecycle__row + .abst-status-lifecycle__row {
     border-top: 1px solid #f0f0f1;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__row .dashicons {
+.post-type-abst_experiments .abst-status-lifecycle__row .dashicons {
     width: 18px;
     height: 18px;
     font-size: 16px;
     color: #8c8f94;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__label {
+.post-type-abst_experiments .abst-status-lifecycle__label {
     color: #646970;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__value {
+.post-type-abst_experiments .abst-status-lifecycle__value {
     color: #1d2327;
     font-weight: 600;
     text-align: right;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__progress {
+.post-type-abst_experiments .abst-status-lifecycle__progress {
     padding-top: 10px;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__progress-bar {
+.post-type-abst_experiments .abst-status-lifecycle__progress-bar {
     width: 100%;
     height: 6px;
     border-radius: 999px;
@@ -1047,14 +1047,14 @@ div#all_boxes {
     overflow: hidden;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__progress-bar span {
+.post-type-abst_experiments .abst-status-lifecycle__progress-bar span {
     display: block;
     height: 100%;
     border-radius: 999px;
     background: #2271b1;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__progress-meta {
+.post-type-abst_experiments .abst-status-lifecycle__progress-meta {
     display: flex;
     justify-content: space-between;
     gap: 12px;
@@ -1063,53 +1063,53 @@ div#all_boxes {
     color: #646970;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__actions {
+.post-type-abst_experiments .abst-status-lifecycle__actions {
     padding: 14px 16px 16px;
     border-top: 1px solid #dcdcde;
     background: #fff;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__actions-row + .abst-status-lifecycle__actions-row {
+.post-type-abst_experiments .abst-status-lifecycle__actions-row + .abst-status-lifecycle__actions-row {
     margin-top: 10px;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__actions-row--split {
+.post-type-abst_experiments .abst-status-lifecycle__actions-row--split {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__actions .button {
+.post-type-abst_experiments .abst-status-lifecycle__actions .button {
     width: 100%;
     justify-content: center;
     text-align: center;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__footer {
+.post-type-abst_experiments .abst-status-lifecycle__footer {
     margin-top: 12px;
     text-align: center;
 }
 
-.post-type-bt_experiments .abst-status-lifecycle__footer .submitdelete {
+.post-type-abst_experiments .abst-status-lifecycle__footer .submitdelete {
     float: none;
     padding: 0;
     color: #b32d2e;
     text-decoration: underline;
 }
 
-.post-type-bt_experiments .abst-idea-panel {
+.post-type-abst_experiments .abst-idea-panel {
     display: grid;
     gap: 16px;
 }
 
-.post-type-bt_experiments #idea_settings .show_test_type {
+.post-type-abst_experiments #idea_settings .show_test_type {
     background: transparent;
     border: 0;
     box-shadow: none;
     padding: 0;
 }
 
-.post-type-bt_experiments #idea_settings .show_test_type > h3 {
+.post-type-abst_experiments #idea_settings .show_test_type > h3 {
     margin: 0 0 18px 0;
     padding: 0;
     background: transparent;
@@ -1117,7 +1117,7 @@ div#all_boxes {
     box-shadow: none;
 }
 
-.post-type-bt_experiments .abst-idea-field {
+.post-type-abst_experiments .abst-idea-field {
     display: grid;
     gap: 0;
     background: #ffffff;
@@ -1127,7 +1127,7 @@ div#all_boxes {
     overflow: hidden;
 }
 
-.post-type-bt_experiments .abst-idea-field > label {
+.post-type-abst_experiments .abst-idea-field > label {
     display: block;
     margin: 0;
     padding: 16px 18px 12px;
@@ -1141,8 +1141,8 @@ div#all_boxes {
     letter-spacing: 0.12em;
 }
 
-.post-type-bt_experiments .abst-idea-field > input[type="text"],
-.post-type-bt_experiments .abst-idea-field > textarea {
+.post-type-abst_experiments .abst-idea-field > input[type="text"],
+.post-type-abst_experiments .abst-idea-field > textarea {
     width: 100%;
     max-width: none;
     margin: 0;
@@ -1156,13 +1156,13 @@ div#all_boxes {
     color: var(--abst-text);
 }
 
-.post-type-bt_experiments .abst-idea-field > textarea {
+.post-type-abst_experiments .abst-idea-field > textarea {
     min-height: 108px;
     resize: vertical;
     line-height: 1.55;
 }
 
-.post-type-bt_experiments .abst-idea-score-grid {
+.post-type-abst_experiments .abst-idea-score-grid {
     display: grid;
     align-items: start;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1174,12 +1174,12 @@ div#all_boxes {
     box-shadow: var(--abst-shadow);
 }
 
-.post-type-bt_experiments .abst-idea-score-card {
+.post-type-abst_experiments .abst-idea-score-card {
     display: grid;
     gap: 8px;
 }
 
-.post-type-bt_experiments .abst-idea-score-card > label {
+.post-type-abst_experiments .abst-idea-score-card > label {
     display: block;
     margin: 0;
     padding: 14px 12px;
@@ -1195,8 +1195,8 @@ div#all_boxes {
     text-align: center;
 }
 
-.post-type-bt_experiments .abst-idea-score-card > select,
-.post-type-bt_experiments .abst-idea-score-card > input[type="text"] {
+.post-type-abst_experiments .abst-idea-score-card > select,
+.post-type-abst_experiments .abst-idea-score-card > input[type="text"] {
     width: 100%;
     max-width: none;
     margin: 0;
@@ -1210,7 +1210,7 @@ div#all_boxes {
     font-weight: 600;
 }
 
-.post-type-bt_experiments .abst-idea-score-total > input[type="text"] {
+.post-type-abst_experiments .abst-idea-score-total > input[type="text"] {
     text-align: center;
     font-size: 28px;
     font-weight: 700;
@@ -1218,13 +1218,13 @@ div#all_boxes {
 }
 
 @media (max-width: 960px) {
-    .post-type-bt_experiments .abst-idea-score-grid {
+    .post-type-abst_experiments .abst-idea-score-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 600px) {
-    .post-type-bt_experiments .abst-idea-score-grid {
+    .post-type-abst_experiments .abst-idea-score-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -1765,7 +1765,7 @@ button.shepherd-button {
 
 /* Remove card styling from collapsed wrapper divs */
 #configuration_settings > div.collapsed,
-.post-type-bt_experiments .collapsed {
+.post-type-abst_experiments .collapsed {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;

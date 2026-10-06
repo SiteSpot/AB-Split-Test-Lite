@@ -35,7 +35,7 @@ function tests_with_id(){
     //return $testTransient;
 
   $posts = get_posts(array(
-    'post_type'      => 'bt_experiments',
+    'post_type'      => 'abst_experiments',
     'post_status'    => 'publish',
     'suppress_filters' => false,
     'posts_per_page' => -1,
@@ -107,7 +107,7 @@ function add_bricks_attributes($attributes, $key, $element){
             $controls['bt_info'] = [
               'tab' => 'style',
               'group' => 'abst',
-              'content' =>  '<a class="new-on-page-test-button" href="' . admin_url( 'post-new.php?post_type=bt_experiments&test_type=ab_test' ) . '" target="_blank">Create a new test.</a><BR><BR>Or choose an existing test below.',
+              'content' =>  '<a class="new-on-page-test-button" href="' . admin_url( 'post-new.php?post_type=abst_experiments&test_type=ab_test' ) . '" target="_blank">Create a new test.</a><BR><BR>Or choose an existing test below.',
               'type' => 'info',
               'styles' => 'muted', 
             ];

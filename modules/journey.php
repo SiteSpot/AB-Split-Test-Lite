@@ -342,7 +342,7 @@ class ABST_Journeys {
 
     public function enqueue_admin_assets($hook) {
 
-        if ($hook !== 'bt_experiments_page_abst-heatmaps') {
+        if ($hook !== 'abst_experiments_page_abst-heatmaps') {
 
             return;
 

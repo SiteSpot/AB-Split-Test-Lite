@@ -10,7 +10,7 @@ function abst_get_supported_test_types() {
 }
 
 function abst_get_supported_test_statuses() {
-    return ['draft', 'publish', 'pending', 'complete'];
+    return ['draft', 'publish', 'pending', 'abst_complete'];
 }
 
 function abst_get_supported_conversion_types() {
@@ -45,7 +45,12 @@ function abst_normalize_test_status($status, $context = 'write') {
         return 'any';
     }
 
-    return $status;
+    return abst_status_from_api($status);
+}
+
+/** Allowed statuses as API callers write them ("complete", not "abst_complete"). */
+function abst_supported_test_statuses_text() {
+    return implode(', ', array_map('abst_status_for_api', abst_get_supported_test_statuses()));
 }
 
 function abst_normalize_api_input_params($params) {
@@ -653,7 +658,7 @@ function abst_drop_unsupported_test_params($params) {
 function abst_validate_test_payload($params, $mode = 'create') {
     $params = abst_normalize_api_input_params($params);
     $requested_status = $params['status'] ?? 'draft';
-    $is_idea = ($requested_status === 'idea');
+    $is_idea = ($requested_status === 'abst_idea');
 
     $guard_result = abst_apply_conversion_order_value_guard($params);
     $params = $guard_result['params'];
@@ -677,7 +682,7 @@ function abst_validate_test_payload($params, $mode = 'create') {
     }
 
     if (!empty($params['status']) && !in_array($params['status'], abst_get_supported_test_statuses(), true)) {
-        return new WP_Error('invalid_status', 'Status must be one of: ' . implode(', ', abst_get_supported_test_statuses()), ['status' => 400, 'field' => 'status']);
+        return new WP_Error('invalid_status', 'Status must be one of: ' . abst_supported_test_statuses_text(), ['status' => 400, 'field' => 'status']);
     }
 
     if ($mode === 'create' && !$is_idea && empty($params['conversion_type'])) {

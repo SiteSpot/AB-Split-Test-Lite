@@ -278,7 +278,7 @@ function abstBuildAdminBar() {
    // Add heatmaps button third
    if(typeof btab_vars !== 'undefined' && btab_vars.abst_enable_user_journeys === '1') {
      if(typeof btab_vars.post_id !== 'undefined' && btab_vars.post_id) {
-       heatmapUrl = bt_adminurl + 'edit.php?post_type=bt_experiments&page=abst-heatmaps&post=' + btab_vars.post_id + '&size=large&mode=clicks';
+       heatmapUrl = bt_adminurl + 'edit.php?post_type=abst_experiments&page=abst-heatmaps&post=' + btab_vars.post_id + '&size=large&mode=clicks';
        submenus += '<li><a class="ab-item ab-sub-secondary" href="' + heatmapUrl + '" target="_blank">🔥 Heat/Click/Scroll Maps </a></li>';
      }
    }
@@ -1891,7 +1891,7 @@ function abst_magic_bar(options = {}) {
             Each test compares the original (A version) with one variation (B version). #variation-picker switches between them; #abst-version-toggle does the same.
             #abst-variation-editor-container is the way to edit the B version after you have selected an element.
             You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and edit its B version. you'll see #abst-selector-input update to the new element. All elements switch together, so visitors see either every original or every B version.
-            The conversion goal is set in the Goal box and is one of two types. Page visit: a conversion counts when a visitor reaches a page, such as a thank-you page; search for it and pick it from the list. Element click: a conversion counts when a visitor clicks an element; type its CSS selector (e.g. #buy-now or .signup-button) or press Pick on page and click the element. After saving test, you can go to /wp-admin/edit.php?post_type=bt_experiments to view all tests. do not edit other tests unless  specifically asked">
+            The conversion goal is set in the Goal box and is one of two types. Page visit: a conversion counts when a visitor reaches a page, such as a thank-you page; search for it and pick it from the list. Element click: a conversion counts when a visitor clicks an element; type its CSS selector (e.g. #buy-now or .signup-button) or press Pick on page and click the element. After saving test, you can go to /wp-admin/edit.php?post_type=abst_experiments to view all tests. do not edit other tests unless  specifically asked">
         <div class="abst-magic-bar-header">
             <span class="abst-magic-bar-heading">Magic Test</span>
             <button type="button" id="abst-magic-bar-show-tour" class="abst-magic-tour-button" title="Show me how it works">How it works</button>

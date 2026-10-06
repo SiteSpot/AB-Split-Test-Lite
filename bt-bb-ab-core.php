@@ -108,7 +108,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_filter( 'fl_builder_module_attributes', array($this,'add_experiment_row_attributes'),10,2 ); // add ab settings to module
 
-      add_filter( 'manage_bt_experiments_posts_columns', array($this,'experiments_posts_columns'), 10, 1 ); // add experiment data to columns in admin
+      add_filter( 'manage_abst_experiments_posts_columns', array($this,'experiments_posts_columns'), 10, 1 ); // add experiment data to columns in admin
 
 
 
@@ -130,7 +130,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'wp_abilities_api_init', [$this, 'register_abilities']);
 
-      add_filter( 'views_edit-bt_experiments', [$this, 'rename_all_to_active_tests']);
+      add_filter( 'views_edit-abst_experiments', [$this, 'rename_all_to_active_tests']);
 
       //add canonical to page variations
 
@@ -215,7 +215,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'abst_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9 );
 
-      add_action( 'manage_bt_experiments_posts_custom_column', array($this,'manage_bt_experiments_posts_custom_column'),10,2); // add data to admin columns
+      add_action( 'manage_abst_experiments_posts_custom_column', array($this,'manage_abst_experiments_posts_custom_column'),10,2); // add data to admin columns
 
       add_action( 'add_meta_boxes', array($this,'add_experiment_meta_box'),10,1 );  // meta boxes for experiments
 
@@ -305,7 +305,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     /**
 
-     * Restrict authors to only see their own bt_experiments posts in admin if the abst_authors_see_own_posts filter returns true.
+     * Restrict authors to only see their own abst_experiments posts in admin if the abst_authors_see_own_posts filter returns true.
 
      *
 
@@ -323,7 +323,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
             $query->is_main_query() &&
 
-            $query->get('post_type') === 'bt_experiments'
+            $query->get('post_type') === 'abst_experiments'
 
         ) {
 
@@ -375,7 +375,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
             $views['all'] = str_replace('All', 'Active Tests', $views['all']);
             // Core counts every status under "All", but this view only lists these (see the
             // pre_get_posts filter), so count the same statuses.
-            $counts = (array) wp_count_posts('bt_experiments', 'readable');
+            $counts = (array) wp_count_posts('abst_experiments', 'readable');
             $active = 0;
             foreach (array('publish', 'draft', 'pending', 'private') as $status) {
                 $active += isset($counts[$status]) ? (int) $counts[$status] : 0;
@@ -398,7 +398,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function add_split_test_params_to_bakery() {
 
-        // Fetch published bt_experiments for dropdown
+        // Fetch published abst_experiments for dropdown
 
         vc_add_param('vc_row', array(
 
@@ -482,7 +482,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $post = get_post($query);
 
-        if($post && $post->post_type == 'bt_experiments' && $post->post_status == 'publish')
+        if($post && $post->post_type == 'abst_experiments' && $post->post_status == 'publish')
 
         {
 
@@ -502,7 +502,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $args = array(
 
-          'post_type'      => 'bt_experiments',
+          'post_type'      => 'abst_experiments',
 
           'post_status'    => 'publish',
 
@@ -551,7 +551,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $post = get_post( $value['value'] ?? $value );
 
-      if ( $post && $post->post_type === 'bt_experiments' ) {
+      if ( $post && $post->post_type === 'abst_experiments' ) {
 
           return array(
 
@@ -845,7 +845,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $experiments = get_posts([
 
-        'post_type' => 'bt_experiments',
+        'post_type' => 'abst_experiments',
 
         'posts_per_page' => -1,
 
@@ -914,7 +914,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $tests = get_posts(array(
 
-        'post_type'      => 'bt_experiments',
+        'post_type'      => 'abst_experiments',
 
         'posts_per_page' => -1,
 
@@ -1020,7 +1020,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $tests = get_posts(array(
 
-        'post_type'      => 'bt_experiments',
+        'post_type'      => 'abst_experiments',
 
         'posts_per_page' => -1,
 
@@ -1168,9 +1168,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'post_title' => $title,
 
-          'post_type' => 'bt_experiments',
+          'post_type' => 'abst_experiments',
 
-          'post_status' => 'idea',
+          'post_status' => 'abst_idea',
 
         ];
 
@@ -1351,7 +1351,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function remove_bulk_actions( $actions, $post ){
 
-      if ( $post->post_type == "bt_experiments" ) {
+      if ( $post->post_type == "abst_experiments" ) {
 
         unset( $actions['inline hide-if-no-js'] );
 
@@ -1560,7 +1560,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       // get user level
 
 
-      //count all custom posts bt_experiments
+      //count all custom posts abst_experiments
 
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
@@ -1568,7 +1568,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     $requested_status = sanitize_text_field((string) ($data['post_status'] ?? get_post_status($post_id)));
 
-    if($requested_status === 'idea')
+    if($requested_status === 'abst_idea')
 
     {
 
@@ -1969,7 +1969,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    if ( ! is_object( $post ) || 'bt_experiments' !== get_post_type( $post->ID ) ) {
+    if ( ! is_object( $post ) || 'abst_experiments' !== get_post_type( $post->ID ) ) {
 
       return $messages;
 
@@ -1997,7 +1997,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
      $message_text = 'Split Test Paused.';
 
- } else if ($status === 'complete') {
+ } else if ($status === 'abst_complete') {
 
      $message_text = 'Split Test Marked Complete.';
 
@@ -2061,9 +2061,9 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-    $messages['bt_experiments'] = isset($messages['bt_experiments']) && is_array($messages['bt_experiments'])
+    $messages['abst_experiments'] = isset($messages['abst_experiments']) && is_array($messages['abst_experiments'])
 
-      ? array_replace($messages['bt_experiments'], $custom_messages)
+      ? array_replace($messages['abst_experiments'], $custom_messages)
 
       : $custom_messages;
 
@@ -2093,7 +2093,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       //only on experiments
 
-      if ( 'bt_experiments' != get_post_type( $post_id ))
+      if ( 'abst_experiments' != get_post_type( $post_id ))
 
         return;
 
@@ -2133,13 +2133,13 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       // purge-everything cascade each time can exhaust PHP memory on large sites.
 
-      if ($post_after->post_type !== 'bt_experiments') {
+      if ($post_after->post_type !== 'abst_experiments') {
         // A full-page test's variations point their canonical at the control page's
         // URL, stored when the test is saved. If the control page's address changes,
         // rebuild that map once, a minute later, instead of leaving the old URL.
         if (abst_get_admin_setting('ab_change_canonicals') == 1
           && ($post_before->post_name !== $post_after->post_name || (int) $post_before->post_parent !== (int) $post_after->post_parent || $post_before->post_status !== $post_after->post_status)
-          && get_posts(['post_type' => 'bt_experiments', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => 1, 'no_found_rows' => true,
+          && get_posts(['post_type' => 'abst_experiments', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => 1, 'no_found_rows' => true,
             'meta_key' => 'bt_experiments_full_page_default_page', 'meta_value' => (string) $post_ID])) { // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Only runs when a page's address changes.
           abst_schedule_canonical_refresh();
         }
@@ -2174,7 +2174,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $post_ids = get_posts(array(
 
-        'post_type' => 'bt_experiments',
+        'post_type' => 'abst_experiments',
 
         'post_status' => 'publish',
 
@@ -2548,7 +2548,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         array($this,'all_boxes'),
 
-        'bt_experiments'
+        'abst_experiments'
 
       );
 
@@ -2614,7 +2614,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       // Per-object permission checks before wp_insert_post()/wp_update_post(),
       // which do not enforce object capabilities themselves.
-      $experiment_type = get_post_type_object('bt_experiments');
+      $experiment_type = get_post_type_object('abst_experiments');
       // Save Draft in the Magic Bar sends post_status=draft; ignoring it published the
       // test while the editor said "saved as a draft". Builder pop-ups send nothing and
       // still create a live test, since it has to appear in their test pickers.
@@ -2629,7 +2629,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       } else {
         $existing_id = isset($data['post_id']) ? absint($data['post_id']) : 0;
         $existing_test = $existing_id ? get_post($existing_id) : null;
-        if (!$existing_test || $existing_test->post_type !== 'bt_experiments'
+        if (!$existing_test || $existing_test->post_type !== 'abst_experiments'
             || !current_user_can('edit_post', $existing_test->ID)) {
           wp_die('You do not have permission to edit this test.');
         }
@@ -2741,7 +2741,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'post_title'   => $abst_post_title,
 
-          'post_type'    => 'bt_experiments',
+          'post_type'    => 'abst_experiments',
 
           'post_status'  => $requested_status,
 
@@ -2815,7 +2815,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
           'updated' => !$createdNew,
 
-          'status' => get_post_status($data['post_id']),
+          'status' => abst_status_for_api(get_post_status($data['post_id'])),
 
           'edit_url' => admin_url('post.php?post=' . intval($data['post_id']) . '&action=edit'),
 
@@ -2908,7 +2908,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       //if test is experiment
 
-      if(get_post_type($pid) == 'bt_experiments')
+      if(get_post_type($pid) == 'abst_experiments')
 
       {
 
@@ -3034,7 +3034,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $post_id = wp_insert_post(array(
 
-        'post_type' => 'bt_experiments',
+        'post_type' => 'abst_experiments',
 
         'post_status' => 'auto-draft',
 
@@ -3580,7 +3580,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function build_status_lifecycle_panel($post) {
 
-      if (!$post || $post->post_type !== 'bt_experiments') {
+      if (!$post || $post->post_type !== 'abst_experiments') {
 
         return null;
 
@@ -3598,7 +3598,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      $stats = $status === 'idea' ? null : $this->get_experiment_stats_array($post);
+      $stats = $status === 'abst_idea' ? null : $this->get_experiment_stats_array($post);
 
       $visits = $this->get_status_lifecycle_total_visits($stats);
 
@@ -3624,7 +3624,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         'status' => $status,
 
-        'eyebrow' => strtoupper($status === 'publish' ? 'Running' : ($status === 'pending' ? 'Paused' : ($status === 'complete' ? 'Complete' : ($status === 'idea' ? 'Idea' : 'Draft')))),
+        'eyebrow' => strtoupper($status === 'publish' ? 'Running' : ($status === 'pending' ? 'Paused' : ($status === 'abst_complete' ? 'Complete' : ($status === 'abst_idea' ? 'Idea' : 'Draft')))),
 
         'rows' => [],
 
@@ -3642,7 +3642,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      if ($status === 'idea') {
+      if ($status === 'abst_idea') {
 
         $panel['rows'] = [
 
@@ -3718,7 +3718,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         }
 
-      } elseif ($status === 'complete') {
+      } elseif ($status === 'abst_complete') {
 
         $panel['rows'] = [
 
@@ -4949,7 +4949,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $variation = isset( $_POST['variation'] ) ? sanitize_text_field( wp_unslash( $_POST['variation'] ) ) : '';
 
-      if (get_post_type($eid) !== 'bt_experiments' || !current_user_can('edit_post', $eid)) {
+      if (get_post_type($eid) !== 'abst_experiments' || !current_user_can('edit_post', $eid)) {
         wp_die('You do not have the correct permissions to delete this variation.');
       }
 
@@ -5025,7 +5025,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     function count_active_experiments() {
 
-      $count_posts = wp_count_posts('bt_experiments');    
+      $count_posts = wp_count_posts('abst_experiments');    
 
       return $count_posts->publish;
 
@@ -5296,7 +5296,7 @@ public function get_experiment_stats_array( $test ){
 
   $test_status = get_post_status($pid);
 
-  if ($test_status === 'complete') {
+  if ($test_status === 'abst_complete') {
 
     $time_remaining = 'Complete';
 
@@ -5660,7 +5660,7 @@ public function get_experiment_stats_array( $test ){
 
     'name'                    => get_the_title($pid),
 
-    'status'                  => get_post_status($pid),
+    'status'                  => abst_status_for_api(get_post_status($pid)),
 
     'test_age_days'           => $duration_so_far_days,
 
@@ -5989,7 +5989,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
   }
 
-  else if($test->post_status == 'complete')
+  else if($test->post_status == 'abst_complete')
 
     echo "Complete";
 
@@ -8166,7 +8166,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       $select = '<option value=""></option>';
 
       // Builder template libraries are public post types but never a page a visitor lands on.
-      $abst_not_landing_pages = apply_filters( 'abst_conversion_page_excluded_post_types', array( 'bt_experiments', 'elementor_library', 'fl-builder-template', 'bricks_template', 'ct_template', 'oxy_user_library', 'breakdance_template', 'breakdance_header', 'breakdance_footer', 'breakdance_block', 'breakdance_popup' ) );
+      $abst_not_landing_pages = apply_filters( 'abst_conversion_page_excluded_post_types', array( 'abst_experiments', 'elementor_library', 'fl-builder-template', 'bricks_template', 'ct_template', 'oxy_user_library', 'breakdance_template', 'breakdance_header', 'breakdance_footer', 'breakdance_block', 'breakdance_popup' ) );
 
       foreach($allPublicPosts as $publicPost)
       {
@@ -8184,7 +8184,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       }
 
       // Only for a saved page ID: get_post('') returns the current post (this test),
-      // which showed up as a blank ": bt_experiments" choice on every new test.
+      // which showed up as a blank ": abst_experiments" choice on every new test.
       if(!$foundConversion && is_numeric($conversion_page) && (int) $conversion_page > 0)
       {
         $cPage = get_post((int) $conversion_page);
@@ -8264,7 +8264,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-    function manage_bt_experiments_posts_custom_column($column_name, $post_id){
+    function manage_abst_experiments_posts_custom_column($column_name, $post_id){
 
       if( $column_name == 'visit' || $column_name == 'conversion' || $column_name == 'rate' || $column_name == 'screenshot' )
 
@@ -8522,17 +8522,17 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     );
 
-    register_post_type( 'bt_experiments', $args );
+    register_post_type( 'abst_experiments', $args );
 
 
 
-    register_post_status( 'idea', array(
+    register_post_status( 'abst_idea', array(
 
         'label'                     => 'Idea',
 
         'public'                    => false,
 
-        'post_type'                 => 'bt_experiments',
+        'post_type'                 => 'abst_experiments',
 
         'show_in_admin_all_list'    => true,
 
@@ -8549,13 +8549,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-    register_post_status( 'complete', array(
+    register_post_status( 'abst_complete', array(
 
         'label'                     => 'Test Complete',
 
         'public'                    => true,
 
-        'post_type'                 => 'bt_experiments', // Define one or more post types the status can be applied to.
+        'post_type'                 => 'abst_experiments', // Define one or more post types the status can be applied to.
 
         'show_in_admin_all_list'    => true,
 
@@ -8756,11 +8756,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'action'        => 'fl_as_posts', // Search posts.
 
-          'data'          => 'bt_experiments', // Slug of the post type to search.
+          'data'          => 'abst_experiments', // Slug of the post type to search.
 
           'limit'         => 1, // Limits the number of selections that can be made.
 
-          'description'   => '<a id="" class="new-on-page-test-button" href="' . admin_url( 'edit.php?post_type=bt_experiments' ) . '" target="_blank">Create a new test. </a>',
+          'description'   => '<a id="" class="new-on-page-test-button" href="' . admin_url( 'edit.php?post_type=abst_experiments' ) . '" target="_blank">Create a new test. </a>',
 
         ],
 
@@ -8842,7 +8842,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $tests = get_posts([
 
-        'post_type' => 'bt_experiments',
+        'post_type' => 'abst_experiments',
 
         'post_status' => 'any',
 
@@ -9086,7 +9086,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       $posts = get_transient('abst_posts_cache');
       if (false === $posts) { // not a transient, create
         $posts = get_posts([
-          'post_type' => 'bt_experiments',
+          'post_type' => 'abst_experiments',
           'post_status' => 'any',
           'numberposts' => -1
         ]);
@@ -9182,8 +9182,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
       // plugins' select2 copies.
       $abst_screen = function_exists('get_current_screen') ? get_current_screen() : null;
       $abst_screen_id = $abst_screen ? $abst_screen->id : '';
-      $is_abst_screen = ($post_type === 'bt_experiments')
-        || ($abst_screen_id && (strpos($abst_screen_id, 'bt_experiments') !== false || strpos($abst_screen_id, 'bt_bb_ab_test') !== false));
+      $is_abst_screen = ($post_type === 'abst_experiments')
+        || ($abst_screen_id && (strpos($abst_screen_id, 'abst_experiments') !== false || strpos($abst_screen_id, 'bt_bb_ab_test') !== false));
 
       if ($is_abst_screen) {
       // Enqueue Shepherd PRODUCT TOUR
@@ -9212,7 +9212,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       wp_enqueue_script( 'abst-select2' );
 
-      // Settings screen (Settings menu and the bt_experiments submenu).
+      // Settings screen (Settings menu and the abst_experiments submenu).
       if ( strpos( $abst_screen_id, 'bt_bb_ab_test' ) !== false ) {
         wp_enqueue_style( 'abst-settings', plugins_url( 'css/abst-settings.css', __FILE__ ), array(), BT_AB_TEST_VERSION );
         wp_enqueue_script( 'abst-settings', plugins_url( 'js/abst-settings.js', __FILE__ ), array( 'jquery', 'abst-select2' ), BT_AB_TEST_VERSION, true );
@@ -9244,7 +9244,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           
 
-      if( $post_type !== 'bt_experiments' ) 
+      if( $post_type !== 'abst_experiments' ) 
 
         return;
 
@@ -9663,7 +9663,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
               'post_status'    => 'publish',  
 
-              'post_type'      => 'bt_experiments',
+              'post_type'      => 'abst_experiments',
 
               'orderby'        => 'modified'
 
@@ -9681,7 +9681,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'post_status'    => 'publish',  
 
-            'post_type'      => 'bt_experiments',
+            'post_type'      => 'abst_experiments',
 
             'orderby'        => 'modified',
 
@@ -9872,11 +9872,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-          if ( 'bt_experiments' == get_post_type( $post->ID ) ) {
+          if ( 'abst_experiments' == get_post_type( $post->ID ) ) {
 
             $newstate = '';
 
-            if($post->post_status == 'idea')
+            if($post->post_status == 'abst_idea')
 
               $newstate = '<span>💡 Idea</span>';
 
@@ -9888,7 +9888,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
               $newstate = '<span>🟢 Running</span>';
 
-            else if($post->post_status == 'complete')
+            else if($post->post_status == 'abst_complete')
 
               $newstate = '<span>✅ Complete</span>';
 
@@ -9906,7 +9906,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             $test_type = get_post_meta( $post->ID, 'test_type', true );
 
-            if($post->post_status == 'idea')
+            if($post->post_status == 'abst_idea')
 
               $test_type = 'Idea';
 
@@ -10275,9 +10275,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         $posts = get_posts([
 
-          'post_type' => 'bt_experiments',
+          'post_type' => 'abst_experiments',
 
-          'post_status' => ['draft','publish', 'complete'],
+          'post_status' => ['draft','publish', 'abst_complete'],
 
           'numberposts' => -1
 
@@ -10317,7 +10317,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
         $full_page_default_page = $meta['bt_experiments_full_page_default_page'][0] ?? '';
 
         // A completed test is not served: every visitor sees the original again.
-        if ($val->post_status === 'complete') {
+        if ($val->post_status === 'abst_complete') {
 
           continue;
 
@@ -10369,7 +10369,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'css_test_variations' => $meta['css_test_variations'][0] ?? '',
 
-          'test_status' => $val->post_status,
+          'test_status' => abst_status_for_api($val->post_status),
 
           'target_option_device_size' => ($meta['target_option_device_size'][0] ?? '') ?: 'all',
 
@@ -10625,7 +10625,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      // Check if we're on any bt_experiments screen (list, edit, add new)
+      // Check if we're on any abst_experiments screen (list, edit, add new)
 
       // Use both screen check and URL parameter check for reliability
 
@@ -10633,7 +10633,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      if( $screen && isset($screen->post_type) && $screen->post_type == 'bt_experiments' ){
+      if( $screen && isset($screen->post_type) && $screen->post_type == 'abst_experiments' ){
 
         $is_experiments_screen = true;
 
@@ -10643,7 +10643,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       // Fallback: check URL parameters if screen check fails
 
-      if( !$is_experiments_screen && isset($_GET['post_type']) && $_GET['post_type'] === 'bt_experiments' ){
+      if( !$is_experiments_screen && isset($_GET['post_type']) && $_GET['post_type'] === 'abst_experiments' ){
 
         $is_experiments_screen = true;
 
@@ -10772,7 +10772,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
         }
 
         // This is public telemetry even though the callee returns an API response.
-        if (get_post_type($eid) !== 'bt_experiments' || get_post_status($eid) !== 'publish' || !$this->is_tracking_allowed($eid)) {
+        if (get_post_type($eid) !== 'abst_experiments' || get_post_status($eid) !== 'publish' || !$this->is_tracking_allowed($eid)) {
             $errors[] = "Event {$idx} is not eligible for tracking";
             continue;
         }
@@ -11032,7 +11032,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         // Public endpoint (visitors aren't logged in and pages are cached, so there is
         // no nonce): only accept events for a test that exists and is running.
-        if(get_post_type( $eid ) !== 'bt_experiments' || (!$from_api && get_post_status( $eid ) !== 'publish'))
+        if(get_post_type( $eid ) !== 'abst_experiments' || (!$from_api && get_post_status( $eid ) !== 'publish'))
 
           $error = 'Test ID ' . $eid . ' not found';
 
@@ -11091,7 +11091,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           //get the experiment
 
-          if(get_post_type($eid) == 'bt_experiments' && isset($test_meta['test_type'][0]))
+          if(get_post_type($eid) == 'abst_experiments' && isset($test_meta['test_type'][0]))
 
           {
 
@@ -11870,7 +11870,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       $meta = ['show_in_rest' => true, 'mcp' => ['public' => true]];
 
       $permission = function() {
-        $post_type = get_post_type_object('bt_experiments');
+        $post_type = get_post_type_object('abst_experiments');
         return $post_type && current_user_can($post_type->cap->edit_posts);
       };
       // Heatmap and session data needs the same capability as its REST endpoints.
@@ -12616,7 +12616,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $test = get_post($test_id);
 
-      if (!$test || $test->post_type !== 'bt_experiments') {
+      if (!$test || $test->post_type !== 'abst_experiments') {
 
         return null;
 
@@ -12698,7 +12698,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'description' => $test->post_content,
 
-        'status' => $test->post_status,
+        'status' => abst_status_for_api($test->post_status),
 
         'test_type' => $test_type,
 
@@ -13120,7 +13120,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          $post_type = get_post_type_object('bt_experiments');
+          $post_type = get_post_type_object('abst_experiments');
           return $post_type && current_user_can($post_type->cap->create_posts);
 
         }
@@ -13139,7 +13139,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          $post_type = get_post_type_object('bt_experiments');
+          $post_type = get_post_type_object('abst_experiments');
           return $post_type && current_user_can($post_type->cap->edit_posts);
 
         }
@@ -13158,7 +13158,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          $post_type = get_post_type_object('bt_experiments');
+          $post_type = get_post_type_object('abst_experiments');
           return $post_type && current_user_can($post_type->cap->edit_posts);
 
         },
@@ -13189,7 +13189,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          $post_type = get_post_type_object('bt_experiments');
+          $post_type = get_post_type_object('abst_experiments');
           return $post_type && current_user_can($post_type->cap->edit_posts);
 
         },
@@ -13222,7 +13222,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          $post_type = get_post_type_object('bt_experiments');
+          $post_type = get_post_type_object('abst_experiments');
           return $post_type && current_user_can($post_type->cap->edit_posts);
 
         }
@@ -13241,7 +13241,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'permission_callback' => function() {
 
-          $post_type = get_post_type_object('bt_experiments');
+          $post_type = get_post_type_object('abst_experiments');
           return $post_type && current_user_can($post_type->cap->edit_posts);
 
         }
@@ -13291,7 +13291,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-      if (!$post || $post->post_type !== 'bt_experiments') {
+      if (!$post || $post->post_type !== 'abst_experiments') {
 
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
 
@@ -13371,7 +13371,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if (!in_array($status, abst_get_supported_test_statuses(), true)) {
 
-        return new WP_Error('invalid_status', 'Status must be one of: ' . implode(', ', abst_get_supported_test_statuses()), ['status' => 400]);
+        return new WP_Error('invalid_status', 'Status must be one of: ' . abst_supported_test_statuses_text(), ['status' => 400]);
 
       }
 
@@ -13381,7 +13381,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $test = get_post($test_id);
 
-      if (!$test || $test->post_type !== 'bt_experiments') {
+      if (!$test || $test->post_type !== 'abst_experiments') {
 
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
 
@@ -13400,7 +13400,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       // Update the post status
 
-      $post_type = get_post_type_object('bt_experiments');
+      $post_type = get_post_type_object('abst_experiments');
       if (!(defined('WP_CLI') && WP_CLI) && $status === 'publish' && (!$post_type || !current_user_can($post_type->cap->publish_posts))) {
         return new WP_Error('forbidden', 'You do not have permission to publish this test.', ['status' => 403]);
       }
@@ -13435,9 +13435,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'test_id' => $test_id,
 
-        'status' => $status,
+        'status' => abst_status_for_api($status),
 
-        'message' => 'Test status updated to ' . $status
+        'message' => 'Test status updated to ' . abst_status_for_api($status)
 
       ], 200);
 
@@ -13473,11 +13473,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $args = [
 
-        'post_type' => 'bt_experiments',
+        'post_type' => 'abst_experiments',
 
         'posts_per_page' => -1,
 
-        'post_status' => ['publish', 'draft', 'pending', 'complete'],
+        'post_status' => ['publish', 'draft', 'pending', 'abst_complete'],
 
         'orderby' => 'date',
 
@@ -13491,7 +13491,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         if (!in_array($requested_status, abst_get_supported_test_statuses(), true)) {
 
-          return new WP_Error('invalid_status', 'Status must be one of: any, ' . implode(', ', abst_get_supported_test_statuses()), ['status' => 400]);
+          return new WP_Error('invalid_status', 'Status must be one of: any, ' . abst_supported_test_statuses_text(), ['status' => 400]);
 
         }
 
@@ -13582,7 +13582,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'type' => $test_type,
 
-          'status' => $test->post_status,
+          'status' => abst_status_for_api($test->post_status),
 
           'test_status' => $test_status,
 
@@ -13666,7 +13666,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-      if (!$post || $post->post_type !== 'bt_experiments') {
+      if (!$post || $post->post_type !== 'abst_experiments') {
 
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
 
@@ -13792,8 +13792,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $validation_warnings = $guard_result['warnings'];
 
-      $requested_status = $params['status'] ?? ($params['post_status'] ?? 'draft');
-      $post_type = get_post_type_object('bt_experiments');
+      $requested_status = $params['status'] ?? abst_status_from_api($params['post_status'] ?? 'draft');
+      $post_type = get_post_type_object('abst_experiments');
       if (!(defined('WP_CLI') && WP_CLI) && (!$post_type || !current_user_can($post_type->cap->create_posts))) {
         return new WP_Error('forbidden', 'You do not have permission to create tests.', ['status' => 403]);
       }
@@ -13828,7 +13828,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'post_title' => $params['test_title'],
 
-        'post_type' => 'bt_experiments',
+        'post_type' => 'abst_experiments',
 
         'post_status' => isset($params['status']) ? $params['status'] : 'draft',
 
@@ -13936,7 +13936,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'normalized' => [
 
-          'status' => $post_data['post_status'],
+          'status' => abst_status_for_api($post_data['post_status']),
 
           'target_percentage' => isset($params['target_percentage']) ? intval($params['target_percentage']) : 100,
 
@@ -14323,8 +14323,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
       {
 
         $experiment = get_post($eid);
-        $post_type = get_post_type_object('bt_experiments');
-        if(!$experiment || $experiment->post_type !== 'bt_experiments') {
+        $post_type = get_post_type_object('abst_experiments');
+        if(!$experiment || $experiment->post_type !== 'abst_experiments') {
           $response['text'] = 'Not found.';
           wp_send_json($response);
         }
@@ -14683,7 +14683,7 @@ function abst_split_test_admin_bar_menu( $wp_admin_bar ) {
 
       'parent' => 'ab-test',
 
-      'href'   => admin_url( 'edit.php?post_type=bt_experiments' ),
+      'href'   => admin_url( 'edit.php?post_type=abst_experiments' ),
 
   );
 
@@ -14962,6 +14962,63 @@ function abst_sanitize($value) {
  */
 
 /**
+ * Test statuses as stored (abst_idea, abst_complete) and as the API and its callers use
+ * them (idea, complete). draft, publish and pending are the same in both.
+ */
+function abst_status_from_api($status) {
+  $map = ['idea' => 'abst_idea', 'complete' => 'abst_complete'];
+  return isset($map[$status]) ? $map[$status] : $status;
+}
+
+function abst_status_for_api($status) {
+  $map = ['abst_idea' => 'idea', 'abst_complete' => 'complete'];
+  return isset($map[$status]) ? $map[$status] : $status;
+}
+
+/**
+ * Tests are stored as the abst_experiments post type with abst_idea / abst_complete
+ * statuses. AB Split Test Pro, and Lite before 1.0.0, used bt_experiments with idea /
+ * complete; those tests are converted here once. Pro converts them back when it runs and
+ * clears the flag, so a site can switch between the two plugins and keep its tests.
+ */
+function abst_migrate_test_post_type() {
+  if (get_option('abst_post_type_version') === '2') {
+    return;
+  }
+  global $wpdb;
+  // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration; caches are cleared below.
+  $ids = $wpdb->get_col($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type = %s", 'bt_experiments'));
+  if ($ids) {
+    foreach (['complete' => 'abst_complete', 'idea' => 'abst_idea'] as $old => $new) {
+      // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration.
+      $wpdb->update($wpdb->posts, ['post_status' => $new], ['post_type' => 'bt_experiments', 'post_status' => $old]);
+    }
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration.
+    $wpdb->update($wpdb->posts, ['post_type' => 'abst_experiments'], ['post_type' => 'bt_experiments']);
+    foreach ($ids as $id) {
+      clean_post_cache((int) $id);
+    }
+    delete_transient('abst_posts_frontend_cache');
+    delete_option('abst_all_testable_posts');
+  }
+  update_option('abst_post_type_version', '2');
+}
+add_action('init', 'abst_migrate_test_post_type', 0);
+
+/** Old admin links (bookmarks, docs, emails) with post_type=bt_experiments open the tests. */
+function abst_redirect_old_post_type_links() {
+  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only redirect of a screen URL.
+  if (!isset($_GET['post_type']) || 'bt_experiments' !== $_GET['post_type']) {
+    return;
+  }
+  $request_uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
+  wp_safe_redirect(add_query_arg('post_type', 'abst_experiments', $request_uri));
+  exit;
+}
+add_action('admin_init', 'abst_redirect_old_post_type_links');
+// Plugin screens (page=...) are access-checked before admin_init.
+add_action('admin_page_access_denied', 'abst_redirect_old_post_type_links');
+/**
  * Secret part of journey file names, so they cannot be downloaded by guessing a URL.
  * Derived from AUTH_KEY.
  */
@@ -15133,7 +15190,7 @@ function abst_add_logs_page() {
 
     add_submenu_page(
 
-      'edit.php?post_type=bt_experiments',
+      'edit.php?post_type=abst_experiments',
 
       'Heatmaps',
 
@@ -15157,7 +15214,7 @@ function abst_add_logs_page() {
 
 
   add_submenu_page(
-    'edit.php?post_type=bt_experiments',
+    'edit.php?post_type=abst_experiments',
     'Test Logs',
     'Logs',
     'manage_options',
@@ -15178,7 +15235,7 @@ add_action('admin_menu', 'abst_add_logs_page');
  * is where a Lite user is most likely to discover that a paid tier exists.
  */
 function abst_lite_plugin_action_links( $links ) {
-  $settings_url = admin_url( 'edit.php?post_type=bt_experiments&page=bt_bb_ab_test' );
+  $settings_url = admin_url( 'edit.php?post_type=abst_experiments&page=bt_bb_ab_test' );
   $custom = array(
     'abst_settings' => '<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'ab-split-test-lite' ) . '</a>',
     'abst_upgrade'  => '<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" style="color:#2271b1;font-weight:600;">' . esc_html__( 'Go Pro', 'ab-split-test-lite' ) . '</a>',
@@ -16232,7 +16289,7 @@ function abst_heatmaps_page_content() {
 
           if (!$journeys_enabled) {
 
-            echo '<li style="color:#dc2626;">❌ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_admin#heatmaps')) . '">Enable it in Settings</a></li>';
+            echo '<li style="color:#dc2626;">❌ Heatmaps & Journeys is <strong>disabled</strong> - <a href="' . esc_url(admin_url('edit.php?post_type=abst_experiments&page=bt_bb_ab_admin#heatmaps')) . '">Enable it in Settings</a></li>';
 
           } else {
 
@@ -16278,7 +16335,7 @@ function abst_heatmaps_page_content() {
 
         
 
-        echo '<p style="font-size:13px; color:#64748b;"><a href="' . esc_url(admin_url('edit.php?post_type=bt_experiments&page=bt_bb_ab_test#heatmaps')) . '">Check your Settings →</a></p>';
+        echo '<p style="font-size:13px; color:#64748b;"><a href="' . esc_url(admin_url('edit.php?post_type=abst_experiments&page=bt_bb_ab_test#heatmaps')) . '">Check your Settings →</a></p>';
 
         echo '</div>';
 
@@ -17391,7 +17448,7 @@ function abst_heatmap_view_urls($page_id, $filters = []) {
   $page_id = is_numeric($page_id) ? (int) $page_id : (is_string($page_id) ? trim($page_id) : $page_id);
 
   $size_map = ['s' => 'small', 'm' => 'medium', 'l' => 'large'];
-  $hm = ['post_type' => 'bt_experiments', 'page' => 'abst-heatmaps', 'post' => $page_id];
+  $hm = ['post_type' => 'abst_experiments', 'page' => 'abst-heatmaps', 'post' => $page_id];
   if (!empty($filters['days']))         { $hm['days'] = intval($filters['days']); }
   if (!empty($filters['screen']))       { $hm['size'] = isset($size_map[$filters['screen']]) ? $size_map[$filters['screen']] : $filters['screen']; }
   if (!empty($filters['eid']))          { $hm['eid'] = intval($filters['eid']); }
@@ -18758,7 +18815,7 @@ function abst_lite_is_sample_test($post_id) {
   }
 
   $post = get_post($post_id);
-  if (!$post || $post->post_type !== 'bt_experiments') {
+  if (!$post || $post->post_type !== 'abst_experiments') {
     return false;
   }
 
@@ -18806,7 +18863,7 @@ function abst_load_sample_tests_from_json($force = false) {
 
     $existing_tests = get_posts([
 
-      'post_type' => 'bt_experiments',
+      'post_type' => 'abst_experiments',
 
       'post_status' => 'any',
 
@@ -18990,7 +19047,7 @@ function abst_create_test_from_results_data($filename, $data) {
 
     'post_title' => $test_name,
 
-    'post_type' => 'bt_experiments',
+    'post_type' => 'abst_experiments',
 
     'post_status' => 'draft',
 
@@ -19077,9 +19134,9 @@ function abst_create_test_from_structured_data($data) {
 
     'post_title' => $post_data['title'],
 
-    'post_type' => 'bt_experiments',
+    'post_type' => 'abst_experiments',
 
-    'post_status' => $post_data['status'] ?? 'publish',
+    'post_status' => abst_status_from_api($post_data['status'] ?? 'publish'),
 
     'post_content' => $post_data['content'] ?? '',
 

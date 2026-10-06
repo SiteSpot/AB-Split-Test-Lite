@@ -27,7 +27,7 @@ function abst_rest_update_test_settings($request) {
     $test_id = intval($params['test_id']);
     $test = get_post($test_id);
     
-    if (!$test || $test->post_type !== 'bt_experiments') {
+    if (!$test || $test->post_type !== 'abst_experiments') {
         return new WP_Error('test_not_found', 'Test not found', ['status' => 404]);
     }
 

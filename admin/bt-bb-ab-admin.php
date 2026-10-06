@@ -140,13 +140,13 @@ class ABST_Admin {
   }
 
   /**
-   * Extra shortcut: add Settings link under the ABSplitTest (bt_experiments) menu
+   * Extra shortcut: add Settings link under the ABSplitTest (abst_experiments) menu
    * The canonical settings page remains under Settings -> ABSplitTest.
    */
   public function add_settings_shortcut_submenu()
   {
     add_submenu_page(
-      'edit.php?post_type=bt_experiments',
+      'edit.php?post_type=abst_experiments',
       self::$page_title,
       __( 'Settings', 'ab-split-test-lite' ),
       'manage_options',
@@ -159,7 +159,7 @@ class ABST_Admin {
   {
     global $submenu;
 
-    $parent_slug = 'edit.php?post_type=bt_experiments';
+    $parent_slug = 'edit.php?post_type=abst_experiments';
 
     if ( empty( $submenu[ $parent_slug ] ) || ! is_array( $submenu[ $parent_slug ] ) ) {
       return;
@@ -175,7 +175,7 @@ class ABST_Admin {
         if ( isset( $item[3] ) ) {
           $item[3] = __( 'All Tests', 'ab-split-test-lite' );
         }
-      } elseif ( $item[2] === 'post-new.php?post_type=bt_experiments' ) {
+      } elseif ( $item[2] === 'post-new.php?post_type=abst_experiments' ) {
         $item[0] = __( 'New Test', 'ab-split-test-lite' );
         if ( isset( $item[3] ) ) {
           $item[3] = __( 'New Test', 'ab-split-test-lite' );
@@ -192,7 +192,7 @@ class ABST_Admin {
     }
 
     $desired_order = [
-      'post-new.php?post_type=bt_experiments',
+      'post-new.php?post_type=abst_experiments',
       $parent_slug,
       'abst-heatmaps',
       'abst-logs',

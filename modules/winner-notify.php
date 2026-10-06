@@ -82,7 +82,7 @@ function abst_find_test_winner( $test ) {
 function abst_run_winner_check() {
 	$tests = get_posts(
 		array(
-			'post_type'   => 'bt_experiments',
+			'post_type'   => 'abst_experiments',
 			'post_status' => 'publish',
 			'numberposts' => -1,
 		)

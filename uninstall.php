@@ -94,7 +94,7 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// Experiment posts (their post meta rows go with them).
 	$abst_experiment_ids = get_posts(
 		array(
-			'post_type'      => 'bt_experiments',
+			'post_type'      => 'abst_experiments',
 			'post_status'    => 'any',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',

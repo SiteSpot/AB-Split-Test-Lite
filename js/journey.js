@@ -97,7 +97,7 @@ jQuery(document).ready(function($) {
         
         // Build URL with all parameters
         // Note: When "All Experiments" is selected (eid is empty), we exclude both eid and variation
-        let url = '?post_type=bt_experiments&page=abst-heatmaps';
+        let url = '?post_type=abst_experiments&page=abst-heatmaps';
         if (post) url += '&post=' + encodeURIComponent(post);
         if (eid) {
             url += '&eid=' + encodeURIComponent(eid);

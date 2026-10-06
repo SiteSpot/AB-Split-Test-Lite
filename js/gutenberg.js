@@ -281,7 +281,7 @@
   'a',
   {
     className: 'new-on-page-test-button modern-abst-button',
-    href: abst_gutenberg.admin_url + 'edit.php?post_type=bt_experiments',
+    href: abst_gutenberg.admin_url + 'edit.php?post_type=abst_experiments',
     rel: 'noopener noreferrer',
     style: {
       display: 'inline-flex',

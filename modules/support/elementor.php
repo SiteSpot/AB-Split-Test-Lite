@@ -69,7 +69,7 @@ class ABST_Elementor
           'multiple' => false,
           'options' => $experiments,
           'default' => 0,
-          'description' => __( 'Select a test or ', 'ab-split-test-lite' ) . '<a class="new-on-page-test-button" href="' . esc_url( admin_url( 'edit.php?post_type=bt_experiments' ) ) . '" target="_blank">' . __( 'Create one here.', 'ab-split-test-lite' ) . '</a>'
+          'description' => __( 'Select a test or ', 'ab-split-test-lite' ) . '<a class="new-on-page-test-button" href="' . esc_url( admin_url( 'edit.php?post_type=abst_experiments' ) ) . '" target="_blank">' . __( 'Create one here.', 'ab-split-test-lite' ) . '</a>'
         ]
       );
       

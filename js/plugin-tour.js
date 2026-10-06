@@ -85,7 +85,7 @@ jQuery(function ($) {
 function wizard1(){
     window.localStorage.wiz = 1;
     console.log('wiz1');
-    jQuery('a[href="post-new.php?post_type=bt_experiments"]').attr('href', 'post-new.php?post_type=bt_experiments&wizard=3');
+    jQuery('a[href="post-new.php?post_type=abst_experiments"]').attr('href', 'post-new.php?post_type=abst_experiments&wizard=3');
     tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: {
@@ -182,7 +182,7 @@ function wizard2(){
         buttons: [
             {
                 action: function() {
-                    window.location.href = 'post-new.php?post_type=bt_experiments&wizard=3';
+                    window.location.href = 'post-new.php?post_type=abst_experiments&wizard=3';
                 },
                 text: 'Create A Split Test'
             }
