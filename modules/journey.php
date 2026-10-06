@@ -358,7 +358,7 @@ class ABST_Journeys {
 
             array(),
 
-            BT_AB_TEST_VERSION,
+            ABST_VERSION,
 
             true
 
@@ -370,11 +370,11 @@ class ABST_Journeys {
 
             'abst-journeys',
 
-            BT_AB_TEST_PLUGIN_URI . 'js/journey.js',
+            ABST_PLUGIN_URI . 'js/journey.js',
 
             array('jquery', 'abst-heatmap-lib'),
 
-            BT_AB_TEST_VERSION,
+            ABST_VERSION,
 
             true
 

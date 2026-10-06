@@ -1187,7 +1187,7 @@ function createTable(deviceSize){
  }
 
 // Device-size filter: swap observations for a per-size slice (mobile/tablet/desktop).
-// Per-size probability and rate are computed server-side by bt_bb_ab_analyze_device_sizes().
+// Per-size probability and rate are computed server-side by abst_analyze_device_sizes().
 // Restored before createTable returns so nothing else sees the filtered view.
 var __abstOriginalObservations = abtestChartData.observations;
 var __abstInsufficientData = false;

@@ -22,9 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
  *
 
- * @package    Bt_Ab_Tests
+ * @package    ABST_Tests
 
- * @subpackage Bt_Ab_Tests/admin/partials
+ * @subpackage ABST_Tests/admin/partials
 
  */
 
@@ -180,7 +180,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           <div class="ab-settings-subsection">
 
-            <p style="margin-top: 0.25rem; font-size: 12px; color: #666;">Version <?php echo esc_html( BT_AB_TEST_VERSION ); ?> </p>
+            <p style="margin-top: 0.25rem; font-size: 12px; color: #666;">Version <?php echo esc_html( ABST_VERSION ); ?> </p>
 
             <p>Get started with A/B testing on your WordPress site.</p>
 
@@ -827,8 +827,8 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
                   <div class="abst-mcp-config-wrap">
                     <button type="button" class="button button-small abst-mcp-copy" data-target="abst_mcp_config_<?php echo esc_attr( $abst_mcp_key ); ?>"><?php echo esc_html( 'Copy' ); ?></button>
                     <pre class="abst-mcp-config"><code id="abst_mcp_config_<?php echo esc_attr( $abst_mcp_key ); ?>"><?php
-                      // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Assembled above from individually escaped parts plus two known placeholder spans.
-                      echo $abst_mcp_client['code'];
+                      // Escaped parts plus the two placeholder spans the config JS rewrites.
+                      echo wp_kses( $abst_mcp_client['code'], array( 'span' => array( 'class' => true ) ) );
                     ?></code></pre>
                   </div>
                 </div>

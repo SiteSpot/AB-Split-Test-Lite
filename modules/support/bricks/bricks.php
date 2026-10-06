@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 
-class BT_BB_AB_Bricks
+class ABST_Bricks
 {
 	public function __construct() 
 	{
@@ -30,7 +30,7 @@ function all_ab_tests_json( ) {
 }
 
 function tests_with_id(){
-  $testTransient = get_transient('bt_bb_ab_bricks_tests');
+  $testTransient = get_transient('abst_bricks_tests');
   //if($testTransient)
     //return $testTransient;
 
@@ -55,7 +55,7 @@ function tests_with_id(){
       $postlist[$post->ID] = $post->post_title;
     }
 
-    set_transient('bt_bb_ab_bricks_tests', $postlist,10);
+    set_transient('abst_bricks_tests', $postlist,10);
 
     return $postlist;
 }
@@ -142,7 +142,7 @@ function add_bricks_attributes($attributes, $key, $element){
   }
 } // end class
 
-$abst_bricks = new BT_BB_AB_Bricks;
+$abst_bricks = new ABST_Bricks;
 
 
 add_filter( 'bricks/element/set_root_attributes', function( $attributes, $element ) {

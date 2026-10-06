@@ -93,7 +93,7 @@ class ABST_Gutenberg
 				'wp-element',
 				'wp-hooks'
 			],
-			BT_AB_TEST_VERSION,
+			ABST_VERSION,
 			true
 		);
     

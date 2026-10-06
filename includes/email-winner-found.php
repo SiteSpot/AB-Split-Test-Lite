@@ -15,14 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! function_exists( 'abst_email_brand_name' ) ) {
-    /**
-     * Name shown in winner emails. Honors a white-label BT_AB_TEST_WL_NAME set
-     * in wp-config.php, without defining that unprefixed global here.
-     */
+    /** Name shown in winner emails. */
     function abst_email_brand_name() {
-        if ( defined( 'BT_AB_TEST_WL_NAME' ) ) {
-            return BT_AB_TEST_WL_NAME;
-        }
         return 'AB Split Test';
     }
 }

@@ -66,7 +66,7 @@ function abst_lite_has_full_plugin( $abst_lite_plugins ) {
         if ( 0 !== validate_file( $abst_lite_plugin ) ) {
             continue;
         }
-        $abst_lite_file = WP_PLUGIN_DIR . '/' . $abst_lite_plugin;
+        $abst_lite_file = plugin_dir_path( __DIR__ ) . $abst_lite_plugin;
         if ( ! is_readable( $abst_lite_file ) ) {
             continue;
         }
@@ -109,7 +109,7 @@ function abst_lite_plugins_being_activated() {
             foreach ( $abst_lite_argv as $abst_lite_arg ) {
                 // WP-CLI takes the folder slug; --all could include the full plugin too.
                 if ( '--all' === $abst_lite_arg ) {
-                    foreach ( (array) glob( WP_PLUGIN_DIR . '/*/bt-bb-ab.php' ) as $abst_lite_found ) {
+                    foreach ( (array) glob( plugin_dir_path( __DIR__ ) . '*/bt-bb-ab.php' ) as $abst_lite_found ) {
                         $abst_lite_plugins[] = plugin_basename( $abst_lite_found );
                     }
                 } elseif ( '' !== $abst_lite_arg && '-' !== $abst_lite_arg[0] ) {

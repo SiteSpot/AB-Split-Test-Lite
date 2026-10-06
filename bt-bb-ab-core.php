@@ -21,28 +21,24 @@ if ( ! defined( 'ABST_LITE_MAIN_FILE' ) ) {
     exit;
 }
 
-define( 'BT_AB_TEST_PLUGIN_NAME', 'AB Split Test' );  
+define( 'ABST_VERSION', '1.0.0' );
 
-define( 'BT_AB_TEST_VERSION', '1.0.0' );
-
-define( 'BT_AB_TEST_PLUGIN_DIR', ABST_LITE_MAIN_FILE );
-
-define( 'BT_AB_TEST_PLUGIN_PATH', plugin_dir_path( __FILE__ )  );
+define( 'ABST_PLUGIN_PATH', plugin_dir_path( __FILE__ )  );
 
 
 
-define( 'BT_AB_TEST_PLUGIN_URI', plugins_url('/', __FILE__) ); 
+define( 'ABST_PLUGIN_URI', plugins_url('/', __FILE__) ); 
 
-$abst_parts = explode('/', BT_AB_TEST_PLUGIN_PATH, -1);
+$abst_parts = explode('/', ABST_PLUGIN_PATH, -1);
 
 $abst_folder_path = end($abst_parts);
 
-define('BT_AB_PLUGIN_FOLDER', $abst_folder_path);
+define('ABST_PLUGIN_FOLDER', $abst_folder_path);
 
 
-if (!defined('BT_AB_TEST_WL_ABTEST')) {
+if (!defined('ABST_TEST_LABEL')) {
   $abst_wl_ab_test = apply_filters('abst_wl_ab_test', 'Split Test');
-  define('BT_AB_TEST_WL_ABTEST', $abst_wl_ab_test);
+  define('ABST_TEST_LABEL', $abst_wl_ab_test);
 }
 
 if (!defined('ABST_JOURNEY_DIR')) define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
@@ -72,11 +68,11 @@ if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 
 
 
-if(! class_exists ( 'Bt_Ab_Tests'))
+if(! class_exists ( 'ABST_Tests'))
 
 {
 
-  class Bt_Ab_Tests{
+  class ABST_Tests{
 
     
 
@@ -151,19 +147,19 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'admin_enqueue_scripts', [$this, 'enqueue_experiment_scripts'] );
 
-      add_action( 'wp_ajax_abst_page_selector', [$this,'get_posts_ajax_callback'] ); // wp_ajax_post_ac
+      add_action( 'wp_ajax_abst_page_selector', [$this,'get_posts_ajax_callback'] );
 
-      add_action( 'wp_ajax_abst_blocks_experiment_list', [$this,'blocks_experiment_list'] ); // wp_ajax_post_ac
+      add_action( 'wp_ajax_abst_blocks_experiment_list', [$this,'blocks_experiment_list'] );
 
-      add_action( 'wp_ajax_abst_on_page_test_create', [$this,'on_page_test_create'] ); // wp_ajax_post_ac
+      add_action( 'wp_ajax_abst_on_page_test_create', [$this,'on_page_test_create'] );
 
-      add_action( 'wp_ajax_abst_create_new_on_page_test', [$this,'create_new_on_page_test'] ); // wp_ajax_post_ac
+      add_action( 'wp_ajax_abst_create_new_on_page_test', [$this,'create_new_on_page_test'] );
 
 
 
       //save_variation_label 
 
-      add_action( 'wp_ajax_abst_save_variation_label', [$this, 'save_variation_label'] ); // wp_ajax_post_ac
+      add_action( 'wp_ajax_abst_save_variation_label', [$this, 'save_variation_label'] );
 
 
 
@@ -240,7 +236,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       add_action( 'after_setup_theme', [$this, 'hide_admin_bar_in_heatmap_iframe'] ); // hide admin bar in heatmap iframe
 
-      add_action( 'wp_ajax_abst_clear_experiment_results',   array($this,'wp_ajax_bt_clear_results'), 10, 2 );  // render js to show tests and log interactions 
+      add_action( 'wp_ajax_abst_clear_experiment_results',   array($this,'clear_experiment_results'), 10, 2 );  // render js to show tests and log interactions 
 
 
 
@@ -627,7 +623,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       if($plugin == plugin_basename(ABST_LITE_MAIN_FILE)) {
 
-          if(is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php')) {
+          if(is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php')) {
 
               wp_safe_redirect(network_admin_url('admin.php?page=bt_bb_ab_test&wizard=1'));
 
@@ -717,8 +713,8 @@ if(! class_exists ( 'Bt_Ab_Tests'))
         } elseif (is_object($upgrader_object) && isset($upgrader_object->result)
             && is_array($upgrader_object->result)
             && !empty($upgrader_object->result['destination_name'])
-            && defined('BT_AB_PLUGIN_FOLDER')
-            && $upgrader_object->result['destination_name'] === BT_AB_PLUGIN_FOLDER) {
+            && defined('ABST_PLUGIN_FOLDER')
+            && $upgrader_object->result['destination_name'] === ABST_PLUGIN_FOLDER) {
           $ours = true;
         }
       }
@@ -750,7 +746,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
      */
     function maybe_handle_plugin_version_change() {
       $stored_version = get_option('abst_plugin_version');
-      if ($stored_version === BT_AB_TEST_VERSION) {
+      if ($stored_version === ABST_VERSION) {
         return;
       }
 
@@ -771,7 +767,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       $stored_version = get_option('abst_plugin_version');
 
-      $current_version = BT_AB_TEST_VERSION;
+      $current_version = ABST_VERSION;
 
       
 
@@ -2998,14 +2994,14 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       // Enqueue custom scripts
       wp_enqueue_script('abst-select2', plugin_dir_url(__FILE__) . 'js/select2.js', array('jquery'), '4.1.0', true);
-      wp_enqueue_script('abst-experiment-editor', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-experiment-editor', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), ABST_VERSION, true);
 
       // Enqueue custom styles
       wp_enqueue_style('abst-select2', plugin_dir_url(__FILE__) . 'css/select2.css', array(), '4.1.0');
-      wp_enqueue_style('abst-experiment-editor', plugin_dir_url(__FILE__) . 'css/experiment.css', array(), BT_AB_TEST_VERSION);
-      wp_enqueue_style('bt-bb-ab-admin-css', plugin_dir_url(__FILE__) . 'admin/bt-bb-ab-admin.css', array(), BT_AB_TEST_VERSION);
-      wp_enqueue_style('abst-popup-css', plugin_dir_url(__FILE__) . 'css/abst-popup.css', array('bt-bb-ab-admin-css'), BT_AB_TEST_VERSION);
-      wp_enqueue_script('abst-popup-js', plugin_dir_url(__FILE__) . 'js/abst-popup.js', array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_style('abst-experiment-editor', plugin_dir_url(__FILE__) . 'css/experiment.css', array(), ABST_VERSION);
+      wp_enqueue_style('abst-admin', plugin_dir_url(__FILE__) . 'admin/bt-bb-ab-admin.css', array(), ABST_VERSION);
+      wp_enqueue_style('abst-popup-css', plugin_dir_url(__FILE__) . 'css/abst-popup.css', array('abst-admin'), ABST_VERSION);
+      wp_enqueue_script('abst-popup-js', plugin_dir_url(__FILE__) . 'js/abst-popup.js', array('jquery'), ABST_VERSION, true);
       wp_add_inline_script('abst-experiment-editor', 'window.ajaxurl = ' . wp_json_encode(admin_url('admin-ajax.php')) . '; window.bt_homeurl = ' . wp_json_encode(home_url()) . ';', 'before');
 
       // Print enqueued styles and scripts for AJAX context
@@ -4260,7 +4256,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
       echo "<li>Click any block you want to test.</li>";
 
-      echo "<li>Click the Advanced Tab, then " . esc_html( BT_AB_TEST_WL_ABTEST ) . ".</li>";
+      echo "<li>Click the Advanced Tab, then " . esc_html( ABST_TEST_LABEL ) . ".</li>";
 
       echo "<li>Choose your test from the dropdown.</li>";
 
@@ -4409,31 +4405,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       $this->abst_show_experiment_results($post);
 
 
-
-      $test_winner = get_post_meta($pid,"test_winner",true);
-
-          if(!empty($test_winner))
-
-            abst_add_inline_js( 'var end = Date.now() + 1500;
-(function frame() {
-  confetti({
-    particleCount: 4,
-    angle: 60,
-    startVelocity: 90,
-    spread: 77,
-    origin: { x: 0,y:0.6 }
-  });
-  confetti({
-    particleCount: 3,
-    angle: 130,
-    startVelocity: 80,
-    spread: 100,
-    origin: { x: 1,y:0.4 }
-  });
-  if (Date.now() < end) {
-    requestAnimationFrame(frame);
-  }
-}());', 'abst-confetti', 'after' );
 
       echo "</div>";
 
@@ -5556,13 +5527,13 @@ public function get_experiment_stats_array( $test ){
 
 
 
-  global $btab;
+  global $abst_btab;
 
   $control_key = null;
 
-  if( is_object($btab) && method_exists($btab, 'identify_control_variation') ){
+  if( is_object($abst_btab) && method_exists($abst_btab, 'identify_control_variation') ){
 
-    $control_key = $btab->identify_control_variation($variations, $test);
+    $control_key = $abst_btab->identify_control_variation($variations, $test);
 
   }
 
@@ -6041,7 +6012,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
   {
 
-    $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_WL_ABTEST . " to find the winner. ";
+    $experiment_status = "<p class='experiment-status'>You need more visits to your " . ABST_TEST_LABEL . " to find the winner. ";
 
   }
 
@@ -6083,7 +6054,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
     {
 
-      $experiment_status = "<p class='experiment-status'>You need more visits to your " . BT_AB_TEST_WL_ABTEST . " to find the winner. " . $remaining . "</p>";
+      $experiment_status = "<p class='experiment-status'>You need more visits to your " . ABST_TEST_LABEL . " to find the winner. " . $remaining . "</p>";
 
     }
 
@@ -7753,7 +7724,7 @@ $titles = array();
 
 
 
-      // Per-size winners (from bt_bb_ab_analyze_device_sizes) for row highlight when filtering
+      // Per-size winners (from abst_analyze_device_sizes) for row highlight when filtering
 
       if (isset($obs['bt_bb_ab_stats']['device_size']) && is_array($obs['bt_bb_ab_stats']['device_size'])) {
 
@@ -8776,7 +8747,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'type'          => 'suggest',
 
-          'label'         => BT_AB_TEST_WL_ABTEST,
+          'label'         => ABST_TEST_LABEL,
 
           'action'        => 'fl_as_posts', // Search posts.
 
@@ -8906,7 +8877,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
               "name" => 'Test Experiment',
 
-              "heading" =>  BT_AB_TEST_WL_ABTEST .' Name',
+              "heading" =>  ABST_TEST_LABEL .' Name',
 
               "description" => '<a class="new-on-page-test-button" href="javascript:void(0);" style="display:inline-block;margin:2px 0 8px;padding:6px 12px;border-radius:3px;background:#7046db;color:#fff;font-size:12px;font-weight:600;line-height:1.4;text-decoration:none;">+ ' . esc_html__( 'Create a new test', 'ab-split-test-lite' ) . '</a>', // opens the create-test modal (js/builderhelper.js)
 
@@ -8965,7 +8936,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       
 
 
-      wp_enqueue_style('abst-experiment-frontend', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION); 
+      wp_enqueue_style('abst-experiment-frontend', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), ABST_VERSION); 
 
       global $wp_roles;
 
@@ -9024,13 +8995,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
           }
       }
 
-      wp_enqueue_script( 'abst-select2', plugins_url( '/', __FILE__ ) . 'js/select2.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //  select2   
+      wp_enqueue_script( 'abst-select2', plugins_url( '/', __FILE__ ) . 'js/select2.js', array( 'jquery' ), ABST_VERSION, false ); //  select2   
 
       wp_enqueue_style( 'abst-select2', plugins_url( '/', __FILE__ ) . 'css/select2.css', false, '4.1.0', 'all' );
 
-      wp_enqueue_script( 'abst-creator', plugins_url( '/', __FILE__ ) . 'js/creator.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //modern screenshot
+      wp_enqueue_script( 'abst-creator', plugins_url( '/', __FILE__ ) . 'js/creator.js', array( 'jquery' ), ABST_VERSION, false ); // Awesomplete (Magic Bar page search)
 
-      wp_enqueue_style('abst-creator', plugins_url( '/', __FILE__ ) . 'css/creator.css', array(), BT_AB_TEST_VERSION); //awesomplete, modern screenshot
+      wp_enqueue_style('abst-creator', plugins_url( '/', __FILE__ ) . 'css/creator.css', array(), ABST_VERSION); // Awesomplete
 
 
 
@@ -9053,7 +9024,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       }
 
 
-      wp_enqueue_script('abst-highlighter', plugins_url('js/highlighter.js', __FILE__), $highlighter_deps, BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-highlighter', plugins_url('js/highlighter.js', __FILE__), $highlighter_deps, ABST_VERSION, true);
 
       wp_localize_script('abst-highlighter', 'abst_magic_data', array(
 
@@ -9075,12 +9046,12 @@ function abst_cmp_by_conversion_rate($a, $b) {
     //if has edit permissions
 
     if(current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
-      wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
+      wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), ABST_VERSION, true); $this->builder_helper_vars();
 
     // Driver.js for the Magic Bar tour (always load when highlighter loads, since magic bar can be loaded dynamically)
-    wp_enqueue_style('abst-driver', plugins_url('css/driver.css', __FILE__), array(), BT_AB_TEST_VERSION);
-    wp_enqueue_script('abst-driver', plugins_url('js/driver.min.js', __FILE__), array(), BT_AB_TEST_VERSION, true);
-    wp_enqueue_script('abst-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('abst-driver', 'abst-highlighter'), BT_AB_TEST_VERSION, true);
+    wp_enqueue_style('abst-driver', plugins_url('css/driver.css', __FILE__), array(), ABST_VERSION);
+    wp_enqueue_script('abst-driver', plugins_url('js/driver.min.js', __FILE__), array(), ABST_VERSION, true);
+    wp_enqueue_script('abst-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('abst-driver', 'abst-highlighter'), ABST_VERSION, true);
 
     }
 
@@ -9157,7 +9128,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if(class_exists('FLBuilderModel') && FLBuilderModel::is_builder_active()){
 
-        wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
+        wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), ABST_VERSION, true); $this->builder_helper_vars();
 
       }
 
@@ -9177,7 +9148,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       // Enqueue the main conversion script
 
-      wp_enqueue_script('abst-tracker', $bt_conversion_js, [], BT_AB_TEST_VERSION, false);
+      wp_enqueue_script('abst-tracker', $bt_conversion_js, [], ABST_VERSION, false);
 
       
 
@@ -9212,11 +9183,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
       if ($is_abst_screen) {
       // Driver.js PRODUCT TOUR
 
-      wp_enqueue_style('abst-driver', plugins_url('css/driver.css', __FILE__), array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('abst-driver', plugins_url('css/driver.css', __FILE__), array(), ABST_VERSION);
 
-      wp_enqueue_script('abst-driver', plugins_url('js/driver.min.js', __FILE__), array(), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-driver', plugins_url('js/driver.min.js', __FILE__), array(), ABST_VERSION, true);
 
-      wp_enqueue_script('abst-plugin-tour', plugins_url('js/plugin-tour.js', __FILE__), array('jquery', 'abst-driver'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-plugin-tour', plugins_url('js/plugin-tour.js', __FILE__), array('jquery', 'abst-driver'), ABST_VERSION, true);
 
       wp_localize_script( 'abst-plugin-tour', 'abstTourVars', [
 
@@ -9238,8 +9209,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       // Settings screen (Settings menu and the abst_experiments submenu).
       if ( strpos( $abst_screen_id, 'bt_bb_ab_test' ) !== false ) {
-        wp_enqueue_style( 'abst-settings', plugins_url( 'css/abst-settings.css', __FILE__ ), array(), BT_AB_TEST_VERSION );
-        wp_enqueue_script( 'abst-settings', plugins_url( 'js/abst-settings.js', __FILE__ ), array( 'jquery', 'abst-select2' ), BT_AB_TEST_VERSION, true );
+        wp_enqueue_style( 'abst-settings', plugins_url( 'css/abst-settings.css', __FILE__ ), array(), ABST_VERSION );
+        wp_enqueue_script( 'abst-settings', plugins_url( 'js/abst-settings.js', __FILE__ ), array( 'jquery', 'abst-select2' ), ABST_VERSION, true );
         $abst_hp = abst_get_admin_setting( 'abst_heatmap_pages' );
         $abst_hp_id = ( is_array( $abst_hp ) && ! empty( $abst_hp[0] ) ) ? intval( $abst_hp[0] ) : 0;
         wp_localize_script( 'abst-settings', 'abstSettings', array(
@@ -9260,9 +9231,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if(class_exists('Vc_Manager') ) {
 
-        wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
+        wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), ABST_VERSION, true); $this->builder_helper_vars();
 
-        wp_enqueue_style('abst-experiment-frontend', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION);
+        wp_enqueue_style('abst-experiment-frontend', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), ABST_VERSION);
 
       }
 
@@ -9278,11 +9249,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $eid = (isset($post->ID))? $post->ID : null;
 
-      wp_enqueue_script( 'abst-experiment', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-experiment', plugins_url('js/experiment.js', __FILE__), ['jquery'], ABST_VERSION, true );
 
-      wp_enqueue_script( 'abst-table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], ABST_VERSION, true );
 
-      wp_enqueue_style( 'abst-table', plugins_url('css/tabulator.css', __FILE__), array(), BT_AB_TEST_VERSION );
+      wp_enqueue_style( 'abst-table', plugins_url('css/tabulator.css', __FILE__), array(), ABST_VERSION );
 
       wp_localize_script( 'abst-experiment', 'abst_exturl', [
 
@@ -9303,11 +9274,10 @@ function abst_cmp_by_conversion_rate($a, $b) {
       // The test being edited, read by experiment.js.
       wp_add_inline_script( 'abst-experiment', 'window.abstpid = ' . intval( $eid ) . ';', 'before' );
 
-      wp_enqueue_script( 'abst-chart', plugins_url('js/chart.js', __FILE__), ['abst-experiment'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-chart', plugins_url('js/chart.js', __FILE__), ['abst-experiment'], ABST_VERSION, true );
 
-      wp_enqueue_style( 'abst-experiment', plugins_url('css/experiment.css', __FILE__),array(),BT_AB_TEST_VERSION);
+      wp_enqueue_style( 'abst-experiment', plugins_url('css/experiment.css', __FILE__),array(),ABST_VERSION);
 
-      wp_enqueue_script( 'abst-confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
       
 
@@ -9794,7 +9764,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     function header_style()
     {
-      wp_enqueue_style( 'abst-frontend', plugins_url( 'css/abst-frontend.css', __FILE__ ), array(), BT_AB_TEST_VERSION );
+      wp_enqueue_style( 'abst-frontend', plugins_url( 'css/abst-frontend.css', __FILE__ ), array(), ABST_VERSION );
 
       // ?btab_reset=<test id> clears that test's visitor cookie (support/debugging aid).
       // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only: only clears the visitor's own cookie in their browser.
@@ -10280,9 +10250,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'abst_disable_ai' => '1',
         'magic_nonce' => current_user_can('edit_posts') ? wp_create_nonce('abst_create_new_on_page_test') : '',
-        'plugins_uri' => BT_AB_TEST_PLUGIN_URI,
+        'plugins_uri' => ABST_PLUGIN_URI,
         'domain' => get_home_url(),
-        'v' => BT_AB_TEST_VERSION,
+        'v' => ABST_VERSION,
         'wait_for_approval' => abst_get_admin_setting( 'abst_wait_for_approval' ) ? '1' : '0',
         'heatmap_pages' => abst_get_admin_setting( 'abst_heatmap_pages' ),
         'heatmap_all_pages' => abst_get_admin_setting( 'abst_heatmap_all_pages' ),
@@ -10686,18 +10656,10 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if( $is_experiments_screen || $is_abst_page ){
 
-        wp_enqueue_style( 'bt_bb_ab_admin_styles', plugins_url('admin/bt-bb-ab-admin.css', __FILE__), array(), BT_AB_TEST_VERSION );    
+        wp_enqueue_style( 'abst-admin', plugins_url('admin/bt-bb-ab-admin.css', __FILE__), array(), ABST_VERSION );    
 
       }
 
-
-      // Enqueue modernScreenshot for heatmaps page
-
-      if (isset($_GET['page']) && $_GET['page'] === 'abst-heatmaps') {
-
-        wp_enqueue_script('abst-creator', plugins_url('js/creator.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
-
-      }
 
     }
 
@@ -14320,7 +14282,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-    function wp_ajax_bt_clear_results(){
+    function clear_experiment_results(){
 
       if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'abst_clear_results')) {
 
@@ -14574,11 +14536,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 }
 
-global $btab;
+global $abst_btab;
 
-
-
-$abst_btab = new Bt_Ab_Tests();
+$abst_btab = new ABST_Tests();
 
 }
 
@@ -14593,7 +14553,7 @@ function abst_add_inline_js( $js, $handle = '', $position = 'before' ) {
   if ( $handle === '' || ! wp_script_is( $handle, 'registered' ) ) {
     $handle = did_action( 'wp_print_scripts' ) || did_action( 'admin_print_scripts' ) ? 'abst-inline-footer' : 'abst-inline';
     if ( ! wp_script_is( $handle, 'registered' ) ) {
-      wp_register_script( $handle, false, array(), BT_AB_TEST_VERSION, $handle === 'abst-inline-footer' );
+      wp_register_script( $handle, false, array(), ABST_VERSION, $handle === 'abst-inline-footer' );
     }
   }
   wp_enqueue_script( $handle );
@@ -14603,7 +14563,7 @@ function abst_add_inline_js( $js, $handle = '', $position = 'before' ) {
 /** Queue inline CSS with wp_add_inline_style() on a source-less "abst-inline" style. */
 function abst_add_inline_css( $css ) {
   if ( ! wp_style_is( 'abst-inline', 'registered' ) ) {
-    wp_register_style( 'abst-inline', false, array(), BT_AB_TEST_VERSION );
+    wp_register_style( 'abst-inline', false, array(), ABST_VERSION );
   }
   wp_enqueue_style( 'abst-inline' );
   wp_add_inline_style( 'abst-inline', $css );
@@ -14903,7 +14863,7 @@ function abst_get_admin_setting($setting){
 
   // Heatmap data retention in days (settings > Heatmaps), 3 unless changed.
   if ($setting === 'abst_heatmap_retention_length') {
-    $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+    $network = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
     $value = $network ? get_site_option($setting, 3) : get_option($setting, 3);
     return max(1, intval($value));
   }
@@ -14918,12 +14878,12 @@ function abst_get_admin_setting($setting){
 
   // Heatmaps run on every page by default.
   if ($setting === 'abst_heatmap_all_pages') {
-    $network_all = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+    $network_all = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
     $value = $network_all ? get_site_option($setting, false) : get_option($setting, false);
     return ($value === false || $value === '') ? 'all' : $value;
   }
 
-  $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+  $network = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
 
   if (isset($default_on[$setting])) {
     $value = $network ? get_site_option($setting, false) : get_option($setting, false);
@@ -15587,7 +15547,7 @@ function abst_heatmaps_page_content() {
 
   echo '<div class="abst-page-header">';
 
-  echo '<h1>' . esc_html( BT_AB_TEST_WL_ABTEST ) . ' Heatmaps & Scrollmaps</h1>';
+  echo '<h1>' . esc_html( ABST_TEST_LABEL ) . ' Heatmaps & Scrollmaps</h1>';
 
   echo '<span class="abst-beta-badge">Beta <a href="https://absplittest.com/support" target="_blank">Report issues</a></span>';
 

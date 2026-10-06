@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function abst_rest_update_test_settings($request) {
     require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
-    global $btab;
+    global $abst_btab;
 
     $params = abst_normalize_api_input_params($request->get_json_params());
     $params = abst_drop_unsupported_test_params($params);
@@ -48,9 +48,9 @@ function abst_rest_update_test_settings($request) {
         return sanitize_text_field((string) $value);
     };
 
-    $get_variation_url = static function($variation) use ($btab) {
-        if (isset($btab) && method_exists($btab, 'get_url_from_slug')) {
-            return $btab->get_url_from_slug($variation);
+    $get_variation_url = static function($variation) use ($abst_btab) {
+        if (isset($abst_btab) && method_exists($abst_btab, 'get_url_from_slug')) {
+            return $abst_btab->get_url_from_slug($variation);
         }
         return (string) $variation;
     };
@@ -273,8 +273,8 @@ function abst_rest_update_test_settings($request) {
     if ($has_param('optimization_type')) {
         $optimization_type = sanitize_text_field((string) $params['optimization_type']);
         update_post_meta($test_id, 'conversion_style', $optimization_type);
-        if ($optimization_type !== 'thompson' && isset($btab) && method_exists($btab, 'clear_test_variation_weights')) {
-            $btab->clear_test_variation_weights($test_id);
+        if ($optimization_type !== 'thompson' && isset($abst_btab) && method_exists($abst_btab, 'clear_test_variation_weights')) {
+            $abst_btab->clear_test_variation_weights($test_id);
         }
     }
 
@@ -344,12 +344,12 @@ function abst_rest_update_test_settings($request) {
     }
 
     // Refresh conversion pages cache
-    if (isset($btab) && method_exists($btab, 'refresh_conversion_pages')) {
-        $btab->refresh_conversion_pages();
+    if (isset($abst_btab) && method_exists($abst_btab, 'refresh_conversion_pages')) {
+        $abst_btab->refresh_conversion_pages();
     }
 
-    $details = (isset($btab) && method_exists($btab, 'get_test_details_payload'))
-        ? $btab->get_test_details_payload($test_id)
+    $details = (isset($abst_btab) && method_exists($abst_btab, 'get_test_details_payload'))
+        ? $abst_btab->get_test_details_payload($test_id)
         : null;
     $conversion_summary = get_post_meta($test_id, 'conversion_page', true);
     $canonical_conversion_type = is_numeric($conversion_summary) ? 'page' : abst_normalize_conversion_type($conversion_summary);

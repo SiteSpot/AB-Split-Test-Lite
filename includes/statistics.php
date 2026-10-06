@@ -462,17 +462,3 @@ function abst_analyze_device_sizes( $data, $test_age = 0, $min_visits = null ) {
 
   return $data;
 }
-
-if ( ! function_exists( 'bt_bb_ab_split_test_analyzer' ) ) {
-  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
-  function bt_bb_ab_split_test_analyzer( $data = array(), $test_age = 0, $min_visits = null ) {
-    return abst_split_test_analyzer( $data, $test_age, $min_visits );
-  }
-}
-
-if ( ! function_exists( 'bt_bb_ab_analyze_device_sizes' ) ) {
-  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for older integrations.
-  function bt_bb_ab_analyze_device_sizes( $data, $test_age = 0, $min_visits = null ) {
-    return abst_analyze_device_sizes( $data, $test_age, $min_visits );
-  }
-}

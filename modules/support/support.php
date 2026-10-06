@@ -1,7 +1,7 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-class BT_BB_AB_Supports
+class ABST_Supports
 {
 	public static $shortcode_abtest_variation = 'abst_test';
 
@@ -112,4 +112,4 @@ class BT_BB_AB_Supports
 
 } // end class
 
-$abst_support = new BT_BB_AB_Supports;
+$abst_support = new ABST_Supports;

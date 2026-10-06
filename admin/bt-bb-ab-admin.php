@@ -8,8 +8,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @link       http://absplittest.com
  * @since      0.9.1
  *
- * @package    Bt_Ab_Tests
- * @subpackage Bt_Ab_Tests/admin/
+ * @package    ABST_Tests
+ * @subpackage ABST_Tests/admin/
  * @version    2.2.0
  */
 
@@ -102,7 +102,7 @@ class ABST_Admin {
   
   public function abst_update_admin_setting( $key, $value )
   {
-    $network = is_plugin_active_for_network(BT_AB_PLUGIN_FOLDER.'/bt-bb-ab.php');
+    $network = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
     // save only network admin settings.
     if( $network && is_network_admin() ) {
       delete_site_option($key);
@@ -222,9 +222,9 @@ class ABST_Admin {
 
   public function settings_page()
   {
-    global $btab;
-    if ( $btab instanceof Bt_Ab_Tests ) {
-      $btab->maybe_handle_plugin_version_change();
+    global $abst_btab;
+    if ( $abst_btab instanceof ABST_Tests ) {
+      $abst_btab->maybe_handle_plugin_version_change();
     }
 
     echo '<div class="wrap">';
