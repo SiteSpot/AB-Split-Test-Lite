@@ -81,7 +81,7 @@ class ABST_Gutenberg
 	public function enqueue_scripts()
 	{
 		wp_register_script(
-	 		'bt-gutenberg',
+	 		'abst-gutenberg',
 			plugins_url('js/gutenberg.js', dirname(dirname(__FILE__)) ),
 			[
 				'wp-blocks',
@@ -97,14 +97,14 @@ class ABST_Gutenberg
 			true
 		);
     
-    	wp_localize_script( 'bt-gutenberg', 'bt_gutenberg', [
+    	wp_localize_script( 'abst-gutenberg', 'abst_gutenberg', [
 			'experiments' 		=> json_encode(apply_filters( 'abst_experiments_get_items', 'all' )),
 			'ajax_url'			=> admin_url( "admin-ajax.php" ),
 			'admin_url'			=> get_admin_url(),
 			'blocks_list_nonce'	=> wp_create_nonce('abst_blocks_experiment_list')
 		]);
 
-		wp_enqueue_script( 'bt-gutenberg' );
+		wp_enqueue_script( 'abst-gutenberg' );
 
 	}
 

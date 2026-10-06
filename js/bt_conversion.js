@@ -1562,7 +1562,8 @@ function abstShowPage(force = false) {
   if(window.abstRedirecting && !force) // if we're redirecting and dont need to foerce it to
     return;
 
-  document.body.classList.add('abst-show-page');
+  // A builder frame's document can have no body (yet).
+  if (document.body) document.body.classList.add('abst-show-page');
   // Only reset inline styles that WE set (in abstRedirect) - don't touch theme styles
   document.documentElement.style.transition = '';
   document.documentElement.style.opacity = '';
@@ -2274,7 +2275,7 @@ function abstRedirect(url) {
 
 /* fallback to ensure nobody is ever left with a blank page */
 setTimeout(function() {
-  if (!window.abstRedirecting && !document.body.classList.contains('abst-show-page') ) {
+  if (document.body && !window.abstRedirecting && !document.body.classList.contains('abst-show-page') ) {
     abstShowPage(); // Use the function instead of direct manipulation
   } 
 }, 2000);
@@ -2283,7 +2284,7 @@ setTimeout(function() {
    Does NOT force-show during an active redirect — the CSS abst-force-show animation (4s) is
    the true last resort for that case, so no flash occurs on slow-but-successful redirects. */
 setTimeout(function() {
-  if (!document.body.classList.contains('abst-show-page') ) {
+  if (document.body && !document.body.classList.contains('abst-show-page') ) {
     abstShowPage(); // respects abstRedirecting; CSS abst-force-show animation is the absolute last resort
   }
 }, 4000);

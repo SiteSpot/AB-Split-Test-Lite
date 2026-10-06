@@ -10,8 +10,8 @@ function abst_exclude_js() {
         "abst_ajax",
         "abst_variables",
         "bt-bb-ab",
-        "bt_conversion_scripts",
-        "bt_conversion_scripts-js",
+        "abst-tracker",
+        "abst-tracker-js",
         "abst",
         "ABST_CONFIG",      // wp_localize_script variable name - LiteSpeed matches this in inline scripts
         "btab_vars",        // Another localized variable

@@ -181,7 +181,7 @@
             data: {
               action: 'abst_blocks_experiment_list',
               search: search,
-              nonce: bt_gutenberg.blocks_list_nonce
+              nonce: abst_gutenberg.blocks_list_nonce
             },
             success: function (response) {
               console.log('ABST: fetchExperiments AJAX success for:', cacheKey, 'results:', response.length);
@@ -242,7 +242,7 @@
             data: {
               action: 'abst_blocks_experiment_list',
               exact_id: id,
-              nonce: bt_gutenberg.blocks_list_nonce
+              nonce: abst_gutenberg.blocks_list_nonce
             },
             success: function (response) {
               fetchingRef.current = false;
@@ -281,7 +281,7 @@
   'a',
   {
     className: 'new-on-page-test-button modern-abst-button',
-    href: bt_gutenberg.admin_url + 'edit.php?post_type=bt_experiments',
+    href: abst_gutenberg.admin_url + 'edit.php?post_type=bt_experiments',
     rel: 'noopener noreferrer',
     style: {
       display: 'inline-flex',

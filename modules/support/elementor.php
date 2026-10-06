@@ -36,7 +36,7 @@ class ABST_Elementor
 
   public function enqueue_custom_script()
   {
-    wp_enqueue_style( 'bt_elementor', BT_AB_TEST_PLUGIN_URI .'css/elementor.css', array(), BT_AB_TEST_VERSION );
+    wp_enqueue_style( 'abst-elementor', BT_AB_TEST_PLUGIN_URI .'css/elementor.css', array(), BT_AB_TEST_VERSION );
   }
 
 

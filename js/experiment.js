@@ -56,7 +56,7 @@ window.acattrs = {
 
           action: 'abst_page_selector', // AJAX action for admin-ajax.php
 
-          nonce: bt_exturl.page_selector_nonce
+          nonce: abst_exturl.page_selector_nonce
 
         };
 
@@ -307,7 +307,7 @@ jQuery(document).ready(function() {
 
             action: 'abst_page_selector', // AJAX action for admin-ajax.php
 
-            nonce: bt_exturl.page_selector_nonce
+            nonce: abst_exturl.page_selector_nonce
 
           };
 
@@ -787,7 +787,7 @@ jQuery(document).ready(function() {
 
           'bt_action': 'clear',
 
-          'nonce': bt_exturl.clear_results_nonce,
+          'nonce': abst_exturl.clear_results_nonce,
 
         };
 
@@ -1011,7 +1011,7 @@ jQuery(document).ready(function() {
 
           'variation': jQuery(this).find('[tabulator-field="id"]').text(),
 
-          'nonce': bt_exturl.delete_variation_nonce,
+          'nonce': abst_exturl.delete_variation_nonce,
 
         },
 
@@ -1519,7 +1519,7 @@ var table = new Tabulator("#abst-results-table", {
 
             'variation_id': cell.getRow().getData().id,
 
-            'nonce': bt_exturl.save_label_nonce,
+            'nonce': abst_exturl.save_label_nonce,
 
           },
 
@@ -2412,7 +2412,7 @@ jQuery(document).ready(function($) {
 
         'test_id': test_id,
 
-        'nonce': bt_exturl.export_nonce,
+        'nonce': abst_exturl.export_nonce,
 
       },
 

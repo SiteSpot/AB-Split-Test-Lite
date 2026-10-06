@@ -2964,7 +2964,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
     /** Nonce for the create-test pop-up that js/builderhelper.js opens. */
     function builder_helper_vars() {
-      wp_localize_script( 'ab_test_builder_helper', 'abstBuilderHelper', array( 'createNonce' => wp_create_nonce( 'abst_on_page_test_create' ) ) );
+      wp_localize_script( 'abst-builder-helper', 'abstBuilderHelper', array( 'createNonce' => wp_create_nonce( 'abst_on_page_test_create' ) ) );
     }
 
     // wp ajax call loaded into iframe to create form to create a new on page test
@@ -2997,16 +2997,16 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       wp_enqueue_script('jquery');
 
       // Enqueue custom scripts
-      wp_enqueue_script('select2-js', plugin_dir_url(__FILE__) . 'js/select2.js', array('jquery'), '4.1.0', true);
-      wp_enqueue_script('experiment-js', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-select2', plugin_dir_url(__FILE__) . 'js/select2.js', array('jquery'), '4.1.0', true);
+      wp_enqueue_script('abst-experiment-editor', plugin_dir_url(__FILE__) . 'js/experiment.js', array('jquery'), BT_AB_TEST_VERSION, true);
 
       // Enqueue custom styles
-      wp_enqueue_style('select2-css', plugin_dir_url(__FILE__) . 'css/select2.css', array(), '4.1.0');
-      wp_enqueue_style('experiment-css', plugin_dir_url(__FILE__) . 'css/experiment.css', array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('abst-select2', plugin_dir_url(__FILE__) . 'css/select2.css', array(), '4.1.0');
+      wp_enqueue_style('abst-experiment-editor', plugin_dir_url(__FILE__) . 'css/experiment.css', array(), BT_AB_TEST_VERSION);
       wp_enqueue_style('bt-bb-ab-admin-css', plugin_dir_url(__FILE__) . 'admin/bt-bb-ab-admin.css', array(), BT_AB_TEST_VERSION);
       wp_enqueue_style('abst-popup-css', plugin_dir_url(__FILE__) . 'css/abst-popup.css', array('bt-bb-ab-admin-css'), BT_AB_TEST_VERSION);
       wp_enqueue_script('abst-popup-js', plugin_dir_url(__FILE__) . 'js/abst-popup.js', array('jquery'), BT_AB_TEST_VERSION, true);
-      wp_add_inline_script('experiment-js', 'window.ajaxurl = ' . wp_json_encode(admin_url('admin-ajax.php')) . '; window.bt_homeurl = ' . wp_json_encode(home_url()) . ';', 'before');
+      wp_add_inline_script('abst-experiment-editor', 'window.ajaxurl = ' . wp_json_encode(admin_url('admin-ajax.php')) . '; window.bt_homeurl = ' . wp_json_encode(home_url()) . ';', 'before');
 
       // Print enqueued styles and scripts for AJAX context
       wp_print_styles();
@@ -4409,7 +4409,7 @@ if(! class_exists ( 'Bt_Ab_Tests'))
   if (Date.now() < end) {
     requestAnimationFrame(frame);
   }
-}());', 'bt_confetti', 'after' );
+}());', 'abst-confetti', 'after' );
 
       echo "</div>";
 
@@ -6233,7 +6233,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
       // Output chart data as JavaScript variable
 
-      abst_add_inline_js( 'var testAge = ' . intval( $test_age ) . '; var likelyDuration = ' . intval( $likelyDuration ) . ';', 'bt_experiment_scripts' );
+      abst_add_inline_js( 'var testAge = ' . intval( $test_age ) . '; var likelyDuration = ' . intval( $likelyDuration ) . ';', 'abst-experiment' );
 
                 
 
@@ -8095,7 +8095,7 @@ $titles = array();
 
     if(!empty($observations)) {
 
-      abst_add_inline_js( 'var abtestChartData = ' . wp_json_encode($observations) . ';', 'bt_experiment_scripts' );
+      abst_add_inline_js( 'var abtestChartData = ' . wp_json_encode($observations) . ';', 'abst-experiment' );
 
 
 
@@ -8103,7 +8103,7 @@ $titles = array();
 
       if(abst_get_admin_setting('abst_enable_user_journeys') == '1') {
 
-        abst_add_inline_js( 'window.abTestShowheatmapLinks = true;', 'bt_experiment_scripts' );
+        abst_add_inline_js( 'window.abTestShowheatmapLinks = true;', 'abst-experiment' );
 
       }
 
@@ -8941,7 +8941,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
       
 
 
-      wp_enqueue_style('ab_test_styles', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION); 
+      wp_enqueue_style('abst-experiment-frontend', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION); 
 
       global $wp_roles;
 
@@ -9000,17 +9000,17 @@ function abst_cmp_by_conversion_rate($a, $b) {
           }
       }
 
-      wp_enqueue_script( 'select2', plugins_url( '/', __FILE__ ) . 'js/select2.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //  select2   
+      wp_enqueue_script( 'abst-select2', plugins_url( '/', __FILE__ ) . 'js/select2.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //  select2   
 
-      wp_enqueue_style( 'select2', plugins_url( '/', __FILE__ ) . 'css/select2.css', false, '4.1.0', 'all' );
+      wp_enqueue_style( 'abst-select2', plugins_url( '/', __FILE__ ) . 'css/select2.css', false, '4.1.0', 'all' );
 
-      wp_enqueue_script( 'creator', plugins_url( '/', __FILE__ ) . 'js/creator.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //modern screenshot
+      wp_enqueue_script( 'abst-creator', plugins_url( '/', __FILE__ ) . 'js/creator.js', array( 'jquery' ), BT_AB_TEST_VERSION, false ); //modern screenshot
 
-      wp_enqueue_style('creator', plugins_url( '/', __FILE__ ) . 'css/creator.css', array(), BT_AB_TEST_VERSION); //awesomplete, modern screenshot
+      wp_enqueue_style('abst-creator', plugins_url( '/', __FILE__ ) . 'css/creator.css', array(), BT_AB_TEST_VERSION); //awesomplete, modern screenshot
 
 
 
-      $highlighter_deps = array('creator');
+      $highlighter_deps = array('abst-creator');
 
 
 
@@ -9029,9 +9029,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
       }
 
 
-      wp_enqueue_script('ab_test_highlighter', plugins_url('js/highlighter.js', __FILE__), $highlighter_deps, BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-highlighter', plugins_url('js/highlighter.js', __FILE__), $highlighter_deps, BT_AB_TEST_VERSION, true);
 
-      wp_localize_script('ab_test_highlighter', 'abst_magic_data', array(
+      wp_localize_script('abst-highlighter', 'abst_magic_data', array(
 
         'roles' => $roles_data,
 
@@ -9051,12 +9051,12 @@ function abst_cmp_by_conversion_rate($a, $b) {
     //if has edit permissions
 
     if(current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
-      wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
+      wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
 
     // Enqueue Shepherd for Magic Bar tour (always load when highlighter loads, since magic bar can be loaded dynamically)
-    wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
-    wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
-    wp_enqueue_script('ab-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('shepherd-js', 'ab_test_highlighter'), BT_AB_TEST_VERSION, true);
+    wp_enqueue_style('abst-shepherd', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
+    wp_enqueue_script('abst-shepherd', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+    wp_enqueue_script('abst-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('abst-shepherd', 'abst-highlighter'), BT_AB_TEST_VERSION, true);
 
     }
 
@@ -9064,7 +9064,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     function allowInOptimizePress($value, $handle) {
 
-      $ourScriptHandles = ['bt_experiment_scripts', 'bt_conversion_scripts', 'ab_test_highlighter', 'ab_test_builder_helper'];
+      $ourScriptHandles = ['abst-experiment', 'abst-tracker', 'abst-highlighter', 'abst-builder-helper'];
       if (in_array($handle, $ourScriptHandles)) {
           return true; // giv er
       }
@@ -9133,7 +9133,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if(class_exists('FLBuilderModel') && FLBuilderModel::is_builder_active()){
 
-        wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
+        wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
 
       }
 
@@ -9153,7 +9153,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       // Enqueue the main conversion script
 
-      wp_enqueue_script('bt_conversion_scripts', $bt_conversion_js, [], BT_AB_TEST_VERSION, false);
+      wp_enqueue_script('abst-tracker', $bt_conversion_js, [], BT_AB_TEST_VERSION, false);
 
       
 
@@ -9163,7 +9163,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $config = $this->build_frontend_config();
 
-      wp_localize_script('bt_conversion_scripts', 'ABST_CONFIG', $config);
+      wp_localize_script('abst-tracker', 'ABST_CONFIG', $config);
 
     }
 
@@ -9188,13 +9188,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
       if ($is_abst_screen) {
       // Enqueue Shepherd PRODUCT TOUR
 
-      wp_enqueue_style('shepherd-css', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('abst-shepherd', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
 
-      wp_enqueue_script('shepherd-js', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-shepherd', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
 
-      wp_enqueue_script('shepherd-tour', plugins_url('js/plugin-tour.js', __FILE__), array('shepherd-js'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-plugin-tour', plugins_url('js/plugin-tour.js', __FILE__), array('abst-shepherd'), BT_AB_TEST_VERSION, true);
 
-      wp_localize_script( 'shepherd-tour', 'abstTourVars', [
+      wp_localize_script( 'abst-plugin-tour', 'abstTourVars', [
 
 
 
@@ -9204,18 +9204,18 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       //dropdowns      
 
-      wp_register_style( 'select2', plugins_url('css/select2.css', __FILE__), false, '4.1.0', 'all' );
+      wp_register_style( 'abst-select2', plugins_url('css/select2.css', __FILE__), false, '4.1.0', 'all' );
 
-      wp_register_script( 'select2', plugins_url('js/select2.js', __FILE__), array( 'jquery' ), '4.1.0', true );
+      wp_register_script( 'abst-select2', plugins_url('js/select2.js', __FILE__), array( 'jquery' ), '4.1.0', true );
 
-      wp_enqueue_style( 'select2' );
+      wp_enqueue_style( 'abst-select2' );
 
-      wp_enqueue_script( 'select2' );
+      wp_enqueue_script( 'abst-select2' );
 
       // Settings screen (Settings menu and the bt_experiments submenu).
       if ( strpos( $abst_screen_id, 'bt_bb_ab_test' ) !== false ) {
         wp_enqueue_style( 'abst-settings', plugins_url( 'css/abst-settings.css', __FILE__ ), array(), BT_AB_TEST_VERSION );
-        wp_enqueue_script( 'abst-settings', plugins_url( 'js/abst-settings.js', __FILE__ ), array( 'jquery', 'select2' ), BT_AB_TEST_VERSION, true );
+        wp_enqueue_script( 'abst-settings', plugins_url( 'js/abst-settings.js', __FILE__ ), array( 'jquery', 'abst-select2' ), BT_AB_TEST_VERSION, true );
         $abst_hp = abst_get_admin_setting( 'abst_heatmap_pages' );
         $abst_hp_id = ( is_array( $abst_hp ) && ! empty( $abst_hp[0] ) ) ? intval( $abst_hp[0] ) : 0;
         wp_localize_script( 'abst-settings', 'abstSettings', array(
@@ -9236,9 +9236,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if(class_exists('Vc_Manager') ) {
 
-        wp_enqueue_script('ab_test_builder_helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
+        wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
 
-        wp_enqueue_style('ab_test_styles', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION);
+        wp_enqueue_style('abst-experiment-frontend', plugins_url( '/', __FILE__ ) . 'css/experiment-frontend.css', array(), BT_AB_TEST_VERSION);
 
       }
 
@@ -9254,13 +9254,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       $eid = (isset($post->ID))? $post->ID : null;
 
-      wp_enqueue_script( 'bt_experiment_scripts', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-experiment', plugins_url('js/experiment.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
-      wp_enqueue_script( 'bt_table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-table', plugins_url('js/tabulator.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
-      wp_enqueue_style( 'bt_table', plugins_url('css/tabulator.css', __FILE__), array(), BT_AB_TEST_VERSION );
+      wp_enqueue_style( 'abst-table', plugins_url('css/tabulator.css', __FILE__), array(), BT_AB_TEST_VERSION );
 
-      wp_localize_script( 'bt_experiment_scripts', 'bt_exturl', [
+      wp_localize_script( 'abst-experiment', 'abst_exturl', [
 
         'ajax_url'  => admin_url( 'admin-ajax.php' ),
 
@@ -9277,13 +9277,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
       ]);
 
       // The test being edited, read by experiment.js.
-      wp_add_inline_script( 'bt_experiment_scripts', 'window.abstpid = ' . intval( $eid ) . ';', 'before' );
+      wp_add_inline_script( 'abst-experiment', 'window.abstpid = ' . intval( $eid ) . ';', 'before' );
 
-      wp_enqueue_script( 'bt_ab_chart', plugins_url('js/chart.js', __FILE__), ['bt_experiment_scripts'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-chart', plugins_url('js/chart.js', __FILE__), ['abst-experiment'], BT_AB_TEST_VERSION, true );
 
-      wp_enqueue_style( 'bt_experiment_style', plugins_url('css/experiment.css', __FILE__),array(),BT_AB_TEST_VERSION);
+      wp_enqueue_style( 'abst-experiment', plugins_url('css/experiment.css', __FILE__),array(),BT_AB_TEST_VERSION);
 
-      wp_enqueue_script( 'bt_confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
+      wp_enqueue_script( 'abst-confetti', plugins_url('js/confetti.js', __FILE__), ['jquery'], BT_AB_TEST_VERSION, true );
 
       
 
@@ -10417,7 +10417,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         // Backwards compat display:revert removed Feb 2026 - was breaking themes using display:flex/grid on body
 
-        abst_add_inline_js( "document.documentElement.classList.add('abst-js');", 'bt_conversion_scripts' );
+        abst_add_inline_js( "document.documentElement.classList.add('abst-js');", 'abst-tracker' );
 
         abst_add_inline_css( wp_strip_all_tags( $hide_css ) );
 
@@ -10671,7 +10671,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if (isset($_GET['page']) && $_GET['page'] === 'abst-heatmaps') {
 
-        wp_enqueue_script('creator', plugins_url('js/creator.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+        wp_enqueue_script('abst-creator', plugins_url('js/creator.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
 
       }
 
