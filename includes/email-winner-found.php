@@ -376,7 +376,7 @@ function abst_render_winner_email_html( $d ) {
         $html .= '<p style="margin:8px 0 0;font-size:15px;line-height:1.5;">' . $line . '</p>';
     }
     $html .= '<p style="margin:14px 0 0;font-size:14px;line-height:1.5;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;color:' . $esc( $text ) . ';">';
-    $html .= 'The test is <strong>still running</strong> and nothing has changed on your site: visitors still see both versions. When you are ready, end the test and keep the version you want.';
+    $html .= 'The test is <strong>still running</strong> and nothing has changed on your site: visitors still see both versions. When you are ready, use Mark complete in the test\'s status box, and put the winning version on your page.';
     $html .= '</p>';
     $html .= '</td></tr>';
 
@@ -428,7 +428,7 @@ function abst_render_winner_email_text( $d ) {
 
     $lines[] = number_format( $d['total_visits'] ) . ' visitors, ' . number_format( $d['total_conversions'], 0 ) . ' conversions, ' . number_format( $d['overall_rate'] * 100, 2 ) . '% rate';
     $lines[] = '';
-    $lines[] = 'The test is still running and nothing has changed on your site: visitors still see both versions. When you are ready, end the test and keep the version you want.';
+    $lines[] = 'The test is still running and nothing has changed on your site: visitors still see both versions. When you are ready, use Mark complete in the test\'s status box, and put the winning version on your page.';
     $lines[] = '';
     $lines[] = 'Open the test:';
     $lines[] = $d['edit_url'];

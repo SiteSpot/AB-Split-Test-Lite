@@ -3684,6 +3684,10 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
         $panel['primary_action'] = ['label' => 'Update Test', 'action' => 'update-test', 'class' => 'button button-primary'];
 
+        $panel['header_action'] = ['label' => 'Mark complete', 'action' => 'mark-complete'];
+
+        $panel['complete_nonce'] = wp_create_nonce('abst_mark_complete_' . $post->ID);
+
         if ($trash_link) {
 
           $panel['footer_links'][] = ['label' => 'Cancel test', 'href' => $trash_link, 'class' => 'submitdelete deletion'];
@@ -3801,6 +3805,12 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       if (!empty($panel['header_badge'])) {
 
         echo '<span class="abst-status-lifecycle__badge">' . esc_html($panel['header_badge']) . '</span>';
+
+      }
+
+      if (!empty($panel['header_action'])) {
+
+        echo '<button type="button" class="button-link abst-status-lifecycle__header-action abst-lifecycle-action" data-action="' . esc_attr($panel['header_action']['action']) . '">' . esc_html($panel['header_action']['label']) . '</button>';
 
       }
 
@@ -3929,6 +3939,20 @@ if(! class_exists ( 'Bt_Ab_Tests'))
       echo '</div>';
 
       echo '</div>';
+
+      if (!empty($panel['complete_nonce'])) {
+        // Completing ends the test: every visitor sees the original again. Nothing switches to a variation.
+        echo '<div id="abst-mark-complete-modal" class="abst-modal-overlay" style="display:none;" data-test-id="' . esc_attr($post->ID) . '" data-nonce="' . esc_attr($panel['complete_nonce']) . '">';
+        echo '<div class="abst-modal" role="dialog" aria-modal="true" aria-labelledby="abst-mark-complete-title">';
+        echo '<h2 id="abst-mark-complete-title">Complete this test</h2>';
+        echo '<p>Mark this test as complete and stop testing traffic. Every visitor sees the original again, and the results are kept. To keep a variation, make that change on the page itself.</p>';
+        echo '<div class="abst-modal__actions">';
+        echo '<button type="button" class="button button-secondary abst-modal-cancel">Keep running</button>';
+        echo '<button type="button" class="button button-primary abst-modal-confirm">Complete test</button>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+      }
 
       echo '</div>';
 
@@ -15018,6 +15042,39 @@ function abst_redirect_old_post_type_links() {
 add_action('admin_init', 'abst_redirect_old_post_type_links');
 // Plugin screens (page=...) are access-checked before admin_init.
 add_action('admin_page_access_denied', 'abst_redirect_old_post_type_links');
+
+/**
+ * "Mark complete" in a running test's status panel: end the test now. Every visitor sees
+ * the original again and the results are kept; nothing switches to a variation.
+ */
+function abst_ajax_mark_test_complete() {
+  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- The nonce action includes the test ID; it is verified next.
+  $test_id = isset($_POST['test_id']) ? absint(wp_unslash($_POST['test_id'])) : 0;
+  if (!$test_id) {
+    wp_send_json_error(['message' => 'Missing test.']);
+  }
+  if (!check_ajax_referer('abst_mark_complete_' . $test_id, 'nonce', false)) {
+    wp_send_json_error(['message' => 'Security check failed. Reload the page and try again.']);
+  }
+  $test = get_post($test_id);
+  if (!$test || $test->post_type !== 'abst_experiments') {
+    wp_send_json_error(['message' => 'Test not found.']);
+  }
+  if (!current_user_can('edit_post', $test_id)) {
+    wp_send_json_error(['message' => 'You do not have permission to complete this test.']);
+  }
+  delete_post_meta($test_id, 'test_winner');
+  $result = wp_update_post(['ID' => $test_id, 'post_status' => 'abst_complete'], true);
+  if (is_wp_error($result)) {
+    wp_send_json_error(['message' => 'Could not complete the test: ' . $result->get_error_message()]);
+  }
+  global $abst_btab;
+  if (is_object($abst_btab)) {
+    $abst_btab->refresh_conversion_pages();
+  }
+  wp_send_json_success(['test_id' => $test_id]);
+}
+add_action('wp_ajax_abst_mark_test_complete', 'abst_ajax_mark_test_complete');
 /**
  * Secret part of journey file names, so they cannot be downloaded by guessing a URL.
  * Derived from AUTH_KEY.

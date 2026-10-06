@@ -521,6 +521,10 @@ jQuery(document).ready(function() {
       return;
     }
 
+    if(action === 'mark-complete') {
+      jQuery('#abst-mark-complete-modal').css('display', 'flex');
+      return;
+    }
     if(action === 'view-results') {
       var $resultsTab = jQuery('[href="#results"]').first();
       if($resultsTab.length) {
@@ -537,6 +541,38 @@ jQuery(document).ready(function() {
 
 
   
+
+  /* mark complete modal: ends the test, every visitor sees the original again */
+  jQuery(document).on('click', '#abst-mark-complete-modal .abst-modal-cancel', function(){
+    jQuery('#abst-mark-complete-modal').hide();
+  });
+
+  jQuery(document).on('click', '#abst-mark-complete-modal', function(e){
+    if(e.target === this) {
+      jQuery(this).hide();
+    }
+  });
+
+  jQuery(document).on('click', '#abst-mark-complete-modal .abst-modal-confirm', function(){
+    var $modal = jQuery('#abst-mark-complete-modal');
+    var $button = jQuery(this);
+    $button.prop('disabled', true).text('Completing…');
+    jQuery.post(ajaxurl, {
+      action: 'abst_mark_test_complete',
+      test_id: $modal.data('test-id'),
+      nonce: $modal.data('nonce')
+    }, function(response){
+      if(response && response.success) {
+        window.location.reload();
+        return;
+      }
+      $button.prop('disabled', false).text('Complete test');
+      alert((response && response.data && response.data.message) ? response.data.message : 'Could not complete the test.');
+    }).fail(function(){
+      $button.prop('disabled', false).text('Complete test');
+      alert('Could not complete the test. Please try again.');
+    });
+  });
 
   jQuery('.test-variation-info input').on('click',function(){
 
