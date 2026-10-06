@@ -2507,28 +2507,30 @@ html.abst-goal-picking #selector-box { border-color: #16a34a; }
   body.admin-bar #abst-magic-bar { top: 46px; height: calc(100% - 46px) !important; }
 }
 
-/* Magic bar walkthrough (Shepherd) */
-.shepherd-modal-overlay-container.shepherd-modal-is-visible { z-index: 2147483645 !important; }
-.shepherd-element.abst-magic-tour {
-  z-index: 2147483646 !important; max-width: 300px; border-radius: 10px;
+/* Magic bar walkthrough (Driver.js). The first step leaves the page clickable
+   (abst-tour-passthrough); the media library hides the tour (abst-tour-hidden). */
+body.abst-magic-touring .driver-overlay { z-index: 2147483645 !important; }
+body.abst-tour-passthrough .driver-overlay,
+body.abst-tour-hidden .driver-overlay,
+body.abst-tour-hidden .driver-popover { display: none !important; }
+.driver-popover.abst-magic-tour {
+  z-index: 2147483646 !important; max-width: 300px; padding: 14px 16px; border-radius: 10px;
   background: #fff; box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
-  font: 400 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --driver-popover-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
-.abst-magic-tour .shepherd-content { border-radius: 10px; }
-.abst-magic-tour .shepherd-header { padding: 14px 14px 0 16px !important; background: #fff !important; border-radius: 10px 10px 0 0; }
-.abst-magic-tour .shepherd-title { font-size: 15px; font-weight: 600; color: #1e293b; }
-.abst-magic-tour .shepherd-cancel-icon { color: #94a3b8; font-size: 20px; }
-.abst-magic-tour .shepherd-text { padding: 6px 16px 4px; color: #334155; font-size: 13px; line-height: 1.5; }
-.abst-magic-tour .abst-tour-count { display: block; margin-top: 8px; font-size: 11px; color: #94a3b8; }
-.abst-magic-tour .shepherd-footer { padding: 8px 14px 14px; gap: 6px; }
-.abst-magic-tour .shepherd-button {
-  margin: 0; padding: 7px 14px; border-radius: 6px; background: #2271b1; color: #fff; font-size: 13px; font-weight: 600;
+.abst-magic-tour .driver-popover-title { padding-right: 20px; font-size: 15px; font-weight: 600; color: #1e293b; }
+.abst-magic-tour .driver-popover-close-btn { color: #94a3b8; font-size: 20px; }
+.abst-magic-tour .driver-popover-close-btn:hover, .abst-magic-tour .driver-popover-close-btn:focus { color: #1e293b; }
+.abst-magic-tour .driver-popover-description { color: #334155; font-size: 13px; line-height: 1.5; }
+.abst-magic-tour .driver-popover-footer { margin-top: 12px; }
+.abst-magic-tour .driver-popover-navigation-btns button + button { margin-left: 6px; }
+.abst-magic-tour .driver-popover-footer-btn {
+  padding: 7px 14px; border: 1px solid #2271b1; border-radius: 6px; background: #2271b1; color: #fff; font-size: 13px; font-weight: 600;
 }
-.abst-magic-tour .shepherd-button:not(:disabled):hover { background: #135e96; color: #fff; }
-.abst-magic-tour .shepherd-button.abst-tour-secondary, .abst-magic-tour .shepherd-button.shepherd-button-secondary { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
-.abst-magic-tour .shepherd-button.abst-tour-secondary:not(:disabled):hover, .abst-magic-tour .shepherd-button.shepherd-button-secondary:not(:disabled):hover { background: #f8fafc; color: #1e293b; }
-.abst-magic-tour .shepherd-arrow:before { background: #fff; }
-
+.abst-magic-tour .driver-popover-footer-btn:hover, .abst-magic-tour .driver-popover-footer-btn:focus { background: #135e96; border-color: #135e96; color: #fff; }
+.abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary { background: #fff; color: #334155; border-color: #cbd5e1; }
+.abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn:hover, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary:hover,
+.abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn:focus, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary:focus { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
 /* ==========================================================================
    MAGIC BAR ON PHONES: bottom drawer
    The page is not squeezed; it gets bottom padding equal to the drawer, which the

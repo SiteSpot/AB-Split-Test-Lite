@@ -117,7 +117,7 @@ This plugin bundles the following open-source libraries:
 * Chart.js 4.5.1, MIT License, https://github.com/chartjs/Chart.js
 * canvas-confetti 1.9.4, ISC License, https://github.com/catdad/canvas-confetti
 * Select2 4.1.0, MIT License, https://github.com/select2/select2
-* Shepherd (shepherd.js) 11.2.0, MIT License, https://github.com/shipshapecode/shepherd
+* Driver.js 1.9.0, MIT License, https://github.com/nilbuild/driver.js
 * Tabulator 6.3.1, MIT License, https://github.com/olifolkerd/tabulator
 * heatmap.js 2.0.5, MIT License, https://github.com/pa7/heatmap.js
 * Awesomplete 1.1.5, MIT License, https://github.com/LeaVerou/awesomplete

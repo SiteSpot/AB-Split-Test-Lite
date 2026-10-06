@@ -116,7 +116,7 @@ jQuery(function(){
 
   jQuery(document).on('mousedown', function(e) {
     var target = e.target;
-    var keepActive = jQuery(target).closest('#variation-editor-container, .shepherd-element, .shepherd-modal-overlay-container').length > 0 || isWithinSelectedMagicElement(target);
+    var keepActive = jQuery(target).closest('#variation-editor-container, .driver-popover, .driver-overlay').length > 0 || isWithinSelectedMagicElement(target);
     if (!keepActive) {
         setVariationEditorActive(false);
     }
@@ -128,7 +128,7 @@ jQuery(function(){
 
   jQuery(document).on('mousedown', function(e) {
     var target = e.target;
-    var keepActive = jQuery(target).closest('.abst-goals-container, .shepherd-element, .shepherd-modal-overlay-container').length > 0;
+    var keepActive = jQuery(target).closest('.abst-goals-container, .driver-popover, .driver-overlay').length > 0;
     if (!keepActive) {
         jQuery('.abst-goals-container').removeClass('is-active');
     }
@@ -610,7 +610,7 @@ function abstGoalPickTarget(target) {
     if (target === document.body || target === document.documentElement) {
         return null;
     }
-    if (target.closest('#abst-magic-bar, #wpadminbar, #selector-box, .abst-variation-marker, .shepherd-element, .shepherd-modal-overlay-container, .abst-magic-ignore, .media-modal')) {
+    if (target.closest('#abst-magic-bar, #wpadminbar, #selector-box, .abst-variation-marker, .driver-popover, .driver-overlay, .abst-magic-ignore, .media-modal')) {
         return null;
     }
     return target.closest('a, button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]') || target;
@@ -1113,7 +1113,7 @@ function selectorDetection(){
             return false;
 
         // dont do for #wpadminbar parent or .mce-panel
-        if (jQuery(element).parents('.mce-panel').length > 0 || jQuery(element).parents('#wpadminbar').length > 0 || jQuery(element).parents('.abst-variation').length > 0 || jQuery(element).parents('.shepherd-element').length > 0 || jQuery(element).parents('.shepherd-modal-overlay-container').length > 0) {
+        if (jQuery(element).parents('.mce-panel').length > 0 || jQuery(element).parents('#wpadminbar').length > 0 || jQuery(element).parents('.abst-variation').length > 0 || jQuery(element).closest('.driver-popover, .driver-overlay').length > 0) {
             return false;
         }
 
@@ -1251,7 +1251,7 @@ function selectorDetection(){
 
 
         // Allow normal interaction inside the magic bar and admin bar UI
-        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.shepherd-element') || e.target.closest('.shepherd-modal-overlay-container') || e.target.closest('.abst-magic-ignore'))) {
+        if (e.target && (e.target.closest('#abst-magic-bar') || e.target.closest('#wpadminbar') || e.target.closest('.driver-popover') || e.target.closest('.driver-overlay') || e.target.closest('.abst-magic-ignore'))) {
             return;
         }
 
@@ -1357,8 +1357,8 @@ function selectorDetection(){
         if (
             (target.closest && target.closest('#wpadminbar')) ||
             (target.closest && target.closest('#abst-magic-bar')) ||
-            (target.closest && target.closest('.shepherd-element')) ||
-            (target.closest && target.closest('.shepherd-modal-overlay-container')) ||
+            (target.closest && target.closest('.driver-popover')) ||
+            (target.closest && target.closest('.driver-overlay')) ||
             (target.closest && target.closest('.abst-magic-ignore'))
         ) {
             return; // Allow normal behavior
@@ -1744,7 +1744,10 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
         if(jQuery("#imageSelector").length < 1) {
             jQuery("#abst-variation-editor-container").after('<button type="button" id="imageSelector">Choose from Media Library</button>');
             jQuery("#imageSelector").on('click', function(){
-                jQuery('.shepherd-modal-overlay-container').hide();
+                // The tour sits above the media library; hide it until the library closes.
+                if (typeof window.abstMagicTourPause === 'function') {
+                    window.abstMagicTourPause();
+                }
                 file_frame.open();
             });
         }
@@ -1768,8 +1771,10 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
         file_frame.on('select', function() {
             const attachments = file_frame.state().get('selection').first().toJSON();
             
-            // Show Shepherd overlay again
-            jQuery('.shepherd-modal-overlay-container').show();
+            // Bring the tour back
+            if (typeof window.abstMagicTourResume === 'function') {
+                window.abstMagicTourResume();
+            }
             
             // Update the editor with the image URL
             if (window.abstEditor) {
@@ -1791,10 +1796,12 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
             jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
         });
         
-        // Show overlay when media library is closed
+        // Bring the tour back when the media library is closed
         file_frame.off('close');
         file_frame.on('close', function() {
-            jQuery('.shepherd-modal-overlay-container').show();
+            if (typeof window.abstMagicTourResume === 'function') {
+                window.abstMagicTourResume();
+            }
         });
     }
     

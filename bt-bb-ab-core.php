@@ -9077,10 +9077,10 @@ function abst_cmp_by_conversion_rate($a, $b) {
     if(current_user_can('edit_posts') && empty($_GET['elementor-preview']) && empty($_GET['brickspreview'])) // not inside elementor or bricks iframe
       wp_enqueue_script('abst-builder-helper',plugins_url( '/', __FILE__ ) . 'js/builderhelper.js', array('jquery'), BT_AB_TEST_VERSION, true); $this->builder_helper_vars();
 
-    // Enqueue Shepherd for Magic Bar tour (always load when highlighter loads, since magic bar can be loaded dynamically)
-    wp_enqueue_style('abst-shepherd', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
-    wp_enqueue_script('abst-shepherd', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
-    wp_enqueue_script('abst-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('abst-shepherd', 'abst-highlighter'), BT_AB_TEST_VERSION, true);
+    // Driver.js for the Magic Bar tour (always load when highlighter loads, since magic bar can be loaded dynamically)
+    wp_enqueue_style('abst-driver', plugins_url('css/driver.css', __FILE__), array(), BT_AB_TEST_VERSION);
+    wp_enqueue_script('abst-driver', plugins_url('js/driver.min.js', __FILE__), array(), BT_AB_TEST_VERSION, true);
+    wp_enqueue_script('abst-magic-tour', plugins_url('js/magic-tour.js', __FILE__), array('abst-driver', 'abst-highlighter'), BT_AB_TEST_VERSION, true);
 
     }
 
@@ -9210,13 +9210,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
         || ($abst_screen_id && (strpos($abst_screen_id, 'abst_experiments') !== false || strpos($abst_screen_id, 'bt_bb_ab_test') !== false));
 
       if ($is_abst_screen) {
-      // Enqueue Shepherd PRODUCT TOUR
+      // Driver.js PRODUCT TOUR
 
-      wp_enqueue_style('abst-shepherd', plugins_url('css/shepherd.css', __FILE__), array(), BT_AB_TEST_VERSION);
+      wp_enqueue_style('abst-driver', plugins_url('css/driver.css', __FILE__), array(), BT_AB_TEST_VERSION);
 
-      wp_enqueue_script('abst-shepherd', plugins_url('js/shepherd.min.js', __FILE__), array('jquery'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-driver', plugins_url('js/driver.min.js', __FILE__), array(), BT_AB_TEST_VERSION, true);
 
-      wp_enqueue_script('abst-plugin-tour', plugins_url('js/plugin-tour.js', __FILE__), array('abst-shepherd'), BT_AB_TEST_VERSION, true);
+      wp_enqueue_script('abst-plugin-tour', plugins_url('js/plugin-tour.js', __FILE__), array('jquery', 'abst-driver'), BT_AB_TEST_VERSION, true);
 
       wp_localize_script( 'abst-plugin-tour', 'abstTourVars', [
 

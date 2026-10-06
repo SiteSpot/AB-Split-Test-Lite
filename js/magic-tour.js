@@ -4,6 +4,13 @@
     var magicTour = null;
     var elementSelected = false;
     var selectionObserver = null;
+    var paused = false;
+    // Set while the tour is ended on purpose (restart), so closing it doesn't count as "don't show again".
+    var quietEnd = false;
+
+    function driverLoaded() {
+        return window.driver && window.driver.js && typeof window.driver.js.driver === 'function';
+    }
 
     function initMagicTour() {
         // Check if tour=1 parameter is present to force show tour
@@ -14,8 +21,8 @@
             return;
         }
 
-        if (typeof Shepherd === 'undefined') {
-            console.log('Shepherd not loaded, skipping magic tour');
+        if (!driverLoaded()) {
+            console.log('Driver.js not loaded, skipping magic tour');
             return;
         }
 
@@ -39,53 +46,79 @@
         }, 200);
     }
 
-    function startMagicTour() {
-        magicTour = new Shepherd.Tour({
-            defaultStepOptions: {
-                cancelIcon: {
-                    enabled: true
-                },
-                classes: 'shadow-md bg-purple-dark abst-magic-tour',
-                scrollTo: true
-            },
-            useModalOverlay: true
-        });
+    /**
+     * Driver.js makes everything outside the highlighted element unclickable while a
+     * tour runs (the driver-active body class). The first step needs the whole page,
+     * so it shows its popover without the overlay and leaves the page clickable.
+     */
+    function applyStepMode(step) {
+        var passThrough = !!(step && step.data && step.data.passThrough);
+        document.body.classList.toggle('abst-tour-passthrough', passThrough);
+        document.body.classList.toggle('driver-active', !passThrough && !paused);
+    }
 
-        // Step 1: Prompt user to click an element on the page
-        magicTour.addStep({
-            name: 'magic-welcome',
-            title: 'Create a Test',
-            text: '<strong>Click on any element on the page to begin</strong> your test. Try a headline, button, or image. An orange box will appear around the element to help you identify it.',
-            attachTo: {
-                element: 'body',
-                on: 'bottom'
+    function visibleElement(selector) {
+        return function() {
+            var el = document.querySelector(selector);
+            return el && el.getClientRects().length ? el : null;
+        };
+    }
+
+    function startMagicTour() {
+        if (magicTour && magicTour.isActive()) {
+            return;
+        }
+        elementSelected = false;
+        magicTour = window.driver.js.driver({
+            popoverClass: 'abst-magic-tour',
+            overlayOpacity: 0.5,
+            stagePadding: 4,
+            prevBtnText: 'Back',
+            nextBtnText: 'Next',
+            doneBtnText: 'Finish',
+            // Arrow keys would change the step while someone types a variation.
+            allowKeyboardControl: false,
+            // A stray click beside the bar shouldn't end the tour; close, Skip or Escape do.
+            overlayClickBehavior: 'none',
+            onHighlightStarted: function(element, step) {
+                applyStepMode(step);
             },
-            buttons: [
-                {
-                    action: function() {
-                        dismissMagicTour();
-                        return magicTour.cancel();
-                    },
-                    text: 'Don\'t Show Again',
-                    classes: 'shepherd-button-secondary'
-                }
-            ],
-            modalOverlayOpeningPadding: 0,
-            when: {
-                show: function() {
-                    setupElementSelectionListener();
-                },
-                cancel: function() {
+            onDestroyed: function(element, step) {
+                var name = step && step.data ? step.data.name : '';
+                document.body.classList.remove('abst-magic-touring', 'abst-tour-passthrough', 'abst-tour-hidden');
+                paused = false;
+                cleanupSelectionListener();
+                // Closing the tour on its first step means "don't show it again".
+                if (name === 'magic-welcome' && !quietEnd) {
                     dismissMagicTour();
                 }
-            }
+            },
+            steps: [
+                // Step 1: Prompt user to click an element on the page
+                {
+                    element: visibleElement('.click-to-start-help'),
+                    data: { name: 'magic-welcome', passThrough: true },
+                    popover: {
+                        title: 'Create a Test',
+                        description: '<strong>Click on any element on the page to begin</strong> your test. Try a headline, button, or image. An orange box will appear around the element to help you identify it.',
+                        side: 'left',
+                        align: 'start',
+                        showButtons: ['next', 'close'],
+                        doneBtnText: 'Don\'t Show Again',
+                        onPopoverRender: function(popover) {
+                            popover.nextButton.classList.add('abst-tour-secondary');
+                        },
+                        onNextClick: function() {
+                            magicTour.destroy();
+                        }
+                    }
+                }
+            ]
         });
 
-        magicTour.start();
-
-        magicTour.on('cancel', function() {
-            cleanupSelectionListener();
-        });
+        document.body.classList.add('abst-magic-touring');
+        magicTour.drive();
+        setupElementSelectionListener();
     }
 
     function setupElementSelectionListener() {
@@ -146,104 +179,66 @@
     }
 
     function showEditorTourSteps() {
-        if (!magicTour) {
+        if (!magicTour || !magicTour.isActive()) {
             return;
         }
 
-        // Step 2: Variation Editor
-        magicTour.addStep({
-            name: 'magic-editor',
-            title: 'Edit Your Variation',
-            text: 'Change the text here to create your test variation. This is what visitors will see instead of the original.',
-            attachTo: {
+        var steps = (magicTour.getConfig('steps') || []).slice(0, 1).concat([
+            // Step 2: Variation Editor
+            {
                 element: '#variation-editor-container',
-                on: 'left'
-            },
-            scrollTo: false,
-            useModalOverlay: false,
-            buttons: [
-                {
-                    action: function() {
-                        return magicTour.cancel();
-                    },
-                    text: 'Skip Tour',
-                    classes: 'shepherd-button-secondary'
-                },
-                {
-                    action: magicTour.next,
-                    text: 'Next'
+                data: { name: 'magic-editor' },
+                popover: {
+                    title: 'Edit Your Variation',
+                    description: 'Change the text here to create your test variation. This is what visitors will see instead of the original.',
+                    side: 'left',
+                    align: 'start',
+                    showButtons: ['previous', 'next', 'close'],
+                    prevBtnText: 'Skip Tour',
+                    onPrevClick: function() {
+                        magicTour.destroy();
+                    }
                 }
-            ]
-        });
-
-        // Step 3: Variation Toggle
-        magicTour.addStep({
-            name: 'magic-toggle',
-            title: 'Switch Variations',
-            text: 'Click here to switch between the original and your variation to preview both versions.',
-            attachTo: {
+            },
+            // Step 3: Variation Toggle
+            {
                 element: '#version-value',
-                on: 'left'
-            },
-            useModalOverlay: true,
-            buttons: [
-                {
-                    action: magicTour.back,
-                    text: 'Back'
-                },
-                {
-                    action: magicTour.next,
-                    text: 'Next'
+                data: { name: 'magic-toggle' },
+                popover: {
+                    title: 'Switch Variations',
+                    description: 'Click here to switch between the original and your variation to preview both versions.',
+                    side: 'left',
+                    align: 'start'
                 }
-            ]
-        });
-
-        // Step 4: Goals
-        magicTour.addStep({
-            name: 'magic-goals',
-            title: 'Set Your Goal',
-            text: 'Choose how a conversion is counted: a <strong>page visit</strong> (visitors reach a page such as a thank-you page) or an <strong>element click</strong> (visitors click an element such as a buy button).',
-            attachTo: {
+            },
+            // Step 4: Goals
+            {
                 element: '.abst-goals-column',
-                on: 'left'
-            },
-            buttons: [
-                {
-                    action: magicTour.back,
-                    text: 'Back'
-                },
-                {
-                    action: magicTour.next,
-                    text: 'Next'
+                data: { name: 'magic-goals' },
+                popover: {
+                    title: 'Set Your Goal',
+                    description: 'Choose how a conversion is counted: a <strong>page visit</strong> (visitors reach a page such as a thank-you page) or an <strong>element click</strong> (visitors click an element such as a buy button).',
+                    side: 'left',
+                    align: 'start'
                 }
-            ]
-        });
-
-        // Step 5: Start Test
-        magicTour.addStep({
-            name: 'magic-start',
-            title: 'Start Your Test',
-            text: 'Click "Start Test" to begin your A/B test, or "Save Draft" to save it for later. After saving, you can share preview links for each variation.',
-            attachTo: {
+            },
+            // Step 5: Start Test
+            {
                 element: '.abst-magic-bar-footer',
-                on: 'left'
-            },
-            buttons: [
-                {
-                    action: magicTour.back,
-                    text: 'Back'
-                },
-                {
-                    action: function() {
-                        return magicTour.complete();
-                    },
-                    text: 'Finish'
+                data: { name: 'magic-start' },
+                popover: {
+                    title: 'Start Your Test',
+                    description: 'Click "Start Test" to begin your A/B test, or "Save Draft" to save it for later. After saving, you can share preview links for each variation.',
+                    side: 'left',
+                    align: 'start'
                 }
-            ]
-        });
+            }
+        ]);
+
+        magicTour.setConfig($.extend({}, magicTour.getConfig(), { steps: steps }));
 
         // Advance from welcome step to the newly added editor step
-        magicTour.next();
+        magicTour.moveNext();
     }
 
     function dismissMagicTour() {
@@ -254,9 +249,11 @@
     function restartTour() {
         // Clear the dismissed flag
         window.localStorage.removeItem('abst_magic_tour_dismissed');
-        // Cancel any existing tour
-        if (magicTour) {
-            magicTour.cancel();
+        // End any existing tour
+        if (magicTour && magicTour.isActive()) {
+            quietEnd = true;
+            magicTour.destroy();
+            quietEnd = false;
         }
         // Reset state
         elementSelected = false;
@@ -265,12 +262,50 @@
         initMagicTour();
     }
 
+    /**
+     * Hide the tour while another dialog (the media library) is open, and let that
+     * dialog be clicked; resume puts the tour back on the same step.
+     */
+    function pauseTour() {
+        if (!magicTour || !magicTour.isActive()) {
+            return;
+        }
+        paused = true;
+        document.body.classList.add('abst-tour-hidden');
+        document.body.classList.remove('driver-active');
+    }
+
+    function resumeTour() {
+        if (!paused) {
+            return;
+        }
+        paused = false;
+        document.body.classList.remove('abst-tour-hidden');
+        if (magicTour && magicTour.isActive()) {
+            applyStepMode(magicTour.getActiveStep());
+            magicTour.refresh();
+        }
+    }
+
     // Expose restartTour globally
     window.restartMagicTour = restartTour;
+    window.abstMagicTourPause = pauseTour;
+    window.abstMagicTourResume = resumeTour;
 
     // Add event listener for Show Tour button
     $(document).on('click', '#abst-magic-bar-show-tour', function() {
         restartTour();
+    });
+
+    // Escape closes the tour, except while typing in a field or the variation editor.
+    $(document).on('keyup', function(e) {
+        if (e.key !== 'Escape' || !magicTour || !magicTour.isActive() || paused) {
+            return;
+        }
+        if ($(e.target).is('input, textarea, select, [contenteditable], [contenteditable] *')) {
+            return;
+        }
+        magicTour.destroy();
     });
 
     // Start when DOM is ready
