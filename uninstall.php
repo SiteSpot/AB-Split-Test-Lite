@@ -125,14 +125,9 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- options table cleanup on uninstall.
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'abst\\_%'" );
 
-	// Journey / heatmap files: the current folder (uploads/abst,
-	// holding abst/journeys) and the legacy wp-content/abst-journeys folder that
-	// earlier versions used, in case it was never migrated.
+	// Journey / heatmap files and the debug log: uploads/abst (abst/journeys, abst/logs).
 	$abst_upload_base = trailingslashit( wp_upload_dir()['basedir'] );
 	abst_lite_uninstall_delete_dir( $abst_upload_base . 'abst' );
-	if ( defined( 'WP_CONTENT_DIR' ) ) {
-		abst_lite_uninstall_delete_dir( trailingslashit( WP_CONTENT_DIR ) . 'abst-journeys' );
-	}
 
 	// The debug log lives in uploads/abst/logs (removed above). Older versions kept it
 	// outside the abst directory: abst_log_<hash>.log (named from AUTH_KEY) and abst_log.txt.

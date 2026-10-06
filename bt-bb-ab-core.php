@@ -42,9 +42,6 @@ define('BT_AB_PLUGIN_FOLDER', $abst_folder_path);
 
 if (!defined('BT_AB_TEST_WL_ABTEST')) {
   $abst_wl_ab_test = apply_filters('abst_wl_ab_test', 'Split Test');
-  // Backward compatibility: also allow old hook name (new hook takes precedence)
-  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-  $abst_wl_ab_test = apply_filters('ab_wl_ab_test', $abst_wl_ab_test);
   define('BT_AB_TEST_WL_ABTEST', $abst_wl_ab_test);
 }
 
@@ -217,8 +214,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
       add_action( 'abst_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9 );
-      // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public action.
-      add_action( 'bt_log_experiment_activity', [$this, 'abst_log_experiment_activity'], 10, 9 );
 
       add_action( 'manage_bt_experiments_posts_custom_column', array($this,'manage_bt_experiments_posts_custom_column'),10,2); // add data to admin columns
 
@@ -1421,9 +1416,6 @@ if(! class_exists ( 'Bt_Ab_Tests'))
 
 
 
-      define( 'BT_MODULES_DIR', plugin_dir_path( __FILE__ ) );
-
-      define( 'BT_MODULES_URL', plugins_url( '/', __FILE__ ) );
 
 
 
@@ -10259,8 +10251,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'post_id' => $post_id,
         'is_preview' => $is_preview,
         'is_free' => '1',
-        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-        'tagging' => apply_filters( 'abst_tagging', apply_filters( 'bt_ab_tagging', true ) ) ? '1' : '0',
+        'tagging' => apply_filters( 'abst_tagging', true ) ? '1' : '0',
         'abst_server_convert_woo' => abst_get_admin_setting( 'abst_server_convert_woo' ) ? '1' : '0',
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'abst_disable_ai' => '1',
@@ -14875,8 +14866,7 @@ if ( ! function_exists( 'abst_test_min_views' ) ) {
    * site-wide minimum (50, filterable) unless the test asks for more.
    */
   function abst_test_min_views( $test_id ) {
-    // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-    $floor = max( 1, (int) apply_filters( 'abst_min_visits_for_winner', apply_filters( 'ab_min_visits_for_winner', 50 ) ) );
+    $floor = max( 1, (int) apply_filters( 'abst_min_visits_for_winner', 50 ) );
     return max( $floor, (int) get_post_meta( $test_id, 'ac_min_views', true ) );
   }
 }

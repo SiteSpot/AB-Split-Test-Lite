@@ -212,37 +212,6 @@ function abst_hash_legacy_journey_files() {
     }
 }
 
-/**
- * One-time move of journey logs from the folder earlier versions used
- * (wp-content/abst-journeys) into ABST_JOURNEY_DIR in the uploads directory.
- *
- * @return void
- */
-function abst_maybe_migrate_legacy_journey_dir() {
-    if ( get_option( 'abst_journey_dir_migrated' ) ) {
-        return;
-    }
-    update_option( 'abst_journey_dir_migrated', 1, false );
-
-    // Legacy location: only used here to find and move old data.
-    $legacy_dir = trailingslashit( WP_CONTENT_DIR ) . 'abst-journeys';
-    if ( ! is_dir( $legacy_dir ) || file_exists( ABST_JOURNEY_DIR ) || ! wp_mkdir_p( dirname( ABST_JOURNEY_DIR ) ) ) {
-        return;
-    }
-
-    global $wp_filesystem;
-    $fs_ready = (bool) $wp_filesystem;
-    if ( ! $fs_ready ) {
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        $fs_ready = WP_Filesystem();
-    }
-    if ( $fs_ready && $wp_filesystem && $wp_filesystem->move( $legacy_dir, ABST_JOURNEY_DIR ) ) {
-        abst_protect_journey_dir();
-        abst_log( 'Moved journey directory to uploads' );
-    } else {
-        abst_log( 'Failed to move legacy journey directory' );
-    }
-}
 
  
 
@@ -271,10 +240,6 @@ class ABST_Journeys {
         add_action('wp_ajax_abst_remove_heatmap_data', array($this, 'ajax_clear_heatmap_data'));
 
 
-
-        //move logs from the old wp-content location (runs once)
-
-        abst_maybe_migrate_legacy_journey_dir();
 
         // Once per upgrade: hashed journey file names and no index.php in uploads.
         if ( file_exists( ABST_JOURNEY_DIR ) && get_option( 'abst_journey_storage_version' ) !== '2' ) {

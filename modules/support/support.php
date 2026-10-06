@@ -10,8 +10,6 @@ class BT_BB_AB_Supports
 		add_shortcode( self::$shortcode_abtest_variation, [$this, 'support_ab_redirect_variation'] );
 
 		add_filter( 'abst_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
-		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-		add_filter( 'bt_experiments_get_items', [$this, 'get_experiments'], 10, 1 );
 
 
 		$this->load_supports();
@@ -65,10 +63,9 @@ class BT_BB_AB_Supports
 	 */
 	public function get_experiments( $type )
 	{
-		// Callers nest the abst_ and legacy bt_ filters, and both run this method. When
-		// the inner one has already built the list, keep it: treating that array as the
-		// $type made the outer pass return the wrong shape, which emptied the Elementor
-		// test picker.
+		// When another abst_experiments_get_items callback has already built the list, keep
+		// it: treating that array as the $type returned the wrong shape, which emptied the
+		// Elementor test picker.
 		if ( is_array( $type ) ) {
 			return $type;
 		}

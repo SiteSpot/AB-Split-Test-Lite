@@ -21,10 +21,6 @@ function abst_exclude_js() {
     return apply_filters( 'abst_exclude_js', $excludes );
 }
 
-// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Backward compatibility for integrations calling this helper directly.
-function ab_exclude_js() {
-    return abst_exclude_js();
-}
     
 
 //autooptimize exclude files
@@ -84,7 +80,7 @@ add_filter('script_loader_tag', 'abst_add_cfasync_to_script', 10, 3);
 
 
 function abst_rapidload_exclude_files( $excluded_files = array() ) {
-    // Merge custom exclusions from ab_exclude_js() with existing exclusions
+    // Merge custom exclusions from abst_exclude_js() with existing exclusions
     return array_merge( $excluded_files, abst_exclude_js() );
 }
 add_filter( 'rapidload/defer/exclusions/js', 'abst_rapidload_exclude_files', 10, 1 );
@@ -92,7 +88,7 @@ add_filter( 'rapidload/defer/exclusions/inline_js', 'abst_rapidload_exclude_file
 
 
 function abst_sgo_js_exclude( $exclude_list ) {
-    // Merge custom exclusions from ab_exclude_js() with the existing list
+    // Merge custom exclusions from abst_exclude_js() with the existing list
     return array_merge( $exclude_list, abst_exclude_js() );
 }
 add_filter( 'sgo_js_minify_exclude', 'abst_sgo_js_exclude' );
@@ -101,7 +97,7 @@ add_filter( 'sgo_js_async_exclude', 'abst_sgo_js_exclude' );
 
 //wp rocket
 function abst_rocket_exclude_files( $excluded_files = array() ) {
-    // Merge custom exclusions from ab_exclude_js() with the existing exclusions
+    // Merge custom exclusions from abst_exclude_js() with the existing exclusions
     return array_merge( $excluded_files, abst_exclude_js() );
 }
 add_filter( 'rocket_delay_js_exclusions', 'abst_rocket_exclude_files', 10, 1 );

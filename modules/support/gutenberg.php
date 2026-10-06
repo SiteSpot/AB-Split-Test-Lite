@@ -98,8 +98,7 @@ class ABST_Gutenberg
 		);
     
     	wp_localize_script( 'bt-gutenberg', 'bt_gutenberg', [
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-			'experiments' 		=> json_encode(apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'all' ) )),
+			'experiments' 		=> json_encode(apply_filters( 'abst_experiments_get_items', 'all' )),
 			'ajax_url'			=> admin_url( "admin-ajax.php" ),
 			'admin_url'			=> get_admin_url(),
 			'blocks_list_nonce'	=> wp_create_nonce('abst_blocks_experiment_list')

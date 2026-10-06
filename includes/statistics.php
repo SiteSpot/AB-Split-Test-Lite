@@ -313,8 +313,7 @@ if ( ! function_exists( 'abst_stats_project_duration' ) ) {
  * site-wide minimum (50, filterable) unless the test asks for more.
  */
 function abst_min_visits_floor() {
-  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-  return max( 1, (int) apply_filters( 'abst_min_visits_for_winner', apply_filters( 'ab_min_visits_for_winner', 50 ) ) );
+  return max( 1, (int) apply_filters( 'abst_min_visits_for_winner', 50 ) );
 }
 
 /**
@@ -331,8 +330,7 @@ function abst_split_test_analyzer( $data = array(), $test_age = 0, $min_visits =
 
   $test_age = intval( $test_age );
   $min_visits_for_winner = max( abst_min_visits_floor(), (int) $min_visits );
-  // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-  $percentage_target = apply_filters( 'abst_complete_confidence', apply_filters( 'ab_complete_confidence', 95 ) );
+  $percentage_target = apply_filters( 'abst_complete_confidence', 95 );
   list( $variations, $has_min_visits ) = abst_stats_collect_variations( $data, $min_visits_for_winner );
   if ( count( $variations ) < 2 ) return abst_stats_no_verdict( $data );
 

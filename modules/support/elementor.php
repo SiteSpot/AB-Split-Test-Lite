@@ -59,8 +59,7 @@ class ABST_Elementor
         ]
       );
 
-      // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Backward compatibility for legacy public filter.
-      $experiments = apply_filters( 'abst_experiments_get_items', apply_filters( 'bt_experiments_get_items', 'select' ) );
+      $experiments = apply_filters( 'abst_experiments_get_items', 'select' );
 
       $element->add_control(
         'bt_experiment',
