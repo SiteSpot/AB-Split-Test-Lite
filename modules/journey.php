@@ -187,16 +187,22 @@ function abst_protect_journey_dir() {
 }
 
 /**
- * Give journey files written before names carried the hash (abst_journeys_YYYYMMDD.txt)
- * their hashed name. A day with both keeps one file: the old lines are appended.
+ * Give journey files written under an earlier naming scheme their current name:
+ * unhashed (abst_journeys_YYYYMMDD.txt) or hashed with a previous key
+ * (abst_journeys_<12 hex>_YYYYMMDD.txt). A day with both keeps one file: the old
+ * lines are appended.
  */
 function abst_hash_legacy_journey_files() {
+    $current = abst_file_hash();
     foreach ( glob( ABST_JOURNEY_DIR . '/abst_journeys_*' ) ?: array() as $file ) {
-        if ( ! preg_match( '/^abst_journeys_(\d{8})\.txt(\.gz)?$/', basename( $file ), $m ) ) {
+        if ( ! preg_match( '/^abst_journeys_(?:([0-9a-f]{12})_)?(\d{8})\.txt(\.gz)?$/', basename( $file ), $m ) ) {
             continue;
         }
-        $compressed = ! empty( $m[2] );
-        $target     = abst_journey_file( $m[1], $compressed );
+        if ( $m[1] === $current ) {
+            continue;
+        }
+        $compressed = ! empty( $m[3] );
+        $target     = abst_journey_file( $m[2], $compressed );
         if ( ! file_exists( $target ) ) {
             $content = @file_get_contents( $file );
             if ( $content !== false && abst_put_contents( $target, $content ) ) {
@@ -241,11 +247,11 @@ class ABST_Journeys {
 
 
 
-        // Once per upgrade: hashed journey file names and no index.php in uploads.
-        if ( file_exists( ABST_JOURNEY_DIR ) && get_option( 'abst_journey_storage_version' ) !== '2' ) {
+        // Once per upgrade: salt-keyed journey file names and no index.php in uploads.
+        if ( file_exists( ABST_JOURNEY_DIR ) && get_option( 'abst_journey_storage_version' ) !== '3' ) {
             abst_protect_journey_dir();
             abst_hash_legacy_journey_files();
-            update_option( 'abst_journey_storage_version', '2', false );
+            update_option( 'abst_journey_storage_version', '3', false );
         }
 
 

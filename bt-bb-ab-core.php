@@ -2826,7 +2826,8 @@ if(! class_exists ( 'ABST_Tests'))
 
       {
 
-        echo wp_json_encode($data);
+        // Served as text/html to the builder iframe, so hex-escape the HTML-significant characters.
+        echo wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
       }
 
@@ -15037,10 +15038,11 @@ function abst_ajax_mark_test_complete() {
 add_action('wp_ajax_abst_mark_test_complete', 'abst_ajax_mark_test_complete');
 /**
  * Secret part of journey file names, so they cannot be downloaded by guessing a URL.
- * Derived from AUTH_KEY.
+ * Keyed with wp_salt(), which falls back to a random salt stored in the database
+ * when wp-config.php still has the sample AUTH_KEY, so the name is never a constant.
  */
 function abst_file_hash() {
-  return substr(md5(defined('AUTH_KEY') ? AUTH_KEY : 'abst'), 0, 12);
+  return substr(hash_hmac('sha256', 'abst_journeys', wp_salt('auth')), 0, 12);
 }
 
 /** A day's journey file: abst_journeys_<hash>_YYYYMMDD.txt, or .txt.gz once compressed. */
