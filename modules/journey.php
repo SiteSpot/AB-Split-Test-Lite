@@ -252,7 +252,14 @@ class ABST_Journeys {
             abst_protect_journey_dir();
             abst_hash_legacy_journey_files();
             update_option( 'abst_journey_storage_version', '3', false );
+            // Right after an update the server can keep running the previous version from
+            // PHP's opcode cache (re-checked every minute on many hosts), and that code still
+            // writes the old names. Rename once more when it has gone, not at 3 AM.
+            if ( ! wp_next_scheduled( 'abst_rehash_journey_files' ) ) {
+                wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, 'abst_rehash_journey_files' );
+            }
         }
+        add_action( 'abst_rehash_journey_files', 'abst_hash_legacy_journey_files' );
 
 
 
