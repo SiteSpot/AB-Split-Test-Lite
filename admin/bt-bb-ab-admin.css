@@ -141,7 +141,6 @@
 .post-type-abst_experiments .show_test_type,
 .post-type-abst_experiments .show_full_page_test,
 .post-type-abst_experiments #magic_settings,
-.post-type-abst_experiments .show_css_test,
 .post-type-abst_experiments .show_css_classes,
 .post-type-abst_experiments .bt_experiments_inner_custom_box {
     background: var(--abst-card-bg);
@@ -152,16 +151,6 @@
     margin-bottom: 25px;
     position: relative;
     transition: box-shadow 0.2s ease;
-}
-
-/* Reset card styles for child elements inside css test section */
-.post-type-abst_experiments .show_css_test .css_test_variations {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 0;
-    margin-bottom: 0;
 }
 
 /* Collapsible sections - no card wrapper, just the h3 header */
@@ -291,12 +280,6 @@ label#title-prompt-text {
     line-height: 100%;
 }
 
-
-input#bt_experiments_conversion_time {
-    margin: 10px 0;
-    width: 80px;
-}
-
 .bt_experiments_inner_custom_box label {
     padding: 8px 0;
     display: block;
@@ -309,74 +292,6 @@ input#bt_experiments_conversion_time {
 .bt_experiments_inner_custom_box p > label {
     font-weight: 400;
     color: var(--abst-text-secondary);
-}
-
-/* =====================================================
-   CODE TEST SECTION
-   ===================================================== */
-
-.css-test-helper-zone {
-    max-height: 150px;
-    overflow-y: auto;
-    background: var(--abst-border-light);
-    border: 1px solid var(--abst-border);
-    border-radius: var(--abst-radius-md);
-    padding: 12px;
-    margin-top: 12px;
-}
-
-.css-test-helper-zone pre {
-    background: var(--abst-card);
-    border: 1px solid var(--abst-border);
-    border-radius: var(--abst-radius-sm);
-    padding: 10px 14px;
-    margin: 6px 0;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-    font-size: 13px;
-    color: var(--abst-text);
-}
-
-.css-test-helper-zone pre span {
-    color: var(--abst-text-muted);
-}
-
-input#css_test_variations {
-    width: 80px;
-    padding: 10px 14px;
-    font-size: 14px;
-    text-align: center;
-}
-
-label.css_test_variations,
-span.css_test_variations {
-    display: inline-block;
-    font-size: 13px;
-    color: var(--abst-text-secondary);
-    margin-left: 8px;
-    vertical-align: middle;
-}
-
-/* Code Test section styling */
-.post-type-abst_experiments .show_css_test h3.css_test_variations {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--abst-text);
-    margin: 0 0 16px 0;
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-}
-
-.post-type-abst_experiments .show_css_test label.css_test_variations {
-    display: inline;
-    margin-right: 8px;
-}
-
-.post-type-abst_experiments .show_css_test p.css_test_variations {
-    margin: 16px 0 8px 0;
-    color: var(--abst-text-secondary);
-    font-size: 13px;
 }
 
 /* =====================================================
@@ -393,7 +308,6 @@ span.css_test_variations {
 
 
 /* Goals subsection - remove yellow background */
-.bt_experiments_inner_custom_box .subgoal,
 .bt_experiments_inner_custom_box .conversion-goal {
     background: var(--abst-border-light) !important;
     border: 1px solid var(--abst-border) !important;
@@ -402,7 +316,6 @@ span.css_test_variations {
     margin: 10px 0 !important;
 }
 
-.bt_experiments_inner_custom_box .subgoal h4,
 .bt_experiments_inner_custom_box .conversion-goal h4 {
     font-size: 13px;
     font-weight: 600;
@@ -444,11 +357,6 @@ span.css_test_variations {
 }
 .show{
     display:inherit;
-}
-
-.post-type-abst_experiments .show_css_test > label.css_test_variations {
-    display: inline;
-    margin-right: 8px;
 }
 
 #bt_experiments_conversion_page_preview,
@@ -645,106 +553,8 @@ span.css_test_variations {
     display: none;
 }
 
-.conversion_scroll_input {
-    display: none;
-}
-
-#bt_experiments_conversion_url {
-    display: none;
-}
 .select2-selection__choice__display{
     padding-left:18px !important;
-}
-#conversion_javascript,
-.bt_js_copied {
-    display: none;
-}
-
-#conversion_javascript_area {
-    width: 100%;
-}
-
-#conversion_order_value {
-    display: none;
-    padding-top: 8px;
-}
-
-#conversion_order_value_javascript_slot,
-#conversion_order_value_embed_slot {
-    margin-top: 8px;
-}
-
-#conversion_order_value_bottom_slot {
-    margin-top: 12px;
-}
-
-#conversion_order_value .conversion_order_value_label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--abst-text);
-    cursor: pointer;
-}
-
-#conversion_order_value .conversion_order_value_row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#conversion_order_value .conversion_order_value_info {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #cbd5e1;
-    border-radius: 999px;
-    background: #ffffff;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 18px;
-    padding: 0;
-    cursor: pointer;
-}
-
-#conversion_order_value .conversion_order_value_info[aria-expanded="true"] {
-    background: #17A8E3;
-    border-color: #17A8E3;
-    color: #ffffff;
-}
-
-#conversion_order_value .conversion_order_value_help_panel {
-    display: none;
-    margin-top: 8px;
-    padding: 10px 12px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--abst-muted);
-}
-
-#conversion_order_value .conversion_order_value_help_panel p,
-#conversion_order_value .conversion_order_value_help_panel ol {
-    margin: 0 0 8px 0;
-}
-
-#conversion_order_value .conversion_order_value_help_panel p:last-child,
-#conversion_order_value .conversion_order_value_help_panel ol:last-child {
-    margin-bottom: 0;
-}
-
-#conversion_order_value .conversion_order_value_help_panel ol {
-    padding-left: 18px;
-}
-
-#conversion_order_value .conversion_order_value_help_panel code {
-    color: var(--abst-text);
-    background: #ffffff;
-    border-radius: 4px;
-    padding: 1px 4px;
 }
 
 /* OLD #configuration_settings h3 styles removed - see MODERN ADMIN UI section */
@@ -1599,7 +1409,7 @@ p.experiment-status {
 .driver-popover.abst-tour .driver-popover-arrow-side-right { border-right-color: #1d2327; }
 .driver-popover.abst-tour .driver-popover-arrow-side-top { border-top-color: #1d2327; }
 .driver-popover.abst-tour .driver-popover-arrow-side-bottom { border-bottom-color: #1d2327; }
-.subgoal, .conversion-goal{
+.conversion-goal{
     padding: 0 0 15px 0;
     margin-bottom: 15px;
     position: relative;
@@ -1608,46 +1418,11 @@ p.experiment-status {
 .conversion-goal{
     margin-top:15px;
 }
-.subgoal, .conversion-goal {
+.conversion-goal {
     background: #00000003;
     padding: 5px 31px 10px 15px;
     border-radius: 6px;
     border: 1px solid #bbbbbb;
-}
-
-.subgoal .close-goal {
-    position: absolute;
-    right: 0;
-    top: 0;
-    padding: 0px 7px 2px 8px;
-    cursor: pointer;
-    background: #e5e5e5;
-    font-weight: bolder;
-    border-radius: 4px;
-    color: #ff000048;
-    box-shadow: 0 1px 1px #d0d0d0;
-}
-
-.subgoal h4 {
-    margin: 10px 0 0 0;
-}
-
-.subgoal .close-goal:hover{
-    background: rgba(255, 0, 0, 0.8);
-    color: white;
-}
-
-.subgoal .close-goal:active{
-    background: black;
-    color: white;
-}
-
-.results-goal {
-    display: inline-block; /* Ensures only one per line */
-    padding: 5px 10px; /* Adjust padding to get the bubble effect */
-    background-color: #f0f0f0; /* Background color for the bubble */
-    border-radius: 10px; /* Rounded corners for the bubble effect */
-    margin: 3px 0; /* Space between bubbles */
 }
 
 .na .results-conversion-rate {
@@ -1876,8 +1651,7 @@ p.experiment-status {
 .show_targeting_options > div h3,
 .bt_experiments_inner_custom_box .conversion-goal h3,
 #magic_settings h3,
-.show_full_page_test h3:not(:first-child),
-.css_test_variations h3:not(:first-child) {
+.show_full_page_test h3:not(:first-child) {
     font-size: 14px !important;
     font-weight: 600 !important;
     color: #1e293b !important;
@@ -2066,49 +1840,14 @@ p.experiment-status {
     outline: none;
 }
 
-/* Subgoals - base styles */
-.subgoal, .conversion-goal {
+/* Conversion goal - base styles */
+.conversion-goal {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 16px 20px;
     margin: 12px 0;
     position: relative;
-}
-
-.subgoal h4 {
-    font-size: 11px;
-    font-weight: 600;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0 0 12px 0;
-}
-
-.subgoal .close-goal {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 22px;
-    height: 22px;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #94a3b8;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
-    line-height: 1;
-}
-
-.subgoal .close-goal:hover {
-    background: #fee2e2;
-    border-color: #fecaca;
-    color: #dc2626;
 }
 
 /* Magic test textarea */
@@ -2394,27 +2133,6 @@ input.ab-toggle:checked:hover {
 
 
 
-/* Subgoal cards - clean style */
-#configuration_settings .subgoal {
-    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-    border: 1px solid #bfdbfe;
-    border-left: 4px solid #3b82f6;
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin: 12px 0;
-    position: relative;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
-}
-
-#configuration_settings .subgoal h4 {
-    margin: 0 0 12px 0;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #1d4ed8;
-}
-
 /* Conversion goal section */
 #configuration_settings .conversion-goal {
     background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
@@ -2433,35 +2151,6 @@ input.ab-toggle:checked:hover {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #15803d;
-}
-
-/* Input groups - tighter */
-#configuration_settings .subgoal label {
-    font-size: 11px;
-    font-weight: 500;
-    color: #4b5563;
-    margin-bottom: 2px;
-}
-
-#configuration_settings .subgoal input[type="text"],
-#configuration_settings .subgoal select {
-    padding: 5px 8px;
-    font-size: 12px;
-}
-
-/* Add Goal button */
-#configuration_settings button#add_goal,
-#configuration_settings .add-goal-btn {
-    background: #ecfdf5;
-    color: #059669;
-    border: 1px solid #a7f3d0;
-    font-size: 12px;
-    padding: 6px 12px;
-}
-
-#configuration_settings button#add_goal:hover {
-    background: #d1fae5;
-    border-color: #6ee7b7;
 }
 
 /* Device size section */
@@ -2816,10 +2505,7 @@ div#share-report>div {
     box-shadow: none;
 }
 
-/* Subgoal items - simple flat style */
-.show_experiment_results .primary-goal,
-.show_experiment_results .conversion-goal-display,
-.show_experiment_results .subgoal,
+/* Goal summary - simple flat style */
 .show_experiment_results h3 + p {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -3001,7 +2687,7 @@ div#wpfooter {
 }
 
 /* =====================================================
-   CODE TEST - CSS Class Display (subtle white style)
+   ON-PAGE TEST - CSS Class Display (subtle white style)
    ===================================================== */
 
 /* Code class display blocks - subtle white instead of dark */
@@ -3020,26 +2706,6 @@ div#wpfooter {
 .show_css_classes h4 span {
     color: #17A8E3 !important;
     font-weight: 600 !important;
-}
-
-/* Number input for variations */
-.css_test_variations input[type="number"] {
-    width: 80px !important;
-    padding: 10px 14px !important;
-    font-size: 14px !important;
-    text-align: center !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 6px !important;
-    background: #ffffff !important;
-}
-
-/* Variations label */
-.css_test_variations > label,
-.css_test_variations > span {
-    font-size: 13px !important;
-    color: #64748b !important;
-    margin-top: 8px !important;
-    display: block !important;
 }
 
 /* =====================================================
@@ -3245,26 +2911,8 @@ div#wpfooter {
 }
 
 /* =====================================================
-   AGENCY HUB PAGE - WPMU DEV Style
+   SHARED ADMIN COMPONENTS
    ===================================================== */
-
-.abst-agency-wrap {
-    max-width: 1200px;
-}
-
-.abst-agency-wrap .abst-page-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 8px;
-}
-
-.abst-agency-wrap .abst-page-header h1 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-}
 
 .abst-page-description {
     font-size: 14px;

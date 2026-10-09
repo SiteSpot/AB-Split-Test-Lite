@@ -302,7 +302,6 @@ function setAbstApprovalStatus(approved) {
     window.abst.clickRegister = {};
     window.abst.heatScrollMax = 0;
     window.abst.heatScrollLastSent = 0;
-    if (window.abst.resetRageClicks) window.abst.resetRageClicks();
     window.abst.consentRevoked = true;
     return;
   }
@@ -330,7 +329,7 @@ function setAbstApprovalStatus(approved) {
     });
   }
   window.abst.consentRevoked = false;
-  if (btab_vars.advanced_tracking === '1' || btab_vars.abst_enable_user_journeys === '1') setAbCrypto();
+  if (btab_vars.abst_enable_user_journeys === '1') setAbCrypto();
   abst_process_approved_events();
   if (window.abst.mainInitialized) check_heatmap_tracking();
 }
@@ -375,10 +374,6 @@ else if (effectiveWidth < 1024) {
 else {
   window.abst.size = 'desktop';
 }
-
-if (window.btab_vars && window.btab_vars.advanced_tracking && window.btab_vars.advanced_tracking == '1') {
-    setAbCrypto();
-  }
 
 function abstPartnerConsentStatus() {
   var states = [];
@@ -574,10 +569,6 @@ function abstMainInit() {
   }
   window.abst.mainInitialized = true;
   setupConsentPartners();
-  // Server-side redirect events are not replayed to analytics; just clear the cookie.
-  if (abstGetCookie('abst_server_events')) {
-    abstDeleteCookie('abst_server_events');
-  }
 
   if (window.btab_vars && !window.btab_vars.is_preview) {
     var abTestRedirects = document.querySelectorAll('.ab-test-page-redirect');
@@ -682,17 +673,6 @@ function abstMainInit() {
     Object.entries(bt_experiments).forEach((([experimentId, experiment]) => {
       try {
 
-      if (experiment.test_type == "css_test") {
-        for (var i = 0; i < experiment.css_test_variations; i++) {
-          // Code to be executed for each element
-          var script = document.createElement('script');
-          script.className = 'bt-css-scripts';
-          script.setAttribute('bt-variation', 'test-css-' + experimentId + '-' + (i + 1));
-          script.setAttribute('bt-eid', experimentId);
-          document.body.appendChild(script);
-        }
-      }
-
       // Element-click goal: a click on the goal selector, or on an element with the
       // ab-click-convert-{test id} class, records the conversion.
       if (experiment.conversion_page === 'selector') {
@@ -750,19 +730,9 @@ function abstMainInit() {
 
     });
 
-    // add css tests to current exp
+    // add magic tests to current exp
     Object.keys(bt_experiments).forEach(function (experimentId) {
-      // Code to be executed for each element
-      if (bt_experiments[experimentId]['test_type'] == 'css_test') {
-        current_exp[experimentId] = []; // create
-        exp_redirect[experimentId] = [];
-
-        for (var i = 1; i <= parseInt(bt_experiments[experimentId]['css_test_variations']); i++) {
-          current_exp[experimentId].push('test-css-' + experimentId + '-' + i);
-          exp_redirect[experimentId]['test-css-' + experimentId + '-' + i] = '';
-        }
-      }
-      else if (bt_experiments[experimentId]['test_type'] == 'magic' && bt_experiments[experimentId]['magic_definition'] && bt_experiments[experimentId]['magic_definition'].length > 0) {
+      if (bt_experiments[experimentId]['test_type'] == 'magic' && bt_experiments[experimentId]['magic_definition'] && bt_experiments[experimentId]['magic_definition'].length > 0) {
         var magic_definition = parseMagicTestDefinition(bt_experiments[experimentId]['magic_definition']);
         // An unreadable definition would throw below and stop every later test from being set up.
         if (!Array.isArray(magic_definition) || !magic_definition.length || !magic_definition[0] || !Array.isArray(magic_definition[0].variations)) {
@@ -778,11 +748,6 @@ function abstMainInit() {
           exp_redirect[experimentId]['magic-' + experimentId + '-' + i] = '';
         }
       }
-    });
-
-    // A test compares the original with one variation: the first two versions found.
-    Object.keys(current_exp).forEach(function (experimentId) {
-      current_exp[experimentId] = current_exp[experimentId].slice(0, 2);
     });
 
     // Sort so full_page experiments are processed first, and within full_page, published (active)
@@ -846,11 +811,7 @@ function abstMainInit() {
 
       if (!btab) // no existing data, create
       {
-        if (bt_experiments[experimentId]['test_type'] == 'css_test') {
-          var randVar = getRandomInt(1, parseInt(bt_experiments[experimentId]['css_test_variations'])) - 1;
-          experimentVariation = current_exp[experimentId][randVar];
-        }
-        else if (bt_experiments[experimentId]['test_type'] == 'full_page') {
+        if (bt_experiments[experimentId]['test_type'] == 'full_page') {
           // For full page tests: if user landed on a variation page, assign them to that variation
           var pageVariations = bt_experiments[experimentId]['page_variations'] || {};
           var currentPageId = String(btab_vars.post_id);
@@ -884,10 +845,7 @@ function abstMainInit() {
       }
 
       var variation_element = false;
-      if (bt_experiments[experimentId]['test_type'] == 'css_test') {
-        document.body.classList.add(experimentVariation);
-      }
-      else if (bt_experiments[experimentId]['test_type'] == 'magic') {
+      if (bt_experiments[experimentId]['test_type'] == 'magic') {
       }
       else // on page tests
       {
@@ -1094,7 +1052,7 @@ function abstMainInit() {
 
   // warn users on localhost
   if (btIsLocalhost())
-    console.info("AB Split Test: It looks like you're on a localhost, using local storage instead of cookies. External Conversion Pixels and server side conversions will not work on local web servers.");
+    console.info("AB Split Test: It looks like you're on a localhost, using local storage instead of cookies.");
 
   window.dispatchEvent(new Event('resize')); // trigger a window resize event. Useful for sliders etc. that dynamically resize
   var event = new Event('ab-test-setup-complete' , {bubbles: true}); 
@@ -1211,11 +1169,7 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
 
   if (variation && eid) // if we have a variation passed, just do it
   {
-    if (bt_experiments[eid].test_type == "css_test") // css version 1
-    {
-      document.body.classList.add(variation);
-    }
-    else if (bt_experiments[eid].test_type == "full_page") // full page
+    if (bt_experiments[eid].test_type == "full_page") // full page
     {
 
       //if the variation page matches the current page, then no redirect we are here already
@@ -1284,14 +1238,6 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     if (createCookie)
       skippedCookie(eid, bt_experiments[eid].full_page_default_page, createCookie);
 
-    return true; // next
-  }
-
-  if (bt_experiments[eid].test_type == "css_test") // css version 1
-  {
-    document.body.classList.add('test-css-' + eid + '-1');
-    if (createCookie)
-      skippedCookie(eid, 'test-css-' + eid + '-1', createCookie);
     return true; // next
   }
 
@@ -1655,10 +1601,6 @@ function bt_experiment_w(eid, variation, type, url) {
   // set up conversion
   if (type == 'conversion')
     experiment_vars.conversion = 1;
-
-  //add advanced id if necessary
-  if (btab_vars.advanced_tracking == '1')
-    data.ab_advanced_id = abstGetAdvancedId();
 
   experiment_vars = JSON.stringify(experiment_vars);
   
@@ -2974,73 +2916,6 @@ function enableClickTracking(){
 
   var trackable_elements = ['a','button','input','textarea','select']; // todo filter this to reduce filesize
 
-  // Rage click detection: Track rapid clicks on same element
-  // Definition: 3+ clicks on same element within 1000ms = rage click (user frustration)
-  var rageClickTracker = {
-    clicks: [],
-    threshold: 3,        // Number of clicks to qualify as rage
-    timeWindow: 2000,    // Time window in ms (1 second)
-     
-    addClick: function(selector, timestamp) {
-      // Remove old clicks outside time window
-      var cutoff = timestamp - this.timeWindow;
-      this.clicks = this.clicks.filter(function(click) {
-        return click.timestamp > cutoff;
-      });
-      
-      // Add new click
-      this.clicks.push({ selector: selector, timestamp: timestamp });
-      
-      // Check if this qualifies as rage click
-      var sameElementClicks = this.clicks.filter(function(click) {
-        return click.selector === selector;
-      });
-      
-      return sameElementClicks.length >= this.threshold;
-    }
-  };
-
-  window.abst.resetRageClicks = function() { rageClickTracker.clicks = []; };
-
-  // Helper function to detect if an element is interactive
-  function isInteractive(element) {
-    // Direct interactive elements
-    var tagName = element.tagName.toLowerCase();
-    if (tagName === 'a' || tagName === 'button' || tagName === 'input' || 
-        tagName === 'select' || tagName === 'textarea') {
-      return true;
-    }
-    
-    // Has click handler
-    if (element.onclick || element.hasAttribute('onclick')) {
-      return true;
-    }
-    
-    // Has interactive role
-    var role = element.getAttribute('role');
-    if (role === 'button' || role === 'link') {
-      return true;
-    }
-    
-    // Has cursor pointer (CSS indicates clickable)
-    var style = window.getComputedStyle(element);
-    if (style.cursor === 'pointer') {
-      return true;
-    }
-    
-    // Inside an interactive parent
-    if (element.closest('a, button, [role="button"], [role="link"], [onclick]')) {
-      return true;
-    }
-
-    //has href
-    if (element.hasAttribute('href')) {
-      return true;
-    }
-    
-    return false;
-  }
-
   //watch for click events on trackable elements  in the dom now or later
     document.addEventListener('click', function(event) {
       if (!window.abst.hasApproval) return;
@@ -3054,14 +2929,10 @@ function enableClickTracking(){
       var target = event.target;
       if (true)  { // todo filter this to reduce filesize
         var selector = getUniqueSelector(target);
-        var timestamp = Date.now();
-        var isRageClick = rageClickTracker.addClick(selector, timestamp);
-        var isDeadClick = !isInteractive(target);
-        
         //add line to object
         window.abst.clickRegister[new Date().toISOString()] = {
           timestamp: new Date().toISOString(),
-          type: isRageClick ? 'rc' : 'c', // 'rc' = rage click, 'c' = normal click
+          type: 'c',
           post_id: btab_vars.post_id,
           uuid: abstGetAdvancedId(),
           ab_advanced_id: abstGetAdvancedId(),
@@ -3070,7 +2941,7 @@ function enableClickTracking(){
           click_x: xval, // position relative to element_id_or_selector as a % from left
           click_y: yval,// position relative to element_id_or_selector as a % from top 
           screen_size: window.abstheatmapScreenSize,
-          meta: isRageClick ? 'rage_click' : (isDeadClick ? 'dead_click' : ''),
+          meta: '',
         };
 
         // Immediately flush data for link clicks or form submit buttons (user may navigate away)

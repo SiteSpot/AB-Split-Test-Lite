@@ -411,7 +411,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
             <ul style="list-style: disc; margin-left: 20px;">
 
-              <li><strong>create-test</strong> - Create new A/B tests (magic, ab_test, css_test, full_page)</li>
+              <li><strong>create-test</strong> - Create new A/B tests (magic, ab_test, full_page)</li>
 
               <li><strong>list-tests</strong> - List all tests with their configurations</li>
 
@@ -421,10 +421,6 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <li><strong>update-test-settings</strong> - Update the conversion goal and other settings on an existing test</li>
               <li><strong>get-test-details</strong> - Get the full configuration of a specific test</li>
-
-              <li><strong>get-heatmap-data</strong> - Get click / scroll heatmap data for a page</li>
-
-              <li><strong>list-heatmap-pages</strong> - List the pages that have heatmap data</li>
 
             </ul>
 
@@ -452,10 +448,6 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
               <li><strong>POST</strong> <code>/update-test-settings</code> - Update the conversion goal and settings</li>
               <li><strong>GET</strong> <code>/test-details/{id}</code> - Get a test's full configuration</li>
 
-              <li><strong>GET</strong> <code>/heatmap-data</code> - Aggregated heatmap / click / scroll data for a page</li>
-
-              <li><strong>GET</strong> <code>/heatmap-pages</code> - Pages that have recorded heatmap data</li>
-
             </ul>
 
 
@@ -469,7 +461,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <div style="margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 5px;">
 
-                <p><strong>Scenario:</strong> Create a magic test for the H1 headline on page ID 12 with one variation, counting a visit to the thank-you page (page ID 34) as the conversion.</p>
+                <p><strong>Scenario:</strong> Create a magic test for the H1 headline on page ID 12 with two variations, counting a visit to the thank-you page (page ID 34) as the conversion.</p>
 
                 
 
@@ -515,7 +507,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           "Original Headline",
 
-          "New Compelling Headline"
+          "New Compelling Headline",
+
+          "Alternative Headline"
 
         ]
 
@@ -579,7 +573,9 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
           'Original Headline',
 
-          'New Compelling Headline'
+          'New Compelling Headline',
+
+          'Alternative Headline'
 
         ]
 
@@ -621,13 +617,13 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
                   <li><strong>selector:</strong> CSS selector for the element to test</li>
 
-                  <li><strong>variations:</strong> Two strings: the original text first, then the variation</li>
+                  <li><strong>variations:</strong> The original text first, then one string per variation</li>
 
                 </ul>
 
                 
 
-                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, the first entry in variations is the original text and the second is the variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
+                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, the first entry in variations is the original text and each later entry is a variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
 
               </div>
 

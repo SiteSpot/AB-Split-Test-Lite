@@ -226,7 +226,7 @@ function abst_stats_relative_loss($verdict, $key) {
 }
 
 /**
- * Conversions (orders, for revenue tests) the whole test needs before a winner
+ * Conversions the whole test needs before a winner
  * can be called: 25 per variation by default, counted across the test so a
  * variation that truly converts close to 0 can still lose.
  */

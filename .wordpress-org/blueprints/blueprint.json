@@ -5,7 +5,7 @@
     "author": "tomsitespot",
     "description": "Try self-hosted A/B testing: sample tests with results, heatmaps, and the point-and-click Magic Bar."
   },
-  "landingPage": "/wp-admin/edit.php?post_type=bt_experiments",
+  "landingPage": "/wp-admin/edit.php?post_type=abst_experiments",
   "preferredVersions": { "php": "8.3", "wp": "latest" },
   "features": { "networking": false },
   "steps": [
@@ -25,7 +25,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php require '/wordpress/wp-load.php'; update_option('abst_enable_heatmaps', 1); update_option('abst_enable_session_replays', 1); update_option('abst_heatmap_all_pages', 'all');"
+      "code": "<?php require '/wordpress/wp-load.php'; update_option('abst_enable_user_journeys', 1);"
     }
   ]
 }

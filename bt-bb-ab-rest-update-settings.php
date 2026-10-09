@@ -16,9 +16,6 @@ function abst_rest_update_test_settings($request) {
 
     $params = abst_normalize_api_input_params($request->get_json_params());
     $params = abst_drop_unsupported_test_params($params);
-    $guard_result = abst_apply_conversion_order_value_guard($params);
-    $params = $guard_result['params'];
-    $validation_warnings = $guard_result['warnings'];
     
     if (empty($params['test_id'])) {
         return new WP_Error('missing_test_id', 'Test ID is required', ['status' => 400, 'field' => 'test_id']);
@@ -58,13 +55,7 @@ function abst_rest_update_test_settings($request) {
     $conversion_fields = [
         'conversion_type',
         'conversion_selector',
-        'conversion_url',
         'conversion_page_id',
-        'conversion_time',
-        'conversion_scroll',
-        'conversion_text',
-        'conversion_link_pattern',
-        'conversion_use_order_value',
     ];
 
     $full_page_fields = ['default_page', 'variations', 'variation_labels', 'variation_images'];
@@ -88,10 +79,6 @@ function abst_rest_update_test_settings($request) {
         return new WP_Error('invalid_test_type_update', 'magic_definition can only be updated on magic tests.', ['status' => 400, 'field' => 'magic_definition']);
     }
 
-    if ($has_param('css_variations') && $test_type !== 'css_test') {
-        return new WP_Error('invalid_test_type_update', 'css_variations can only be updated on css_test tests.', ['status' => 400, 'field' => 'css_variations']);
-    }
-
     if ($has_full_page_update && $test_type !== 'full_page') {
         return new WP_Error('invalid_test_type_update', 'default_page, variations, variation_labels, and variation_images can only be updated on full_page tests.', ['status' => 400, 'field' => 'default_page']);
     }
@@ -109,13 +96,7 @@ function abst_rest_update_test_settings($request) {
         $validation_params = [
             'conversion_type' => $effective_conversion_type,
             'conversion_selector' => $has_param('conversion_selector') ? $params['conversion_selector'] : get_post_meta($test_id, 'conversion_selector', true),
-            'conversion_url' => $has_param('conversion_url') ? $params['conversion_url'] : get_post_meta($test_id, 'conversion_url', true),
             'conversion_page_id' => $effective_conversion_page_id,
-            'conversion_time' => $has_param('conversion_time') ? $params['conversion_time'] : intval(get_post_meta($test_id, 'conversion_time', true)),
-            'conversion_scroll' => $has_param('conversion_scroll') ? $params['conversion_scroll'] : intval(get_post_meta($test_id, 'conversion_scroll', true)),
-            'conversion_text' => $has_param('conversion_text') ? $params['conversion_text'] : get_post_meta($test_id, 'conversion_text', true),
-            'conversion_link_pattern' => $has_param('conversion_link_pattern') ? $params['conversion_link_pattern'] : get_post_meta($test_id, 'conversion_link_pattern', true),
-            'conversion_use_order_value' => $has_param('conversion_use_order_value') ? $params['conversion_use_order_value'] : (get_post_meta($test_id, 'conversion_use_order_value', true) == '1'),
         ];
 
         $validation_error = abst_validate_test_payload($validation_params, 'update');
@@ -146,7 +127,6 @@ function abst_rest_update_test_settings($request) {
     $general_validation = abst_validate_test_payload(array_intersect_key($params, array_flip([
         'target_percentage',
         'target_device',
-        'optimization_type',
     ])), 'update');
     if (is_wp_error($general_validation)) {
         return $general_validation;
@@ -172,10 +152,6 @@ function abst_rest_update_test_settings($request) {
 
         if (empty($effective_variations)) {
             return new WP_Error('missing_variations', 'At least one variation page is required for full_page tests.', ['status' => 400, 'field' => 'variations']);
-        }
-
-        if (count($effective_variations) > 1) {
-            return new WP_Error('invalid_variation_count', 'A full page test compares the default page with one variation page: pass one page in variations.', ['status' => 400, 'field' => 'variations']);
         }
     }
 
@@ -206,26 +182,6 @@ function abst_rest_update_test_settings($request) {
         if ($has_param('conversion_selector')) {
             update_post_meta($test_id, 'conversion_selector', sanitize_text_field($params['conversion_selector']));
         }
-        if ($has_param('conversion_url')) {
-            update_post_meta($test_id, 'conversion_url', sanitize_text_field($params['conversion_url']));
-        }
-        if ($has_param('conversion_time')) {
-            update_post_meta($test_id, 'conversion_time', intval($params['conversion_time']));
-        }
-        if ($has_param('conversion_scroll')) {
-            update_post_meta($test_id, 'conversion_scroll', intval($params['conversion_scroll']));
-        }
-        if ($has_param('conversion_text')) {
-            update_post_meta($test_id, 'conversion_text', sanitize_text_field($params['conversion_text']));
-        }
-        if ($has_param('conversion_link_pattern')) {
-            update_post_meta($test_id, 'conversion_link_pattern', sanitize_text_field($params['conversion_link_pattern']));
-        }
-    }
-    
-    // Update conversion_use_order_value if provided
-    if (isset($params['conversion_use_order_value'])) {
-        update_post_meta($test_id, 'conversion_use_order_value', $params['conversion_use_order_value'] ? '1' : '0');
     }
 
     if ($has_param('target_percentage')) {
@@ -254,7 +210,7 @@ function abst_rest_update_test_settings($request) {
         update_post_meta($test_id, 'log_on_visible', !empty($params['log_on_visible']) ? '1' : '0');
     }
     
-    // Lite supports one primary conversion only.
+    // A test has one conversion goal; clear any sub-goals stored by older versions.
     delete_post_meta($test_id, 'goals');
 
     // Minimum days and visits before a winner is called (and emailed about).
@@ -270,24 +226,12 @@ function abst_rest_update_test_settings($request) {
         update_post_meta($test_id, 'ac_min_views', $min_views);
     }
 
-    if ($has_param('optimization_type')) {
-        $optimization_type = sanitize_text_field((string) $params['optimization_type']);
-        update_post_meta($test_id, 'conversion_style', $optimization_type);
-        if ($optimization_type !== 'thompson' && isset($abst_btab) && method_exists($abst_btab, 'clear_test_variation_weights')) {
-            $abst_btab->clear_test_variation_weights($test_id);
-        }
-    }
-
     if ($has_param('magic_definition')) {
         // Already decoded and validated at the top of this function.
         $magic_definition = $params['magic_definition'];
         // wp_slash() because update_post_meta() runs wp_unslash() and would otherwise
         // strip the backslashes from JSON-escaped quotes, corrupting the stored JSON.
         update_post_meta($test_id, 'magic_definition', wp_slash(wp_json_encode($magic_definition, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));
-    }
-
-    if ($has_param('css_variations')) {
-        update_post_meta($test_id, 'css_test_variations', intval($params['css_variations']));
     }
 
     if ($has_full_page_update) {
@@ -357,13 +301,7 @@ function abst_rest_update_test_settings($request) {
     $applied_settings = [
         'conversion_type' => $details['conversion']['type'] ?? $canonical_conversion_type,
         'conversion_selector' => $details['conversion']['selector'] ?? get_post_meta($test_id, 'conversion_selector', true),
-        'conversion_url' => $details['conversion']['url'] ?? get_post_meta($test_id, 'conversion_url', true),
         'conversion_page_id' => $details['conversion']['page_id'] ?? (is_numeric($conversion_summary) ? intval($conversion_summary) : 0),
-        'conversion_time' => $details['conversion']['time'] ?? intval(get_post_meta($test_id, 'conversion_time', true)),
-        'conversion_scroll' => $details['conversion']['scroll'] ?? intval(get_post_meta($test_id, 'conversion_scroll', true)),
-        'conversion_text' => $details['conversion']['text'] ?? get_post_meta($test_id, 'conversion_text', true),
-        'conversion_link_pattern' => $details['conversion']['link_pattern'] ?? get_post_meta($test_id, 'conversion_link_pattern', true),
-        'conversion_use_order_value' => $details['conversion']['use_order_value'] ?? (get_post_meta($test_id, 'conversion_use_order_value', true) == '1'),
         'target_percentage' => $details['targeting']['percentage'] ?? intval(get_post_meta($test_id, 'target_percentage', true) ?: 100),
         'target_device' => $details['targeting']['device'] ?? (get_post_meta($test_id, 'target_option_device_size', true) ?: 'all'),
         'allowed_roles' => $details['targeting']['allowed_roles'] ?? (array) get_post_meta($test_id, 'bt_allowed_roles', true),
@@ -373,7 +311,6 @@ function abst_rest_update_test_settings($request) {
         'ac_min_days' => $details['optimization']['ac_min_days'] ?? intval(get_post_meta($test_id, 'ac_min_days', true)),
         'ac_min_views' => $details['optimization']['ac_min_views'] ?? intval(get_post_meta($test_id, 'ac_min_views', true)),
         'magic_definition' => $details['magic_definition'] ?? null,
-        'css_variations' => $details['css_variations'] ?? intval(get_post_meta($test_id, 'css_test_variations', true) ?: 0),
         'default_page' => $details['full_page']['default_page'] ?? get_post_meta($test_id, 'bt_experiments_full_page_default_page', true),
         'variations' => isset($details['full_page']['variations']) ? array_values(array_map(static function($variation) {
             return $variation['id'] ?? null;
@@ -393,7 +330,7 @@ function abst_rest_update_test_settings($request) {
         'applied_settings' => $applied_settings,
         'preview_urls' => $details['preview_urls'] ?? [],
         'test' => $details,
-        'validation_warnings' => $validation_warnings,
+        'validation_warnings' => [],
         'message' => 'Test settings updated successfully'
     ], 200);
 }

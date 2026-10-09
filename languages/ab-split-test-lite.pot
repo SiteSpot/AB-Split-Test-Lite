@@ -9,17 +9,17 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-30T19:29:29+00:00\n"
+"POT-Creation-Date: 2026-10-09T13:53:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ab-split-test-lite\n"
 
 #. Plugin Name of the plugin
 #: bt-bb-ab.php
-#: bt-bb-ab-core.php:8501
-#: bt-bb-ab-core.php:8505
-#: bt-bb-ab-core.php:8507
-#: bt-bb-ab-core.php:8559
+#: bt-bb-ab-core.php:7796
+#: bt-bb-ab-core.php:7800
+#: bt-bb-ab-core.php:7802
+#: bt-bb-ab-core.php:7854
 msgid "AB Split Test Lite"
 msgstr ""
 
@@ -30,194 +30,194 @@ msgstr ""
 
 #. Description of the plugin
 #: bt-bb-ab.php
-msgid "Self-hosted A/B split testing for WordPress. Test pages, blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and more, with heatmaps and session replays."
+msgid "Self-hosted A/B split testing for WordPress. Test pages, blocks, Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and more, with heatmaps."
 msgstr ""
 
 #. Author of the plugin
 #: bt-bb-ab.php
-#: bt-bb-ab-core.php:8503
+#: bt-bb-ab-core.php:7798
 #: modules/support/bricks/bricks.php:97
 #: modules/support/elementor.php:58
 msgid "AB Split Test"
 msgstr ""
 
-#: admin/bt-bb-ab-admin.php:154
-#: bt-bb-ab-core.php:15207
+#: admin/bt-bb-ab-admin.php:133
+#: bt-bb-ab-core.php:13995
 msgid "Settings"
 msgstr ""
 
-#: admin/bt-bb-ab-admin.php:177
-#: admin/bt-bb-ab-admin.php:179
+#: admin/bt-bb-ab-admin.php:156
+#: admin/bt-bb-ab-admin.php:158
 msgid "All Tests"
 msgstr ""
 
-#: admin/bt-bb-ab-admin.php:182
-#: admin/bt-bb-ab-admin.php:184
+#: admin/bt-bb-ab-admin.php:161
+#: admin/bt-bb-ab-admin.php:163
 msgid "New Test"
 msgstr ""
 
-#: admin/partials/single-site-display.php:209
+#: admin/partials/single-site-display.php:199
 msgid "AB Split Test Pro is a separate plugin that adds revenue and form goals, sub-goals, audiences, AI test ideas and more."
 msgstr ""
 
-#: admin/partials/single-site-display.php:209
+#: admin/partials/single-site-display.php:199
 msgid "Learn more"
 msgstr ""
 
-#: admin/partials/single-site-display.php:959
+#: admin/partials/single-site-display.php:933
 msgid "Save Settings"
 msgstr ""
 
-#: bt-bb-ab-core.php:412
-#: bt-bb-ab-core.php:444
+#: bt-bb-ab-core.php:403
+#: bt-bb-ab-core.php:435
 msgid "Choose a Test or  <a class=\"new-on-page-test-button\" style=\"display:inline-block;margin-bottom:10px;\" href=\"javascript:void(0);\"> Create a new test</a>"
 msgstr ""
 
-#: bt-bb-ab-core.php:416
-#: bt-bb-ab-core.php:448
+#: bt-bb-ab-core.php:407
+#: bt-bb-ab-core.php:439
 msgid "Choose an existing split test"
 msgstr ""
 
-#: bt-bb-ab-core.php:418
-#: bt-bb-ab-core.php:432
-#: bt-bb-ab-core.php:450
-#: bt-bb-ab-core.php:464
+#: bt-bb-ab-core.php:409
+#: bt-bb-ab-core.php:423
+#: bt-bb-ab-core.php:441
+#: bt-bb-ab-core.php:455
 msgid "Split Test Settings"
 msgstr ""
 
-#: bt-bb-ab-core.php:426
-#: bt-bb-ab-core.php:458
+#: bt-bb-ab-core.php:417
+#: bt-bb-ab-core.php:449
 msgid "Test Variation"
 msgstr ""
 
-#: bt-bb-ab-core.php:430
-#: bt-bb-ab-core.php:462
+#: bt-bb-ab-core.php:421
+#: bt-bb-ab-core.php:453
 msgid "Enter the test variation name."
 msgstr ""
 
-#: bt-bb-ab-core.php:1970
+#: bt-bb-ab-core.php:1909
 msgid "Magic test not saved"
 msgstr ""
 
-#: bt-bb-ab-core.php:4937
+#: bt-bb-ab-core.php:4816
 msgid "User roles"
 msgstr ""
 
-#: bt-bb-ab-core.php:8221
+#: bt-bb-ab-core.php:7534
 msgid "Choose what counts as a conversion: a visitor reaching a page (such as a thank-you or order-complete page), or clicking an element."
 msgstr ""
 
-#: bt-bb-ab-core.php:8226
+#: bt-bb-ab-core.php:7539
 msgid "Page or post visit"
 msgstr ""
 
-#: bt-bb-ab-core.php:8227
+#: bt-bb-ab-core.php:7540
 msgid "Element click"
 msgstr ""
 
-#: bt-bb-ab-core.php:8276
+#: bt-bb-ab-core.php:7589
 msgid "Element to click"
 msgstr ""
 
-#: bt-bb-ab-core.php:8277
-msgid "A CSS selector, for example .buy-button or #signup. Elements with this class also count:"
+#: bt-bb-ab-core.php:7590
+msgid "A CSS selector: a button such as .buy-button, or a link such as a[href*=\"calendly.com\"]. Elements with this class also count:"
 msgstr ""
 
-#: bt-bb-ab-core.php:8509
+#: bt-bb-ab-core.php:7804
 msgid "AB Split Test  Archives"
 msgstr ""
 
-#: bt-bb-ab-core.php:8511
+#: bt-bb-ab-core.php:7806
 msgid "AB Split Test  Attributes"
 msgstr ""
 
-#: bt-bb-ab-core.php:8513
+#: bt-bb-ab-core.php:7808
 msgid "Parent  AB Split Test Lite"
 msgstr ""
 
-#: bt-bb-ab-core.php:8515
+#: bt-bb-ab-core.php:7810
 msgid "All AB Split Tests "
 msgstr ""
 
-#: bt-bb-ab-core.php:8517
+#: bt-bb-ab-core.php:7812
 msgid "New Split Test"
 msgstr ""
 
-#: bt-bb-ab-core.php:8519
-#: bt-bb-ab-core.php:8521
+#: bt-bb-ab-core.php:7814
+#: bt-bb-ab-core.php:7816
 msgid "New Split Test "
 msgstr ""
 
-#: bt-bb-ab-core.php:8523
+#: bt-bb-ab-core.php:7818
 msgid "Edit Split Test "
 msgstr ""
 
-#: bt-bb-ab-core.php:8525
+#: bt-bb-ab-core.php:7820
 msgid "Update AB Split Test "
 msgstr ""
 
-#: bt-bb-ab-core.php:8527
+#: bt-bb-ab-core.php:7822
 msgid "View"
 msgstr ""
 
-#: bt-bb-ab-core.php:8529
+#: bt-bb-ab-core.php:7824
 msgid "View Tests"
 msgstr ""
 
-#: bt-bb-ab-core.php:8531
+#: bt-bb-ab-core.php:7826
 msgid "Search Tests"
 msgstr ""
 
-#: bt-bb-ab-core.php:8533
+#: bt-bb-ab-core.php:7828
 msgid "Not found"
 msgstr ""
 
-#: bt-bb-ab-core.php:8535
+#: bt-bb-ab-core.php:7830
 msgid "Not found in Trash"
 msgstr ""
 
-#: bt-bb-ab-core.php:8537
+#: bt-bb-ab-core.php:7832
 msgid "Featured Image"
 msgstr ""
 
-#: bt-bb-ab-core.php:8539
+#: bt-bb-ab-core.php:7834
 msgid "Set featured image"
 msgstr ""
 
-#: bt-bb-ab-core.php:8541
+#: bt-bb-ab-core.php:7836
 msgid "Remove featured image"
 msgstr ""
 
-#: bt-bb-ab-core.php:8543
+#: bt-bb-ab-core.php:7838
 msgid "Use as featured image"
 msgstr ""
 
-#: bt-bb-ab-core.php:8545
+#: bt-bb-ab-core.php:7840
 msgid "Insert into item"
 msgstr ""
 
-#: bt-bb-ab-core.php:8547
+#: bt-bb-ab-core.php:7842
 msgid "Uploaded to this item"
 msgstr ""
 
-#: bt-bb-ab-core.php:8549
+#: bt-bb-ab-core.php:7844
 msgid "Test list"
 msgstr ""
 
-#: bt-bb-ab-core.php:8551
+#: bt-bb-ab-core.php:7846
 msgid "Test list navigation"
 msgstr ""
 
-#: bt-bb-ab-core.php:8553
+#: bt-bb-ab-core.php:7848
 msgid "Filter Test list"
 msgstr ""
 
-#: bt-bb-ab-core.php:8561
+#: bt-bb-ab-core.php:7856
 msgid "Page Builder AB Split Test Lite"
 msgstr ""
 
 #. translators: %s: number of ideas.
-#: bt-bb-ab-core.php:8618
+#: bt-bb-ab-core.php:7913
 #, php-format
 msgid "Idea <span class=\"count\">(%s)</span>"
 msgid_plural "Ideas <span class=\"count\">(%s)</span>"
@@ -225,40 +225,52 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of completed tests.
-#: bt-bb-ab-core.php:8641
+#: bt-bb-ab-core.php:7936
 #, php-format
 msgid "Test Complete <span class=\"count\">(%s)</span>"
 msgid_plural "Tests Complete <span class=\"count\">(%s)</span>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: bt-bb-ab-core.php:8959
+#: bt-bb-ab-core.php:8206
 #: modules/support/breakdance.php:40
 msgid "Create a new test"
 msgstr ""
 
-#: bt-bb-ab-core.php:9297
+#: bt-bb-ab-core.php:8537
 msgid "Search for a page…"
 msgstr ""
 
-#: bt-bb-ab-core.php:9297
+#: bt-bb-ab-core.php:8537
 msgid "Copied!"
 msgstr ""
 
-#: bt-bb-ab-core.php:15208
+#: bt-bb-ab-core.php:13996
 msgid "Go Pro"
 msgstr ""
 
-#: bt-bb-ab-core.php:15221
+#: bt-bb-ab-core.php:14009
 msgid "Documentation"
 msgstr ""
 
-#: bt-bb-ab-core.php:15222
+#: bt-bb-ab-core.php:14010
 msgid "Lite vs Pro"
 msgstr ""
 
+#: bt-bb-ab-core.php:14423
+msgid "Click heatmap"
+msgstr ""
+
+#: bt-bb-ab-core.php:14424
+msgid "Scroll map"
+msgstr ""
+
+#: bt-bb-ab-core.php:14427
+msgid "Map"
+msgstr ""
+
 #. translators: %d: number of days of heatmap history to show.
-#: bt-bb-ab-core.php:15659
+#: bt-bb-ab-core.php:14447
 #, php-format
 msgid "Last %d day"
 msgid_plural "Last %d days"
@@ -266,95 +278,43 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of visitors.
-#: bt-bb-ab-core.php:18648
+#: bt-bb-ab-core.php:17119
 #, php-format
 msgid " (about %s more visitors)"
 msgstr ""
 
 #. translators: %s: number of visitors.
-#: bt-bb-ab-core.php:18653
+#: bt-bb-ab-core.php:17124
 #, php-format
 msgid "Collecting data. %s visitors so far."
 msgstr ""
 
-#: bt-bb-ab-core.php:18657
+#: bt-bb-ab-core.php:17128
 msgid "No winner yet."
 msgstr ""
 
 #. translators: 1: days, 2: visitors clause.
-#: bt-bb-ab-core.php:18661
+#: bt-bb-ab-core.php:17132
 #, php-format
 msgid "About %1$d days%2$s until a winner can be called."
 msgstr ""
 
 #. translators: %s: confidence percentage.
-#: bt-bb-ab-core.php:18664
+#: bt-bb-ab-core.php:17135
 #, php-format
 msgid "Nearly complete. A winner should be called soon (%s%% confidence)."
 msgstr ""
 
 #. translators: %d: days.
-#: bt-bb-ab-core.php:18668
+#: bt-bb-ab-core.php:17139
 #, php-format
 msgid "About %d more days needed at this traffic. More traffic would settle it sooner."
 msgstr ""
 
 #. translators: %d: days.
-#: bt-bb-ab-core.php:18672
+#: bt-bb-ab-core.php:17143
 #, php-format
 msgid "Too close to call after %d days. A bolder change is more likely to show a difference."
-msgstr ""
-
-#: modules/session-replay/session-page.php:11
-msgid "Session Replay"
-msgstr ""
-
-#: modules/session-replay/session-page.php:12
-msgid "Watch recordings of user sessions to understand how visitors interact with your site."
-msgstr ""
-
-#: modules/session-replay/session-page.php:21
-msgid "Sessions"
-msgstr ""
-
-#: modules/session-replay/session-page.php:25
-msgid "Loading sessions..."
-msgstr ""
-
-#: modules/session-replay/session-page.php:36
-msgid "Select a Session to Replay"
-msgstr ""
-
-#: modules/session-replay/session-page.php:37
-msgid "Choose a session from the list on the left to watch how a visitor interacted with your site."
-msgstr ""
-
-#: modules/session-replay/session-replay.php:109
-msgid "Loading..."
-msgstr ""
-
-#: modules/session-replay/session-replay.php:110
-msgid "No sessions found."
-msgstr ""
-
-#: modules/session-replay/session-replay.php:111
-msgid "Loading session data..."
-msgstr ""
-
-#: modules/session-replay/session-replay.php:112
-msgid "Page View"
-msgstr ""
-
-#: modules/session-replay/session-replay.php:113
-msgid "Click"
-msgstr ""
-
-#: modules/session-replay/session-replay.php:114
-msgid "Rage Click"
-msgstr ""
-
-#: modules/session-replay/session-replay.php:115
-msgid "Conversion"
 msgstr ""
 
 #: modules/support/bricks/bricks.php:123
@@ -362,7 +322,7 @@ msgid "Choose Test"
 msgstr ""
 
 #: modules/support/bricks/bricks.php:129
-#: modules/support/elementor.php:80
+#: modules/support/elementor.php:79
 msgid "Variation Name"
 msgstr ""
 
@@ -370,22 +330,22 @@ msgstr ""
 msgid "Your variation name..."
 msgstr ""
 
-#: modules/support/elementor.php:68
+#: modules/support/elementor.php:67
 msgid "Experiment"
 msgstr ""
 
-#: modules/support/elementor.php:73
+#: modules/support/elementor.php:72
 msgid "Select a test or "
 msgstr ""
 
-#: modules/support/elementor.php:73
+#: modules/support/elementor.php:72
 msgid "Create one here."
 msgstr ""
 
-#: modules/support/elementor.php:83
+#: modules/support/elementor.php:82
 msgid "Using \"default\" will cause this version to run first, unless otherwise targeted. <a href=\"#\">more info <img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==\" alt=\"opens in a new window\"></a>"
 msgstr ""
 
-#: modules/support/elementor.php:90
+#: modules/support/elementor.php:89
 msgid "Variation Hidden"
 msgstr ""

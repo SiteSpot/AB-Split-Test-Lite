@@ -22,7 +22,6 @@ class ABST_Admin {
   public function __construct()
   {
     add_action( 'admin_menu', [$this, 'settings_menu']);  
-    add_action( 'network_admin_menu', [$this, 'settings_menu_multisite']);  
     add_action( 'admin_menu', [$this, 'add_settings_shortcut_submenu'],99);
     add_action( 'admin_menu', [$this, 'reorder_experiments_submenu'],1000);
     
@@ -46,9 +45,6 @@ class ABST_Admin {
     if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bt-bb-ab-nonce'] ) ), 'bt-bb-ab-nonce' ) ) {
       return false;
     }
-
-    // remove transient abst_disable_hosted_ai
-    delete_transient('abst_disable_hosted_ai');
 
     $selected_post_types = isset($_POST['selected_post_types']) ? array_map('sanitize_text_field', wp_unslash($_POST['selected_post_types'])) : array();
     // add the control page as the canonical link on full page test variations
@@ -110,20 +106,6 @@ class ABST_Admin {
     }
  
     return update_option($key, $value);
-  }
-
-  public function settings_menu_multisite()
-  {
-    if( $this->should_show_license_field() ) {
-      add_submenu_page(
-        'settings.php',
-        self::$page_title,
-        self::$menu_name,
-        'manage_options',
-        self::$page_slug,
-        [$this, 'settings_page']
-      );
-    }
   }
 
   public function settings_menu()
@@ -243,19 +225,6 @@ class ABST_Admin {
   }
 
 
-
-  public function should_show_license_field()
-  {
-    
-    return false;
-  }
-
-  
-  public function should_show_white_label()
-  {
-    
-    return false;
-  }
 
   public static function get_current_settings_url()
   {

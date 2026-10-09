@@ -225,7 +225,7 @@ function abst_render_winner_email_html( $d ) {
 
     if ( $d['winner_is_control'] ) {
         $hero_lines[] = sprintf(
-            '<span style="color:%s;">&#128737;&#65039; The original beat the variation &mdash; keep it</span>',
+            '<span style="color:%s;">&#128737;&#65039; The original beat every variation &mdash; keep it</span>',
             $esc( $text )
         );
     } else {
@@ -246,7 +246,7 @@ function abst_render_winner_email_html( $d ) {
     } elseif ( $d['impact_kind'] === 'avoided' && $d['impact_value'] > 0 ) {
         $runner = $d['runner_up_label'] ? ' (' . $esc( $d['runner_up_label'] ) . ')' : '';
         $hero_lines[] = sprintf(
-            '<span style="color:%s;">&#128737;&#65039; Keeping the original avoids losing <strong>about %s conversions per year</strong> to the variation%s</span>',
+            '<span style="color:%s;">&#128737;&#65039; Keeping the original avoids losing <strong>about %s conversions per year</strong> to the best variation%s</span>',
             $esc( $text ),
             $esc( number_format( $d['impact_value'], 0 ) ),
             $runner
@@ -370,7 +370,7 @@ function abst_render_winner_email_html( $d ) {
         $html .= '<p style="margin:8px 0 0;font-size:15px;line-height:1.5;">' . $line . '</p>';
     }
     $html .= '<p style="margin:14px 0 0;font-size:14px;line-height:1.5;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;color:' . $esc( $text ) . ';">';
-    $html .= 'The test is <strong>still running</strong> and nothing has changed on your site: visitors still see both versions. When you are ready, use Mark complete in the test\'s status box, and put the winning version on your page.';
+    $html .= 'The test is <strong>still running</strong> and nothing has changed on your site: visitors still see every version. When you are ready, use Mark complete in the test\'s status box, and put the winning version on your page.';
     $html .= '</p>';
     $html .= '</td></tr>';
 
@@ -408,7 +408,7 @@ function abst_render_winner_email_text( $d ) {
     $lines[] = 'Winning: ' . $d['winner_label'] . ' (' . number_format( $d['winner_conf'], 0 ) . '% confidence)';
 
     if ( $d['winner_is_control'] ) {
-        $lines[] = 'The original beat the variation - keep it.';
+        $lines[] = 'The original beat every variation - keep it.';
     } else {
         $lines[] = '+' . number_format( $d['winner_uplift'], 1 ) . '% conversion rate vs. the original over ' . $d['test_age_days'] . ' days';
     }
@@ -416,13 +416,13 @@ function abst_render_winner_email_text( $d ) {
     if ( $d['impact_kind'] === 'extra' && $d['impact_value'] > 0 ) {
         $lines[] = 'Projected: about ' . number_format( $d['impact_value'], 0 ) . ' extra conversions per year';
     } elseif ( $d['impact_kind'] === 'avoided' && $d['impact_value'] > 0 ) {
-        $tail = $d['runner_up_label'] ? ' to the variation (' . $d['runner_up_label'] . ')' : ' to the variation';
+        $tail = $d['runner_up_label'] ? ' to the best variation (' . $d['runner_up_label'] . ')' : ' to the best variation';
         $lines[] = 'Keeping the original avoids losing about ' . number_format( $d['impact_value'], 0 ) . ' conversions per year' . $tail;
     }
 
     $lines[] = number_format( $d['total_visits'] ) . ' visitors, ' . number_format( $d['total_conversions'], 0 ) . ' conversions, ' . number_format( $d['overall_rate'] * 100, 2 ) . '% rate';
     $lines[] = '';
-    $lines[] = 'The test is still running and nothing has changed on your site: visitors still see both versions. When you are ready, use Mark complete in the test\'s status box, and put the winning version on your page.';
+    $lines[] = 'The test is still running and nothing has changed on your site: visitors still see every version. When you are ready, use Mark complete in the test\'s status box, and put the winning version on your page.';
     $lines[] = '';
     $lines[] = 'Open the test:';
     $lines[] = $d['edit_url'];

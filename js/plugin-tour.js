@@ -55,31 +55,6 @@ jQuery(function ($) {
          wizard3();
     });
 
-    jQuery('#abst_enable_user_journeys').on('change', function() {
-        if(jQuery('#abst_enable_user_journeys').is(':checked')) {
-          jQuery('.ab-test-heatmap-pages, .ab-test-heatmap-retention').show();
-        } else {
-          jQuery('.ab-test-heatmap-pages, .ab-test-heatmap-retention').hide();
-        }
-      }).trigger('change');
-
-    jQuery('#use_fingerprint').on('change', function() {
-        if(jQuery('#use_fingerprint').is(':checked')) {
-          jQuery('.ab-test-fingerprint-length').show();
-        } else {
-          jQuery('.ab-test-fingerprint-length').hide();
-        }
-      }).trigger('change');
-
-      jQuery('#use_uuid').on('change', function() {
-          if(jQuery('#use_uuid').is(':checked')) {
-            jQuery('.ab-test-uuid-length').show();
-          } else {
-            jQuery('.ab-test-uuid-length').hide();
-          }
-        }).trigger('change');
-
-
         jQuery('body').on('click', '#remove_heatmap_data', function() {
             if(!confirm('Are you sure you want to remove all heatmap data?')) return;
 
@@ -207,15 +182,11 @@ function addTourSteps(testType){
     var steps = (tour.getConfig('steps') || []).slice(0, (tour.getActiveIndex() || 0) + 1);
 
     if(testType == 'full_page'){
-        steps.push(abstTourStep('.show_full_page_test', 'bottom', 'Choose Pages', "This is your existing page, or the page you will send traffic to. We will split the traffic between this page and the variation page you choose next.<br> Choose your starting page, then choose your variation page.", ['next']));
+        steps.push(abstTourStep('.show_full_page_test', 'bottom', 'Choose Pages', "This is your existing page, or the page you will send traffic to. We will split the traffic evenly between this page and the variation pages you choose next.<br> Choose your starting page, then choose one or more variation pages.", ['next']));
     }
 
     if(testType == 'ab_test'){
         steps.push(abstTourStep('.show_css_classes', 'top', 'On Page Test Setup', "Swap out one or many on page elements in your page. We will split the traffic between the original and your variation.", ['next']));
-    }
-
-    if(testType == 'css_test'){
-        steps.push(abstTourStep('.show_css_test', 'top', 'CSS Test Setup', "Each visitor's page gets one of two body classes: the first for the original, the second for your variation. Use them in your CSS to style the variation.", ['next']));
     }
 
     steps.push(
@@ -250,28 +221,3 @@ function wizard4(){
 
     abstStartTour(steps);
 }
-
-
-  // heatmap settings handler
-  jQuery(document).ready(function() {
-    jQuery('body').on('change', '#heatmap_all_pages', function() {
-        if (jQuery(this).val() === 'chosen') {
-            jQuery('#heatmap_pages').parent().find('.select2-container').show();
-        } else {
-            jQuery('#heatmap_pages').parent().find('.select2-container').hide();
-        }
-    });
-    jQuery('#heatmap_all_pages').trigger('change');
-
-
-
-
-    jQuery('body').on('change', '#abst_heatmap_enable_user_journeys', function() {
-      if (jQuery(this).is(':checked')) {
-        jQuery('.ab-test-heatmap-pages,.ab-test-heatmap-retention').show();
-      } else {
-        jQuery('.ab-test-heatmap-pages,.ab-test-heatmap-retention').hide();
-      }
-    });
-    jQuery('#abst_heatmap_enable_user_journeys').trigger('change');
-});

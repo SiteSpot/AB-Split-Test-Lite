@@ -262,9 +262,8 @@ select {
     margin-top: 4px;
 }
 
-/* Goal cards - flat cards, as on the main test editor */
-.conversion-goal,
-.subgoal {
+/* Goal card - flat card, as on the main test editor */
+.conversion-goal {
     background: var(--abst-border-light);
     padding: 16px;
     border: 1px solid var(--abst-border);
@@ -273,8 +272,7 @@ select {
     position: relative;
 }
 
-.conversion-goal h4,
-.subgoal h4 {
+.conversion-goal h4 {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -284,10 +282,6 @@ select {
 
 .conversion-goal h4 {
     color: #15803d !important;
-}
-
-.subgoal h4 {
-    color: #1d4ed8 !important;
 }
 
 .conversion-goal p {
@@ -300,57 +294,6 @@ select {
     margin-bottom: 0;
 }
 
-.subgoal label {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--abst-text);
-    margin-bottom: 6px;
-}
-
-.subgoal p {
-    font-size: 12px;
-    color: var(--abst-text-secondary);
-    margin: 8px 0;
-    line-height: 1.5;
-}
-
-.subgoal input[type="text"] {
-    margin-top: 4px;
-    width: 100%;
-}
-
-.subgoal select {
-    width: 100%;
-    max-width: 300px;
-}
-
-/* Close button on subgoals */
-.subgoal .close-goal {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    background: #f1f5f9;
-    color: #94a3b8;
-    border: 1px solid #e2e8f0;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
-    line-height: 1;
-}
-
-.subgoal .close-goal:hover {
-    background: #fee2e2;
-    border-color: #fecaca;
-    color: #dc2626;
-}
 
 /* Checkboxes - inline pills (toggles keep their own switch style) */
 .ab-targeting-roles label,
@@ -387,143 +330,9 @@ input[type="checkbox"] {
     border-radius: 3px;
 }
 
-/* Add Goal button */
-button.button.button-small.add-goal,
-.add-goal {
-    background: #ffffff;
-    border: 1px solid var(--abst-border);
-    border-radius: 6px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    transition: all 0.15s ease;
-    margin-top: 8px;
-}
 
-button.button.button-small.add-goal:hover,
-.add-goal:hover {
-    background: var(--abst-bg);
-    border-color: var(--abst-primary);
-    color: var(--abst-primary);
-}
 
-/* Visitor segmentation rules - same look as the main editor, which scopes them to #configuration_settings */
-.expanded > .abst-target-rules {
-    margin: 4px 16px 16px;
-    padding: 0;
-    border: 1px solid var(--abst-border);
-    border-radius: var(--abst-radius);
-    background: #ffffff;
-    overflow: hidden;
-}
 
-.abst-target-rule {
-    margin: 0;
-    border-bottom: 1px solid var(--abst-border);
-}
-
-.abst-target-rule:last-child {
-    border-bottom: 0;
-}
-
-.abst-target-rule > summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 13px 16px;
-    color: var(--abst-text);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    list-style: none;
-}
-
-.abst-target-rule > summary::-webkit-details-marker {
-    display: none;
-}
-
-.abst-target-rule > summary::after {
-    content: "+";
-    color: var(--abst-text-secondary);
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 1;
-}
-
-.abst-target-rule[open] > summary::after {
-    content: "−";
-}
-
-.abst-target-rule > summary small {
-    margin-left: auto;
-    color: var(--abst-text-secondary);
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.abst-target-rule[open] > summary {
-    background: #f8fafc;
-}
-
-.abst-target-rule__body {
-    padding: 14px 16px 16px;
-    border-top: 1px solid var(--abst-border-light);
-}
-
-.abst-target-rule__body textarea {
-    min-height: 72px;
-}
-
-.abst-target-rule__body .description {
-    margin: 8px 0 0;
-}
-
-/* Audience subsets */
-.expanded > .ab-targeting-audiences {
-    margin: 0 16px 16px;
-    padding: 14px;
-    border: 1px solid var(--abst-border);
-    border-radius: var(--abst-radius-md);
-}
-
-.ab-targeting-audiences__heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 6px;
-}
-
-.ab-targeting-audiences__heading h4 {
-    margin: 1px 0 0;
-}
-
-.ab-targeting-audiences__heading a {
-    color: var(--abst-text-secondary);
-    font-size: 11px;
-}
-
-.abst-section-kicker, .abst-optional-label {
-    color: var(--abst-text-muted);
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-}
-
-.abst-optional-label {
-    margin-left: 4px;
-    font-weight: 400;
-}
-
-.ab-targeting-audiences__intro {
-    margin: 0 0 10px;
-    font-size: 12px;
-    line-height: 1.45;
-}
 
 /* Submit button */
 .submit_box {

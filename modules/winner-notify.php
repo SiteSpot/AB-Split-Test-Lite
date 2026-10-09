@@ -4,7 +4,7 @@
  *
  * Once a day every running test is checked with the same rules as its results screen.
  * The first time a test has a winner, the site admin gets one email about it. Nothing
- * else changes: the test keeps running and visitors keep seeing both versions until
+ * else changes: the test keeps running and visitors keep seeing every version until
  * the site owner ends it.
  */
 
@@ -34,9 +34,6 @@ function abst_find_test_winner( $test ) {
 
 	$observations = get_post_meta( $test->ID, 'observations', true );
 	if ( empty( $observations ) || ! is_array( $observations ) ) {
-		return null;
-	}
-	if ( get_post_meta( $test->ID, 'conversion_style', true ) === 'thompson' ) {
 		return null;
 	}
 	foreach ( $observations as $row ) {

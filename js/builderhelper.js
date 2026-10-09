@@ -168,10 +168,8 @@ jQuery(document).ready(function(){
             closeActiveNewAbPanel = closeNewAbPanel;
     
             // generate source
-            const wp_ajax_on_page_test_create = window.ajaxurl 
-                ? `${window.ajaxurl}?action=abst_on_page_test_create` 
-                : `${window.location.origin}/wp-admin/admin-ajax.php?action=abst_on_page_test_create`;
-    
+            const wp_ajax_on_page_test_create = window.abstBuilderHelper.ajaxUrl + '?action=abst_on_page_test_create';
+
             newabiframe.classList.add('newabpanel');
             document.body.appendChild(newabiframe);
             newabiframe.style.display = 'block';

@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Shared validation and normalization helpers for REST, MCP, CLI, and abilities integrations.
  */
 function abst_get_supported_test_types() {
-    return ['magic', 'ab_test', 'css_test', 'full_page'];
+    return ['magic', 'ab_test', 'full_page'];
 }
 
 function abst_get_supported_test_statuses() {
@@ -15,23 +15,6 @@ function abst_get_supported_test_statuses() {
 
 function abst_get_supported_conversion_types() {
     return ['page', 'selector'];
-}
-
-
-
-
-
-function abst_apply_conversion_order_value_guard($params) {
-    // Conversions are counted, not valued, so an order-value flag is dropped.
-    if (!is_array($params)) {
-        $params = [];
-    }
-    unset($params['conversion_use_order_value']);
-
-    return [
-        'params' => $params,
-        'warnings' => [],
-    ];
 }
 
 function abst_normalize_conversion_type($conversion_type) {
@@ -101,35 +84,15 @@ function abst_normalize_api_input_params($params) {
         $params['conversion_selector'] = sanitize_text_field((string) $params['conversion_selector']);
     }
 
-    if (isset($params['conversion_link_pattern'])) {
-        $params['conversion_link_pattern'] = sanitize_text_field((string) $params['conversion_link_pattern']);
-    }
-
-    if (isset($params['conversion_text'])) {
-        $params['conversion_text'] = sanitize_text_field((string) $params['conversion_text']);
-    }
-
-    if (isset($params['conversion_url'])) {
-        $url = sanitize_text_field((string) $params['conversion_url']);
-        if ($url !== '') {
-            $url = str_replace(site_url(), '', $url);
-            $url = ltrim($url, '/');
-            $url = rtrim($url, '/');
-        }
-        $params['conversion_url'] = $url;
-    }
-
-    foreach (['conversion_page_id', 'conversion_time', 'conversion_scroll', 'target_percentage', 'css_variations', 'test_id', 'ac_min_days', 'ac_min_views'] as $int_key) {
+    foreach (['conversion_page_id', 'target_percentage', 'test_id', 'ac_min_days', 'ac_min_views'] as $int_key) {
         if (isset($params[$int_key]) && $params[$int_key] !== '') {
             $params[$int_key] = intval($params[$int_key]);
         }
     }
 
-    foreach (['conversion_use_order_value', 'log_on_visible'] as $bool_key) {
-        if (isset($params[$bool_key])) {
-            $value = filter_var($params[$bool_key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            $params[$bool_key] = $value === null ? false : $value;
-        }
+    if (isset($params['log_on_visible'])) {
+        $value = filter_var($params['log_on_visible'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $params['log_on_visible'] = $value === null ? false : $value;
     }
 
     if (isset($params['optimization_type'])) {
@@ -621,10 +584,6 @@ function abst_validate_magic_definition($magic_definition) {
             return new WP_Error('missing_magic_variations', 'Each magic_definition item requires a non-empty variations array.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
         }
 
-        if (count($definition['variations']) > 2) {
-            return new WP_Error('invalid_magic_variation_count', 'Each magic_definition item compares the original with one variation: variations takes two entries, the original first.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
-        }
-
         foreach ($definition['variations'] as $variation_index => $variation) {
             if (!is_string($variation) || trim($variation) === '') {
                 return new WP_Error('invalid_magic_variation_value', 'Magic definition variations must be plain non-empty strings.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations.' . $variation_index]);
@@ -640,9 +599,7 @@ function abst_validate_magic_definition($magic_definition) {
     return true;
 }
 
-/** Drop settings this plugin has no code for (sub-goals, revenue weighting,
- * auto-completion, webhooks, goal types other than a page visit or element click, and
- * a CSS test's class count, which is always two), so API callers can't store them. */
+/** Drop parameters this plugin does not store. */
 function abst_drop_unsupported_test_params($params) {
     if (!is_array($params)) {
         return $params;
@@ -650,7 +607,7 @@ function abst_drop_unsupported_test_params($params) {
 
     unset($params['subgoals'], $params['goals'], $params['autocomplete_on'], $params['webhook_url'], $params['conversion_use_order_value'],
         $params['conversion_url'], $params['conversion_time'], $params['conversion_scroll'],
-        $params['conversion_text'], $params['conversion_link_pattern'], $params['css_variations']);
+        $params['conversion_text'], $params['conversion_link_pattern']);
 
     return $params;
 }
@@ -659,9 +616,6 @@ function abst_validate_test_payload($params, $mode = 'create') {
     $params = abst_normalize_api_input_params($params);
     $requested_status = $params['status'] ?? 'draft';
     $is_idea = ($requested_status === 'abst_idea');
-
-    $guard_result = abst_apply_conversion_order_value_guard($params);
-    $params = $guard_result['params'];
 
     if ($mode === 'create') {
         if (empty($params['test_title'])) {
@@ -673,7 +627,7 @@ function abst_validate_test_payload($params, $mode = 'create') {
         }
 
         if (!$is_idea && empty($params['test_type'])) {
-            return new WP_Error('missing_test_type', 'Test type is required (magic, ab_test, css_test, full_page).', ['status' => 400, 'field' => 'test_type']);
+            return new WP_Error('missing_test_type', 'Test type is required (magic, ab_test, full_page).', ['status' => 400, 'field' => 'test_type']);
         }
     }
 
@@ -704,10 +658,6 @@ function abst_validate_test_payload($params, $mode = 'create') {
         return new WP_Error('invalid_target_device', 'target_device must be one of: all, desktop, mobile, tablet, desktop_tablet, tablet_mobile.', ['status' => 400, 'field' => 'target_device']);
     }
 
-    if (isset($params['optimization_type']) && !in_array($params['optimization_type'], ['bayesian', 'thompson'], true)) {
-        return new WP_Error('invalid_optimization_type', 'optimization_type must be one of: bayesian, thompson.', ['status' => 400, 'field' => 'optimization_type']);
-    }
-
     if (($params['test_type'] ?? '') === 'magic') {
         $magic_validation = abst_validate_magic_definition($params['magic_definition'] ?? null);
         if (is_wp_error($magic_validation)) {
@@ -723,42 +673,10 @@ function abst_validate_test_payload($params, $mode = 'create') {
         if (empty($params['variations']) || !is_array($params['variations'])) {
             return new WP_Error('missing_variations', 'At least one variation page is required for full page tests.', ['status' => 400, 'field' => 'variations']);
         }
-
-        if (count($params['variations']) > 1) {
-            return new WP_Error('invalid_variation_count', 'A full page test compares the default page with one variation page: pass one page in variations.', ['status' => 400, 'field' => 'variations']);
-        }
     }
 
     return true;
 }
-
-
-
-/**
- * Convert internal storage format back to the API subgoals format.
- * Input:  [ 1 => ['scroll' => '50'], ... ]
- * Output: [ ['type' => 'scroll', 'value' => '50'], ... ]
- *
- * @param mixed $goals
- * @return array
- */
-function abst_storage_subgoals_to_api($goals) {
-    if (!is_array($goals)) {
-        return [];
-    }
-    $result = [];
-    foreach ($goals as $goal) {
-        if (!is_array($goal) || empty($goal)) {
-            continue;
-        }
-        $type  = array_key_first($goal);
-        $value = $goal[$type] ?? '';
-        $result[] = ['type' => $type, 'value' => $value];
-    }
-    return $result;
-}
-
-
 
 function abst_validate_conversion_parameters($conversion_type, $params) {
     $params = abst_normalize_api_input_params($params);

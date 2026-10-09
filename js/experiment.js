@@ -280,15 +280,6 @@ jQuery(document).ready(function() {
 
     window.acattrs.multiple=true;
 
-    // A full page test compares the original page with one variation page.
-    window.acattrs.maximumSelectionLength = 1;
-
-    window.acattrs.language = {
-      maximumSelected: function () {
-        return 'A test compares the original page with one variation page. Remove the selected page to choose a different one.';
-      }
-    };
-
     window.acattrs['ajax'] = {
 
       url: ajaxurl, // AJAX URL is predefined in WordPress admin
@@ -433,7 +424,7 @@ jQuery(document).ready(function() {
   }
 
   function validateExperimentCanLaunch() {
-    var hasTestType = jQuery('#full_page').is(':checked') || jQuery('#ab_test').is(':checked') || jQuery('#css_test').is(':checked') || jQuery('#magic').is(':checked');
+    var hasTestType = jQuery('#full_page').is(':checked') || jQuery('#ab_test').is(':checked') || jQuery('#magic').is(':checked');
     // Page visit: a goal page must be chosen. Element click: a valid CSS selector is needed.
     var goalType = getConversionGoalType();
     var $goalField = goalType === 'selector' ? jQuery('#bt_experiments_conversion_selector') : jQuery('#bt_experiments_conversion_page_selector');
@@ -882,37 +873,6 @@ jQuery(document).ready(function() {
   });
 
 
-
-
-
-  // Code test body classes: test-css-{id}-1 marks the original, test-css-{id}-2 the variation.
-  // #css_test_variations is a hidden input fixed at 2; the two classes are listed whatever it holds.
-  function renderCssTestClasses(){
-
-    var $zone = jQuery('.css-test-helper-zone');
-
-    if(!$zone.length)
-      return;
-
-    var testId = jQuery("#post_ID").val();
-
-    var count = 2;
-
-    $zone.empty();
-
-    for (var i = 1; i <= count; i++) {
-
-        jQuery('<code style="background:#f1f5f9; padding:6px 12px; border-radius:4px; font-size:13px;"><span style="color:#64748b;">body.</span></code>')
-          .append(document.createTextNode('test-css-' + testId + '-' + i))
-          .appendTo($zone);
-
-    }
-
-  }
-
-  jQuery('#css_test_variations').on('change', renderCssTestClasses);
-
-  renderCssTestClasses();
 
 
 
@@ -1399,14 +1359,6 @@ for (let observationKey in abtestChartData.observations) {
 
     }
 
-    // Code tests: test-css-<test id>-1 is Variation A, -2 is Variation B, ...
-    else if(/^test-css-\d+-\d+$/.test(observationKey)){
-      var cssNumber = parseInt(observationKey.split("-").pop(), 10) - 1;
-      var cssLetters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
-      if(cssNumber >= 0 && cssNumber < cssLetters.length){
-        variationLabel = "Variation " + cssLetters[cssNumber];
-      }
-    }
 
 
 
@@ -1432,7 +1384,7 @@ for (let observationKey in abtestChartData.observations) {
 
         if(varMeta.eid && varMeta.variation && varMeta.page_id) {
 
-          var heatmapUrl = window.location.origin + '/wp-admin/edit.php?post_type=abst_experiments&page=abst-heatmaps';
+          var heatmapUrl = window.bt_adminurl + 'edit.php?post_type=abst_experiments&page=abst-heatmaps';
 
           heatmapUrl += '&post=' + varMeta.page_id;
 
@@ -1941,7 +1893,6 @@ for (var key in observations) {
       ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].forEach(function(letter, index) {
 
         labelText = labelText.replace('magic-' + index, 'Variation ' + letter);
-        labelText = labelText.replace(new RegExp('^test-css-\\d+-' + (index + 1) + '$'), 'Variation ' + letter);
 
       });
 
@@ -2185,8 +2136,6 @@ function refreshTestType(){
 
     jQuery('.show_css_classes').hide(); // hide element css classes helper
 
-    jQuery(".css_test_variations").hide();
-
     jQuery("#magic_settings").hide();
 
     jQuery(".show_full_page_test").show();
@@ -2200,22 +2149,6 @@ function refreshTestType(){
     jQuery("#configuration_settings>div").show(); 
 
     jQuery("#magic_settings").hide();
-
-    jQuery(".show_full_page_test").hide();
-
-    jQuery(".css_test_variations").hide();
-
-  }
-
-  else if(jQuery("input:radio[value=\'css_test\']").is(":checked")){
-
-    jQuery("#configuration_settings>div").show(); 
-
-    jQuery("#magic_settings").hide();
-
-    jQuery(".css_test_variations").show();    
-
-    jQuery('.show_css_classes').hide(); // show element css classes helper
 
     jQuery(".show_full_page_test").hide();
 
@@ -2407,10 +2340,14 @@ function updateDescription(full = true) {
 
     {
 
-      // Each test splits its traffic between the original and one variation.
-      var splitamount =  Math.round(percentage/2);
+      // Traffic is split evenly between the original and every variation.
+      description += "<BR>Traffic split examples:";
 
-      description += "<BR>The original and the variation are each shown to about " + splitamount + "% of your total traffic.";
+      for (var versions = 2; versions <= 4; versions++) {
+
+        description += "<BR>" + versions + " versions: about " + Math.round(percentage / versions) + "% of your total traffic sees each one.";
+
+      }
 
     }
 

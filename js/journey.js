@@ -533,54 +533,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     heatmapContainer.innerHTML = '';
 
-    let radius = 80;
-    let maxOpacity = 0.8;
-    let minOpacity = 0;
-    let blur = 0.75;
-    console.log('Heatmap mode:', activeMode);
-    if (activeMode === 'confetti') {
-      radius = 8;
-      maxOpacity = 0.9;
-      minOpacity = 0;
-      blur = 0.1;
-    }
-
-    // Rage click mode: Use red gradient to highlight frustration points
-    // Dead click mode: Use orange gradient to highlight confusion points
-    let gradient = null;
-    if (activeMode === 'rage') {
-      gradient = {
-        0.0: 'rgba(255, 0, 0, 0)',
-        0.3: 'rgba(255, 100, 100, 0.5)',
-        0.6: 'rgba(255, 50, 50, 0.7)',
-        1.0: 'rgba(255, 0, 0, 0.9)'
-      };
-      radius = 35; // Larger radius for rage clicks
-      maxOpacity = 0.9;
-    } else if (activeMode === 'dead') {
-      gradient = {
-        0.0: 'rgba(255, 165, 0, 0)',      // Transparent orange
-        0.3: 'rgba(255, 165, 0, 0.5)',    // Light orange
-        0.6: 'rgba(255, 140, 0, 0.7)',    // Medium orange
-        1.0: 'rgba(255, 120, 0, 0.9)'     // Dark orange
-      };
-      radius = 30; // Slightly larger radius for dead clicks
-      maxOpacity = 0.85;
-    }
-
     const heatmap = h337.create({
       container: heatmapContainer,
-      radius: radius,
-      maxOpacity: maxOpacity,
-      minOpacity: minOpacity,
-      blur: blur,
-      dotColor: '#FF6B6B',
-      gradient: gradient // Only set for rage mode
+      radius: 80,
+      maxOpacity: 0.8,
+      minOpacity: 0,
+      blur: 0.75,
+      dotColor: '#FF6B6B'
     });
 
     const points = [];
     let skippedCount = 0;
-    const isConfetti = activeMode === 'confetti';
 
     heatmapRecords.forEach((record) => {
       const selector = record.selector;
@@ -604,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const y = Math.round(rect.top + rect.height * percentY + win.scrollY);
 
           if (Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0) {
-            points.push({ x, y, value: isConfetti ? 1 : 0.5 });
+            points.push({ x, y, value: 0.5 });
           } else {
             skippedCount++;
           }
