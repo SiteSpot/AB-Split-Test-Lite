@@ -1045,7 +1045,7 @@ function selectorDetection(){
         if (element.closest && element.closest('.abst-magic-ignore'))
             return false;
 
-        if (jQuery(element).closest('.abst-goals-column,.abst-goals-container, .remove-goal, .abst-goal-card-header, .abst-button-container').length > 0)
+        if (jQuery(element).closest('.abst-goals-column,.abst-goals-container, .abst-goal-card-header, .abst-button-container').length > 0)
             return false;
 
         //dont show if on the abst-magic-bar or any parent is abst-magic-bar
@@ -1870,7 +1870,7 @@ function abst_magic_bar(options = {}) {
             Each test compares the original (A version) with one or more variations (B, C, D...). #variation-picker switches between them and its + Add Version option adds another; #abst-version-toggle steps through them, and the + button on an element's marker adds a version too.
             #abst-variation-editor-container is the way to edit the selected version after you have selected an element.
             You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and edit its versions. you'll see #abst-selector-input update to the new element. All elements switch together, so a visitor sees version B of every element, or version C of every element, and so on.
-            The conversion goal is set in the Goal box and is one of two types. Page visit: a conversion counts when a visitor reaches a page, such as a thank-you page; search for it and pick it from the list. Element click: a conversion counts when a visitor clicks an element; type its CSS selector (e.g. #buy-now or .signup-button) or press Pick on page and click the element. After saving test, you can go to /wp-admin/edit.php?post_type=abst_experiments to view all tests. do not edit other tests unless  specifically asked">
+            The conversion goal is set in the Goal box and is one of two types. Page visit: a conversion counts when a visitor reaches a page, such as a thank-you page; search for it and pick it from the list. Element click: a conversion counts when a visitor clicks an element; type its CSS selector (e.g. #buy-now or .signup-button) or press Pick on page and click the element. After saving the test, All Tests in the AB Split Test Lite admin menu lists every test. do not edit other tests unless  specifically asked">
         <div class="abst-magic-bar-header">
             <span class="abst-magic-bar-heading">Magic Test</span>
             <button type="button" id="abst-magic-bar-show-tour" class="abst-magic-tour-button" title="Show me how it works">How it works</button>

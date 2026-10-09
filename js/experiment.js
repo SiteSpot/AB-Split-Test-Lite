@@ -1754,7 +1754,7 @@ var datasets = [];
 
 for (var key in observations) {
 
-  if (observations.hasOwnProperty(key) && key !== 'conversion_style' && key !== 'test_type' && key !== 'test_winner') {
+  if (observations.hasOwnProperty(key) && key !== 'test_type' && key !== 'test_winner') {
 
       var variant = observations[key];
 
@@ -2359,74 +2359,3 @@ function updateDescription(full = true) {
 
 
 
-jQuery(document).ready(function($) {
-
-  // onabst-export-data click
-
-  $('body').on('click', '.abst-export-data', function(e) {
-
-    e.preventDefault();
-
-    console.log('exporting data');
-
-    $('.abst-export-data-response').remove();
-
-    var test_id = $(this).attr('test_id');
-
-    jQuery.ajax({
-
-      type: "POST",
-
-      url: window.ajaxurl,
-
-      data: {
-
-        'action': 'abst_export_data',
-
-        'test_id': test_id,
-
-        'nonce': abst_exturl.export_nonce,
-
-      },
-
-      success: function(response){
-
-        console.log(response.data);
-
-        var explain_csv = "<H5>Table Column descriptions:</H5>";
-
-        explain_csv += "<br/><strong>uuid:</strong> unique identifier for each visitor";
-
-        explain_csv += "<br/><strong>type:</strong> type of event. starts as 'visit' and changes to 'conversion' when a conversion is detected";
-
-        explain_csv += "<br/><strong>variation:</strong> variation name";
-
-        explain_csv += "<br/><strong>testId:</strong> test id";
-
-        explain_csv += "<br/><strong>location:</strong> location of event (page ID or URL)";
-
-        explain_csv += "<br/><strong>size:</strong> screen size of device (desktop, tablet, mobile)";
-
-        explain_csv += "<br/><strong>timestamp:</strong> timestamp of last visit/conversion";
-
-        $('.abst-export-data').after('<p class="abst-export-data-response">' + response.data + '</p>' + explain_csv);
-
-      },
-
-      error: function(error){
-
-        console.log('error exporting data');
-
-        console.log(error);
-
-      },
-
-    });
-
-  });
-
-
-
-  
-
-});

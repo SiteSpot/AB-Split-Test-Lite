@@ -33,25 +33,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Hand off to the full version of AB Split Test.
+ * Step aside for AB Split Test Pro, a separate plugin.
  *
- * Lite and the full plugin are the same engine: they share constants, top-level
- * functions and class names, so PHP cannot load both. Activating the full plugin
- * while Lite was active used to die with "Plugin could not be activated because it
+ * Both plugins share constants, top-level functions and class names, so PHP cannot
+ * load both. Activating Pro while Lite was active used to die with "Plugin could not be activated because it
  * triggered a fatal error".
  *
  * WHY THIS FILE IS ONLY A LOADER: PHP registers top-level functions when a file is
  * COMPILED, before a single line of it runs, so a guard at the top of the real
  * plugin file cannot help. The plugin code lives in bt-bb-ab-core.php so that, when
- * the full plugin is active or is being activated, Lite is never compiled at all.
+ * Pro is active or is being activated, Lite is never compiled at all.
  *
- * Nothing is deleted here. Tests, settings and results stay in the database for the
- * full plugin to pick up; data removal only ever happens in uninstall.php.
+ * Nothing is deleted here. Tests, settings and results stay in the database for Pro
+ * to pick up; data removal only ever happens in uninstall.php.
  */
 
 /**
- * Plugin files (relative to the plugins folder) that are the full AB Split Test.
- * The full plugin's main file is also called bt-bb-ab.php, in whatever folder it was
+ * Plugin files (relative to the plugins folder) that are AB Split Test Pro.
+ * Pro's main file is also called bt-bb-ab.php, in whatever folder it was
  * installed to; its "bt-bb-ab" text domain tells it apart from a copy of Lite.
  *
  * @param string[] $abst_lite_plugins Plugin basenames to check.
@@ -107,7 +106,7 @@ function abst_lite_plugins_being_activated() {
         $abst_lite_argv = array_map( 'strval', $GLOBALS['argv'] );
         if ( in_array( 'plugin', $abst_lite_argv, true ) && in_array( 'activate', $abst_lite_argv, true ) ) {
             foreach ( $abst_lite_argv as $abst_lite_arg ) {
-                // WP-CLI takes the folder slug; --all could include the full plugin too.
+                // WP-CLI takes the folder slug; --all could include Pro too.
                 if ( '--all' === $abst_lite_arg ) {
                     foreach ( (array) glob( plugin_dir_path( __DIR__ ) . '*/bt-bb-ab.php' ) as $abst_lite_found ) {
                         $abst_lite_plugins[] = plugin_basename( $abst_lite_found );
@@ -122,25 +121,25 @@ function abst_lite_plugins_being_activated() {
     return $abst_lite_plugins;
 }
 
-// Stay out of the way when the full plugin is already running (it loaded first), is
-// active on this site or network, or is being activated in this request. Lite does
-// nothing else here: the full plugin switches Lite off when it is activated, and if
-// the full plugin is later removed Lite simply starts working again.
+// Stay out of the way when Pro is already running (it loaded first), is active on
+// this site or network, or is being activated in this request. Lite does nothing
+// else here: Pro switches Lite off when it is activated, and if Pro is later removed
+// Lite simply starts working again.
 $abst_lite_active = (array) get_option( 'active_plugins', array() );
 if ( is_multisite() ) {
     $abst_lite_active = array_merge( $abst_lite_active, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
 }
 $abst_lite_reason = '';
 if ( defined( 'BT_AB_TEST_ITEM_ID' ) ) {
-    $abst_lite_reason = 'the full plugin is already loaded';
+    $abst_lite_reason = 'AB Split Test Pro is already loaded';
 } elseif ( abst_lite_has_full_plugin( $abst_lite_active ) ) {
-    $abst_lite_reason = 'the full plugin is active';
+    $abst_lite_reason = 'AB Split Test Pro is active';
 } elseif ( abst_lite_has_full_plugin( abst_lite_plugins_being_activated() ) ) {
-    $abst_lite_reason = 'the full plugin is being activated in this request';
+    $abst_lite_reason = 'AB Split Test Pro is being activated in this request';
 }
 if ( '' !== $abst_lite_reason ) {
     // Trace it in the AB Split Test log. Lite's own logger is in the core, which is
-    // not loaded, so this uses the full plugin's once everything has loaded - and
+    // not loaded, so this uses Pro's once everything has loaded - and
     // only once a day for the steady state, so the log is not flooded.
     add_action(
         'plugins_loaded',

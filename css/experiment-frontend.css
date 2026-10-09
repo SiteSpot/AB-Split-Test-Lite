@@ -357,16 +357,6 @@ body[data-builder-window='iframe'] .brx-body [bt-eid],
 
 
 
-.ab-white-popup {
-  position: relative;
-  background: #FFF;
-  padding: 20px;
-  width: auto;
-  margin: 20px auto;
-}
-
-
-
 .ab-copy-link{
   cursor: pointer;
   position: absolute !important;
@@ -845,31 +835,6 @@ div#abst-variation-editor button:hover{
   /* box-shadow: 0 0 10px -2px #00000029; */
 }
 
-#abst-idea-button{
-  background-color: #a82bb949;
-  color: black;
-  border:rgba(128, 0, 128, 0.493) 1px solid;
-  border-radius: 5px;
-  padding: 7px 20px;
-  cursor: pointer;
-}
-
-.prompt-response{
-  display: none;
-}
-
-.test-ideas-suggestion {
-  margin: 5px;
-  padding: 10px;
-  background: #0000000a;
-  border: thin solid #0000001f;
-  border-radius: 5px;
-}
-
-#abst-idea-button:hover{
-  background-color:rgba(128, 0, 128, 0.493);
-}
-
 .abst-element-column-hidden {
   display: none;
   flex: 0 0 300px;
@@ -938,30 +903,6 @@ div#abst-variation-editor button:hover{
   /* overflow-y: auto; */
   padding-right: 5px;
   overflow-x: hidden;
-}
-.goal-type{
-  padding: 0 5px !important ;
-  text-align:left;
-}
-.remove-goal{
-  /* fill rest of line and text align right */
-  text-align: center;
-  cursor: pointer;
-  color: #696969;
-  font-weight: bold;
-  background: #ececec;
-  font-size: 12px;
-  padding: 0;
-  border: thin solid #cccccc;
-  width: 30px;
-  border-radius: 20px;
-  float: right;
-}
-
-.remove-goal:active{
-  background-color: #381111;
-  border:black;
-  color: white;
 }
 
 
@@ -1066,7 +1007,8 @@ html.doing-abst-magic-bar{
   transition: margin-right 0.3s, width 0.3s, max-width 0.3s;
 }
 
-select.goal-type, .abst-goal-page-input, #abst-device-size{
+.abst-goal-page-input,
+#abst-device-size{
   width: 100%;
   display: inline-block;
   border: 1px solid #d7d7d7;
@@ -1839,7 +1781,6 @@ button.abst-add-row-button:hover {
 }
 
 /* Goal type select */
-select.goal-type,
 .abst-goal-page-input,
 #abst-device-size {
   border: 1px solid #e2e8f0;
@@ -1852,23 +1793,6 @@ select.goal-type,
 }
 
 /* Remove goal button */
-.remove-goal {
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  width: 20px;
-  height: 20px;
-  font-size: 16px;
-  line-height: 20px;
-  text-align: center;
-  transition: color 0.15s ease;
-  cursor: pointer;
-}
-
-.remove-goal:hover {
-    color: #c50000;
-    background: white;
-}
 
 .goal-value-label {
   margin: 0 0 10px 0;
@@ -2052,7 +1976,7 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
   letter-spacing: normal;
   text-transform: none;
 }
-/* Padding stays inside each section's width (Lite's base styles don't set this) */
+/* Padding stays inside each section's width (the base styles don't set this) */
 #abst-magic-bar, #abst-magic-bar *, #abst-magic-bar *::before, #abst-magic-bar *::after { box-sizing: border-box; }
 #abst-magic-bar .abst-magic-bar-container { display: flex; flex-direction: column; min-height: 100%; }
 /* The base styles make each section a card: width calc(100% - 16px) + 8px margins. The refresh

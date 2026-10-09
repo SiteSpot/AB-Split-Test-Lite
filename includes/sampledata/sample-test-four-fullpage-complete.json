@@ -30,7 +30,6 @@
             "subscriber",
             "customer"
         ],
-        "conversion_style": "bayesian",
         "test_winner": "home-v2",
         "ac_min_days": "7",
         "ac_min_views": "500"

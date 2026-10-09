@@ -196,7 +196,7 @@ function abst_build_winner_email_data( $experiment, $observations ) {
         'runner_up_key'     => $runner_up_key,
         'runner_up_label'   => $runner_up_key ? $variations[ $runner_up_key ]['label'] : null,
         'edit_url'          => admin_url( 'post.php?post=' . $test_id . '&action=edit' ),
-        'wl_name'           => abst_email_brand_name(),
+        'brand_name'           => abst_email_brand_name(),
     );
 }
 
@@ -360,7 +360,7 @@ function abst_render_winner_email_html( $d ) {
 
     // Header band
     $html .= '<tr><td style="background:' . $esc( $green ) . ';padding:14px 24px;">';
-    $html .= '<div style="color:#ffffff;font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;">' . $esc( $d['wl_name'] ) . '</div>';
+    $html .= '<div style="color:#ffffff;font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;">' . $esc( $d['brand_name'] ) . '</div>';
     $html .= '</td></tr>';
 
     // Hero
@@ -403,7 +403,7 @@ function abst_render_winner_email_html( $d ) {
  */
 function abst_render_winner_email_text( $d ) {
     $lines = array();
-    $lines[] = $d['wl_name'] . ': ' . $d['test_name'] . ' has a winner.';
+    $lines[] = $d['brand_name'] . ': ' . $d['test_name'] . ' has a winner.';
     $lines[] = '';
     $lines[] = 'Winning: ' . $d['winner_label'] . ' (' . number_format( $d['winner_conf'], 0 ) . '% confidence)';
 

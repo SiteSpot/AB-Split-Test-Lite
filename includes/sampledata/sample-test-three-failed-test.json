@@ -25,7 +25,6 @@
             "subscriber",
             "customer"
         ],
-        "conversion_style": "bayesian",
         "test_winner": "magic-0",
         "ac_min_days": "7",
         "ac_min_views": "500"

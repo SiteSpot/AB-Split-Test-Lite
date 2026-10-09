@@ -20,8 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * yet" from one page view to the next. A variation with no visits yet is left
  * out of the draws (and blocks a winner) instead of stopping the analysis.
  *
- * The helpers share their names with AB Split Test Pro, which ships the same
- * code, so each is only declared when Pro has not already declared it.
+ * Each helper is declared only once, guarded with function_exists().
  */
 
 if ( ! function_exists( 'abst_stats_seed' ) ) {

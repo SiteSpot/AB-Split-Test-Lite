@@ -19,7 +19,7 @@
 
     var args = Array.prototype.slice.call(arguments);
     if (typeof args[0] === 'string') {
-      args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+      args[0] = args[0].replace(/^\s*ABST\s*:\s*/i, '');
       args[0] = 'ABST: ' + args[0];
     } else {
       args.unshift('ABST:');
@@ -276,13 +276,13 @@ function setAbstApprovalStatus(approved) {
     var cookies = document.cookie.split(';');
     cookies.forEach(function(cookie) {
       var name = cookie.split('=')[0].trim();
-      if (name.indexOf('btab_') === 0 || name === 'ab-advanced-id' || name === 'abst_server_events') abstDeleteCookie(name);
+      if (name.indexOf('btab_') === 0 || name === 'ab-advanced-id') abstDeleteCookie(name);
     });
     [function() { return localStorage; }, function() { return sessionStorage; }].forEach(function(getStorage) {
       try {
         var storage = getStorage();
         Object.keys(storage).forEach(function(key) {
-          if (key.indexOf('btab_') === 0 || key === 'ab-advanced-id' || key === 'abst_server_events' || key === 'abstApprovalStatus' || key === 'abstTestDataQueue' || key === 'abst_original_utm' || key === 'abst_original_referrer') storage.removeItem(key);
+          if (key.indexOf('btab_') === 0 || key === 'ab-advanced-id' || key === 'abstApprovalStatus' || key === 'abstTestDataQueue' || key === 'abst_original_utm' || key === 'abst_original_referrer') storage.removeItem(key);
         });
       } catch (e) {}
     });
@@ -1282,8 +1282,7 @@ function skippedCookie(eid, btv, reason) {
 }
 
 // Merge the visitor's query string into a redirect target: parameters already on the
-// target win, every other visitor parameter is carried over. Plugin control
-// parameters (ssr, abst_pin, abst_uuid) are never carried.
+// target win, every other visitor parameter is carried over.
 function abstMergeRedirectQuery(targetUrl, visitorSearch, visitorHash) {
   var target;
   try {
@@ -1294,7 +1293,6 @@ function abstMergeRedirectQuery(targetUrl, visitorSearch, visitorHash) {
   var visitor = new URLSearchParams(visitorSearch || '');
   var carried = false;
   visitor.forEach(function (value, key) {
-    if (key === 'ssr' || key === 'abst_pin' || key === 'abst_uuid') return;
     if (!target.searchParams.has(key)) {
       target.searchParams.append(key, value);
       carried = true;
@@ -1441,8 +1439,6 @@ function abstSetCookie(c_name, value, exdays) {
   }
 
   console.log('ABST: Cookie set on localStorage backup. ALERT COOKIES ARE BEING BLOCKED.');
-  console.log('ABST: Server side conversions will not work. Client side conversions will work.');
-  
   // All failed - use browser storage after consent, or page memory while pending.
   return btSetLocal(c_name, value);
 }
@@ -2196,13 +2192,6 @@ function abstContainsHtml(str) {
 function abstRedirect(url) {
 
   console.log('ABST: Redirecting to ' + url);
-  // Don't redirect if we're in server-side rendering mode (check current page URL)
-  if (window.location.search.indexOf('ssr=1') > -1) {
-    console.log('ABST: Not redirecting - server-side rendering mode active ?ssr=1');
-    window.abstRedirecting = false;
-    return;
-  }
-
   window.abstRedirecting = true;
   document.documentElement.style.transition = 'none';
   try {

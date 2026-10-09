@@ -353,22 +353,6 @@
 
 }
 
-#abst-insights-iframe {
-
-  width: 100%;
-
-  min-height: 100%;
-
-  height: auto;
-
-  border: thin solid whitesmoke;
-
-  box-shadow: 0 1px 10px -3px grey;
-
-  border-radius: 10px;
-
-}
-
 #wpfooter{
 
   position: static;

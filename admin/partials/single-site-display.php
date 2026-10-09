@@ -653,7 +653,7 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
               <p><strong>The WordPress MCP Adapter plugin is not installed.</strong></p>
 
-              <p>MCP adapter will be included in WordPress 7, but you are on an older version. To use the MCP integration with AB Split Test, you need to install the WordPress MCP Adapter plugin first.</p>
+              <p>To use the MCP integration with AB Split Test, install and activate the WordPress MCP Adapter plugin first.</p>
 
             </div>
 
@@ -662,7 +662,7 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
             <h4 style="margin-top: 20px;">Step 1: Install WordPress MCP Adapter Plugin</h4>
 
             <ol style="margin-left: 20px;">
-              <li><a href="https://github.com/WordPress/mcp-adapter/releases/latest/download/mcp-adapter.zip" target="_blank" rel="noopener noreferrer">Download the WordPress MCP Adapter</a> (a zip file from WordPress on GitHub)</li>
+              <li><a href="https://github.com/WordPress/mcp-adapter/releases" target="_blank" rel="noopener noreferrer">Get the WordPress MCP Adapter</a> from its releases page on GitHub (download the zip)</li>
               <li>Go to <strong>Plugins &rarr; Add New Plugin</strong> and click <strong>Upload Plugin</strong></li>
               <li>Choose the zip, click <strong>Install Now</strong>, then <strong>Activate Plugin</strong></li>
               <li>Come back to this tab for the connection steps</li>
@@ -886,9 +886,9 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
               <li><strong>Minimum WordPress 6.9:</strong> The Abilities API is only available in WordPress 6.9+ and requires MCP adapter plugin to function.</li>
 
-              <li><strong>Built for WordPress 7:</strong> No additional plugins etc needed if on WordPress 7.0 or later.</li>
-
             </ul>
+
+          <?php endif; ?>
 
           </div>
 
@@ -903,8 +903,6 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
             <p><a href="https://github.com/WordPress/mcp-adapter" target="_blank">WordPress MCP Adapter on GitHub</a></p>
 
           </div>
-
-          <?php endif; ?>
 
         </div><!-- end #tab-developer -->
 

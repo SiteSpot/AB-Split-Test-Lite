@@ -23,7 +23,6 @@
         "conversion_selector": "button, .btn, input[type=\"submit\"], .wp-block-button__link",
         "url_query": "",
         "bt_allowed_roles": [],
-        "conversion_style": "bayesian",
         "test_winner": "variation-b",
         "ac_min_days": "7",
         "ac_min_views": "500"

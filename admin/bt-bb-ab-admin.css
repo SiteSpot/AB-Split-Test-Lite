@@ -1243,30 +1243,6 @@ p.experiment-status {
     font-size: 1.1em;
 }
 
-.free-notice {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.free-trial-notice {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.free-notice a, .free-trial-notice a {
-    font-weight: bold;
-    color: #323232;
-    background: white;
-    padding: 10px;
-    border-radius: 5px;
-    background: #f5f5f5;
-    box-shadow: inset 0 1px 10px -7px;
-}
-
 .show_experiment_results h2 {
     padding-left: 0 !important;
 }
@@ -1308,31 +1284,6 @@ input.search-filter {
 
 p.experiment-status {
     font-size: 1.1em;
-}
-
-.free-notice {
-    background-color: #e2e2e2;
-    padding: 20px;
-    border-radius: 10px;
-    border:thin solid grey;
-    
-    margin-bottom: 20px;
-}
-
-.free-trial-notice {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.free-notice a, .free-trial-notice a {
-    font-weight: bold;
-    color: #323232;
-    background: white;
-    padding: 10px;
-    border-radius: 5px;
-    display: inline-block;
 }
 
 
@@ -1428,29 +1379,6 @@ p.experiment-status {
 .na .results-conversion-rate {
     font-size: 1.5em !important;
     font-weight:bolder;
-}
-
-.insights-section span.lawbadge {
-    margin: -3px 10px 5px -5px;
-    padding: 5px 10px;
-    background: #0080001a;
-    display: inline-block;
-    border-radius: 3px;
-}
-
-.insights-section p.lawdescription {
-    background: white;
-    padding: 3px 5px;
-    border-radius: 3px;
-    box-shadow: 0 1px 10px -3px #0000004f;
-}
-
-.insights-section .test-suggestion-seen-page {
-    background: white;
-    border-radius: 5px;
-    padding: 3px 5px;
-    margin-right: 10px;
-    box-shadow: 0 1px 10px -3px #0000004f;
 }
 
 /* =====================================================
@@ -2306,10 +2234,6 @@ input.ab-toggle:checked:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-div#share-report>div {
-    padding-top: 0;
-}
-
 /* Status Panel */
 .abst-status-panel h2 {
     font-size: 1.25em;
@@ -2617,18 +2541,6 @@ div#wpfooter {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
-}
-.share-button {
-    padding: 9px 10px !important;
-}
-.share-button:hover {
-    background: #e3f1ff !important;
-    border-color: #9ca3af !important;
-}
-.share-button:focus,
-.share-button:active {
-    box-shadow: none !important;
-    background: white !important;
 }
 .show_experiment_results .button:hover,
 .show_experiment_results button:hover {

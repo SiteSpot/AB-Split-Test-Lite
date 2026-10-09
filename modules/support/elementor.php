@@ -79,7 +79,7 @@ class ABST_Elementor
           'label' => __( 'Variation Name', 'ab-split-test-lite' ),
           'type' => \Elementor\Controls_Manager::TEXT,
           'default' => '',
-          'description' => __('Using "default" will cause this version to run first, unless otherwise targeted. <a href="#">more info <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window"></a>', 'ab-split-test-lite')
+          'description' => __('Using "default" will cause this version to run first, unless otherwise targeted.', 'ab-split-test-lite')
         ]
       );
 

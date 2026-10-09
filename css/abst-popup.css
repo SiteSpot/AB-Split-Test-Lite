@@ -190,7 +190,7 @@ label {
     padding: 0 16px;
 }
 
-/* a select placed straight in an accordion (free version Device Size) lines up with the text */
+/* a select placed straight in an accordion (Device Size) lines up with the text */
 .expanded > select {
     width: calc(100% - 32px);
     margin: 0 16px 16px;

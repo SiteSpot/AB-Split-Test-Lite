@@ -59,7 +59,7 @@ jQuery(function ($) {
             if(!confirm('Are you sure you want to remove all heatmap data?')) return;
 
             jQuery.ajax({
-                url: bt_adminurl + 'admin-ajax.php',
+                url: abstTourVars.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'abst_remove_heatmap_data',

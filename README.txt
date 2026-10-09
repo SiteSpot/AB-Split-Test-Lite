@@ -89,18 +89,6 @@ AB Split Test registers WordPress Abilities. Install the official WordPress MCP 
 * `update-test-status`: start, pause or complete a test
 * `update-test-settings`: change the goal, targeting and variations
 
-= What users say =
-
-> "Makes A/B testing as simple as can be. It's truly point-and-click easy with the WordPress plugin." (Verified User, Legal Services)
-
-> "Smooth, super powerful and easy to integrate. It runs fast, has separate tables, the db is not clogged, and it runs smoothly even on cheap hosting." (digitalfastmind.com)
-
-> "As a WordPress developer, this plugin immediately stood out. It runs fast without bloating the site and integrates cleanly into a standard WordPress workflow." (Stacey W., CodeInk)
-
-> "It worked especially well with Elementor, letting me test anything from minor aesthetic variations all the way to total page variations." (Geoff, medlmobile.com)
-
-> "I didn't have to read the manual in order to set up a test." (David McCan, WebTNG)
-
 = AB Split Test Pro =
 
 AB Split Test Pro is a separate plugin, available from [absplittest.com](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=pro), with more ways to measure a win: form submission goals, WooCommerce, Easy Digital Downloads and FluentCart purchase and revenue tracking, sub-goals for multi-step funnels, audiences and location targeting, automatic winner selection, AI test ideas, webhooks, email reports and WP-CLI commands. Your tests and results carry over if you switch.
@@ -116,6 +104,7 @@ This plugin bundles the following open-source libraries:
 * heatmap.js 2.0.5, MIT License, https://github.com/pa7/heatmap.js
 * Awesomplete 1.1.7, MIT License, https://github.com/LeaVerou/awesomplete
 
+The readable source of every minified file ships alongside it: js/chart.src.js, js/select2.src.js, js/driver.src.js, js/tabulator.src.js, js/heatmap.src.js, js/creator.src.js (Awesomplete) and js/bt_conversion.js (the plugin's tracking script, minified as js/bt_conversion-min.js).
 = Help translate =
 
 AB Split Test is translation-ready. Contribute a translation for your language at [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/ab-split-test-lite/).

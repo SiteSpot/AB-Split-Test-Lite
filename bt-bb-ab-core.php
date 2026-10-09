@@ -3,7 +3,7 @@
  * AB Split Test Lite - plugin core.
  *
  * Loaded only by bt-bb-ab.php, which carries the plugin header and decides whether
- * it is safe to load at all (see the full-version handoff there). This file has no
+ * it is safe to load at all (see the handoff check there). This file has no
  * "Plugin Name" header on purpose, so WordPress does not list the plugin twice.
  *
  * __FILE__ here is this core file. That is fine for directory-based calls
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Only bt-bb-ab.php may load the core, after its full-version handoff check.
+// Only bt-bb-ab.php may load the core, after its handoff check.
 if ( ! defined( 'ABST_LITE_MAIN_FILE' ) ) {
     exit;
 }
@@ -37,8 +37,7 @@ define('ABST_PLUGIN_FOLDER', $abst_folder_path);
 
 
 if (!defined('ABST_TEST_LABEL')) {
-  $abst_wl_ab_test = apply_filters('abst_wl_ab_test', 'Split Test');
-  define('ABST_TEST_LABEL', $abst_wl_ab_test);
+  define('ABST_TEST_LABEL', apply_filters('abst_test_label', 'Split Test'));
 }
 
 if (!defined('ABST_JOURNEY_DIR')) define( 'ABST_JOURNEY_DIR', trailingslashit( wp_upload_dir()['basedir'] ) . 'abst/journeys' );
@@ -109,8 +108,6 @@ if(! class_exists ( 'ABST_Tests'))
 
 
       add_filter( 'body_class', [$this, 'updated_body_class'] );
-
-      add_filter( 'bt_can_user_view_variations', [$this, 'can_user_view_variations'], 10, 1 );
 
       add_filter( 'display_post_states',  [$this, 'test_post_states'], 10, 2);
 
@@ -199,10 +196,6 @@ if(! class_exists ( 'ABST_Tests'))
 
       add_action( 'wp_ajax_nopriv_abst_data', array($this,'process_batch_data'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
-      add_action( 'wp_ajax_abst_event', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions 
-
-      add_action( 'wp_ajax_nopriv_abst_event', array($this,'abst_log_experiment_activity'), 10, 6 ); // render js to show tests and log interactions - logged out user
-
       add_action( 'wp_ajax_abst_delete_variation', array($this,'abst_delete_variation'), 10, 6 ); // render js to show tests and log interactions - logged out user
 
 
@@ -215,7 +208,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       add_action( 'add_meta_boxes', array($this,'add_experiment_meta_box'),10,1 );  // meta boxes for experiments
 
-      add_action( 'save_post_bt_experiments', array($this,'save_postdata'),10,1 ); // catch page save to get update conversion URL meta
+      add_action( 'save_post_abst_experiments', array($this,'save_postdata'),10,1 ); // catch page save to get update conversion URL meta
 
       add_action( 'trashed_post', array($this,'experiment_trash_handler'),10,1 ); // trashed, refresh conversions pages
 
@@ -464,7 +457,7 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-    // Autocomplete callback for Test ID (bt_experiment posts with test_type=on_page)
+    // WP Bakery autocomplete callback for the Test ID field (on-page tests)
 
     function bakery_autocomplete( $query, $tag, $param_name ) {
 
@@ -603,25 +596,16 @@ if(! class_exists ( 'ABST_Tests'))
 
   
 
-    function add_canonical_to_page_variations() {
-
-      // add rel="canonical" to variation pages pointing to default page
-
-      //get current page id
-
-      $pageID = get_the_ID();
-
-      //<link rel="canonical" href="https://example.com/preferred-url-here/" />
-
-    }
-
 
 
 
 
     function activate_plugin($plugin) {
 
-      if($plugin == plugin_basename(ABST_LITE_MAIN_FILE)) {
+      // Only after a single "Activate" click: never during bulk activation, WP-CLI or another plugin's activation.
+      // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only check; core verifies the nonce before activating.
+      $abst_activation_action = isset($_GET['action']) ? sanitize_key(wp_unslash($_GET['action'])) : '';
+      if($plugin == plugin_basename(ABST_LITE_MAIN_FILE) && 'activate' === $abst_activation_action && !(defined('WP_CLI') && WP_CLI)) {
 
           if(is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php')) {
 
@@ -1766,9 +1750,6 @@ if(! class_exists ( 'ABST_Tests'))
           'label' => sanitize_text_field($variation_labels[$key] ?? ''),
 
           'image' => esc_url_raw($variation_images[$key] ?? ''),
-
-          'weight' => 1
-
         );
 
       }
@@ -1776,14 +1757,6 @@ if(! class_exists ( 'ABST_Tests'))
       update_post_meta( $post_id, 'variation_meta', $variation_meta );
 
     }
-
-
-
-    // Results use Bayesian analysis and traffic is split evenly between versions.
-
-    update_post_meta( $post_id, 'conversion_style', 'bayesian' );
-
-    $this->clear_test_variation_weights($post_id);
 
 
 
@@ -4774,7 +4747,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       echo '<BR><textarea id="bt_experiments_url_query" name="bt_experiments_url_query" style="width:100%;min-height:72px;" placeholder="utm_source=Google&#10;utm_source=Facebook">' . esc_textarea( $url_query ) . '</textarea>';
 
-      echo '<p>Test on traffic with matching URL query strings. Use one rule per line (recommended), or separate OR rules with <code>|</code> or commas. Use <code>*</code> for URL contains, and start a rule with <code>NOT </code> to exclude.</p><p class="small urlqueryexamples">EXAMPLES +</p><div class="target-example">*thanks will match any URL containing "thanks". Example matching values: */pl match any complete URL with the string /pl </div><div class="target-example">"utm_source" will match any URL query with the key "utm_source". Example matching values: ?utm_source ?utm_source=anything ?utm_source=somethingelse </div><div class="target-example">"utm_source=fb" will match only when the key and value is a match. Example matching values: ?utm_source=fb  </div><div class="target-example">"NOT ?licenceKey" will exclude any URL containing the string "?licenceKey" </div><div class="target-example">Multiple OR rules: <code>utm_source=fb | utm_source=google | *pricing*</code></div><BR>';
+      echo '<p>Test on traffic with matching URL query strings. Use one rule per line (recommended), or separate OR rules with <code>|</code> or commas. Use <code>*</code> for URL contains, and start a rule with <code>NOT </code> to exclude.</p><p class="small urlqueryexamples">EXAMPLES +</p><div class="target-example">*thanks will match any URL containing "thanks". Example matching values: */pl match any complete URL with the string /pl </div><div class="target-example">"utm_source" will match any URL query with the key "utm_source". Example matching values: ?utm_source ?utm_source=anything ?utm_source=somethingelse </div><div class="target-example">"utm_source=fb" will match only when the key and value is a match. Example matching values: ?utm_source=fb  </div><div class="target-example">"NOT ?preview" will exclude any URL containing the string "?preview" </div><div class="target-example">Multiple OR rules: <code>utm_source=fb | utm_source=google | *pricing*</code></div><BR>';
 
       echo '<div class="ab-target-percentage"><h4><label for="bt_experiments_target_percentage">Traffic allocation percentage</label></h4><p>Limit the number of site visitors that get tested by a percentage.</p><input type="number" min="1" max="100" id="bt_experiments_target_percentage" name="bt_experiments_target_percentage" style="width:100%;" placeholder="100" value="' . esc_attr( $target_percentage ) . '"  /><p id="percentage_description"></p></div>';
 
@@ -5076,7 +5049,7 @@ public function identify_control_variation($variations, $test = null) {
 
 
 
-    // CSS/on-page: match defaultNames
+    // On-page: match defaultNames
 
     $defaultNames = ['original','one','1','default','standard','a','control'];
 
@@ -5117,12 +5090,8 @@ public function get_experiment_stats_array( $test ){
 
 
   $percentage_target         = apply_filters('abst_complete_confidence', 95);
-  // Backward compatibility: also allow old hook name (new hook takes precedence)
-  $percentage_target         = apply_filters("abst_complete_confidence", $percentage_target);
 
   $min_visits_for_winner     = abst_test_min_views($pid); // site-wide minimum, or the test's own if higher
-
-  $conversion_style          = get_post_meta($test->ID,'conversion_style',true);
 
   $test_type                 = get_post_meta($test->ID,'test_type',true);
 
@@ -5554,8 +5523,6 @@ public function get_experiment_stats_array( $test ){
 
     'duration_so_far'         => $duration_so_far,
 
-    'conversion_style'        => $conversion_style,
-
     'test_type'               => $test_type,
 
     'winner_key'              => $winner_key,
@@ -5767,8 +5734,6 @@ function abst_show_experiment_results($test,$asTable = false){
   $titles = [];
 
   $percentage_target = apply_filters('abst_complete_confidence', 95);
-  // Backward compatibility: also allow old hook name (new hook takes precedence)
-  $percentage_target = apply_filters("abst_complete_confidence", $percentage_target);
 
   $test_type = get_post_meta($test->ID,'test_type',true);
 
@@ -6551,12 +6516,6 @@ function abst_show_experiment_results($test,$asTable = false){
 
     
 
-    // Extension point below the status message.
-
-    do_action('abst_after_experiment_status', $pid);
-
-    
-
     echo "</div>"; // Close Status Panel
 
 
@@ -6572,11 +6531,6 @@ function abst_show_experiment_results($test,$asTable = false){
     else
 
       echo '<div class="results_variation title"><div class="title">Variation</div><div class="results-visits">Visits</div><div class="results-conversions">Conversions</div><div class="results-conversion-rate">', esc_html( $conversion_text ), '</div><div class="results-likely">', esc_html( $chance_column_header ), '</div></div>';
-
-    //hide old results remove soon
-
-
-
 
 $titles = array();
 
@@ -7111,13 +7065,6 @@ $titles = array();
 
 
 
-        //add weight
-
-        $meta = get_post_meta($pid, 'variation_meta', true);
-
-        if(isset($meta[$key]['weight']))
-
-          $observations['observations'][$key]['variation_meta']['weight'] = $meta[$key]['weight'];
 
 
 
@@ -7145,9 +7092,6 @@ $titles = array();
 
             $observations['observations'][$key]['variation_meta']['slug'] = $value['slug'];
 
-          if(!empty($value['weight']))
-
-            $observations['observations'][$key]['variation_meta']['weight'] = $value['weight'];
 
         }
 
@@ -7174,8 +7118,6 @@ $titles = array();
         $observations['device_size_winners'] = [];
 
         $min_visits_for_winner = apply_filters('abst_min_visits_for_winner', 50);
-        // Backward compatibility: also allow old hook name (new hook takes precedence)
-        $min_visits_for_winner = apply_filters("abst_min_visits_for_winner", $min_visits_for_winner);
 
         foreach ($obs['bt_bb_ab_stats']['device_size'] as $sk => $sb) {
 
@@ -7225,15 +7167,6 @@ $titles = array();
 
       
 
-      // Add conversion style information
-
-      $conversion_style = get_post_meta($pid, 'conversion_style', true);
-
-      if(!empty($conversion_style)) {
-
-        $observations['conversion_style'] = $conversion_style;
-
-      }
 
       
 
@@ -8001,11 +7934,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     function experiments_posts_columns($columns){
 
-      //if is not localhosted
-
-    //  $is_localhost = in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1']) || strpos($_SERVER['HTTP_HOST'], 'localhost:') === 0 || substr($_SERVER['HTTP_HOST'], -5) === '.test'; 
-
-      //if(!$is_localhost)
 
 
 
@@ -8510,8 +8438,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
+        'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
         'clearHeatmapNonce' => wp_create_nonce( 'abst_clear_heatmap_data' ),
-
       ] );
 
       //dropdowns      
@@ -8575,8 +8503,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
       wp_localize_script( 'abst-experiment', 'abst_exturl', [
 
         'ajax_url'  => admin_url( 'admin-ajax.php' ),
-
-        'export_nonce' => wp_create_nonce('abst_export_data_nonce'),
 
         'delete_variation_nonce' => wp_create_nonce('abst_delete_variation'),
 
@@ -9277,8 +9203,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'edit_pages'
 
       ]);
-      // Backward compatibility: also allow old hook name (new hook takes precedence)
-      $capabilities = apply_filters("abst_bt_can_user_view_variations", $capabilities);
 
 
 
@@ -9309,46 +9233,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
      * @return bool
 
      */
-
-    function can_user_view_variations( $capabilities ) {
-
-
-
-      if( !is_array($capabilities) || empty($capabilities) ) {
-
-        return true;
-
-      }
-
-
-
-      $allowed = 0;
-
-
-
-      foreach ($capabilities as $capability) {
-
-        if( current_user_can( $capability ) ) {
-
-          $allowed += 1;
-
-        }
-
-      }
-
-
-
-      if( $allowed > 0 ) {
-
-        return true;
-
-      }
-
-
-
-      return false;
-
-    }
 
     
 
@@ -9408,10 +9292,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
             $experiments[$module->settings->ab_test]['log_on_visible'] = get_post_meta($module->settings->ab_test, 'log_on_visible', true) === '1';
 
             $experiments[$module->settings->ab_test]['meta'] = [];
-
-            $experiments[$module->settings->ab_test]['meta']['weight'] = 0;
-
-            $experiments[$module->settings->ab_test]['conversion_style'] = get_post_meta($module->settings->ab_test,"conversion_style",true);
 
             if(get_post_meta($module->settings->ab_test,"meta",true))
 
@@ -9539,7 +9419,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'is_admin' => current_user_can('manage_options'),
         'post_id' => $post_id,
         'is_preview' => $is_preview,
-        'tagging' => apply_filters( 'abst_tagging', true ) ? '1' : '0',
         'abst_enable_user_journeys' => abst_get_admin_setting( 'abst_enable_user_journeys' ) ? '1' : '0',
         'magic_nonce' => current_user_can('edit_posts') ? wp_create_nonce('abst_create_new_on_page_test') : '',
         'plugins_uri' => ABST_PLUGIN_URI,
@@ -9547,7 +9426,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'v' => ABST_VERSION,
         'wait_for_approval' => abst_get_admin_setting( 'abst_wait_for_approval' ) ? '1' : '0',
         'heatmap_pages' => abst_get_admin_setting( 'abst_heatmap_pages' ),
-        'heatmap_all_pages' => abst_get_admin_setting( 'abst_heatmap_all_pages' ),
       ];
 
       // Build experiments array
@@ -9619,8 +9497,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
           'url_query' => $meta['url_query'][0] ?? '',
 
           'conversion_page' => ($meta['conversion_page'][0] ?? '') == 'block' ? '' : ($meta['conversion_page'][0] ?? ''),
-
-          'conversion_style' => $meta['conversion_style'][0] ?? 'bayesian',
 
           'conversion_selector' => $meta['conversion_selector'][0] ?? '',
 
@@ -10981,13 +10857,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-    /**
-
-     * Handle manual sample data loading via URL parameter
-
-     * Triggered via ?addtestdata=1 (admin only)
-
-     */
 
     /**
 
@@ -11048,8 +10917,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
                          'If status is "idea", only test_title and abst_idea_hypothesis are required. Ideas are lightweight placeholders that can be converted into draft tests later. ' .
 
                          'Supports magic (visual element), ab_test (on-page variations) and full_page (split URL) types. ' .
-
-                         'Conversion type options are generated from integrations active on this site — do not assume any ecommerce or form plugin is installed. ' .
 
                          'The response includes preview_urls for magic and full_page tests — visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (variations are defined in page content). ' .
 
@@ -11401,9 +11268,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'description' => 'Update conversion goals and other settings for an existing test. ' .
 
-                         'Use this when a test was created without proper conversion settings or needs to be reconfigured. ' .
-
-                         'Conversion type options reflect integrations active on this site.',
+                         'Use this when a test was created without proper conversion settings or needs to be reconfigured.',
 
         'input_schema' => [
 
@@ -11633,34 +11498,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-    public function clear_test_variation_weights($test_id) {
-
-      $variation_meta = get_post_meta($test_id, 'variation_meta', true);
-
-      if (empty($variation_meta) || !is_array($variation_meta)) {
-
-        return;
-
-      }
-
-
-
-      foreach ($variation_meta as $key => $meta) {
-
-        if (isset($variation_meta[$key]['weight'])) {
-
-          unset($variation_meta[$key]['weight']);
-
-        }
-
-      }
-
-
-
-      update_post_meta($test_id, 'variation_meta', $variation_meta);
-
-    }
-
 
 
     public function get_test_details_payload($test_id) {
@@ -11737,8 +11574,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'image' => isset($meta['image']) ? (string) $meta['image'] : '',
 
-          'weight' => isset($meta['weight']) ? $meta['weight'] : null,
-
         ];
 
       }
@@ -11786,8 +11621,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         ],
 
         'optimization' => [
-
-          'type' => get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian',
 
           'ac_min_days' => intval(get_post_meta($test_id, 'ac_min_days', true)),
 
@@ -12670,8 +12503,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
       $params = abst_normalize_api_input_params($request->get_json_params());
-      $params = abst_drop_unsupported_test_params($params);
-
       $requested_status = $params['status'] ?? abst_status_from_api($params['post_status'] ?? 'draft');
       $post_type = get_post_type_object('abst_experiments');
       if (!(defined('WP_CLI') && WP_CLI) && (!$post_type || !current_user_can($post_type->cap->create_posts))) {
@@ -12973,9 +12804,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
           'label' => isset($params['variation_labels'][$index]) ? sanitize_text_field($params['variation_labels'][$index]) : '',
 
           'image' => isset($params['variation_images'][$index]) ? esc_url_raw($params['variation_images'][$index]) : '',
-
-          'weight' => 1
-
         ];
 
       }
@@ -13005,8 +12833,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
       require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
 
       $params = abst_normalize_api_input_params($params);
-      $params = abst_drop_unsupported_test_params($params);
-
 
 
       // Set conversion goal
@@ -13068,12 +12894,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      // Results use Bayesian analysis; traffic is split evenly between versions.
-
-      update_post_meta($test_id, 'conversion_style', 'bayesian');
-
-      
-
       // Set URL query parameter filter
 
       if (!empty($params['url_query'])) {
@@ -13087,8 +12907,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      // A test has one conversion goal; clear any sub-goals stored by older versions.
-      delete_post_meta($test_id, 'goals');
 
       
 
@@ -13472,11 +13290,13 @@ add_action( 'admin_bar_menu', 'abst_split_test_admin_bar_menu', 199 );
 
       $grouped_posts = [];
 
-      $posts = get_posts([ 
+      // The pickers preload this many pages for speed; typing in a picker searches every
+      // page (get_posts_ajax_callback), so no page is out of reach.
+      $posts = get_posts([
 
           'post_type' 	 => $selected_post_types,
 
-          'posts_per_page' => 200,
+          'posts_per_page' => (int) apply_filters('abst_preloaded_posts_count', 200),
 
           'orderby'   => 'post_type',
 
@@ -13594,10 +13414,6 @@ if ( ! function_exists( 'abst_test_min_views' ) ) {
 
 function abst_get_admin_setting($setting){
 
-  if ($setting === 'abst_enable_logging') {
-    return '1';
-  }
-
   // Heatmap data retention in days (settings > Heatmaps), 3 unless changed.
   if ($setting === 'abst_heatmap_retention_length') {
     $network = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
@@ -13605,20 +13421,12 @@ function abst_get_admin_setting($setting){
     return max(1, intval($value));
   }
 
-  // Free features that ship ON by default. We return '1' only when the option
+  // Features that ship on by default. We return '1' only when the option
   // has never been saved (get_option/get_site_option === false); an explicit
   // '0' written by the settings form is preserved so users can still opt out.
   $default_on = array(
     'abst_enable_user_journeys'   => '1', // powers journey tracking + heatmaps
-    'abst_enable_heatmaps'        => '1',
   );
-
-  // Heatmaps run on every page by default.
-  if ($setting === 'abst_heatmap_all_pages') {
-    $network_all = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
-    $value = $network_all ? get_site_option($setting, false) : get_option($setting, false);
-    return ($value === false || $value === '') ? 'all' : $value;
-  }
 
   $network = is_plugin_active_for_network(ABST_PLUGIN_FOLDER.'/bt-bb-ab.php');
 
@@ -13644,17 +13452,6 @@ function abst_sanitize($value) {
 
   $value = sanitize_text_field($value); // classic sanitize
 
-  if($value == 'znx1uO7B')
-
-    return false;
-
-  if($value == 'dvMjCjQW')
-
-    return false;
-
-  if($value == '14zONhIZ')
-
-    return false;
 
   $value = preg_replace("/[^a-zA-Z0-9_\- ]/", "", $value); // keep alphanumeric plus - / etc
 
@@ -13667,20 +13464,6 @@ function abst_sanitize($value) {
 
 
 
-
-/**
-
- * Log a message to the AB Split Test log file
-
- *
-
- * @param string $message The message to log
-
- * @param string $level The log level (info, warning, error)
-
- * @return void
-
- */
 
 /**
  * Test statuses as stored (abst_idea, abst_complete) and as the API and its callers use
@@ -13698,9 +13481,8 @@ function abst_status_for_api($status) {
 
 /**
  * Tests are stored as the abst_experiments post type with abst_idea / abst_complete
- * statuses. AB Split Test Pro, and Lite before 1.0.0, used bt_experiments with idea /
- * complete; those tests are converted here once. Pro converts them back when it runs and
- * clears the flag, so a site can switch between the two plugins and keep its tests.
+ * statuses. Earlier builds stored them as bt_experiments with idea / complete statuses;
+ * those tests are converted here once, so existing tests are kept.
  */
 function abst_migrate_test_post_type() {
   if (get_option('abst_post_type_version') === '2') {
@@ -13786,14 +13568,13 @@ function abst_journey_file($date, $compressed = false) {
   return trailingslashit(ABST_JOURNEY_DIR) . 'abst_journeys_' . abst_file_hash() . '_' . $date . ($compressed ? '.txt.gz' : '.txt');
 }
 
-// Debug log bounds, the same as AB Split Test Pro: the newest 500 lines, at most 512 KB.
+// Debug log bounds: the newest 500 lines, at most 512 KB.
 if (!defined('ABST_LOG_MAX_LINES')) define('ABST_LOG_MAX_LINES', 500);
 if (!defined('ABST_LOG_MAX_BYTES')) define('ABST_LOG_MAX_BYTES', 512 * KB_IN_BYTES);
 
 /**
  * The debug log: a plain .log file with an unguessable name (an HMAC of the site URL
  * with the auth salt) in uploads/abst/logs, behind a blank index and "Deny from all".
- * It is the file AB Split Test Pro writes, so the log carries over when a site switches.
  * False until WordPress has loaded wp_salt().
  */
 function abst_debug_log_file() {
@@ -13985,29 +13766,26 @@ function abst_add_logs_page() {
 add_action('admin_menu', 'abst_add_logs_page');
 
 /**
- * Plugins-screen row: a Settings shortcut (which Lite was missing entirely) and
- * a Go Pro link. This row is the most-visited surface in the whole admin, so it
- * is where a Lite user is most likely to discover that a paid tier exists.
+ * Plugins-screen row: Settings, and a link to the separate Pro plugin.
  */
 function abst_lite_plugin_action_links( $links ) {
   $settings_url = admin_url( 'edit.php?post_type=abst_experiments&page=bt_bb_ab_test' );
   $custom = array(
     'abst_settings' => '<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'ab-split-test-lite' ) . '</a>',
-    'abst_upgrade'  => '<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank" style="color:#2271b1;font-weight:600;">' . esc_html__( 'Go Pro', 'ab-split-test-lite' ) . '</a>',
+    'abst_upgrade'  => '<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">' . esc_html__( 'Go Pro', 'ab-split-test-lite' ) . '</a>',
   );
   return array_merge( $custom, $links );
 }
 add_filter( 'plugin_action_links_' . plugin_basename( ABST_LITE_MAIN_FILE ), 'abst_lite_plugin_action_links' );
 
 /**
- * Plugins-screen meta row: point at the docs and the feature comparison.
+ * Plugins-screen meta row: a link to the documentation.
  */
 function abst_lite_plugin_row_meta( $links, $file ) {
   if ( $file !== plugin_basename( ABST_LITE_MAIN_FILE ) ) {
     return $links;
   }
   $links[] = '<a href="https://absplittest.com/documentation/" target="_blank">' . esc_html__( 'Documentation', 'ab-split-test-lite' ) . '</a>';
-  $links[] = '<a href="https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=plugin&utm_campaign=feature-link" target="_blank">' . esc_html__( 'Lite vs Pro', 'ab-split-test-lite' ) . '</a>';
   return $links;
 }
 add_filter( 'plugin_row_meta', 'abst_lite_plugin_row_meta', 10, 2 );
@@ -14967,10 +14745,6 @@ function abst_heatmaps_page_content() {
 
         
 
-        // Heatmaps record on every page, including installs that saved the old 'chosen' setting.
-        $heatmap_all_pages = true;
-
-        $page_tracked = true;
 
         
 
@@ -14984,7 +14758,7 @@ function abst_heatmaps_page_content() {
 
         // Check for issues
 
-        $has_issues = !$journeys_enabled || !$page_tracked;
+        $has_issues = !$journeys_enabled;
 
         
 
@@ -15003,18 +14777,6 @@ function abst_heatmaps_page_content() {
           } else {
 
             echo '<li style="color:#16a34a;">✓ Heatmaps & Journeys is enabled</li>';
-
-          }
-
-          
-
-          if (!$page_tracked) {
-
-            echo '<li style="color:#dc2626;">❌ This page is <strong>not being tracked</strong> - add it to your tracked pages or enable "All Pages"</li>';
-
-          } else {
-
-            echo '<li style="color:#16a34a;">✓ This page is being tracked' . ($heatmap_all_pages ? ' (All Pages enabled)' : '') . '</li>';
 
           }
 
@@ -15068,7 +14830,7 @@ function abst_heatmaps_page_content() {
 
         $session_label = $scroll_total_sessions === 1 ? 'session' : 'sessions';
 
-        $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
+        $days_label = 'the last ' . $selected_days . ' days';
 
         $description = 'Scroll map covers <strong>' . intval($scroll_total_sessions) . '</strong> ' . $session_label . ' from ' . $days_label . '. Each band shows the share of visitors who reached that depth.';
 
@@ -15078,7 +14840,7 @@ function abst_heatmaps_page_content() {
 
         $click_label = $click_count === 1 ? 'click' : 'clicks';
 
-        $days_label = $selected_days == '365' ? 'all time' : 'the last ' . $selected_days . ' days';
+        $days_label = 'the last ' . $selected_days . ' days';
 
         $description = 'Click heatmap shows <strong>' . intval($click_count) . '</strong> ' . $click_label . ' from ' . $days_label . '. Warmer colors indicate areas with more clicks.';
 
@@ -15872,48 +15634,6 @@ function abst_get_scroll_data($post_id, $filters) {
 }
 
 
-
-function abst_logs_by_screen_size($screenWidth,$journey_logs) {
-
-  $return_object = [];
-
-  if($screenWidth == 'small')
-
-    $screenWidth = 's';
-
-  else if($screenWidth == 'medium')
-
-    $screenWidth = 'm';
-
-  else
-
-    $screenWidth = 'l';
-
-
-
-  //start at the oldest logs
-
-  abst_log('before filter by screen size ' . $screenWidth . " " . sizeof($journey_logs));
-
-  foreach ($journey_logs as $journey_log) {
-
-    $screen_size = $journey_log[8]; //s,m,l 
-
-    //change to size
-
-    if($screen_size == $screenWidth) { // if the width matches
-
-      $return_object[] = $journey_log; // add to return object
-
-    }
-
-  }
-
-  abst_log('after filter by screen size ' . $screenWidth . " " . sizeof($return_object));
-
-  return $return_object;
-
-}
 
 
 
@@ -17200,12 +16920,6 @@ function abst_get_detected_caches() {
 
 
 
-  if ( class_exists( 'autoptimizeCache' ) )
-
-    $detected_caches[] = 'Autoptimize';
-
-
-
   // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Third-party Breeze cache action.
   if (has_action('breeze_clear_all_cache')) 
 
@@ -17514,100 +17228,11 @@ function abst_load_sample_tests_from_json($force = false) {
 
 function abst_create_test_from_json_data($filename, $data) {
 
-  // Handle the current format (test results data)
-
-  if (isset($data['magic-1']) || isset($data['magic-2'])) {
-
-    return abst_create_test_from_results_data($filename, $data);
-
-  }
-
-  
-
   // Handle structured format (post_data, test_config, sample_results)
 
   if (isset($data['post_data']) && isset($data['test_config'])) {
 
     return abst_create_test_from_structured_data($data);
-
-  }
-
-  
-
-  return false;
-
-}
-
-
-
-/**
-
- * Create test from results data format
-
- */
-
-function abst_create_test_from_results_data($filename, $data) {
-
-  // Extract test name from filename
-
-  $test_name = 'Sample: ' . ucwords(str_replace(['-', '.json'], [' ', ''], basename($filename, '.json')));
-
-  
-
-  // Create the post
-
-  $sample_test = [
-
-    'post_title' => $test_name,
-
-    'post_type' => 'abst_experiments',
-
-    'post_status' => 'draft',
-
-    'post_content' => 'This is a sample test with realistic data loaded from JSON.',
-
-    'post_date' => current_time('mysql'),
-
-    'post_date_gmt' => current_time('mysql', 1),
-
-  ];
-
-  
-
-  $test_id = wp_insert_post($sample_test);
-
-  
-
-  if ($test_id) {
-
-    update_post_meta($test_id, '_abst_is_sample_test', 1);
-
-    // Basic test configuration
-
-    update_post_meta($test_id, 'test_type', 'magic');
-
-    update_post_meta($test_id, 'target_percentage', '50');
-
-    update_post_meta($test_id, 'conversion_page', intval(get_option('page_on_front')) ?: '');
-
-
-    
-
-    // Create sample magic definition based on filename
-
-    $magic_definition = abst_create_sample_magic_definition($filename);
-
-    update_post_meta($test_id, 'magic_definition', wp_slash(wp_json_encode($magic_definition)));
-
-    
-
-    // Store the sample results data
-
-    update_post_meta($test_id, 'sample_results', wp_json_encode($data));
-
-    
-
-    return $test_id;
 
   }
 
@@ -17701,8 +17326,6 @@ function abst_create_test_from_structured_data($data) {
 
 
       'bt_allowed_roles' => 'bt_allowed_roles',
-
-      'conversion_style' => 'conversion_style',
 
 
 
@@ -17808,896 +17431,9 @@ function abst_create_test_from_structured_data($data) {
 
 
 
-/**
-
- * Create sample magic definition based on filename
-
- */
-
-function abst_create_sample_magic_definition($filename) {
-
-  $name = strtolower($filename);
-
-  
-
-  if (strpos($name, 'button') !== false || strpos($name, 'cta') !== false) {
-
-    return [
-
-      'original' => [
-
-        'selector' => 'button, .btn, input[type="submit"]',
-
-        'type' => 'style',
-
-        'property' => 'background-color',
-
-        'value' => '#007cba'
-
-      ],
-
-      'variations' => [
-
-        'Green Button' => [
-
-          'selector' => 'button, .btn, input[type="submit"]',
-
-          'type' => 'style',
-
-          'property' => 'background-color',
-
-          'value' => '#46b450'
-
-        ],
-
-        'Red Button' => [
-
-          'selector' => 'button, .btn, input[type="submit"]',
-
-          'type' => 'style',
-
-          'property' => 'background-color',
-
-          'value' => '#dc3232'
-
-        ]
-
-      ]
-
-    ];
-
-  }
-
-  
-
-  // Default to headline test
-
-  return [
-
-    'original' => [
-
-      'selector' => 'h1, h2.entry-title, .page-title',
-
-      'type' => 'text',
-
-      'value' => 'Original Headline'
-
-    ],
-
-    'variations' => [
-
-      'Compelling Headline' => [
-
-        'selector' => 'h1, h2.entry-title, .page-title',
-
-        'type' => 'text',
-
-        'value' => 'Discover Amazing Results in Just 30 Days'
-
-      ],
-
-      'Question Headline' => [
-
-        'selector' => 'h1, h2.entry-title, .page-title',
-
-        'type' => 'text',
-
-        'value' => 'Ready to Transform Your Business?'
-
-      ]
-
-    ]
-
-  ];
-
-}
-
-
-
 // Register activation hook
 
 register_activation_hook(ABST_LITE_MAIN_FILE, 'abst_create_sample_tests_on_activation');
-
-
-
-/**
-
- * Set cookie with fallback strategy matching JavaScript implementation
-
- * Tries root domain first, then subdomain, then minimal options
-
- */
-
-function abst_set_cookie_with_fallback($name, $value, $days, $host = null) {
-
-    if ($host === null) {
-
-        $host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-
-    }
-
-    
-
-    // Check if localhost
-
-    $is_localhost = (
-
-        in_array($host, ['localhost', '127.0.0.1'], true) ||
-
-        strpos($host, 'localhost:') === 0 ||
-
-        substr($host, -6) === '.test' ||
-
-        substr($host, -6) === '.local' ||
-
-        substr($host, -4) === '.dev' ||
-
-        filter_var(preg_replace('/:\d+$/', '', $host), FILTER_VALIDATE_IP)
-
-    );
-
-    if ($is_localhost) {
-
-        return setcookie($name, $value, [
-
-            'expires' => time() + ($days * 86400),
-
-            'path' => '/',
-
-            'SameSite' => 'Lax',
-
-            'Secure' => false,
-
-        ]);
-
-    }
-
-    
-
-    // Get root domain
-
-    $domain = abst_get_root_domain($host);
-
-    $expiry = time() + ($days * 86400);
-
-    $same_site = (is_ssl() ? 'None' : 'Lax');
-
-    $secure = is_ssl();
-
-    
-
-    // Strategy 1: Try main domain first
-
-    $options = [
-
-        'expires' => $expiry,
-
-        'path' => '/',
-
-        'domain' => $domain,
-
-        'SameSite' => $same_site,
-
-        'Secure' => $secure,
-
-    ];
-
-    
-
-    if (setcookie($name, $value, $options)) {
-
-        return true;
-
-    }
-
-    
-
-    // Strategy 2: Fallback to current subdomain only
-
-    $options['domain'] = ''; // No domain = current host only
-
-    
-
-    if (setcookie($name, $value, $options)) {
-
-        return true;
-
-    }
-
-    
-
-    // Strategy 3: Last resort - minimal cookie
-
-    $minimal_options = [
-
-        'expires' => $expiry,
-
-        'path' => '/',
-
-    ];
-
-    
-
-    if (setcookie($name, $value, $minimal_options)) {
-
-        return true;
-
-    }
-
-    
-
-    return false;
-
-}
-
-
-
-
-/**
-
- * Get root domain handling multi-part TLDs like .co.uk, .com.au, etc.
-
- * Matches the JavaScript logic in bt_conversion.js
-
- */
-
-function abst_get_root_domain($host) {
-
-    // Remove www prefix
-
-    $host = preg_replace('/^www\./', '', $host);
-
-    $parts = explode('.', $host);
-
-    
-
-    // Multi-part TLDs that need 3 parts instead of 2
-
-    $multiPartTlds = [
-
-        // Australia
-
-        'com.au', 'net.au', 'edu.au', 'gov.au', 'org.au', 'asn.au',
-
-        // United Kingdom
-
-        'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'me.uk', 'ltd.uk', 'plc.uk',
-
-        // New Zealand
-
-        'co.nz', 'org.nz', 'net.nz', 'govt.nz', 'ac.nz',
-
-        // South Africa
-
-        'co.za', 'org.za', 'net.za', 'gov.za', 'ac.za',
-
-        // Japan
-
-        'co.jp', 'ne.jp', 'or.jp', 'go.jp', 'ac.jp',
-
-        // China
-
-        'com.cn', 'net.cn', 'org.cn', 'gov.cn', 'ac.cn',
-
-        // Taiwan
-
-        'com.tw', 'org.tw', 'net.tw', 'gov.tw', 'edu.tw',
-
-        // Hong Kong
-
-        'com.hk', 'org.hk', 'net.hk', 'gov.hk', 'edu.hk',
-
-        // Singapore
-
-        'com.sg', 'org.sg', 'net.sg', 'gov.sg', 'edu.sg',
-
-        // India
-
-        'co.in', 'org.in', 'net.in', 'gov.in', 'ac.in',
-
-        // South Korea
-
-        'co.kr', 'or.kr', 'ne.kr', 'go.kr', 'ac.kr',
-
-        // Brazil
-
-        'com.br', 'org.br', 'net.br', 'gov.br', 'edu.br',
-
-        // Mexico
-
-        'com.mx', 'org.mx', 'net.mx', 'gov.mx', 'edu.mx',
-
-        // Israel
-
-        'co.il', 'org.il', 'net.il', 'gov.il', 'ac.il',
-
-        // Thailand
-
-        'co.th', 'or.th', 'net.th', 'go.th', 'ac.th',
-
-        // Malaysia
-
-        'com.my', 'org.my', 'net.my', 'gov.my', 'edu.my',
-
-        // Philippines
-
-        'com.ph', 'org.ph', 'net.ph', 'gov.ph', 'edu.ph',
-
-        // Indonesia
-
-        'co.id', 'org.id', 'net.id', 'go.id', 'ac.id',
-
-        // Canada
-
-        'co.ca', 'org.ca', 'net.ca', 'gov.ca', 'edu.ca',
-
-        // UAE
-
-        'co.ae', 'org.ae', 'net.ae', 'gov.ae', 'edu.ae',
-
-        // Pakistan
-
-        'com.pk', 'org.pk', 'net.pk', 'gov.pk', 'edu.pk',
-
-        // Bangladesh
-
-        'com.bd', 'org.bd', 'net.bd', 'gov.bd', 'edu.bd',
-
-        // Sri Lanka
-
-        'com.lk', 'org.lk', 'net.lk', 'gov.lk', 'ac.lk',
-
-        // Vietnam
-
-        'com.vn', 'org.vn', 'net.vn', 'gov.vn', 'edu.vn',
-
-        // Thailand
-
-        'com.tn', 'org.tn', 'net.tn', 'gov.tn',
-
-        // Egypt
-
-        'com.eg', 'org.eg', 'net.eg', 'gov.eg', 'edu.eg',
-
-        // Nigeria
-
-        'com.ng', 'org.ng', 'net.ng', 'gov.ng', 'edu.ng',
-
-        // Kenya
-
-        'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke',
-
-        // Argentina
-
-        'com.ar', 'org.ar', 'net.ar', 'gov.ar', 'edu.ar',
-
-        // Chile
-
-        'com.cl', 'org.cl', 'net.cl', 'gov.cl', 'edu.cl',
-
-        // Colombia
-
-        'com.co', 'org.co', 'net.co', 'gov.co', 'edu.co',
-
-        // Peru
-
-        'com.pe', 'org.pe', 'net.pe', 'gov.pe', 'edu.pe',
-
-        // Venezuela
-
-        'com.ve', 'org.ve', 'net.ve', 'gov.ve', 'edu.ve',
-
-        // Ecuador
-
-        'com.ec', 'org.ec', 'net.ec', 'gov.ec', 'edu.ec',
-
-        // Russia
-
-        'com.ru', 'org.ru', 'net.ru', 'gov.ru', 'edu.ru',
-
-        // Ukraine
-
-        'com.ua', 'org.ua', 'net.ua', 'gov.ua', 'edu.ua',
-
-        // Turkey
-
-        'com.tr', 'org.tr', 'net.tr', 'gov.tr', 'edu.tr',
-
-        // Greece
-
-        'com.gr', 'org.gr', 'net.gr', 'gov.gr', 'edu.gr',
-
-        // Poland
-
-        'com.pl', 'org.pl', 'net.pl', 'gov.pl', 'edu.pl',
-
-        // Czech Republic
-
-        'com.cz', 'org.cz', 'net.cz', 'gov.cz', 'edu.cz',
-
-        // Hungary
-
-        'com.hu', 'org.hu', 'net.hu', 'gov.hu', 'edu.hu',
-
-        // Romania
-
-        'com.ro', 'org.ro', 'net.ro', 'gov.ro', 'edu.ro',
-
-        // Serbia
-
-        'com.rs', 'org.rs', 'net.rs', 'gov.rs', 'edu.rs',
-
-        // Croatia
-
-        'com.hr', 'org.hr', 'net.hr', 'gov.hr', 'edu.hr',
-
-        // Slovenia
-
-        'com.si', 'org.si', 'net.si', 'gov.si', 'edu.si',
-
-        // Slovakia
-
-        'com.sk', 'org.sk', 'net.sk', 'gov.sk', 'edu.sk',
-
-        // Bulgaria
-
-        'com.bg', 'org.bg', 'net.bg', 'gov.bg', 'edu.bg',
-
-        // Portugal
-
-        'com.pt', 'org.pt', 'net.pt', 'gov.pt', 'edu.pt',
-
-        // Belgium
-
-        'com.be', 'org.be', 'net.be', 'gov.be', 'edu.be',
-
-        // Netherlands
-
-        'com.nl', 'org.nl', 'net.nl', 'gov.nl', 'edu.nl',
-
-        // Austria
-
-        'com.at', 'org.at', 'net.at', 'gov.at', 'edu.at',
-
-        // Switzerland
-
-        'com.ch', 'org.ch', 'net.ch', 'gov.ch', 'edu.ch',
-
-        // Germany
-
-        'com.de', 'org.de', 'net.de', 'gov.de', 'edu.de',
-
-        // France
-
-        'com.fr', 'org.fr', 'net.fr', 'gov.fr', 'edu.fr',
-
-        // Spain
-
-        'com.es', 'org.es', 'net.es', 'gov.es', 'edu.es',
-
-        // Italy
-
-        'com.it', 'org.it', 'net.it', 'gov.it', 'edu.it',
-
-        // Sweden
-
-        'com.se', 'org.se', 'net.se', 'gov.se', 'edu.se',
-
-        // Norway
-
-        'com.no', 'org.no', 'net.no', 'gov.no', 'edu.no',
-
-        // Denmark
-
-        'com.dk', 'org.dk', 'net.dk', 'gov.dk', 'edu.dk',
-
-        // Finland
-
-        'com.fi', 'org.fi', 'net.fi', 'gov.fi', 'edu.fi',
-
-        // Iceland
-
-        'com.is', 'org.is', 'net.is', 'gov.is', 'edu.is',
-
-        // Ireland
-
-        'com.ie', 'org.ie', 'net.ie', 'gov.ie', 'edu.ie',
-
-        // Luxembourg
-
-        'com.lu', 'org.lu', 'net.lu', 'gov.lu', 'edu.lu',
-
-        // Malta
-
-        'com.mt', 'org.mt', 'net.mt', 'gov.mt', 'edu.mt',
-
-        // Cyprus
-
-        'com.cy', 'org.cy', 'net.cy', 'gov.cy', 'edu.cy',
-
-        // Lithuania
-
-        'com.lt', 'org.lt', 'net.lt', 'gov.lt', 'edu.lt',
-
-        // Latvia
-
-        'com.lv', 'org.lv', 'net.lv', 'gov.lv', 'edu.lv',
-
-        // Estonia
-
-        'com.ee', 'org.ee', 'net.ee', 'gov.ee', 'edu.ee',
-
-        // Bosnia and Herzegovina
-
-        'com.ba', 'org.ba', 'net.ba', 'gov.ba', 'edu.ba',
-
-        // Montenegro
-
-        'com.me', 'org.me', 'net.me', 'gov.me', 'edu.me',
-
-        // Macedonia
-
-        'com.mk', 'org.mk', 'net.mk', 'gov.mk', 'edu.mk',
-
-        // Albania
-
-        'com.al', 'org.al', 'net.al', 'gov.al', 'edu.al',
-
-        // Moldova
-
-        'com.md', 'org.md', 'net.md', 'gov.md', 'edu.md',
-
-        // Belarus
-
-        'com.by', 'org.by', 'net.by', 'gov.by', 'edu.by',
-
-        // Kazakhstan
-
-        'com.kz', 'org.kz', 'net.kz', 'gov.kz', 'edu.kz',
-
-        // Uzbekistan
-
-        'com.uz', 'org.uz', 'net.uz', 'gov.uz', 'edu.uz',
-
-        // Tajikistan
-
-        'com.tj', 'org.tj', 'net.tj', 'gov.tj', 'edu.tj',
-
-        // Kyrgyzstan
-
-        'com.kg', 'org.kg', 'net.kg', 'gov.kg', 'edu.kg',
-
-        // Turkmenistan
-
-        'com.tm', 'org.tm', 'net.tm', 'gov.tm', 'edu.tm',
-
-        // Afghanistan
-
-        'com.af', 'org.af', 'net.af', 'gov.af', 'edu.af',
-
-        // Iran
-
-        'com.ir', 'org.ir', 'net.ir', 'gov.ir', 'ac.ir',
-
-        // Iraq
-
-        'com.iq', 'org.iq', 'net.iq', 'gov.iq', 'edu.iq',
-
-        // Saudi Arabia
-
-        'com.sa', 'org.sa', 'net.sa', 'gov.sa', 'edu.sa',
-
-        // Yemen
-
-        'com.ye', 'org.ye', 'net.ye', 'gov.ye', 'edu.ye',
-
-        // Oman
-
-        'com.om', 'org.om', 'net.om', 'gov.om', 'edu.om',
-
-        // Qatar
-
-        'com.qa', 'org.qa', 'net.qa', 'gov.qa', 'edu.qa',
-
-        // Bahrain
-
-        'com.bh', 'org.bh', 'net.bh', 'gov.bh', 'edu.bh',
-
-        // Kuwait
-
-        'com.kw', 'org.kw', 'net.kw', 'gov.kw', 'edu.kw',
-
-        // Jordan
-
-        'com.jo', 'org.jo', 'net.jo', 'gov.jo', 'edu.jo',
-
-        // Lebanon
-
-        'com.lb', 'org.lb', 'net.lb', 'gov.lb', 'edu.lb',
-
-        // Syria
-
-        'com.sy', 'org.sy', 'net.sy', 'gov.sy', 'edu.sy',
-
-        // Palestine
-
-        'com.ps', 'org.ps', 'net.ps', 'gov.ps', 'edu.ps',
-
-        // Myanmar
-
-        'com.mm', 'org.mm', 'net.mm', 'gov.mm', 'edu.mm',
-
-        // Cambodia
-
-        'com.kh', 'org.kh', 'net.kh', 'gov.kh', 'edu.kh',
-
-        // Laos
-
-        'com.la', 'org.la', 'net.la', 'gov.la', 'edu.la',
-
-        // Mongolia
-
-        'com.mn', 'org.mn', 'net.mn', 'gov.mn', 'edu.mn',
-
-        // Nepal
-
-        'com.np', 'org.np', 'net.np',
-
-        // Bhutan
-
-        'com.bt', 'org.bt', 'net.bt', 'gov.bt', 'edu.bt',
-
-        // Maldives
-
-        'com.mv', 'org.mv', 'net.mv', 'gov.mv', 'edu.mv',
-
-        // Thailand (additional)
-
-        'com.th', 'org.th', 'net.th', 'go.th', 'ac.th',
-
-        // USA
-
-        'com.us', 'org.us', 'net.us', 'gov.us', 'edu.us',
-
-        // Canada (additional)
-
-        'com.ca', 'org.ca', 'net.ca', 'gov.ca', 'edu.ca',
-
-        // Mexico (additional)
-
-        'com.mx', 'org.mx', 'net.mx', 'gov.mx', 'edu.mx',
-
-        // Belize
-
-        'com.bz', 'org.bz', 'net.bz',
-
-        // Costa Rica
-
-        'co.cr', 'org.cr', 'net.cr',
-
-        // Panama
-
-        'com.pa', 'org.pa', 'net.pa',
-
-        // Dominican Republic
-
-        'com.do', 'org.do', 'net.do',
-
-        // Puerto Rico
-
-        'com.pr', 'org.pr', 'net.pr',
-
-        // Cuba
-
-        'com.cu', 'org.cu', 'net.cu',
-
-        // Jamaica
-
-        'com.jm', 'org.jm', 'net.jm',
-
-        // Trinidad and Tobago
-
-        'com.tt', 'org.tt', 'net.tt',
-
-        // Suriname
-
-        'com.sr', 'org.sr', 'net.sr',
-
-        // Guyana
-
-        'com.gy', 'org.gy', 'net.gy',
-
-        // Bolivia
-
-        'com.bo', 'org.bo', 'net.bo',
-
-        // Paraguay
-
-        'com.py', 'org.py', 'net.py',
-
-        // Uruguay
-
-        'com.uy', 'org.uy', 'net.uy',
-
-        // Ethiopia
-
-        'com.et', 'org.et', 'net.et', 'gov.et', 'edu.et',
-
-        // Ghana
-
-        'com.gh', 'org.gh', 'net.gh', 'gov.gh', 'edu.gh',
-
-        // Uganda
-
-        'com.ug', 'org.ug', 'net.ug', 'gov.ug', 'edu.ug',
-
-        // Tanzania
-
-        'com.tz', 'org.tz', 'net.tz', 'gov.tz', 'edu.tz',
-
-        // Zambia
-
-        'com.zm', 'org.zm', 'net.zm', 'gov.zm', 'edu.zm',
-
-        // Zimbabwe
-
-        'com.zw', 'org.zw', 'net.zw', 'gov.zw', 'edu.zw',
-
-        // Botswana
-
-        'co.bw', 'org.bw', 'net.bw', 'gov.bw', 'edu.bw',
-
-        // Namibia
-
-        'com.na', 'org.na', 'net.na', 'gov.na', 'edu.na',
-
-        // Mauritius
-
-        'com.mu', 'org.mu', 'net.mu', 'gov.mu', 'edu.mu',
-
-        // Seychelles
-
-        'com.sc', 'org.sc', 'net.sc', 'gov.sc', 'edu.sc',
-
-        // Morocco
-
-        'com.ma', 'org.ma', 'net.ma', 'gov.ma', 'edu.ma',
-
-        // Algeria
-
-        'com.dz', 'org.dz', 'net.dz', 'gov.dz', 'edu.dz',
-
-        // Tunisia
-
-        'com.tn', 'org.tn', 'net.tn', 'gov.tn', 'edu.tn',
-
-        // Libya
-
-        'com.ly', 'org.ly', 'net.ly', 'gov.ly', 'edu.ly',
-
-        // Sudan
-
-        'com.sd', 'org.sd', 'net.sd', 'gov.sd', 'edu.sd',
-
-        // Senegal
-
-        'com.sn', 'org.sn', 'net.sn', 'gov.sn', 'edu.sn',
-
-        // Ivory Coast
-
-        'com.ci', 'org.ci', 'net.ci', 'gov.ci', 'edu.ci',
-
-        // Cameroon
-
-        'com.cm', 'org.cm', 'net.cm', 'gov.cm', 'edu.cm',
-
-        // Angola
-
-        'com.ao', 'org.ao', 'net.ao', 'gov.ao', 'edu.ao',
-
-        // Mozambique
-
-        'com.mz', 'org.mz', 'net.mz', 'gov.mz', 'edu.mz',
-
-        // Madagascar
-
-        'com.mg', 'org.mg', 'net.mg', 'gov.mg', 'edu.mg',
-
-        // Fiji
-
-        'com.fj', 'org.fj', 'net.fj', 'gov.fj', 'edu.fj',
-
-        // New Caledonia
-
-        'com.nc', 'org.nc', 'net.nc', 'gov.nc', 'edu.nc',
-
-        // Papua New Guinea
-
-        'com.pg', 'org.pg', 'net.pg', 'gov.pg', 'edu.pg',
-
-        // Solomon Islands
-
-        'com.sb', 'org.sb', 'net.sb', 'gov.sb', 'edu.sb',
-
-        // Samoa
-
-        'com.ws', 'org.ws', 'net.ws', 'gov.ws', 'edu.ws',
-
-        // Tonga
-
-        'com.to', 'org.to', 'net.to', 'gov.to', 'edu.to',
-
-        // Kiribati
-
-        'com.ki', 'org.ki', 'net.ki', 'gov.ki', 'edu.ki',
-
-        // Marshall Islands
-
-        'com.mh', 'org.mh', 'net.mh', 'gov.mh', 'edu.mh',
-
-        // Palau
-
-        'com.pw', 'org.pw', 'net.pw', 'gov.pw', 'edu.pw',
-
-        // Micronesia
-
-        'com.fm', 'org.fm', 'net.fm', 'gov.fm', 'edu.fm',
-
-        // Nauru
-
-        'com.nr', 'org.nr', 'net.nr', 'gov.nr', 'edu.nr',
-
-        // Tuvalu
-
-        'com.tv', 'org.tv', 'net.tv', 'gov.tv', 'edu.tv',
-
-    ];
-
-    
-
-    // Check if last 2 parts match a multi-part TLD
-
-    if (count($parts) >= 3) {
-
-        $potential_tld = implode('.', array_slice($parts, -2));
-
-        if (in_array($potential_tld, $multiPartTlds)) {
-
-            // Use last 3 parts for multi-part TLDs
-
-            return '.' . implode('.', array_slice($parts, -3));
-
-        }
-
-    }
-
-    
-
-    // Default: use last 2 parts for standard TLDs
-
-    return '.' . implode('.', array_slice($parts, -2));
-
-}
 
 
 

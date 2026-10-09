@@ -27,7 +27,6 @@
         "conversion_selector": "",
         "url_query": "",
         "bt_allowed_roles": [],
-        "conversion_style": "bayesian",
         "ac_min_days": "14",
         "ac_min_views": "500"
     },

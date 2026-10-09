@@ -95,10 +95,6 @@ function abst_normalize_api_input_params($params) {
         $params['log_on_visible'] = $value === null ? false : $value;
     }
 
-    if (isset($params['optimization_type'])) {
-        $params['optimization_type'] = sanitize_text_field((string) $params['optimization_type']);
-    }
-
     if (isset($params['target_device'])) {
         $params['target_device'] = sanitize_text_field((string) $params['target_device']);
     }
@@ -597,19 +593,6 @@ function abst_validate_magic_definition($magic_definition) {
     }
 
     return true;
-}
-
-/** Drop parameters this plugin does not store. */
-function abst_drop_unsupported_test_params($params) {
-    if (!is_array($params)) {
-        return $params;
-    }
-
-    unset($params['subgoals'], $params['goals'], $params['autocomplete_on'], $params['webhook_url'], $params['conversion_use_order_value'],
-        $params['conversion_url'], $params['conversion_time'], $params['conversion_scroll'],
-        $params['conversion_text'], $params['conversion_link_pattern']);
-
-    return $params;
 }
 
 function abst_validate_test_payload($params, $mode = 'create') {

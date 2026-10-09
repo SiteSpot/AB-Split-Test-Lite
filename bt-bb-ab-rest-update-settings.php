@@ -15,8 +15,6 @@ function abst_rest_update_test_settings($request) {
     global $abst_btab;
 
     $params = abst_normalize_api_input_params($request->get_json_params());
-    $params = abst_drop_unsupported_test_params($params);
-    
     if (empty($params['test_id'])) {
         return new WP_Error('missing_test_id', 'Test ID is required', ['status' => 400, 'field' => 'test_id']);
     }
@@ -210,8 +208,6 @@ function abst_rest_update_test_settings($request) {
         update_post_meta($test_id, 'log_on_visible', !empty($params['log_on_visible']) ? '1' : '0');
     }
     
-    // A test has one conversion goal; clear any sub-goals stored by older versions.
-    delete_post_meta($test_id, 'goals');
 
     // Minimum days and visits before a winner is called (and emailed about).
     if ($has_param('ac_min_days') || $has_param('ac_min_views')) {
@@ -279,7 +275,6 @@ function abst_rest_update_test_settings($request) {
                     'image' => is_array($images)
                         ? esc_url_raw((string) ($images[$index] ?? ''))
                         : esc_url_raw((string) ($existing_meta['image'] ?? '')),
-                    'weight' => $existing_meta['weight'] ?? 1,
                 ];
             }
 
@@ -307,7 +302,6 @@ function abst_rest_update_test_settings($request) {
         'allowed_roles' => $details['targeting']['allowed_roles'] ?? (array) get_post_meta($test_id, 'bt_allowed_roles', true),
         'url_query' => $details['targeting']['url_query'] ?? get_post_meta($test_id, 'url_query', true),
         'log_on_visible' => $details['targeting']['log_on_visible'] ?? (get_post_meta($test_id, 'log_on_visible', true) === '1'),
-        'optimization_type' => $details['optimization']['type'] ?? (get_post_meta($test_id, 'conversion_style', true) ?: 'bayesian'),
         'ac_min_days' => $details['optimization']['ac_min_days'] ?? intval(get_post_meta($test_id, 'ac_min_days', true)),
         'ac_min_views' => $details['optimization']['ac_min_views'] ?? intval(get_post_meta($test_id, 'ac_min_views', true)),
         'magic_definition' => $details['magic_definition'] ?? null,

@@ -13,26 +13,14 @@ class ABST_Bricks
     //render attributes to elements
     add_filter('bricks/element/render_attributes',[$this,'add_bricks_attributes'],10,3);
 
-    //get experiments
-    add_action( 'wp_ajax_abst_all_experiments', [$this,'all_ab_tests_json'] );
 
     //add to all elements
     $this->addToBricks();
 
 	}
 
-function all_ab_tests_json( ) {
-    check_ajax_referer('abst_bricks_nonce', 'nonce');
-    if (!current_user_can('edit_posts')) {
-        wp_send_json_error('Unauthorized');
-    }
-    wp_send_json($this->tests_with_id());
-}
-
 function tests_with_id(){
   $testTransient = get_transient('abst_bricks_tests');
-  //if($testTransient)
-    //return $testTransient;
 
   $posts = get_posts(array(
     'post_type'      => 'abst_experiments',

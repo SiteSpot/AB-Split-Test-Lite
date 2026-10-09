@@ -19,7 +19,7 @@
 
         var args = Array.prototype.slice.call(arguments);
         if (typeof args[0] === 'string') {
-            args[0] = args[0].replace(/^\s*ABST(?:\s+AI)?\s*:\s*/i, '');
+            args[0] = args[0].replace(/^\s*ABST\s*:\s*/i, '');
             args[0] = 'ABST: ' + args[0];
         } else {
             args.unshift('ABST:');

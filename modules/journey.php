@@ -801,11 +801,11 @@ class ABST_Journeys {
 
     public function receive_journey_data() {
 
-        // Rate limit: max 120 requests per minute per IP
+        // Abuse protection for this public endpoint: 120 requests a minute per IP unless filtered.
         $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
         $rate_key = 'abst_jr_' . md5($ip);
         $rate_count = (int) get_transient($rate_key);
-        if ($rate_count > 120) {
+        if ($rate_count > (int) apply_filters( 'abst_journey_requests_per_minute', 120 )) {
             wp_send_json_error('Rate limit exceeded', 429);
         }
         set_transient($rate_key, $rate_count + 1, MINUTE_IN_SECONDS);
@@ -1120,14 +1120,12 @@ class ABST_Journeys {
 
 
 
-        // if the file is over 5mb, stop writing to it. safety net for spam todo manage another way
-
-        if (file_exists($journey_file) && filesize($journey_file) > 5 * 1024 * 1024) {
-
-            abst_log('Journey log file for today is 5MB, not adding more');
-
-            wp_send_json_error('Journey log file for today is 5MB');
-
+        // Disk protection against runaway or spam traffic: stop writing today's file once it
+        // reaches the daily size (5 MB unless filtered).
+        $journey_daily_bytes = (int) apply_filters( 'abst_journey_daily_max_bytes', 5 * 1024 * 1024 );
+        if (file_exists($journey_file) && filesize($journey_file) > $journey_daily_bytes) {
+            abst_log('Journey log file for today has reached its size limit, not adding more');
+            wp_send_json_error('Journey log file for today has reached its size limit');
         }
 
         $written = false;

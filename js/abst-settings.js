@@ -31,18 +31,6 @@
       return;
     }
 
-    // Old tab names (and removed tabs) map onto the current ones.
-    var legacyTabs = {
-      welcome: 'account',
-      license: 'account',
-      general: 'testing',
-      data: 'tracking',
-      advanced: 'testing',
-      integrations: 'testing',
-      reports: 'testing',
-      mcp: 'developer'
-    };
-
     function readStoredTab() {
       try {
         return window.localStorage.getItem('abst_settings_tab');
@@ -91,8 +79,6 @@
     var savedTab = isActivationWizard
       ? 'account'
       : (window.location.hash.replace('#', '') || readStoredTab() || 'account');
-    savedTab = legacyTabs[savedTab] || savedTab;
-
     activateTab(savedTab);
 
     tabButtons.forEach(function (button) {
