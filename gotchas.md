@@ -258,22 +258,6 @@ An Agency Hub site key can be structurally valid while still being unusable in p
 
 If a child site regenerates its Agency Hub key, every hub must reconnect with the new key. Old saved keys are expected to stop working.
 
-## Lite version: hard limits are enforced at save time, not read time
-
-The free tier enforces 1 active test and 1 variation by intercepting `save_postdata`. If a user already has published tests from a previous Pro licence, those tests remain in the database until they are edited.
-
-### Symptom
-
-- A site that previously had a Pro licence still shows multiple active tests after switching to the free version.
-- Attempting to edit an existing multi-variation test silently truncates variations to 1 on save.
-
-### Mitigation in ABSPLITTEST Lite
-
-- `save_test_config` forces additional published tests to `draft` status.
-- Variation arrays are sliced to `array_slice(..., 0, 1)` for page, CSS, and magic tests.
-- Subgoals (`goals` meta) are deleted and `autocomplete_on` is forced to `0`.
-- `conversion_use_order_value` is forced to `0`.
-
 ## Lite version: orphaned module includes must be removed
 
 Leaving `include_once` for modules that rely on Pro-only classes can cause fatal errors on the free version.
@@ -288,21 +272,6 @@ Leaving `include_once` for modules that rely on Pro-only classes can cause fatal
 - `modules/public-reports/public-reports.php`, `modules/page-redirect/page-redirect.php`, and `modules/support/agency_hub.php` includes were removed from `bt_include_module()`.
 - The `conversion.php` and journey modules remain because they are used by the free tier.
 - Any code that references the removed classes (e.g. `$GLOBALS['abst_public_reports']`) must also be guarded or removed.
-
-## Lite magic-bar AI: UI can look "stuck loading" if frontend still runs AI request paths
-
-Magic point-and-click in Lite should not attempt AI network calls, even if the backend already returns an upgrade error.
-
-### Symptom
-
-- selecting an element shows `Generating AI Suggestions...` with skeletons that never produce usable output
-- clicking ChatCRO appears interactive but effectively dead-ends with errors
-
-### Mitigation in ABSPLITTEST Lite
-
-- short-circuit AI suggestion loading in `showAISuggestionsForSelector()` and render an upgrade CTA panel instead
-- keep the AI Suggestions header toggle interactive (expand/collapse), but show upgrade content only
-- render ChatCRO in a disabled/grayed state with `Subscribe for AI features.` and an upgrade link
 
 ## WordPress.org checks: avoid remote assets and unescaped dynamic JS strings in admin output
 

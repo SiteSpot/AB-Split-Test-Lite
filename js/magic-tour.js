@@ -206,7 +206,7 @@
                 data: { name: 'magic-toggle' },
                 popover: {
                     title: 'Switch Variations',
-                    description: 'Click here to step through the original and your variations to preview each version. Use the + on an element to add another variation.',
+                    description: 'Click here to switch between the original and your variation to preview each one.',
                     side: 'left',
                     align: 'start'
                 }

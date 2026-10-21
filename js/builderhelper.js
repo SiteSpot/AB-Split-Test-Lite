@@ -44,33 +44,6 @@ jQuery(document).ready(function(){
             }
         }
 
-        // sanitize variation titles before submitting to server
-        function abstSanitizeVariation(value){
-            return value.replace(/[^a-zA-Z0-9_\- ]/g,'');
-        }
-
-        function attachVariationSanitizer(doc){
-            const selectors = [
-                'input[name="bt_variation_name"]',
-                'input[name="bt_variation"]',
-                'input[data-setting="bt_variation"]',
-                'input[data-controlkey="bt_variation"]',
-                'input[data-controlkey="bt_variation_name"]'
-            ].join(',');
-
-            jQuery(doc).on('input', selectors, function(){
-                const sanitized = abstSanitizeVariation(this.value);
-                if (sanitized !== this.value) {
-                    this.value = sanitized;
-                    if(!jQuery(this).next('.bt-variation-warning').length){
-                        jQuery(this).after('<span class="bt-variation-warning" style="color:#d63638;font-size:12px;">Only letters, numbers, spaces, underscores and dashes are allowed.</span>');
-                    }
-                } else {
-                    jQuery(this).next('.bt-variation-warning').remove();
-                }
-            });
-        }
-
         // oxygen builder: the scope of the page iframe, which holds the active element and its options
         function abstOxygenScope(){
             var ui = document.getElementById('ct-controller-ui');
@@ -80,10 +53,6 @@ jQuery(document).ready(function(){
             return uiScope && uiScope.iframeScope ? uiScope.iframeScope : null;
         }
 
-        attachVariationSanitizer(document);
-        if(window.parent && window.parent !== window){
-            attachVariationSanitizer(window.parent.document);
-        }
 
         // closes the open create-test pop-up (iframe + backdrop), if there is one
         var closeActiveNewAbPanel = null;
@@ -197,7 +166,7 @@ jQuery(document).ready(function(){
                     if (selectedBlockId) {
                         wp.data.dispatch('core/block-editor').updateBlockAttributes( selectedBlockId, { 
                             'bt-eid': data.id,
-                            'bt-variation': 'default'
+                            'bt-variation': 'original'
                         } );
                     }
                 }

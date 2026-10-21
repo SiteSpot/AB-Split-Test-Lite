@@ -1,7 +1,7 @@
 {
     "post_data": {
         "title": "Sample Test 5 - Full Page Collecting Data",
-        "content": "This is a Full Page Test that hasn't collected enough data yet. Each variation page is still well below the minimum views needed before a winner can be declared.",
+        "content": "This is a Full Page Test that hasn't collected enough data yet. The original and the variation page are both still well below the minimum views needed before a winner can be declared.",
         "status": "publish"
     },
     "test_config": {
@@ -16,9 +16,6 @@
             },
             "home-v2": {
                 "label": "Long-Form Redesign"
-            },
-            "home-v3": {
-                "label": "Video Hero"
             }
         },
         "target_percentage": "50",

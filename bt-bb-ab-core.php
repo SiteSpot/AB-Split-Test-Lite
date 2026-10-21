@@ -262,7 +262,7 @@ if(! class_exists ( 'ABST_Tests'))
 
         if(!empty($options['btVar']) && !empty($options['btExperiment']) )
 
-          echo " bt-variation='".esc_attr($options['btVar'])."' bt-eid='".esc_attr($options['btExperiment'])."' ";
+          echo " bt-variation='" . esc_attr( abst_normalize_onpage_variation( $options['btVar'] ) ) . "' bt-eid='" . intval( $options['btExperiment'] ) . "' ";
 
       });
 
@@ -405,13 +405,17 @@ if(! class_exists ( 'ABST_Tests'))
 
         vc_add_param('vc_row', array(
 
-            'type' => 'textfield',
+            'type' => 'dropdown',
 
-            'heading' => __('Test Variation', 'ab-split-test-lite'),
+            'heading' => __('Version', 'ab-split-test-lite'),
 
             'param_name' => 'test_variation',
 
-            'description' => __('Enter the test variation name.', 'ab-split-test-lite'),
+            'value' => array_flip($this->onpage_variation_choices()),
+
+            'std' => 'original',
+
+            'description' => __('Tag this as the Original or the Variation.', 'ab-split-test-lite'),
 
             'group' => __('Split Test Settings', 'ab-split-test-lite'),
 
@@ -437,13 +441,17 @@ if(! class_exists ( 'ABST_Tests'))
 
         vc_add_param('vc_section', array(
 
-            'type' => 'textfield',
+            'type' => 'dropdown',
 
-            'heading' => __('Test Variation', 'ab-split-test-lite'),
+            'heading' => __('Version', 'ab-split-test-lite'),
 
             'param_name' => 'test_variation',
 
-            'description' => __('Enter the test variation name.', 'ab-split-test-lite'),
+            'value' => array_flip($this->onpage_variation_choices()),
+
+            'std' => 'original',
+
+            'description' => __('Tag this as the Original or the Variation.', 'ab-split-test-lite'),
 
             'group' => __('Split Test Settings', 'ab-split-test-lite'),
 
@@ -580,7 +588,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       if (isset($atts['test_variation']) && !empty($atts['test_variation'])) {
 
-          $class_string .= ' ab-var-'. sanitize_html_class($atts['test_variation']);
+          $class_string .= ' ab-var-'. abst_normalize_onpage_variation($atts['test_variation']);
 
       }
 
@@ -763,40 +771,6 @@ if(! class_exists ( 'ABST_Tests'))
 
       
 
-      // Run version-specific upgrades
-
-      if (!$stored_version || version_compare($stored_version, '2.4.1', '<')) {
-
-        $this->upgrade_to_241();
-
-        update_option('abst_upgrade_241_complete', true);
-
-      }
-
-
-
-      // 2.5.0: Clean up orphaned magic test variations from 2.4.1-2.4.3 bug
-
-      if (!$stored_version || version_compare($stored_version, '2.5.0', '<')) {
-
-        $this->upgrade_to_250();
-
-      }
-
-
-
-      // 2.5.1: Backfill wildcard scope on legacy Magic Tests that predate scope support.
-
-      if (!$stored_version || version_compare($stored_version, '2.5.1', '<')) {
-
-        $this->upgrade_to_251();
-
-      }
-
-
-
-      $this->refresh_conversion_pages();
-
       
 
       // Update the stored version
@@ -806,415 +780,6 @@ if(! class_exists ( 'ABST_Tests'))
       
 
       abst_log('All caches cleared and version updated to ' . $current_version);
-
-    }
-
-
-
-    /**
-
-     * Upgrade to 2.4.1: Set log_on_visible=1 for existing tests
-
-     * Preserves original visibility-based behavior for tests created before this version
-
-     */
-
-    function upgrade_to_241() {
-
-      abst_log('Plugin upgrade_to_241');
-
-      $experiments = get_posts([
-
-        'post_type' => 'abst_experiments',
-
-        'posts_per_page' => -1,
-
-        'post_status' => 'any',
-
-        'fields' => 'ids',
-
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- One-time upgrade query for plugin-owned meta.
-        'meta_query' => [
-
-          [
-
-            'key' => 'log_on_visible',
-
-            'compare' => 'NOT EXISTS'
-
-          ]
-
-        ]
-
-      ]);
-
-
-
-      if (empty($experiments)) {
-
-        abst_log('No experiments found needing upgrade');
-
-        return;
-
-      }
-
-
-
-      $upgraded_count = 0;
-
-      foreach ($experiments as $exp_id) {
-
-        abst_log('Upgrading experiment ' . $exp_id);
-
-        update_post_meta($exp_id, 'log_on_visible', '1');
-
-        $upgraded_count++;
-
-      }
-
-
-
-      abst_log('Upgrade to 2.4.1: Set log_on_visible=1 for ' . $upgraded_count . ' existing tests');
-
-    }
-
-
-
-    /**
-
-     * Upgrade to 2.5.0: Clean up orphaned magic test variations
-
-     * Removes extra variations created by the 2.4.1-2.4.3 bug
-
-     */
-
-    function upgrade_to_250() {
-
-
-
-      $tests = get_posts(array(
-
-        'post_type'      => 'abst_experiments',
-
-        'posts_per_page' => -1,
-
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One-time upgrade query for plugin-owned meta.
-        'meta_key'       => 'test_type',
-
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- One-time upgrade query for plugin-owned meta.
-        'meta_value'     => 'magic'
-
-      ));
-
-
-
-      $removed = 0;
-
-      foreach ($tests as $test) {
-
-        $magic_def = json_decode(get_post_meta($test->ID, 'magic_definition', true), true);
-
-        if (!is_array($magic_def) || empty($magic_def[0]['variations'])) continue;
-
-
-
-        $expected = count($magic_def[0]['variations']); // variations includes original at index 0
-
-
-
-        $obs = get_post_meta($test->ID, 'observations', true);
-
-        if (!is_array($obs)) continue;
-
-
-
-        $test_removed = 0;
-
-        foreach ($obs as $key => $data) {
-
-          if (strpos($key, 'magic-') !== 0) continue;
-
-
-
-          // Support both legacy keys (magic-0) and tracked keys (magic-{testId}-{index}).
-
-          if (!preg_match('/^magic-(?:\d+-)?(\d+)$/', (string) $key, $matches)) {
-
-            continue;
-
-          }
-
-
-
-          $variation_index = intval($matches[1]);
-
-          if ($variation_index >= $expected) {
-
-            abst_log('upgrade_to_250: Removing orphaned variation ' . $key . ' from "' . $test->post_title . '" (#' . $test->ID . ')');
-
-            unset($obs[$key]);
-
-            $test_removed++;
-
-          }
-
-        }
-
-
-
-        if ($test_removed > 0) {
-
-          update_post_meta($test->ID, 'observations', $obs);
-
-          $removed += $test_removed;
-
-        }
-
-      }
-
-      if($removed > 0) {
-
-        abst_log('upgraded to v2.5.0: Removed ' . $removed . ' orphaned variation(s)');
-
-      }
-
-      else
-
-      {
-
-        abst_log('upgraded to v2.5.0');
-
-      }
-
-    }
-
-
-
-    function upgrade_to_251() {
-
-      abst_log('upgrading to v2.5.1');
-
-      require_once plugin_dir_path(__FILE__) . 'bt-bb-ab-validation.php';
-
-
-
-      $tests = get_posts(array(
-
-        'post_type'      => 'abst_experiments',
-
-        'posts_per_page' => -1,
-
-        'post_status'    => 'any',
-
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One-time upgrade query for plugin-owned meta.
-        'meta_key'       => 'test_type',
-
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- One-time upgrade query for plugin-owned meta.
-        'meta_value'     => 'magic'
-
-      ));
-
-
-
-      $updated = 0;
-
-      foreach ($tests as $test) {
-
-        $raw_magic_def = get_post_meta($test->ID, 'magic_definition', true);
-
-        if (empty($raw_magic_def)) continue;
-
-
-
-        $magic_def = json_decode($raw_magic_def, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($magic_def)) continue;
-
-
-
-        $needs_update = false;
-
-        foreach ($magic_def as $index => $element) {
-
-          if (!is_array($element)) continue;
-
-
-
-          $scope = isset($element['scope']) && is_array($element['scope']) ? $element['scope'] : [];
-
-          $has_scope_page_id = isset($scope['page_id']) && $scope['page_id'] !== '';
-
-          $has_scope_url = isset($scope['url']) && trim((string) $scope['url']) !== '';
-
-
-
-          if (!$has_scope_page_id && !$has_scope_url) {
-
-            $magic_def[$index]['scope'] = ['page_id' => '*'];
-
-            $needs_update = true;
-
-          }
-
-        }
-
-
-
-        if (!$needs_update) continue;
-
-
-
-        $magic_def = abst_normalize_magic_definition($magic_def);
-
-        update_post_meta($test->ID, 'magic_definition', wp_slash(wp_json_encode($magic_def, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))); // update_post_meta unslashes; without wp_slash an escaped quote loses its backslash and the JSON breaks
-
-        $updated++;
-
-      }
-
-
-
-      abst_log('upgraded to v2.5.1: Backfilled wildcard scope for ' . $updated . ' legacy magic test(s)');
-
-
-
-      $legacy_ideas = json_decode(get_option('abst_plugin_test_ideas', '[]'), true);
-
-      if (!is_array($legacy_ideas)) {
-
-        $legacy_ideas = [];
-
-      }
-
-
-
-      $migrated_ideas = 0;
-
-      foreach ($legacy_ideas as $legacy_idea) {
-
-        if (!is_array($legacy_idea)) {
-
-          continue;
-
-        }
-
-
-
-        $title = sanitize_text_field($legacy_idea['title'] ?? '');
-
-        $page = sanitize_text_field($legacy_idea['page'] ?? '');
-
-        $problem = sanitize_text_field($legacy_idea['problem'] ?? '');
-
-        $hypothesis = sanitize_textarea_field($legacy_idea['hypothesis'] ?? '');
-
-        $next_step = sanitize_textarea_field($legacy_idea['nextstep'] ?? '');
-
-
-
-        if ($title === '') {
-
-          if ($page !== '') {
-
-            $title = $page;
-
-          } elseif ($problem !== '') {
-
-            $title = wp_trim_words($problem, 6, '');
-
-          } elseif ($hypothesis !== '') {
-
-            $title = wp_trim_words($hypothesis, 6, '');
-
-          } else {
-
-            $title = 'Test Idea';
-
-          }
-
-        }
-
-
-
-        if ($hypothesis === '') {
-
-          continue;
-
-        }
-
-
-
-        $post_data = [
-
-          'post_title' => $title,
-
-          'post_type' => 'abst_experiments',
-
-          'post_status' => 'abst_idea',
-
-        ];
-
-
-
-        $created_at = sanitize_text_field($legacy_idea['created_at'] ?? '');
-
-        $created_timestamp = $created_at ? strtotime($created_at) : false;
-
-        if ($created_timestamp) {
-
-          $post_data['post_date'] = wp_date('Y-m-d H:i:s', $created_timestamp);
-
-          $post_data['post_date_gmt'] = gmdate('Y-m-d H:i:s', $created_timestamp);
-
-        }
-
-
-
-        $idea_post_id = wp_insert_post($post_data, true);
-
-        if (is_wp_error($idea_post_id) || !$idea_post_id) {
-
-          continue;
-
-        }
-
-
-
-        update_post_meta($idea_post_id, 'abst_idea_hypothesis', $hypothesis);
-
-        update_post_meta($idea_post_id, 'abst_idea_page_flow', $page);
-
-        update_post_meta($idea_post_id, 'abst_idea_observed_problem', $problem);
-
-        update_post_meta($idea_post_id, 'abst_idea_next_step', $next_step);
-
-
-
-        foreach (['impact', 'reach', 'confidence', 'effort'] as $idea_score_key) {
-
-          if (!isset($legacy_idea[$idea_score_key]) || $legacy_idea[$idea_score_key] === '') {
-
-            continue;
-
-          }
-
-
-
-          update_post_meta($idea_post_id, 'abst_idea_' . $idea_score_key, max(1, min(5, intval($legacy_idea[$idea_score_key]))));
-
-        }
-
-
-
-        $migrated_ideas++;
-
-      }
-
-
-
-      delete_option('abst_plugin_test_ideas');
-
-      abst_log('upgraded to v2.5.1: Migrated ' . $migrated_ideas . ' legacy test idea(s)');
 
     }
 
@@ -1301,29 +866,7 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-    public function abtest_shortcode( $atts, $content = "" )
-    {
-      $attr = shortcode_atts([
-        'eid' => -1,
-        'variation' => '',
-        'class' => ''
-      ], $atts);
-      
-      ob_start();
 
-
-
-      echo '<div class="bt-abtest-wrap '. esc_attr($attr['class']) .'" bt-eid="'. intval($attr['eid']) .'" bt-variation="'. esc_attr($attr['variation']) .'">';
-
-        echo wp_kses_post($content);
-
-      echo '</div>';
-
-
-
-      return ob_get_clean();
-
-    }
 
 
 
@@ -1705,17 +1248,17 @@ if(! class_exists ( 'ABST_Tests'))
 
     //page_variations
 
-    $page_variations = (array) ($data['page_variations'] ?? []);
+    // A full page test compares the original page with one variation page,
+    // stored as a single entry: variation page => URL.
+    $variation_page = isset($data['page_variations']) && is_scalar($data['page_variations']) ? sanitize_text_field( (string) $data['page_variations'] ) : '';
 
-    foreach($page_variations as $k => $v){
+    $page_variations = array();
 
-      $page_variations[$v] = $this->get_url_from_slug($v);
+    if($variation_page !== ''){
 
-      unset($page_variations[$k]);
+      $page_variations[$variation_page] = sanitize_text_field( $this->get_url_from_slug($variation_page) );
 
     }
-
-    $page_variations = array_map( 'sanitize_text_field', $page_variations );
 
 
 
@@ -3299,51 +2842,35 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-    function get_magic_variation_count($magic_definition) {
+    // Each magic element stores [original, variation]; the test is configured
+    // once at least one element has its variation (slot 1) filled in.
+    function magic_definition_has_variation($magic_definition) {
 
       if (empty($magic_definition)) {
 
-        return 0;
+        return false;
 
       }
-
-
 
       $decoded = json_decode($magic_definition, true);
 
-      if (!is_array($decoded) || empty($decoded)) {
+      if (!is_array($decoded)) {
 
-        return 0;
+        return false;
 
       }
-
-
-
-      $max_variations = 0;
 
       foreach ($decoded as $item) {
 
-        if (!is_array($item) || empty($item['variations']) || !is_array($item['variations'])) {
+        if (is_array($item) && isset($item['variations'][1]) && is_string($item['variations'][1]) && trim($item['variations'][1]) !== '') {
 
-          continue;
-
-        }
-
-
-
-        $count = count($item['variations']);
-
-        if ($count > $max_variations) {
-
-          $max_variations = $count;
+          return true;
 
         }
 
       }
 
-
-
-      return $max_variations;
+      return false;
 
     }
 
@@ -3367,43 +2894,37 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-    function get_status_lifecycle_variation_count($post, $stats = null) {
+    // Every test compares the original with one variation; this reports whether
+    // that variation has been set up yet.
+    function status_lifecycle_has_variation($post, $stats = null) {
 
       if (is_array($stats) && !empty($stats['variations']) && is_array($stats['variations'])) {
 
-        return count($stats['variations']);
+        return true;
 
       }
-
-
 
       $pid = $post->ID;
 
       $test_type = get_post_meta($pid, 'test_type', true);
 
-
-
       if ($test_type === 'magic') {
 
-        return max(0, intval($this->get_magic_variation_count(get_post_meta($pid, 'magic_definition', true))));
+        return $this->magic_definition_has_variation(get_post_meta($pid, 'magic_definition', true));
 
       }
-
-
 
       if ($test_type === 'full_page') {
 
         $page_variations = get_post_meta($pid, 'page_variations', true);
 
-        return is_array($page_variations) ? count($page_variations) : 0;
+        return is_array($page_variations) && !empty($page_variations);
 
       }
 
-
-
       $variation_meta = get_post_meta($pid, 'variation_meta', true);
 
-      return is_array($variation_meta) ? count($variation_meta) : 0;
+      return is_array($variation_meta) && !empty($variation_meta);
 
     }
 
@@ -3515,7 +3036,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       $visits = $this->get_status_lifecycle_total_visits($stats);
 
-      $variation_count = $this->get_status_lifecycle_variation_count($post, $stats);
+      $has_variation = $this->status_lifecycle_has_variation($post, $stats);
 
       $created_at = get_post_time('U', true, $post);
 
@@ -3663,7 +3184,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       } else {
 
-        $variant_value = $variation_count > 0 ? number_format_i18n($variation_count) . ' configured' : 'Not configured yet';
+        $variant_value = $has_variation ? 'Original + 1 variation' : 'Not configured yet';
 
         $panel['rows'] = [
 
@@ -3955,7 +3476,7 @@ if(! class_exists ( 'ABST_Tests'))
 
         $elements_in_test = is_array($decoded_array) ? count($decoded_array) : 0;
 
-        $variation_count = $this->get_magic_variation_count($magic_definition);
+        $has_variation = $this->magic_definition_has_variation($magic_definition);
 
 
 
@@ -3975,7 +3496,7 @@ if(! class_exists ( 'ABST_Tests'))
 
           echo "<div class='abst-magic-summary-row'><span class='abst-magic-summary-label'>Elements in test</span><strong>" . esc_html($elements_in_test . ' element' . ($elements_in_test === 1 ? '' : 's')) . "</strong></div>";
 
-          echo "<div class='abst-magic-summary-row'><span class='abst-magic-summary-label'>Variations</span><strong>" . esc_html($variation_count . ' variation' . ($variation_count === 1 ? '' : 's')) . "</strong></div>";
+          echo "<div class='abst-magic-summary-row'><span class='abst-magic-summary-label'>Versions</span><strong>" . esc_html($has_variation ? 'Original + 1 variation' : 'Not configured yet') . "</strong></div>";
 
           echo "<div class='abst-magic-summary-actions'><a href='" . esc_url($edit_magic_url) . "' class='button button-primary'>Edit test elements</a></div>";
 
@@ -4043,9 +3564,9 @@ if(! class_exists ( 'ABST_Tests'))
 
         echo "<li>Choose your test.</li>";
 
-        echo "<li>Give your test variation a name.</li>";
+        echo "<li>Set the version to Original.</li>";
 
-        echo "<li>Create your alternate version in Bricks, then tag it with the same test name and a new variation name.</li>";
+        echo "<li>Create your alternate version in Bricks, then tag it with the same test, set to Variation.</li>";
 
         echo "</ol>";
 
@@ -4067,9 +3588,9 @@ if(! class_exists ( 'ABST_Tests'))
 
         echo "<li>Choose your test.</li>";
 
-        echo "<li>Give your test variation a name.</li>";
+        echo "<li>Set the version to Original.</li>";
 
-        echo "<li>Create your alternate version in Elementor, and tag it with the same test name and a new variation name.</li>";
+        echo "<li>Create your alternate version in Elementor, and tag it with the same test, set to Variation.</li>";
 
         echo "</ol>";
 
@@ -4091,9 +3612,9 @@ if(! class_exists ( 'ABST_Tests'))
 
         echo "<li>Choose your test.</li>";
 
-        echo "<li>Give your test variation a name.</li>";
+        echo "<li>Set the version to Original.</li>";
 
-        echo "<li>Create your alternate version in Beaver Builder, and tag it with the same test name and a new variation name.</li>";  
+        echo "<li>Create your alternate version in Beaver Builder, and tag it with the same test, set to Variation.</li>";  
 
         echo "</ol>";
 
@@ -4115,9 +3636,9 @@ if(! class_exists ( 'ABST_Tests'))
 
         echo "<li>Choose your test.</li>";
 
-        echo "<li>Give your test variation a name.</li>";
+        echo "<li>Set the version to Original.</li>";
 
-        echo "<li>Create your alternate version in Breakdance, and tag it with the same test name and a new variation name.</li>";
+        echo "<li>Create your alternate version in Breakdance, and tag it with the same test, set to Variation.</li>";
 
         echo "</ol>";
 
@@ -4139,9 +3660,9 @@ if(! class_exists ( 'ABST_Tests'))
 
         echo "<li>Choose your test.</li>";
 
-        echo "<li>Give your test variation a name.</li>";
+        echo "<li>Set the version to Original.</li>";
 
-        echo "<li>Create your alternate version in Oxygen, and tag it with the same test name and a new variation name.</li>";
+        echo "<li>Create your alternate version in Oxygen, and tag it with the same test, set to Variation.</li>";
 
         echo "</ol>";
 
@@ -4161,9 +3682,9 @@ if(! class_exists ( 'ABST_Tests'))
 
       echo "<li>Choose your test from the dropdown.</li>";
 
-      echo "<li>Give your test variation a name.</li>";
+      echo "<li>Set the version to Original.</li>";
 
-      echo "<li>Create your alternate version in Blocks, and tag it the same test and a different variation name.</li>";
+      echo "<li>Create your alternate version in Blocks, and tag it with the same test, set to Variation.</li>";
 
       echo "</ol>";
 
@@ -4177,11 +3698,9 @@ if(! class_exists ( 'ABST_Tests'))
 
       echo "<li>Load and edit the page you want to test. You can do this on any page in anything that lets you apply CSS classes or edit HTML.</li>";
 
-      echo "<li>Choose an element wrapping your test variation.</li><li>Add the CSS classes you copied from the test like 'ab-". esc_html( $post->ID ) ." ab-var-{name}' to that element.</li>"; 
+      echo "<li>Choose an element wrapping the original content.</li><li>Add the CSS classes you copied from the test like 'ab-". esc_html( $post->ID ) ." ab-var-original' to that element.</li>"; 
 
-      echo "<li>Give your test variation a name.</li>";
-
-      echo "<li>Create your alternate version on the same page and apply the same test classes, but with a different variation name.</li>";
+      echo "<li>Create your alternate version on the same page and apply the same test class with ab-var-variation.</li>";
 
       echo "</ol>";
 
@@ -4191,15 +3710,15 @@ if(! class_exists ( 'ABST_Tests'))
 
       echo "<label>HTML Classes</label>";
 
-      echo "<input type='text' value='ab-". esc_attr( get_the_ID() ) ." ab-var-{name}'/>";
+      echo "<input type='text' value='ab-". esc_attr( get_the_ID() ) ." ab-var-original'/>";
 
-      echo "<p><small>Replace {name} with your variation name</small></p>";
+      echo "<p><small>Use ab-var-original on the original and ab-var-variation on the variation.</small></p>";
 
       //shortcodes
 
       echo "<label>Shortcode</label>";
 
-      echo "<input type='text' value=\"[ab_split_test eid='". esc_attr( $post->ID ) ."' var='{name}']Text One![/ab_split_test]\"/>";
+      echo "<input type='text' value=\"[ab_split_test eid='". esc_attr( $post->ID ) ."' var='original']Text One![/ab_split_test]\"/>";
 
       echo "</div></div><div class='bt_experiments_inner_custom_box'><h3>Goals</h3><div class='goal'><div class='conversion-goal'>";
 
@@ -4394,9 +3913,9 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-      echo "</div><div class='page-variations-wrapper'><p>Traffic will be split evenly across this page and any variations you add.</><h4>Page Variations</h4>";
+      echo "</div><div class='page-variations-wrapper'><h4>Variation Page</h4>";
 
-      echo "<p>We'll split your traffic evenly between the page you choose above, and any variations you add below.</p>";
+      echo "<p>We'll split your traffic evenly between the page you choose above and the variation page you choose below.</p>";
 
 
       $mypages = $posts;
@@ -4405,19 +3924,20 @@ if(! class_exists ( 'ABST_Tests'))
 
       {
 
-        echo "<div id='page-test-variations' class='choices-container'><select id='page_variations' name='page_variations[]' placeholder='Choose a Variation...' multiple data-placeholder='Choose a Variation...'>";
+        echo "<div id='page-test-variations' class='choices-container'><select id='page_variations' name='page_variations' data-placeholder='Choose the variation page...'>";
 
-        
+        // empty option so select2 can show the placeholder and allow clearing
+        echo "<option value=''></option>";
 
-        //add in existing variations
+        //add in the saved variation page
 
         if(!empty($page_variations))
 
         {
 
-          
 
-          // add preselected options (page_variations)
+
+          // add the preselected option (page_variations holds one entry)
 
           foreach($page_variations as $k => $page_variation)
 
@@ -4691,7 +4211,7 @@ if(! class_exists ( 'ABST_Tests'))
 
     <input type="radio" id="full_page" name="test_type" value="full_page" '. esc_attr( $full_page_test_selected ).'>
 
-    <label for="full_page"><h5>Full Page</h5><p>Send visitors to one of several pages or posts to see which performs better.</p></label>
+    <label for="full_page"><h5>Full Page</h5><p>Send visitors to the original page or one variation page to see which performs better.</p></label>
 
   </div>
 
@@ -4991,21 +4511,7 @@ function abst_get_experiment_results( $post){
 
 
 
-/**
 
- * Identify the control/original variation key based on test type and naming rules.
-
- * - For magic tests: 'magic-0'
-
- * - For on-page tests: match defaultNames
-
- * - For full page tests: 'bt_experiments_full_page_default_page' if present
-
- * @param array $variations
-
- * @return string|null
-
- */
 
 /**
 
@@ -5013,7 +4519,7 @@ function abst_get_experiment_results( $post){
 
  * - For magic tests: 'magic-0'
 
- * - For on-page tests: match defaultNames
+ * - For on-page tests: 'original'
 
  * - For full page tests: get control key from post meta 'bt_experiments_full_page_default_page'
 
@@ -5049,21 +4555,9 @@ public function identify_control_variation($variations, $test = null) {
 
 
 
-    // On-page: match defaultNames
+    // On-page: the version tagged as the Original
 
-    $defaultNames = ['original','one','1','default','standard','a','control'];
-
-    foreach ($variations as $key => $data) {
-
-        $variationName = strtolower($key);
-
-        foreach ($defaultNames as $d) {
-
-            if ($variationName === $d) return $key;
-
-        }
-
-    }
+    if (isset($variations['original'])) return 'original';
 
     // Fallback: return nothing so it doesnt display uplift downlift stuff
 
@@ -5197,39 +4691,15 @@ public function get_experiment_stats_array( $test ){
 
   } elseif ($test_type === 'magic') {
 
-    // For magic tests, parse magic_definition to get variation count
+    // A magic test has two fixed slots: magic-0 (original) and magic-1 (variation).
 
     $magic_definition = get_post_meta($pid, 'magic_definition', true);
 
-    if (!empty($magic_definition)) {
+    $decoded = !empty($magic_definition) ? json_decode($magic_definition, true) : null;
 
-      $decoded = json_decode($magic_definition, true);
+    if (is_array($decoded) && !empty($decoded)) {
 
-      if (is_array($decoded)) {
-
-        // Count variations in magic definition
-
-        $variation_count = 0;
-
-        foreach ($decoded as $element) {
-
-          if (isset($element['variations']) && is_array($element['variations'])) {
-
-            $variation_count = max($variation_count, count($element['variations'])); // variations array includes original
-
-          }
-
-        }
-
-        // Generate magic-0, magic-1, etc.
-
-        for ($i = 0; $i < $variation_count; $i++) {
-
-          $all_variation_keys[] = 'magic-' . $i;
-
-        }
-
-      }
+      $all_variation_keys = ['magic-0', 'magic-1'];
 
     }
 
@@ -5571,7 +5041,8 @@ function abst_show_experiment_results($test,$asTable = false){
 
   
 
-  // For magic tests, ensure all configured variations exist in observations (even with zero data)
+  // For magic tests, make sure both slots exist in observations (even with zero data):
+  // magic-0 is the original, magic-1 is the variation.
 
   $test_type = get_post_meta($pid, 'test_type', true);
 
@@ -5579,33 +5050,21 @@ function abst_show_experiment_results($test,$asTable = false){
 
     $magic_definition = get_post_meta($pid, 'magic_definition', true);
 
-    if(!empty($magic_definition)) {
+    $magic_def = !empty($magic_definition) ? json_decode($magic_definition, true) : null;
 
-      $magic_def = json_decode($magic_definition, true);
+    if(is_array($magic_def) && isset($magic_def[0]['variations']) && is_array($magic_def[0]['variations'])) {
 
-      if(is_array($magic_def) && isset($magic_def[0]['variations']) && is_array($magic_def[0]['variations'])) {
+      if(!is_array($observations)) {
 
-        // Ensure observations array exists
+        $observations = [];
 
-        if(!is_array($observations)) {
+      }
 
-          $observations = [];
+      foreach(['magic-0', 'magic-1'] as $var_key) {
 
-        }
+        if(!isset($observations[$var_key])) {
 
-        
-
-        // Ensure all variations have observation entries (variations[0] = original, [1..N] = test)
-
-        for($i = 0; $i < count($magic_def[0]['variations']); $i++) {
-
-          $var_key = 'magic-' . $i;
-
-          if(!isset($observations[$var_key])) {
-
-            $observations[$var_key] = ['visit' => 0, 'conversion' => 0, 'rate' => 0];
-
-          }
+          $observations[$var_key] = ['visit' => 0, 'conversion' => 0, 'rate' => 0];
 
         }
 
@@ -6330,7 +5789,7 @@ function abst_show_experiment_results($test,$asTable = false){
 
         
 
-        // Custom label, page title, "Variation B" for Magic tests.
+        // Custom label, page title, or "Original" / "Variation" for Magic and on-page tests.
         $leading_label = abst_get_variation_label($leading_variation, $variation_meta ?? get_post_meta($test->ID, 'variation_meta', true));
 
         
@@ -6644,7 +6103,7 @@ $titles = array();
 
 
 
-      // Custom label, page title, "Variation B" for Magic tests.
+      // Custom label, page title, or "Original" / "Variation" for Magic and on-page tests.
       $mk = abst_get_variation_label($okey, $variation_meta);
       if (in_array($mk, $titles, true) && is_numeric($okey)) {
         $post_id_data = get_post($okey);
@@ -7706,7 +7165,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         {
 
-            $attrs['bt-variation'] = $row->settings->bt_variation_name;
+            $attrs['bt-variation'] = abst_normalize_onpage_variation($row->settings->bt_variation_name, 'original');
 
             $attrs['bt-eid'] = $row->settings->ab_test;
 
@@ -8013,11 +7472,15 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         'bt_variation_name'  => [
 
-          'type'        => 'text',
+          'type'        => 'select',
 
-          'label'       => 'Variation Name',
+          'label'       => 'Version',
 
-          'description' => 'Using "default" will cause this version to run first, unless otherwise targeted. <a href="#">more info <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR42qXKwQkAIAxDUUdxtO6/RBQkQZvSi8I/pL4BoGw/XPkh4XigPmsUgh0626AjRsgxHTkUThsG2T/sIlzdTsp52kSS1wAAAABJRU5ErkJggg==" alt="opens in a new window"></a>',
+          'default'     => 'original',
+
+          'options'     => $this->onpage_variation_choices(),
+
+          'description' => 'Tag one row as the Original and another as the Variation.',
 
         ]
 
@@ -8074,6 +7537,15 @@ function abst_cmp_by_conversion_rate($a, $b) {
     }
 
 
+
+    // The two on-page version choices (value => label). The support module defines the
+    // shared list on init; builders can ask for their controls before that runs.
+    function onpage_variation_choices() {
+      if (function_exists('abst_onpage_variation_choices')) {
+        return abst_onpage_variation_choices();
+      }
+      return ['original' => 'Original', 'variation' => 'Variation'];
+    }
 
     function add_oxy_split_options () {
 
@@ -8145,19 +7617,19 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           $oxygen_vsb_components[$in]->options['params'][] = [
 
-              "type" => 'textfield', // types: textfield, dropdown, checkbox, buttons-list, measurebox, slider-measurebox, colorpicker, icon_finder, mediaurl
+              "type" => 'dropdown', // types: textfield, dropdown, checkbox, buttons-list, measurebox, slider-measurebox, colorpicker, icon_finder, mediaurl
 
-              "name" => 'Variation Name',
+              "name" => 'Version',
 
-              "heading" => 'Variation Name',
+              "heading" => 'Version',
 
-              "param_name" => 'btVar',				
+              "param_name" => 'btVar',
 
               "hidden" 		=> false,
 
               "css" 			=> false,
 
-              "value" 			=> '',
+              "value" 			=> $this->onpage_variation_choices(),
 
           ];
 
@@ -8177,7 +7649,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     if(!empty($options['btVar']) && !empty($options['btExperiment']) )
 
-      echo " bt-variation='" . esc_attr( sanitize_text_field( $options['btVar'] ) ) . "' bt-eid='" . intval( $options['btExperiment'] ) . "' ";
+      echo " bt-variation='" . esc_attr( abst_normalize_onpage_variation( $options['btVar'] ) ) . "' bt-eid='" . intval( $options['btExperiment'] ) . "' ";
 
    }
 
@@ -9274,13 +8746,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
                $experiments[$module->settings->ab_test] = [];
 
-            if(!isset($experiments[$module->settings->ab_test]['variations']))
-
-              $experiments[$module->settings->ab_test]['variations'] = [];
-
-
-
-            $experiments[$module->settings->ab_test]['variations'][] =  $module->settings->bt_variation_name;
+            // An on-page test always has the same two versions.
+            $experiments[$module->settings->ab_test]['variations'] = ['original', 'variation'];
 
 
             $experiments[$module->settings->ab_test]['target_percentage'] = $target_percentage;
@@ -10166,7 +9633,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         if(!empty($variation) && is_string($variation) && strlen($variation) > 100)
 
-          $error = 'Variation Name too long. 100 characters max.';
+          $error = 'Variation key too long. 100 characters max.';
 
         
 
@@ -10178,7 +9645,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         if(!empty($variation) && ((string)abst_sanitize((string)$variation) !== (string)$variation))
 
-          $error = 'Variation Name contains invalid characters.';
+          $error = 'Variation key contains invalid characters.';
 
 
 
@@ -10192,7 +9659,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         if($variation === "" || $variation === false)
 
-          $error = 'Variation name is required, blank or false given';
+          $error = 'Variation key is required, blank or false given';
 
 
 
@@ -10228,14 +9695,19 @@ function abst_cmp_by_conversion_rate($a, $b) {
             if ($test_type === 'magic') {
               $definition = maybe_unserialize($test_meta['magic_definition'][0] ?? []);
               if (is_string($definition)) $definition = json_decode($definition, true);
-              $slots = is_array($definition) && isset($definition[0]['variations']) && is_array($definition[0]['variations']) ? count($definition[0]['variations']) : 0;
-              if (!preg_match('/^magic-(0|[1-9]\d*)$/', (string) $variation, $slot) || (int) $slot[1] >= $slots) {
+              // Two slots: magic-0 (original) and magic-1 (variation).
+              $has_slots = is_array($definition) && isset($definition[0]['variations']) && is_array($definition[0]['variations']);
+              if (!$has_slots || !in_array((string) $variation, ['magic-0', 'magic-1'], true)) {
                 $error = 'Invalid Magic variation.';
               }
             }
 
   
 
+            // An on-page test compares the original with one variation.
+            if ($test_type === 'ab_test' && !in_array((string) $variation, ['original', 'variation'], true)) {
+              $error = 'Invalid on-page variation.';
+            }
             if($test_type == 'full_page')
 
             {
@@ -10358,16 +9830,6 @@ function abst_cmp_by_conversion_rate($a, $b) {
         if(!isset($obs[$variation]) || (isset($obs[$variation]) && !is_array($obs[$variation])))
 
         {
-
-          // Spam guard for the public tracking endpoint: magic, code and full-page variations
-          // are checked against the test above, but builder-authored on-page labels have no
-          // central definition, so new on-page labels stop at 100 per test. Labels already
-          // recorded keep receiving events.
-          if (($test_type ?? '') === 'ab_test' && count($obs) >= 100 && !array_key_exists($variation, $obs)) {
-            $this->observations_lock($eid, 'release');
-            if ($from_api) return new WP_REST_Response(['error' => 'Too many variation labels.'], 400);
-            wp_send_json_error('Too many variation labels.', 400);
-          }
 
           $obs[$variation] = array(
 
@@ -10918,7 +10380,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
                          'Supports magic (visual element), ab_test (on-page variations) and full_page (split URL) types. ' .
 
-                         'The response includes preview_urls for magic and full_page tests — visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (variations are defined in page content). ' .
+                         'The response includes preview_urls for magic and full_page tests — visit each URL after creation to verify the test renders correctly. ab_test preview URLs are not available at creation time (the two versions are tagged in page content as Original and Variation). ' .
 
                          'For magic tests: before choosing selectors, browse the target page with ?abhash=1 appended to the URL (use &abhash=1 if the URL already has query params) — a table will appear at the bottom of the page listing every visible text element and its unique CSS selector; use those selector values in magic_definition.',
 
@@ -10956,15 +10418,15 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
               'type' => 'array',
 
-              'description' => 'For magic tests: array of element definitions. Each item must have selector, type, variations (plain strings), and scope. ' .
+              'description' => 'For magic tests: array of element definitions. Each item must have selector, type, variations (two plain strings: the original, then the variation), and scope. ' .
 
                                'scope examples: {"page_id": 42}, {"url": "pricing"}, {"page_id": "*"} or {"url": "*"} for all pages. ' .
 
                                'variations must be a plain array of strings — NOT objects. ' .
 
-                               'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array — each visitor sees the same variation slot across all elements, keeping them in sync. ' .
+                               'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array — each visitor sees either the original of every element or the variation of every element, keeping them in sync. ' .
 
-                               'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"variations":["Original headline","Variation B headline","Variation C headline"]},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"variations":["Original subtitle","Variation B subtitle","Variation C subtitle"]}]',
+                               'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"variations":["Original headline","New headline"]},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"variations":["Original subtitle","New subtitle"]}]',
 
               'items' => [
 
@@ -10978,7 +10440,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
                   'scope'      => ['type' => 'object', 'description' => 'Page scope: {"page_id": 42} or {"url": "path"} or wildcard {"page_id": "*"}'],
 
-                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 2, 'description' => 'The original/control text first, then one string per variation. e.g. ["Original headline", "Variation B", "Variation C"]'],
+                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 2, 'maxItems' => 2, 'description' => 'The original first, then the variation, e.g. ["Original headline", "New headline"]'],
 
                 ],
 
@@ -10990,11 +10452,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'default_page'     => ['type' => ['integer', 'string'], 'description' => 'For full_page tests: default page ID'],
 
-            'variations'       => ['type' => 'array', 'description' => 'For full_page tests: array of variation page IDs', 'items' => ['type' => ['integer', 'string']]],
+            'variations'       => ['type' => 'array', 'maxItems' => 1, 'description' => 'For full_page tests: the variation page ID (one item)', 'items' => ['type' => ['integer', 'string']]],
 
-            'variation_labels' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Optional labels for full_page variations, aligned by index with variations'],
+            'variation_labels' => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Optional label for the full_page variation page (one item)'],
 
-            'variation_images' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Optional screenshot URLs for full_page variations, aligned by index with variations'],
+            'variation_images' => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Optional screenshot URL for the full_page variation page (one item)'],
 
             'conversion_type'  => ['type' => 'string', 'enum' => $active_types, 'description' => $conversion_type_description],
 
@@ -11295,16 +10757,29 @@ function abst_cmp_by_conversion_rate($a, $b) {
             'log_on_visible'             => ['type' => 'boolean', 'description' => 'Only count visits after the tested element becomes visible'],
 
 
-            'magic_definition'           => ['type' => 'array', 'description' => 'Replace the full magic test definition for magic tests'],
+            'magic_definition'           => [
+              'type'        => 'array',
+              'description' => 'Replace the full magic test definition for magic tests. Each item\'s variations holds two strings: the original, then the variation.',
+              'items'       => [
+                'type'       => 'object',
+                'properties' => [
+                  'selector'   => ['type' => 'string'],
+                  'type'       => ['type' => 'string', 'enum' => ['text', 'html', 'image']],
+                  'scope'      => ['type' => 'object'],
+                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 2, 'maxItems' => 2, 'description' => 'The original first, then the variation'],
+                ],
+                'required'   => ['selector', 'type', 'scope', 'variations'],
+              ],
+            ],
 
 
             'default_page'               => ['type' => ['integer', 'string'], 'description' => 'Control page ID or slug for full_page tests'],
 
-            'variations'                 => ['type' => 'array', 'items' => ['type' => ['integer', 'string']], 'description' => 'Variation page IDs or slugs for full_page tests'],
+            'variations'                 => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => ['integer', 'string']], 'description' => 'The variation page ID or slug for full_page tests (one item)'],
 
-            'variation_labels'           => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Labels for full_page variations, aligned by index with variations'],
+            'variation_labels'           => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Label for the full_page variation page (one item)'],
 
-            'variation_images'           => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Screenshot URLs for full_page variations, aligned by index with variations'],
+            'variation_images'           => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Screenshot URL for the full_page variation page (one item)'],
 
           ],
 
@@ -11358,11 +10833,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
      * Variation key formats (must match the JS tracker):
 
-     *   magic:     magic-0 (original/variations[0]), magic-1..N (test variations)
+     *   magic:     magic-0 (original, variations[0]) and magic-1 (variation, variations[1])
 
-     *   full_page: each variation page's own permalink (no query params needed)
+     *   full_page: the original page and the variation page, each at its own permalink (no query params needed)
 
-     *   ab_test:   skipped — variation keys come from shortcode attributes, unknown at creation time
+     *   ab_test:   skipped — the Original and Variation are tagged in page content, nothing to preview at creation time
 
      *
 
@@ -11438,13 +10913,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-        // Variations: magic-0 = original (variations[0]), magic-1..N = test variations
+        // Two slots: magic-0 = original (variations[0]), magic-1 = variation (variations[1])
 
-        $count = count($first['variations']);
-
-        for ($i = 0; $i < $count; $i++) {
-
-          $k = 'magic-' . $i;
+        foreach (['magic-0', 'magic-1'] as $k) {
 
           $preview_urls[$k] = add_query_arg(['abtv' => $k, 'abtid' => $test_id], $base);
 
@@ -11486,9 +10957,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       }
 
-      // ab_test: variation keys come from [bt-variation="..."] shortcode attributes in page
-
-      // content, which are set by the user in the editor — not knowable at API creation time.
+      // ab_test: the Original and Variation versions are tagged in page content by the user
+      // in their editor, so there is nothing to preview at API creation time.
 
 
 
@@ -12765,9 +12235,22 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       if (empty($params['variations']) || !is_array($params['variations'])) {
 
-        return new WP_Error('missing_variations', 'At least one variation page is required for full page tests', ['status' => 400]);
+        return new WP_Error('missing_variations', 'A variation page is required for full page tests', ['status' => 400]);
 
       }
+
+      // A full page test compares the original page with one variation page.
+      $variation_pages = array_values(array_unique(array_map(function ($variation) {
+        return is_numeric($variation) ? intval($variation) : sanitize_text_field((string) $variation);
+      }, array_values($params['variations']))));
+
+      if (count($variation_pages) !== 1) {
+
+        return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400]);
+
+      }
+
+      $var_id = $variation_pages[0];
 
       
 
@@ -12779,36 +12262,18 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      // Set page variations
+      // Set the variation page and its metadata (label and image if provided)
 
-      $page_variations = [];
+      $page_variations = [ $var_id => $this->get_url_from_slug($var_id) ];
 
-      $variation_meta = [];
+      $variation_meta = [
+        $var_id => [
+          'label' => isset($params['variation_labels'][0]) ? sanitize_text_field($params['variation_labels'][0]) : '',
+          'image' => isset($params['variation_images'][0]) ? esc_url_raw($params['variation_images'][0]) : '',
+        ],
+      ];
 
-      
 
-      $variations = array_values($params['variations']);
-
-      foreach ($variations as $index => $variation) {
-
-        $var_id = is_numeric($variation) ? intval($variation) : sanitize_text_field($variation);
-
-        $page_variations[$var_id] = $this->get_url_from_slug($var_id);
-
-        
-
-        // Set variation metadata if provided
-
-        $variation_meta[$var_id] = [
-
-          'label' => isset($params['variation_labels'][$index]) ? sanitize_text_field($params['variation_labels'][$index]) : '',
-
-          'image' => isset($params['variation_images'][$index]) ? esc_url_raw($params['variation_images'][$index]) : '',
-        ];
-
-      }
-
-      
 
       update_post_meta($test_id, 'page_variations', $page_variations);
 
@@ -13075,7 +12540,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             if(!empty($block['attrs']['bt-variation']))
 
-              $processor->set_attribute( 'bt-variation', $block['attrs']['bt-variation'] ?? '');
+              $processor->set_attribute( 'bt-variation', abst_normalize_onpage_variation( $block['attrs']['bt-variation'] ) );
 
             
 
@@ -17459,10 +16924,6 @@ function abst_get_variation_label( $variation, $variation_meta = null ) {
 
     $variation_label = $variation;
 
-    $alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-
-    
-
     // Check for custom label in variation_meta first (highest priority)
 
     if ( is_array( $variation_meta ) && isset( $variation_meta[ $variation ]['label'] ) && ! empty( $variation_meta[ $variation ]['label'] ) ) {
@@ -17471,21 +16932,19 @@ function abst_get_variation_label( $variation, $variation_meta = null ) {
 
     }
 
-    
+    // Magic tests (magic-0 / magic-1) and on-page tests (original / variation) have two
+    // fixed slots: the Original and the Variation.
 
-    // Handle magic test variations (magic-0, magic-1, etc.)
+    $slot_labels = [
+        'magic-0'   => 'Original',
+        'magic-1'   => 'Variation',
+        'original'  => 'Original',
+        'variation' => 'Variation',
+    ];
 
-    if ( substr( $variation, 0, 6 ) === 'magic-' ) {
+    if ( isset( $slot_labels[ $variation ] ) ) {
 
-        $index = (int) substr( $variation, 6 );
-
-        if ( $index === 0 ) {
-
-            return 'Variation ' . $alphabet[0] . ' (Original)';
-
-        }
-
-        return 'Variation ' . ( isset( $alphabet[ $index ] ) ? $alphabet[ $index ] : $index );
+        return $slot_labels[ $variation ];
 
     }
 

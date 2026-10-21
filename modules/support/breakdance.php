@@ -26,9 +26,17 @@ function abst_bd($controls, $element)
                 'layout' => 'inline', 
                 'postChooserOptions' => ['multiple' => false, 'showThumbnails' => false, 'postType' => 'abst_experiments']],
             ),
-            control('test_var_name', 'Variation Name',
-                ['type' => 'text',
-                'layout' => 'vertical'],
+            // Stored as 'original' or 'variation' and output as the bt-variation attribute.
+            control('test_var_name', __( 'Version', 'ab-split-test-lite' ),
+                ['type' => 'dropdown',
+                'layout' => 'inline',
+                'items' => array_map(
+                    function ( $value, $label ) {
+                        return [ 'value' => $value, 'text' => $label ];
+                    },
+                    array_keys( abst_onpage_variation_choices() ),
+                    array_values( abst_onpage_variation_choices() )
+                )],
             ),
             // Opens the create-test pop-up (js/builderhelper.js); the new test can then be
             // picked in Split Test above.

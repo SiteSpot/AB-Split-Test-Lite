@@ -641,6 +641,12 @@ function abstMainInit() {
       el.removeAttribute('bt-variation');
     });
 
+    // Builders that leave the default out of saved data (Breakdance) tag an element
+    // with a test but no version: that is the Original.
+    document.querySelectorAll('[bt-eid]:not([bt-eid=""]):not([bt-variation]), [bt-eid]:not([bt-eid=""])[bt-variation=""]').forEach(function (el) {
+      el.setAttribute('bt-variation', 'original');
+    });
+
     abstWarnOnUnsafeVariationNames();
     abstWarnOnUnsafeExperimentIds();
 
@@ -742,11 +748,11 @@ function abstMainInit() {
         current_exp[experimentId] = []; // create
         exp_redirect[experimentId] = [];
         
-        // Register all variations: magic-0 is original (variations[0]), magic-1..N are test variations
-        for (var i = 0; i < magic_definition[0].variations.length; i++) {
-          current_exp[experimentId].push('magic-' + experimentId + '-' + i);
-          exp_redirect[experimentId]['magic-' + experimentId + '-' + i] = '';
-        }
+        // Register the two slots: magic-0 is the original (variations[0]), magic-1 the variation (variations[1])
+        ['magic-' + experimentId + '-0', 'magic-' + experimentId + '-1'].forEach(function (slotKey) {
+          current_exp[experimentId].push(slotKey);
+          exp_redirect[experimentId][slotKey] = '';
+        });
       }
     });
 
@@ -787,7 +793,7 @@ function abstMainInit() {
         var btab = abstGetCookie('btab_' + experimentId);
         try {
           var skippedAs = btab ? JSON.parse(btab).skipped : false;
-          if (skippedAs && skippedAs !== 'pct') { // 'preview', or an older skipped:1 cookie; a traffic % skip is kept
+          if (skippedAs && skippedAs !== 'pct') { // a 'preview' skip is cleared; a traffic % skip is kept
             abstDeleteCookie('btab_' + experimentId);
             console.info('ABST: previously skipped experiment will begin ' + experimentId);
           }
@@ -874,10 +880,9 @@ function abstMainInit() {
           if (bt_experiments[experimentId]['test_type'] == 'magic' && 
             bt_experiments[experimentId]['magic_definition'] && 
             bt_experiments[experimentId]['magic_definition'].length > 0) {
-            // Extract the numeric index from the variation string (format: magic-{index})
+            // Extract the slot index from the variation string (magic-0 or magic-1)
             var vartn = 0;
             if (btab.variation && typeof btab.variation === 'string') {
-              // Handle format: magic-2
               vartn = parseInt(btab.variation.split('-').pop());
             }
             showMagicTest(experimentId, vartn);
@@ -1189,33 +1194,14 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     }
     else if (bt_experiments[eid].test_type == "magic") {
       //console.log('magic test, showing ver ' + variation);
-      // Clean up the variation string and get the letter
-      const letter = variation.replace('Variation ', '').replace('(original)', '').replace('(Original)', '').replace('magic-', '').trim().toLowerCase();
-
-      let magVar;
-      if (!isNaN(letter) && !isNaN(parseInt(letter))) {
-        // If it's a number, use it directly
-        magVar = parseInt(letter);
-      }
-      else
-      {
-        // Safety check - make sure we have a single letter
-        if (letter.length !== 1 || !/[a-z]/.test(letter)) {
-          console.error('Invalid variation format:', variation);
-          return false;
-        }
-        // Convert letter to index (a=0, b=1, etc)
-        magVar = letter.charCodeAt(0) - 'a'.charCodeAt(0);
-      }
-
-
-      // Verify the index is in valid range
-      if (magVar < 0 || magVar > 25) {
-        console.error('Invalid variation letter:', letter);
+      // A magic test has two slots: magic-<id>-0 (or 0) is the original, magic-<id>-1 (or 1) the variation.
+      const slotKey = String(variation).split('-').pop();
+      if (slotKey !== '0' && slotKey !== '1') {
+        console.error('Invalid variation format:', variation);
         return false;
       }
 
-      showMagicTest(eid, magVar, true);
+      showMagicTest(eid, Number(slotKey), true);
     }
     else // on page
     {
@@ -1247,10 +1233,8 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
     return;
   var foundSpecial = false;
   document.querySelectorAll('[bt-eid="' + eid + '"]').forEach((function (element, index) {
-    var variationName = element.getAttribute('bt-variation') || '';
-    var defaultNames = ["original", "one", "1", "default", "standard", "a", "control"];
-    if (defaultNames.includes(variationName.toLowerCase())) {
-      btv = variationName; // keep the attribute's case - the cookie is matched against it exactly
+    if (element.getAttribute('bt-variation') === 'original') {
+      btv = 'original';
       element.classList.add('bt-show-variation');
       foundSpecial = true;
     }
@@ -1870,7 +1854,7 @@ function matchesMagicScope(scope) {
   return true;
 }
 
-// Variation key -> slot index: 'magic-2' -> 2, 'magic-123-4' -> 4, '3' -> 3, anything
+// Variation key -> slot index: 'magic-1' -> 1, 'magic-123-1' -> 1, '0' -> 0, anything
 // unparseable -> 0 (the original). Visitor paths must pass showMagicTest a number:
 // it skips slot 0 only for the number 0, while the Magic bar passes the string "0"
 // on purpose to put the original back after previewing a variation.
@@ -1910,8 +1894,9 @@ function showMagicTest(eid, index,scroll = false) { // called from magic bar so 
     var variation;
 
     if (Array.isArray(swapElement.variations)) {
+        // index is 1 (the variation) here; a missing variations[1] leaves the original
+        // (variations[0]) on the page, which already shows it.
         variation = swapElement.variations[index];
-        // If variation is null, undefined, or empty string, fall back to original (no-op effectively)
         if (variation === null || variation === undefined || variation === '') {
             return;
         }
@@ -2246,7 +2231,7 @@ function checkMagicTestSelectors(node) {
       var magic_definition = parseMagicTestDefinition(exp.magic_definition);
       if (!Array.isArray(magic_definition)) continue;
       
-      // Get variation index (e.g., "magic-2" -> 2)
+      // Get the slot index ("magic-0" -> 0, "magic-1" -> 1)
       var varIndex = parseInt(testData.variation.split('-').pop());
       
       // Check each selector in the magic definition
@@ -3300,7 +3285,7 @@ function initAbstDynamicElementObserver() {
  */
 function processNodeForTests(node, activeTests) {
   if (!node.getAttribute) return;
-  
+
   var eid = node.getAttribute('bt-eid');
   var variation = node.getAttribute('bt-variation');
   

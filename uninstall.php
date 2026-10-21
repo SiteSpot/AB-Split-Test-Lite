@@ -111,7 +111,6 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// Plugin options: the named ones plus anything under our own prefix.
 	$abst_option_names = array(
 		'abst_plugin_version',
-		'abst_plugin_test_ideas',
 		'abst_delete_data_on_uninstall',
 		'abst_conversion_pages',
 		'bt_bb_ab_settings',

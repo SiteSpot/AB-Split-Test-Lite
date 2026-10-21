@@ -182,7 +182,7 @@ function addTourSteps(testType){
     var steps = (tour.getConfig('steps') || []).slice(0, (tour.getActiveIndex() || 0) + 1);
 
     if(testType == 'full_page'){
-        steps.push(abstTourStep('.show_full_page_test', 'bottom', 'Choose Pages', "This is your existing page, or the page you will send traffic to. We will split the traffic evenly between this page and the variation pages you choose next.<br> Choose your starting page, then choose one or more variation pages.", ['next']));
+        steps.push(abstTourStep('.show_full_page_test', 'bottom', 'Choose Pages', "This is your existing page, or the page you will send traffic to. We will split the traffic evenly between this page and the variation page you choose next.<br> Choose your starting page, then choose your variation page.", ['next']));
     }
 
     if(testType == 'ab_test'){

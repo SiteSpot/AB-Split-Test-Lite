@@ -1,7 +1,7 @@
 {
     "post_data": {
         "title": "Sample Test 4 - Full Page Complete",
-        "content": "This is a completed Full Page Test comparing three landing page designs. The redesigned long-form page (Variation B) is the clear winner with an 11.00% conversion rate vs 5.50% for the original.",
+        "content": "This is a completed Full Page Test comparing the original landing page with one redesign. The long-form variation page is the clear winner with an 11.00% conversion rate vs 5.50% for the original.",
         "status": "complete"
     },
     "test_config": {
@@ -16,9 +16,6 @@
             },
             "home-v2": {
                 "label": "Long-Form Redesign"
-            },
-            "home-v3": {
-                "label": "Video Hero"
             }
         },
         "target_percentage": "75",

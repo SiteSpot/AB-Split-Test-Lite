@@ -248,9 +248,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           <div class="ab-settings-subsection ab-test-add-canonical">
 
-            <label for="add_canonical"><strong>Add canonical links to page variations:</strong></label>
+            <label for="add_canonical"><strong>Add canonical link to the variation page:</strong></label>
 
-            <p>To avoid SEO duplicate content issues. Adds the default page from your full page split test as a canonical link to each variation page.</p>
+            <p>To avoid SEO duplicate content issues. Adds the default page from your full page split test as a canonical link on the variation page.</p>
 
             <p><input type="checkbox" class="ab-toggle" id="add_canonical" name="add_canonical" value="1" <?php echo esc_attr($add_canonical); ?> /> Add canonical links.</p>
 
@@ -461,7 +461,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
               <div style="margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 5px;">
 
-                <p><strong>Scenario:</strong> Create a magic test for the H1 headline on page ID 12 with two variations, counting a visit to the thank-you page (page ID 34) as the conversion.</p>
+                <p><strong>Scenario:</strong> Create a magic test for the H1 headline on page ID 12 that compares the original headline with one new headline, counting a visit to the thank-you page (page ID 34) as the conversion.</p>
 
                 
 
@@ -507,9 +507,7 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
           "Original Headline",
 
-          "New Compelling Headline",
-
-          "Alternative Headline"
+          "New Compelling Headline"
 
         ]
 
@@ -573,9 +571,7 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
           'Original Headline',
 
-          'New Compelling Headline',
-
-          'Alternative Headline'
+          'New Compelling Headline'
 
         ]
 
@@ -611,19 +607,19 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
                   <li><strong>conversion_selector:</strong> CSS selector of the element to click, e.g. <code>.buy-button</code> (selector goal)</li>
 
-                  <li><strong>magic_definition:</strong> Array of elements to test with their variations</li>
+                  <li><strong>magic_definition:</strong> Array of elements to test, each with its original and its variation</li>
 
                   <li><strong>scope:</strong> Optional but recommended page targeting metadata. Use <code>page_id</code> (WordPress page/post ID) or <code>url</code> (path fragment) or both for precise targeting</li>
 
                   <li><strong>selector:</strong> CSS selector for the element to test</li>
 
-                  <li><strong>variations:</strong> The original text first, then one string per variation</li>
+                  <li><strong>variations:</strong> Two strings: the original text first, then the variation</li>
 
                 </ul>
 
                 
 
-                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, the first entry in variations is the original text and each later entry is a variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
+                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, variations holds two entries: the original text, then the variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
 
               </div>
 

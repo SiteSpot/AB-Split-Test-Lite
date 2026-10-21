@@ -577,7 +577,12 @@ function abst_validate_magic_definition($magic_definition) {
         }
 
         if (empty($definition['variations']) || !is_array($definition['variations'])) {
-            return new WP_Error('missing_magic_variations', 'Each magic_definition item requires a non-empty variations array.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
+            return new WP_Error('missing_magic_variations', 'Each magic_definition item requires a variations array: the original, then the variation.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
+        }
+
+        // A Magic test compares the original with one variation: exactly two strings.
+        if (count($definition['variations']) !== 2) {
+            return new WP_Error('invalid_magic_variations', 'A Magic test compares the original with one variation: variations must hold two strings, the original then the variation.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
         }
 
         foreach ($definition['variations'] as $variation_index => $variation) {
@@ -654,7 +659,15 @@ function abst_validate_test_payload($params, $mode = 'create') {
         }
 
         if (empty($params['variations']) || !is_array($params['variations'])) {
-            return new WP_Error('missing_variations', 'At least one variation page is required for full page tests.', ['status' => 400, 'field' => 'variations']);
+            return new WP_Error('missing_variations', 'A variation page is required for full page tests.', ['status' => 400, 'field' => 'variations']);
+        }
+
+        // A full page test compares the original page with one variation page.
+        $variation_pages = array_unique(array_map(function ($variation) {
+            return is_scalar($variation) ? (string) $variation : wp_json_encode($variation);
+        }, array_values($params['variations'])));
+        if (count($variation_pages) !== 1) {
+            return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400, 'field' => 'variations']);
         }
     }
 

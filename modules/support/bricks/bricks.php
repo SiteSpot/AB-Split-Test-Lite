@@ -50,10 +50,10 @@ function tests_with_id(){
 
 function add_bricks_attributes($attributes, $key, $element){
 
-      if(!empty($element->settings['bt_experiment']))
+      if(!empty($element->settings['bt_experiment'])) {
         $attributes[$key]['bt-eid'] = [$element->settings['bt_experiment']];
-      if(!empty($element->settings['bt_var']))
-        $attributes[$key]['bt-variation'] = [$element->settings['bt_var']];
+        $attributes[$key]['bt-variation'] = [abst_normalize_onpage_variation( $element->settings['bt_var'] ?? '', 'original' )];
+      }
 
     return $attributes;
 }
@@ -114,10 +114,12 @@ function add_bricks_attributes($attributes, $key, $element){
             $controls['bt_var'] = [
               'tab' => 'style',
               'group' => 'abst',
-              'label' => esc_html__( 'Variation Name', 'ab-split-test-lite' ),
-              'type' => 'text',
+              'label' => esc_html__( 'Version', 'ab-split-test-lite' ),
+              'type' => 'select',
+              'options' => abst_onpage_variation_choices(),
               'inline' => true,
-              'placeholder' => esc_html__( 'Your variation name...', 'ab-split-test-lite' ),
+              // Left unset, an element with a test runs as the Original.
+              'placeholder' => esc_html__( 'Original', 'ab-split-test-lite' ),
             ];
 
         
@@ -134,10 +136,10 @@ $abst_bricks = new ABST_Bricks;
 
 
 add_filter( 'bricks/element/set_root_attributes', function( $attributes, $element ) {
-      if(!empty($element->settings['bt_experiment']))
+      if(!empty($element->settings['bt_experiment'])) {
         $attributes['bt-eid'] = $element->settings['bt_experiment'];
-      if(!empty($element->settings['bt_var']))
-        $attributes['bt-variation'] = $element->settings['bt_var'];
+        $attributes['bt-variation'] = abst_normalize_onpage_variation( $element->settings['bt_var'] ?? '', 'original' );
+      }
 
     return $attributes;
 }, 10, 2 );

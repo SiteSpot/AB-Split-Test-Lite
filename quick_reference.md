@@ -68,19 +68,19 @@ Use these for new integrations:
     "type": "text",
     "selector": ".hero h1",
     "scope": { "page_id": 12 },
-    "variations": ["Original", "Variant A", "Variant B"]
+    "variations": ["Original headline", "Variation headline"]
   }
 ]
 ```
 
 Notes:
 
+- `variations` holds exactly two strings: the original, then the variation (validation rejects any other count with `invalid_magic_variations`)
 - `scope` is recommended for precise targeting
 - unscoped payloads remain backward compatible
 - page goals still store the numeric page ID in historical `conversion_page` storage
 - point-and-click selector capture ignores magic-bar/admin-bar UI, including goal cards and `.remove-goal` controls
-- AI suggestions panel uses fixed `height: 180px` on `ul#ai-suggestions-list` in CSS and shows shimmering skeleton placeholders while loading; closing the toggle suppresses auto-expand for the session
-- Lite mode: Magic Bar AI is upsell-only. Element selection no longer triggers `send_to_openai` for `magic`; the AI Suggestions panel shows an upgrade CTA and ChatCRO is disabled with `Subscribe for AI features.`
+- Lite: the Magic Bar has no AI panel and no AI code; AI suggestions are an AB Split Test Pro feature
 
 ## Editor tabs
 

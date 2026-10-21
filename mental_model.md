@@ -77,7 +77,7 @@ Two rules matter:
 
 Magic tests separate two concerns:
 
-- **what changes**: selector, type, variations
+- **what changes**: selector, type, and the two versions (`variations: [original, variation]`)
 - **where it applies**: optional scope metadata
 
 Scope should be used when available for safer targeting, but older unscoped payloads must remain compatible.
@@ -153,33 +153,21 @@ Secret rotation is intentionally breaking for old keys:
 - previously saved hub connections using the old key will stop authenticating
 - reconnecting requires pasting the fresh key into the hub again
 
-## Lite Version Architecture
+## Two-way tests
 
-The lite (free) version hardcodes a single-tier license model and removes/stubs premium features.
+Every Lite test compares the Original with exactly one Variation. That is the data model everywhere, not a setting:
 
-### License Model
-- `btab_user_level()` always returns `'free'`
-- `is_abst_pro()` always returns `false`
-- EDD licensing hooks and remote activation are removed
-- `bt_bb_ab_licence_details()` returns a hardcoded valid-lite object
+- **Magic (point-and-click)**: each `magic_definition` item has `variations: [original, variation]`, exactly two strings. Validation rejects any other count with `invalid_magic_variations`.
+- **Full-page**: `page_variations` holds one entry, the variation page. The test's own page is the original.
+- **On-page (builders and Gutenberg)**: the `bt-variation` attribute is `original` or `variation`. `abst_normalize_onpage_variation()` reads `original` (or an empty value, where a builder leaves its default out of the saved data) as the Original and anything else as the Variation.
 
-### Feature Gating Strategy
-Premium features are gated at three levels:
-1. **Backend hard limits**: `save_test_config` enforces 1 active test, 1 variation, no subgoals, no revenue tracking
-2. **Backend stubs**: AJAX handlers and cron functions return early for PRO-only features
-3. **UI disabled**: Settings fields are visually disabled with an "(upgrade)" link rather than removed
+The rule: no code may exist that supports more versions and then restricts them (no "max variations" setting, no slicing arrays down, no hidden or disabled third-variation UI). WordPress.org treats locked or capped functionality as trialware (guideline 5). A/B/n tests with several variations live in the separate AB Split Test Pro plugin, and Lite only mentions that as information.
 
-### Stubbed Features
-- AI/OpenAI: AJAX handlers return `wp_die()`
-- Webhooks: `btab_send_webhook()` returns `false`
-- Weekly reports: Cron scheduling is a no-op
-- MAB: Thompson sampling falls back to random selection
-- Agency Hub: Page renders an upgrade message
-- Public reports: Module include removed, REST returns `null`
-- Fingerprint/UUID: Hooks commented out, handlers are no-ops
-- Form-plugin conversions: WooCommerce hook removed
+## Lite version architecture
 
-### Lite Magic Bar AI contract
-- backend AI endpoints are disabled, and frontend Magic Bar should also avoid initiating AI flows
-- AI Suggestions remains as an expandable UI surface, but its content is upgrade-only CTA state in Lite
-- ChatCRO is presented as a disabled/grayed upsell surface with `Subscribe for AI features.` messaging
+AB Split Test Lite is a standalone plugin, not Pro with features switched off.
+
+- Pro-only features (AI suggestions, revenue and form goals, sub-goals, audiences, webhooks, email reports, WP-CLI, A/B/n tests) are absent from the code, not stubbed, hidden or disabled.
+- There is no licence check, no tier function and no "(upgrade)" control on a disabled field.
+- Pro is mentioned only as information: the readme's Pro section and the notice on the settings page.
+- Everything Lite does ship is fully working with no count or time limit: unlimited tests, heatmaps on every page with configurable retention.

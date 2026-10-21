@@ -187,7 +187,7 @@ jQuery(function(){
             //set bg yellow opacity 50%
             element.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
 
-            // Get variations from URL
+            // Get the variation from the URL
             const variationsParam = urlParams.get('variations');
             // These land in the saved definition and are replayed via innerHTML to every
             // visitor, so scrub them here — the query string is attacker-controllable if an
@@ -195,14 +195,15 @@ jQuery(function(){
             // used above for text matching, where it is never treated as markup.)
             const variationsArray = (variationsParam ? variationsParam.split('|') : [])
                 .map(function (v) { return abstSanitizeCreatedHtml(v); });
-            // The original plus every suggested variation.
-            const allVariations = [abstSanitizeCreatedHtml(textToReplace)].concat(variationsArray);
+            // The original and the suggested variation.
+            const originalText = abstSanitizeCreatedHtml(textToReplace);
+            const allVariations = [originalText, variationsArray.length ? variationsArray[0] : originalText];
             
             // Initialize abmagic and create definition
             if (!window.abmagic) window.abmagic = {};
             if (!window.abmagic.definition) window.abmagic.definition = [];
             
-            // Add to definition with all variations from URL
+            // Add to definition with the original and the variation from the URL
             window.abmagic.definition.push({
                 selector: selector,
                 variations: allVariations,
@@ -239,7 +240,7 @@ jQuery(function(){
                     jQuery('#abst-magic-bar-title').val(test_title);
                 }
                 
-                // Update variation picker to show all variations
+                // Update the variation picker
                 if (typeof updateVariationPicker === 'function') {
                     updateVariationPicker();
                 }
@@ -310,11 +311,8 @@ function abstBuildAdminBar() {
                 }
                 // Get variation display text
                 if (magicItem.variations && magicItem.variations.length > 0) {
-                  const varName = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
-                  magicItem.variations.forEach((variation, ix) => {
-                    let variationText = bt_variation_icon + " Variation " + varName[ix];
-                    if(ix == 0)
-                      variationText += " (Original)";
+                  [0, 1].forEach((ix) => {
+                    let variationText = bt_variation_icon + " " + getVariationLabel(ix);
                     //generate link_html and preview_url like below
                     let preview_url = new URL(window.location.href);
                     preview_url.searchParams.set('abtid', index);
@@ -343,8 +341,11 @@ function abstBuildAdminBar() {
           spantext = jQuery(this).attr('bt-url').replace(/^.*\/\/[^\/]+/, '');
         else if(typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.includes(jQuery(this).attr('bt-variation')))
           spantext = 'Current Page';
-        else
-          spantext = jQuery(this).attr('bt-variation');
+        else {
+          // On-page tags are 'original' / 'variation'; show them as Original / Variation.
+          var versionTag = jQuery(this).attr('bt-variation');
+          spantext = versionTag === 'original' ? 'Original' : (versionTag === 'variation' ? 'Variation' : versionTag);
+        }
 
         if( variations.indexOf(jQuery(this).attr('bt-variation')) === -1)
         {
@@ -877,17 +878,18 @@ function loadMagicTestFromUrl() {
 
     var firstDef = magicDefinition[0];
     if (firstDef && firstDef.selector) {
-        var initialVariationIndex = firstDef.variations && firstDef.variations.length > 1 ? 1 : 0;
-        jQuery('#variation-picker').val(String(initialVariationIndex));
+        // Open on the Variation: variations are [original, variation].
+        var firstVariations = firstDef.variations || [];
+        jQuery('#variation-picker').val('1');
         setMagicBar(
             firstDef.selector,
-            (firstDef.variations && firstDef.variations[initialVariationIndex]) || (firstDef.variations && firstDef.variations[0]) || '',
+            firstVariations[1] || firstVariations[0] || '',
             false,
             firstDef.type || 'text',
             true
         );
         jQuery('.abst-variation-marker .abst-marker-var').removeClass('active');
-        jQuery('.abst-variation-marker .abst-marker-var[data-var="' + initialVariationIndex + '"]').addClass('active');
+        jQuery('.abst-variation-marker .abst-marker-var[data-var="1"]').addClass('active');
     }
 
     console.log('ABST: Loaded existing magic test into Magic Mode', testId, experiment);
@@ -1854,22 +1856,15 @@ function abst_magic_bar(options = {}) {
             rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"><span>' + value + '</span></label>';
     });
 
-    var variationOptions = [
-        {  label: 'A Version - Control', selected: false, value: 0 },
-        { label: 'B Version', selected: true, value: 1 },
-        { label: '+ Add Version', selected: false, value: 'addAnother' },
-    ];
-    var variationOptionsHtml = variationOptions.map(function(opt, index) {
-        return '<option value="' + opt.value + '" ' + (opt.selected ? 'selected' : '') + '>' + opt.label + '</option>';
-    }).join('');
+    var variationOptionsHtml = '<option value="0">Original</option><option value="1" selected>Variation</option>';
 
     magicBar.innerHTML = `
     <div class="abst-magic-bar-container" data-llm-instructions="this div contains instructions for LLM assistance 
             #abst-magic-bar-title is the test name. add your descriptive title
             #abst-selector-input gives you the css selector of the selected element, if any is selected.
-            Each test compares the original (A version) with one or more variations (B, C, D...). #variation-picker switches between them and its + Add Version option adds another; #abst-version-toggle steps through them, and the + button on an element's marker adds a version too.
+            Each test compares the Original with one Variation. #variation-picker and #abst-version-toggle switch between the Original and the Variation.
             #abst-variation-editor-container is the way to edit the selected version after you have selected an element.
-            You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and edit its versions. you'll see #abst-selector-input update to the new element. All elements switch together, so a visitor sees version B of every element, or version C of every element, and so on.
+            You can add additional elements to a test, like a subhero under a hero for example. To add an additional element to the test, click it and edit its versions. you'll see #abst-selector-input update to the new element. All elements switch together, so a visitor sees either the Original of every element or the Variation of every element.
             The conversion goal is set in the Goal box and is one of two types. Page visit: a conversion counts when a visitor reaches a page, such as a thank-you page; search for it and pick it from the list. Element click: a conversion counts when a visitor clicks an element; type its CSS selector (e.g. #buy-now or .signup-button) or press Pick on page and click the element. After saving the test, All Tests in the AB Split Test Lite admin menu lists every test. do not edit other tests unless  specifically asked">
         <div class="abst-magic-bar-header">
             <span class="abst-magic-bar-heading">Magic Test</span>
@@ -1894,8 +1889,8 @@ function abst_magic_bar(options = {}) {
             <div class="abst-goals-title" style="display: flex; align-items: center; justify-content: center; gap: 8px;">Element <input id="abst-selector-input" type="text" value="Select an item" placeholder="CSS Selector" style="background: transparent; color: #999; font-size: 13px; padding: 0; flex: 1; text-align: center; margin: 0 !important; height: 30px;"></div>
             <p id="version-value" class="abst-version-value">
                 <span class="abst-version-prefix">Editing</span>
-                <button type="button" id="abst-version-toggle" class="abst-version-toggle" aria-label="Click to swap between variations" title="Click to swap between variations">B version</button>
-                <button type="button" id="abst-version-swap" class="abst-version-swap" aria-label="Click to swap between variations" title="Click to swap between variations">
+                <button type="button" id="abst-version-toggle" class="abst-version-toggle" aria-label="Click to swap between the original and the variation" title="Click to swap between the original and the variation">Variation</button>
+                <button type="button" id="abst-version-swap" class="abst-version-swap" aria-label="Click to swap between the original and the variation" title="Click to swap between the original and the variation">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3"></path>
                     </svg>
@@ -2474,9 +2469,8 @@ function adjustFixedElementsForMagicBar(activate) {
                     originalValue = jQuery(selector).html() || '';
                 }
 
-                var newVariations = [];
-                newVariations[0] = originalValue || ''; // Ensure it's never null/undefined
-                newVariations[variationIndex] = variationValue || ''; // Ensure it's never null/undefined
+                originalValue = originalValue || ''; // Ensure it's never null/undefined
+                var newVariations = [originalValue, variationIndex === 1 ? (variationValue || '') : originalValue];
 
                 var newDef = {
                     type: variationType,
@@ -2501,71 +2495,27 @@ function adjustFixedElementsForMagicBar(activate) {
 
 
 
-        // 0 = the original (A), 1 = B, 2 = C and so on.
+        // 0 = the Original, 1 = the Variation.
         function getCurrentVariationIndex() {
-            var variationValue = jQuery("#variation-picker").val();
-            if (variationValue === 'addAnother') {
-                return 1;
-            }
-            return parseInt(variationValue, 10) || 0;
-        }
-
-        function getVariationVersionName(variationIndex) {
-            var optionText = jQuery('#variation-picker option[value="' + variationIndex + '"]').text();
-            optionText = optionText.replace(/\s*-\s*Control\s*$/i, '').trim();
-
-            if (!optionText) {
-                optionText = getVariationLabel(variationIndex) + ' Version';
-            }
-
-            return optionText.replace(/\bVersion\b/g, 'version');
+            return jQuery("#variation-picker").val() === '1' ? 1 : 0;
         }
 
         function updateVersionValue() {
             var variationIndex = getCurrentVariationIndex();
-            var versionName = getVariationVersionName(variationIndex);
             var actionText = variationIndex === 0 ? 'Viewing' : 'Editing';
 
             jQuery("#version-value .abst-version-prefix").text(actionText);
-            jQuery("#abst-version-toggle").text(versionName).attr('aria-label', 'Click to swap between variations').attr('title', 'Click to swap between variations');
-            jQuery("#abst-version-swap").attr('aria-label', 'Click to swap between variations').attr('title', 'Click to swap between variations');
+            jQuery("#abst-version-toggle").text(getVariationLabel(variationIndex));
         }
 
-        // Step to the next version, back to the original after the last one.
-        function cycleMagicVariation() {
-            var variationCount = Math.max(1, getMagicVariationCount());
-            var currentIndex = getCurrentVariationIndex();
-            var nextIndex = (currentIndex + 1) % variationCount;
+        // Swap between the Original and the Variation.
+        function toggleMagicVariation() {
+            var nextIndex = getCurrentVariationIndex() === 1 ? 0 : 1;
 
             jQuery("#variation-picker").val(String(nextIndex)).trigger('change');
         }
 
         jQuery('body').on('change', "#variation-picker", function() {
-            var variationIndexRaw = jQuery("#variation-picker").val();
-
-            // "+ Add Version": a new version for every element, starting from each element's original.
-            if (variationIndexRaw === 'addAnother') {
-                jQuery("#variation-picker option[value='addAnother']").remove();
-                var nextIndex = jQuery("#variation-picker option").length;
-                var label = getVariationLabel(nextIndex);
-                jQuery("#variation-picker").append('<option value="' + nextIndex + '">' + label + ' Version</option><option value="addAnother"> + Add Version</option>');
-                jQuery("#variation-picker").val(String(nextIndex));
-
-                if (window.abmagic && window.abmagic.definition) {
-                    window.abmagic.definition.forEach(function(def) {
-                        if (!def.variations) {
-                            return;
-                        }
-                        while (def.variations.length < nextIndex + 1) {
-                            def.variations.push(def.variations[0]);
-                        }
-                    });
-                }
-
-                jQuery("#variation-picker").trigger('change');
-                return;
-            }
-
             var variationIndex = getCurrentVariationIndex();
             updateVersionValue();
 
@@ -2624,7 +2574,7 @@ function adjustFixedElementsForMagicBar(activate) {
 
         jQuery('body').on('click', "#abst-version-toggle, #abst-version-swap", function(e) {
             e.preventDefault();
-            cycleMagicVariation();
+            toggleMagicVariation();
         });
 
 
@@ -2676,7 +2626,6 @@ function adjustFixedElementsForMagicBar(activate) {
             // Validate and sanitize magic_definition before sending
             var sanitizedDefinition = [];
             if (window.abmagic && window.abmagic.definition && Array.isArray(window.abmagic.definition)) {
-                var versionCount = Math.max(2, getMagicVariationCount());
                 sanitizedDefinition = window.abmagic.definition.map(function(item) {
                     if (!item || typeof item !== 'object') return null;
                     
@@ -2691,21 +2640,12 @@ function adjustFixedElementsForMagicBar(activate) {
                         sanitized.scope = normalizeMagicScope(selectedScope, true);
                     }
                     
-                    // Sanitize variations array: the original (A) first, then B, C...
-                    if (item.variations && Array.isArray(item.variations)) {
-                        sanitized.variations = item.variations.map(function(variation) {
-                            // Convert null/undefined to empty string
-                            if (variation === null || variation === undefined) return '';
-                            // Ensure it's a string
-                            return String(variation);
-                        });
-                    } else {
-                        sanitized.variations = [''];
-                    }
-                    // Every element has every version; one never edited in a version shows its original there.
-                    while (sanitized.variations.length < versionCount) {
-                        sanitized.variations.push(sanitized.variations[0]);
-                    }
+                    // Variations are exactly [original, variation]. An element never edited
+                    // in the Variation shows its original there.
+                    var itemVariations = Array.isArray(item.variations) ? item.variations : [];
+                    var original = (itemVariations[0] === null || itemVariations[0] === undefined) ? '' : String(itemVariations[0]);
+                    var variation = (itemVariations[1] === null || itemVariations[1] === undefined) ? original : String(itemVariations[1]);
+                    sanitized.variations = [original, variation];
                     
                     return sanitized;
                 }).filter(function(item) { return item !== null; }); // Remove null items
@@ -2972,7 +2912,7 @@ function refreshVariationClasses() {
 
 /**
  * Add a variation marker toolbar to an element
- * Shows A, B, C, D buttons to toggle variations and X to remove
+ * Shows Original and Variation buttons to toggle versions and X to remove
  */
 function addVariationMarker($element, definition, defIndex) {
     // Remove existing marker if any
@@ -2985,19 +2925,11 @@ function addVariationMarker($element, definition, defIndex) {
         $element.css('position', 'relative');
     }
     
-    // A button per version (A is the original), then + to add a version
+    // Original and Variation buttons
+    var currentVariation = jQuery('#variation-picker').val() === '1' ? 1 : 0;
     var buttonsHtml = '';
-    var numVariations = Math.max(2, getMagicVariationCount());
-    var currentVariation = parseInt(jQuery('#variation-picker').val(), 10) || 0;
-
-    for (var i = 0; i < numVariations; i++) {
-        var label = getVariationLabel(i);
-        var activeClass = (i === currentVariation) ? ' active' : '';
-        var title = 'Show ' + label + ' Version' + (i === 0 ? ' (original)' : ' (right-click to remove)');
-        buttonsHtml += '<button class="abst-marker-var' + activeClass + '" data-var="' + i + '" data-def="' + defIndex + '" title="' + title + '">' + label + '</button>';
-    }
-
-    buttonsHtml += '<button class="abst-marker-add" data-def="' + defIndex + '" title="Add a version">+</button>';
+    buttonsHtml += '<button class="abst-marker-var' + (currentVariation === 0 ? ' active' : '') + '" data-var="0" data-def="' + defIndex + '" title="Show the Original">Original</button>';
+    buttonsHtml += '<button class="abst-marker-var' + (currentVariation === 1 ? ' active' : '') + '" data-var="1" data-def="' + defIndex + '" title="Show the Variation">Variation</button>';
 
     // Add remove button
     buttonsHtml += '<button class="abst-marker-remove" data-def="' + defIndex + '" title="Remove element from test">×</button>';
@@ -3096,34 +3028,6 @@ jQuery('body').on('click', '.abst-marker-var', function(e) {
     jQuery('.abst-variation-marker .abst-marker-var[data-var="' + varIndex + '"]').addClass('active');
 });
 
-// Right-click a version label to remove that version from every element
-jQuery('body').on('contextmenu', '.abst-marker-var', function(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    removeMagicVariation(parseInt(jQuery(this).data('var'), 10));
-});
-
-// + on a marker: select that element and add a version to the test
-jQuery('body').on('click', '.abst-marker-add', function(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    var defIndex = jQuery(this).data('def');
-    var def = (window.abmagic && window.abmagic.definition) ? window.abmagic.definition[defIndex] : null;
-
-    if (def) {
-        jQuery('#abst-selector-input').val(def.selector);
-    }
-
-    jQuery('#variation-picker').val('addAnother').trigger('change');
-
-    if (def) {
-        var currentVar = parseInt(jQuery('#variation-picker').val(), 10) || 0;
-        setMagicBar(def.selector, def.variations[currentVar] || def.variations[0] || '', false, def.type || 'text');
-    }
-});
-
 // Handle remove button clicks
 jQuery('body').on('click', '.abst-marker-remove', function(e) {
     e.preventDefault();
@@ -3171,98 +3075,22 @@ jQuery('body').on('click', '.abst-marker-remove', function(e) {
 });
 
 
-function getVariationLabel(n) {
-    alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-    // Past Z, versions are numbered.
-    return alphabet[n] || String(n + 1);
-}
-
-// The number of versions in the test, the original included.
-function getMagicVariationCount() {
-    var maxVariations = 1;
-
-    if (!window.abmagic || !window.abmagic.definition) {
-        return maxVariations;
-    }
-
-    window.abmagic.definition.forEach(function(def) {
-        if (def && def.variations && def.variations.length > maxVariations) {
-            maxVariations = def.variations.length;
-        }
-    });
-
-    return maxVariations;
-}
-
-// Remove one version (C onwards; the original and B stay) from every element.
-function removeMagicVariation(variationIndex) {
-    if (!window.abmagic || !window.abmagic.definition || !Array.isArray(window.abmagic.definition)) {
-        return;
-    }
-
-    if (variationIndex === 0) {
-        alert('The original version cannot be removed.');
-        return;
-    }
-
-    var variationCount = getMagicVariationCount();
-    if (variationCount <= 2) {
-        alert('A magic test needs at least one variation.');
-        return;
-    }
-
-    if (variationIndex < 1 || variationIndex >= variationCount) {
-        return;
-    }
-
-    if (!confirm('Remove version ' + getVariationLabel(variationIndex) + ' from this magic test?')) {
-        return;
-    }
-
-    var currentValue = jQuery('#variation-picker').val();
-    var currentIndex = currentValue === 'addAnother' ? 1 : (parseInt(currentValue, 10) || 0);
-
-    window.abmagic.definition.forEach(function(def) {
-        if (def.variations && def.variations.length > variationIndex) {
-            def.variations.splice(variationIndex, 1);
-        }
-    });
-
-    var nextCount = getMagicVariationCount();
-    var nextIndex = currentIndex;
-    if (currentIndex === variationIndex) {
-        nextIndex = Math.min(variationIndex, nextCount - 1);
-    } else if (currentIndex > variationIndex) {
-        nextIndex = currentIndex - 1;
-    }
-    nextIndex = Math.max(1, Math.min(nextIndex, nextCount - 1));
-
-    jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
-    updateVariationPicker(nextIndex);
+function getVariationLabel(variationIndex) {
+    return variationIndex === 1 ? 'Variation' : 'Original';
 }
 
 /**
- * Rebuild the variation picker from the definition: one option per version plus
- * "+ Add Version". selectedIndex defaults to B.
+ * Rebuild the variation picker: Original and Variation. selectedIndex defaults to the Variation.
  */
 function updateVariationPicker(selectedIndex) {
     if (!window.abmagic || !window.abmagic.definition || window.abmagic.definition.length === 0) {
         return;
     }
 
-    var maxVariations = Math.max(2, getMagicVariationCount());
-    selectedIndex = (typeof selectedIndex === 'number') ? selectedIndex : 1;
-    selectedIndex = Math.max(0, Math.min(selectedIndex, maxVariations - 1));
+    selectedIndex = selectedIndex === 0 ? 0 : 1;
 
-    // Build options HTML
-    var optionsHtml = '';
-    for (var i = 0; i < maxVariations; i++) {
-        var label = getVariationLabel(i);
-        var suffix = (i === 0) ? ' Version - Control' : ' Version';
-        var selected = (i === selectedIndex) ? ' selected' : '';
-        optionsHtml += '<option value="' + i + '"' + selected + '>' + label + suffix + '</option>';
-    }
-    optionsHtml += '<option value="addAnother"> + Add Version</option>';
+    var optionsHtml = '<option value="0"' + (selectedIndex === 0 ? ' selected' : '') + '>Original</option>';
+    optionsHtml += '<option value="1"' + (selectedIndex === 1 ? ' selected' : '') + '>Variation</option>';
 
     // Update the picker and trigger change to refresh editor
     jQuery('#variation-picker').html(optionsHtml).trigger('change');
@@ -3405,9 +3233,7 @@ function checkChangedEditor() {
                 }
             }
 
-            const newVariations = [];
-            newVariations[0] = originalValue;
-            newVariations[variationIndex] = cleanValue;
+            const newVariations = [originalValue, variationIndex === 1 ? cleanValue : originalValue];
             
             window.abmagic.definition.push({
                 selector: selector,

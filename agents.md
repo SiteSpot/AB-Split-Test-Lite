@@ -10,6 +10,10 @@ The AB Split Test WordPress plugin includes integrated AI-powered features to he
 
 
 
+> **AB Split Test Lite:** the AI features in this section belong to AB Split Test Pro, and their code does not ship in Lite. Lite's Magic Bar has no AI panel. In Lite you write the variation yourself, and every test compares the original with that one variation.
+
+
+
 ## AI Integration Architecture
 
 
@@ -262,13 +266,7 @@ The AB Split Test WordPress plugin includes integrated AI-powered features to he
 
           "variations": [
 
-            "Variation A: Replacement text",
-
-            "Variation B: Replacement text",
-
-            "Variation C: Replacement text",
-
-            "Variation D: Replacement text"
+            "Variation: Replacement text"
 
           ],
 
@@ -346,7 +344,7 @@ When no OpenAI API key is provided:
 
 - Radio button selection for AI action type:
 
-  - Generate variations
+  - Generate a variation
 
   - Rewrite phrase
 
@@ -378,7 +376,7 @@ When no OpenAI API key is provided:
 
 5. Response parsed and displayed to user
 
-6. User can select variations to include in test
+6. User picks the suggestion to use as the test's variation
 
 
 
@@ -646,6 +644,8 @@ All AI responses are expected in valid JSON format. The plugin uses `json_decode
 
 Magic Tests are a powerful feature for creating point-and-click A/B tests via multiple entry points with flexible scope control.
 
+Every magic test compares the original with one variation, so each `variations` array holds exactly two strings: the original first, then the variation.
+
 ### Scope Configuration
 
 Magic test definitions require explicit scope to control where tests are displayed:
@@ -676,7 +676,7 @@ Magic test definitions require explicit scope to control where tests are display
     "type": "text",
     "selector": ".cta-button",
     "scope": {"page_id": 42},
-    "variations": ["Click Here", "Get Started", "Start Free"]
+    "variations": ["Click Here", "Get Started"]
   }],
   "conversion_type": "selector",
   "conversion_selector": ".checkout-btn"
@@ -692,7 +692,7 @@ Magic test definitions require explicit scope to control where tests are display
     "type": "text",
     "selector": ".price-text",
     "scope": {"url": "pricing"},
-    "variations": ["$99", "$79", "$49"]
+    "variations": ["$99", "$79"]
   }],
   "conversion_type": "selector",
   "conversion_selector": ".buy-button"
@@ -708,7 +708,7 @@ Magic test definitions require explicit scope to control where tests are display
     "type": "text",
     "selector": "button.primary",
     "scope": {"url": "*"},
-    "variations": ["Submit", "Continue", "Next Step"]
+    "variations": ["Submit", "Continue"]
   }],
   "conversion_type": "selector",
   "conversion_selector": ".success"
@@ -716,6 +716,8 @@ Magic test definitions require explicit scope to control where tests are display
 ```
 
 ### WP-CLI: wp absplittest create-test
+
+WP-CLI commands are part of AB Split Test Pro; Lite has no WP-CLI commands. The REST API and MCP tools above cover the same actions.
 
 **Create magic test**:
 ```bash
@@ -747,7 +749,7 @@ wp absplittest create-test \
   - `type`: "text", "html", or "image"
   - `selector`: CSS selector string
   - `scope`: Object with scoping rules (page_id, url, or wildcard)
-  - `variations`: Array of plain strings (NOT objects)
+  - `variations`: Two plain strings (NOT objects): the original, then the variation
 - `conversion_type` (required): How conversions are tracked
 - Additional conversion parameters (varies by type)
 
@@ -761,7 +763,7 @@ wp absplittest create-test \
       "type": "text",
       "selector": "header h1",
       "scope": {"page_id": "*"},
-      "variations": ["Welcome", "Hello", "Hi there"]
+      "variations": ["Welcome", "Hello"]
     }
   ],
   "conversion_type": "selector",
@@ -774,7 +776,7 @@ wp absplittest create-test \
 **Required for each magic definition item**:
 1. `selector` - Valid CSS selector string
 2. `type` - One of: "text", "html", "image"
-3. `variations` - Non-empty array of plain strings
+3. `variations` - Exactly two plain non-empty strings: the original, then the variation
 4. `scope` - Object with at least one of:
    - `page_id`: Integer > 0 OR "*" wildcard
    - `url`: Non-empty string OR "*" wildcard
@@ -792,7 +794,7 @@ wp absplittest create-test \
 **Correct**:
 ```json
 {
-  "variations": ["Buy Now", "Get Started", "Start Free"]
+  "variations": ["Buy Now", "Get Started"]
 }
 ```
 
@@ -801,6 +803,11 @@ wp absplittest create-test \
 **Missing scope**:
 ```
 missing_magic_scope: Each magic_definition item requires scope.page_id, scope.url, or use "*" wildcard to apply to all pages.
+```
+
+**Wrong number of variations**:
+```
+invalid_magic_variations: A Magic test compares the original with one variation: variations must hold two strings, the original then the variation.
 ```
 
 **Invalid variations**:
@@ -827,8 +834,7 @@ A common use case is testing a headline and sub-headline together so they stay c
       "scope": {"page_id": 42},
       "variations": [
         "Build Better Products Faster",
-        "Ship Features Your Customers Love",
-        "Turn Ideas Into Products in Days"
+        "Ship Features Your Customers Love"
       ]
     },
     {
@@ -837,8 +843,7 @@ A common use case is testing a headline and sub-headline together so they stay c
       "scope": {"page_id": 42},
       "variations": [
         "The all-in-one platform for modern product teams.",
-        "From backlog to launch — without the busywork.",
-        "Everything your team needs, nothing they don't."
+        "From backlog to launch — without the busywork."
       ]
     }
   ],
@@ -847,7 +852,7 @@ A common use case is testing a headline and sub-headline together so they stay c
 }
 ```
 
-Each visitor sees one variation slot (e.g. slot 1 = variation 1 for both elements, slot 2 = variation 2 for both), keeping the headline and sub-headline in sync.
+Each visitor sees either the original of every element or the variation of every element, keeping the headline and sub-headline in sync.
 
 **Complex test with different scopes per element**:
 
@@ -857,7 +862,7 @@ Each visitor sees one variation slot (e.g. slot 1 = variation 1 for both element
     "type": "text",
     "selector": ".header-title",
     "scope": {"page_id": 42},
-    "variations": ["Original", "Variation A"]
+    "variations": ["Original", "Variation"]
   },
   {
     "type": "text",

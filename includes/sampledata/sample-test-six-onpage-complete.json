@@ -1,7 +1,7 @@
 {
     "post_data": {
         "title": "Sample Test 6 - On-Page Elements Complete",
-        "content": "This is a completed On-Page Elements Test comparing three call-to-action button variations. Variation B (Start My Free Trial) is the winner with an 8.60% conversion rate vs 5.00% for the original.",
+        "content": "This is a completed On-Page Elements Test comparing the original call-to-action button with one variation. The Variation (Start My Free Trial) is the winner with an 8.60% conversion rate vs 5.00% for the original.",
         "status": "complete"
     },
     "test_config": {
@@ -10,11 +10,8 @@
             "original": {
                 "label": "Original - Sign Up"
             },
-            "variation-b": {
+            "variation": {
                 "label": "Start My Free Trial"
-            },
-            "variation-c": {
-                "label": "Get Started Now"
             }
         },
         "target_percentage": "75",
@@ -23,7 +20,7 @@
         "conversion_selector": "button, .btn, input[type=\"submit\"], .wp-block-button__link",
         "url_query": "",
         "bt_allowed_roles": [],
-        "test_winner": "variation-b",
+        "test_winner": "variation",
         "ac_min_days": "7",
         "ac_min_views": "500"
     },
@@ -64,7 +61,7 @@
                 }
             }
         },
-        "variation-b": {
+        "variation": {
             "visit": 4150,
             "conversion": 357,
             "rate": 8.6,

@@ -57,9 +57,9 @@ class ABST_Gutenberg
           foreach ($exp[1] as $key => $eid) {
             $experiments[] = [
             	'eid' => $eid,
-            	'variation' => $exp[2][$key]
+            	'variation' => abst_normalize_onpage_variation( $exp[2][$key], 'original' )
             ];
-          }        
+          }
           update_post_meta($post_id, 'bt_post_experiments', $experiments); // save GB modules to DB
         } else {
           delete_post_meta($post_id, 'bt_post_experiments'); // remove meta if post/page don't have experiment modules
@@ -101,7 +101,15 @@ class ABST_Gutenberg
 			'experiments' 		=> json_encode(apply_filters( 'abst_experiments_get_items', 'all' )),
 			'ajax_url'			=> admin_url( "admin-ajax.php" ),
 			'admin_url'			=> get_admin_url(),
-			'blocks_list_nonce'	=> wp_create_nonce('abst_blocks_experiment_list')
+			'blocks_list_nonce'	=> wp_create_nonce('abst_blocks_experiment_list'),
+			'version_label'		=> __( 'Version', 'ab-split-test-lite' ),
+			'variation_choices'	=> array_map(
+				function ( $value, $label ) {
+					return [ 'value' => $value, 'label' => $label ];
+				},
+				array_keys( abst_onpage_variation_choices() ),
+				array_values( abst_onpage_variation_choices() )
+			),
 		]);
 
 		wp_enqueue_script( 'abst-gutenberg' );

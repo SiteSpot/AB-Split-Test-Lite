@@ -186,50 +186,13 @@ It is responsible for:
 
 This keeps the connection test path and refresh path behavior aligned instead of letting add and sync drift apart.
 
-## Lite Version Conversion (Free Tier)
+## Lite version (standalone, two-way tests)
 
-The following features have been disabled/stubbed for the lite (free) version:
+AB Split Test Lite ships only the features it runs; Pro-only features are absent from the code rather than stubbed, hidden or capped. See mental_model.md, "Two-way tests" and "Lite version architecture".
 
-### Backend Hard Limits
-- **1 active test maximum**: `save_test_config` enforces a hard limit of 1 published `bt_experiments` post. Additional tests are forced to `draft` status.
-- **1 variation maximum**: All test types (page, CSS, magic) are limited to exactly 1 variation.
-- **No subgoals**: `goals` post meta is deleted on save; only the primary conversion trigger is retained.
-- **No autocomplete**: `autocomplete_on` is forced to `0`.
-- **No revenue tracking**: `conversion_use_order_value` is forced to `0`.
-
-### Disabled Premium Features
-- **AI/OpenAI integration**: All AJAX handlers, prompt construction, and UI hooks stubbed or removed.
-- **Webhooks**: `btab_send_webhook()` returns `false` unconditionally.
-- **Weekly reports**: Cron scheduling functions are no-ops.
-- **Multi-armed bandit (MAB)**: `thompson_select_variation_for_query` and `weighted_random_selection` fall back to random selection.
-- **Agency Hub**: Admin page content function shows an upgrade message.
-- **Public reports**: Module include removed; REST API returns `report_url: null`.
-- **Fingerprint/UUID tracking**: AJAX hooks commented out; backend handlers are no-ops.
-- **Form-plugin conversions**: WooCommerce `checkout_update_order_meta` hook removed.
-
-### Heatmap Limits
-- **1 page maximum**: `save_settings` caps `heatmap_pages` to 1 entry.
-- **3-day retention**: `save_settings` caps `heatmap_retention_length` to 3 days.
-
-### UI Changes
-- Premium settings in `admin/partials/single-site-display.php` are visually disabled with an "(upgrade)" button/link instead of being removed.
-- AI-related settings are hidden.
-- Trial/upsell banners are replaced with a single free-version notice.
-- In the experiment editor, free-tier users now see upgrade CTAs for **Sub Goals** and **Autocomplete** instead of interactive controls that only work in higher tiers.
-- In Magic point-and-click (`js/highlighter.js`), AI panels are now upgrade-only placeholders:
-  - selecting an element no longer triggers AI requests for `type: magic`
-  - the **AI Suggestions** accordion stays user-toggleable and shows an upgrade CTA when opened
-  - **ChatCRO** is rendered as disabled/grayed and shows `Subscribe for AI features.` with an upgrade link
-
-### bt-bb-ab.php selective recovery notes
-- Keep the **Primary Conversion** block fully functional in the create-test modal, and keep subgoal/autocomplete restrictions additive (upsell messaging) rather than destructive UI behavior.
-- In the create-test modal for free-tier users, **Sub Goals** and **Autocomplete** render upgrade CTAs instead of interactive controls.
-- Frontend localized settings (`$btab_vars`) should continue reading from stored settings/filters (for compatibility) and should not be hardcoded globally to fixed values.
-
-### Plugin Header
-- Plugin name updated to `AB Split Test Lite`.
-- Description updated to reflect free-tier limitations.
-- Trial-related wording removed to comply with WordPress.org rules.
+- **Two versions per test**: magic `variations` is `[original, variation]` (validated in `bt-bb-ab-validation.php`, error `invalid_magic_variations`), full-page `page_variations` holds one entry (single `<select>` in the editor), and on-page elements carry `bt-variation="original|variation"` via `abst_normalize_onpage_variation()`.
+- **No limits on what ships**: tests are unlimited; nothing forces tests to draft, slices variation arrays or caps settings on save.
+- **Upsell**: Pro (including A/B/n tests with several variations) is mentioned only as information in the readme and the settings-page notice.
 
 ## WordPress.org plugin-check compliance (public reports + readme)
 

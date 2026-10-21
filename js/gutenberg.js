@@ -36,10 +36,15 @@
   const { Fragment, useState, useEffect } = element;
 
   const {
-    TextControl,
+    SelectControl,
     PanelBody,
     ComboboxControl
   } = components;
+
+  // Each tagged block is the Original or the Variation of its test (abst_onpage_variation_choices() in support.php).
+  const variationChoices = (abst_gutenberg.variation_choices && abst_gutenberg.variation_choices.length)
+    ? abst_gutenberg.variation_choices
+    : [{ value: 'original', label: 'Original' }, { value: 'variation', label: 'Variation' }];
 
   var controls_xhr = null;
   var experimentsCache = window.btExperimentsCache || (window.btExperimentsCache = {});
@@ -147,6 +152,13 @@
           }
         }
       }, [experiment]); // Only run when experiment changes, NOT when filteredExperiments changes
+
+      // A block given a test starts as the Original, matching what the Version control shows.
+      useEffect(() => {
+        if (experiment && !variation) {
+          props.setAttributes({ 'bt-variation': 'original' });
+        }
+      }, [experiment, variation]);
 
       const fetchExperiments = (search) => {
         const cacheKey = buildSearchCacheKey(search);
@@ -305,33 +317,20 @@
 ),
               options: filteredExperiments,
               onChange: (newVal) => {
-                // Predefined default variation names that should be preserved when changing tests
-                const defaultVariationNames = ['original', 'one', '1', 'default', 'standard', 'a', 'control'];
-                const currentVariation = props.attributes['bt-variation'] || '';
-                const isDefaultName = defaultVariationNames.includes(currentVariation.toLowerCase());
-                
-                // Clear variation if it's not a predefined default (prevents cross-test contamination)
-                if (currentVariation && !isDefaultName) {
-                  props.setAttributes({
-                    'bt-eid': newVal,
-                    'bt-variation': ''
-                  });
-                } else {
-                  props.setAttributes({
-                    'bt-eid': newVal
-                  });
-                }
+                props.setAttributes({
+                  'bt-eid': newVal
+                });
               },
               onFilterValueChange: handleFilterValueChange,
               className: 'bt-eid-input'
             }),
-            el(TextControl, {
-              label: 'Variation Name',
-              value: variation,
-              help: 'Using "default, 1 or control" will cause this version to run first, unless otherwise targeted.',
-              onChange: (VariationOption) => {
+            el(SelectControl, {
+              label: abst_gutenberg.version_label || 'Version',
+              value: variation || 'original',
+              options: variationChoices,
+              onChange: (newVariation) => {
                 props.setAttributes({
-                  'bt-variation': VariationOption
+                  'bt-variation': newVariation
                 });
               }
             })

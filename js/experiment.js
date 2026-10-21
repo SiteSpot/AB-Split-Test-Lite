@@ -278,7 +278,8 @@ jQuery(document).ready(function() {
 
 
 
-    window.acattrs.multiple=true;
+    // #page_variations is a single select: the one variation page of a full page test.
+    window.acattrs.placeholder = 'Choose the variation page...';
 
     window.acattrs['ajax'] = {
 
@@ -344,11 +345,11 @@ jQuery(document).ready(function() {
 
     var defaultPage = jQuery('#bt_experiments_full_page_default_page').val();
 
-    var variationPages = jQuery('#page_variations').val() || [];
+    var variationPage = jQuery('#page_variations').val() || '';
 
 
 
-    if (!defaultPage || variationPages.length === 0) {
+    if (!defaultPage || !variationPage) {
 
         return; // Nothing to validate against.
 
@@ -356,17 +357,11 @@ jQuery(document).ready(function() {
 
 
 
-    if (variationPages.includes(defaultPage)) {
+    if (variationPage === defaultPage) {
 
-        alert('A page cannot be both the default and a variation. The conflicting variation will be removed.');
+        alert('A page cannot be both the original and the variation. The variation page has been cleared.');
 
-        var newVariationPages = variationPages.filter(function (val) {
-
-            return val !== defaultPage;
-
-        });
-
-        jQuery('#page_variations').val(newVariationPages).trigger('change.select2'); // Update value and refresh Select2 UI
+        jQuery('#page_variations').val('').trigger('change.select2'); // Clear value and refresh Select2 UI
 
     }
 
@@ -1339,23 +1334,17 @@ for (let observationKey in abtestChartData.observations) {
 
     }
 
-    //else if it's magic-0, magic-1, magic-2, etc. convert to Variation A, Variation B, Variation C, etc.
+    //else magic-0 is the Original and magic-1 is the Variation
 
-    else if(observationKey.startsWith("magic-")){
+    else if(observationKey === "magic-0"){
 
-      var magicNumber = parseInt(observationKey.replace("magic-", ""));
+      variationLabel = "Original";
 
-      var letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+    }
 
-      if(magicNumber >= 0 && magicNumber < letters.length){
+    else if(observationKey === "magic-1"){
 
-        variationLabel = "Variation " + letters[magicNumber];
-
-      } else {
-
-        variationLabel = observationKey; // fallback to original if number is out of range
-
-      }
+      variationLabel = "Variation";
 
     }
 
@@ -1888,13 +1877,9 @@ for (var key in observations) {
 
 
 
-      //loop through labeltext if its magic-0 replace with Variation A, magic-1 with Variation B etc up to Z
+      //magic-0 is the Original and magic-1 is the Variation
 
-      ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].forEach(function(letter, index) {
-
-        labelText = labelText.replace('magic-' + index, 'Variation ' + letter);
-
-      });
+      labelText = labelText.replace('magic-0', 'Original').replace('magic-1', 'Variation');
 
       
 
@@ -2202,13 +2187,9 @@ function refreshTestPages(){
 
   if(defaultPage){
 
-    var variations = jQuery("#page_variations").val() || [];
+    if(jQuery("#page_variations").val() === defaultPage){
 
-    if(variations.indexOf(defaultPage) !== -1){
-
-      variations = variations.filter(function(v){ return v !== defaultPage; });
-
-      jQuery("#page_variations").val(variations).trigger('change');
+      jQuery("#page_variations").val('').trigger('change');
 
     }
 

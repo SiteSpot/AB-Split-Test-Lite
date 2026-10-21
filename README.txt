@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Self-hosted A/B and split testing for WordPress: unlimited tests and variations, heatmaps, page-builder controls, MCP and REST.
+Self-hosted A/B testing for WordPress: unlimited tests comparing your original with a variation, heatmaps, page-builder controls and MCP.
 
 == Description ==
 
@@ -20,13 +20,13 @@ It is built on the WordPress **Abilities API**, so AI agents such as Claude Code
 
 = Features =
 
-* **Unlimited tests and variations.** Run as many tests at once as you need, each with as many variations as you like. Traffic is split evenly between the original and every variation.
+* **Unlimited A/B tests.** Run as many tests at once as you need. Each test compares your original with one variation, and traffic is split evenly between the two.
 * **Self-hosted.** Tests, tracking and reporting all run on your server.
 * **No traffic meter.** No "tested page view" limit and no per-visitor billing.
 * **Heatmaps on every page.** Click maps and scroll maps, stored on your own server. You choose how many days of data to keep.
 * **Built for AI agents.** An MCP integration and a matching REST API let Claude, Cursor or any MCP client create, launch and read tests on your site.
 * **Page-builder integrations.** Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg all get native test controls inside the builder.
-* **Privacy-first.** No device fingerprinting and no third-party services. Visitors are assigned to variations with first-party cookies on your own domain, and you can wait for cookie consent before anything is stored.
+* **Privacy-first.** No device fingerprinting and no third-party services. Visitors are assigned to the original or the variation with first-party cookies on your own domain, and you can wait for cookie consent before anything is stored.
 * **Cache-friendly.** Test scripts are marked for exclusion in WP Rocket, NitroPack, LiteSpeed Cache, SiteGround Optimizer and other optimization plugins, so tests don't flicker or break.
 
 = Three ways to build a test =
@@ -35,7 +35,7 @@ It is built on the WordPress **Abilities API**, so AI agents such as Claude Code
 
 **Full-page (split URL).** Send traffic between completely different pages and measure which one converts.
 
-**On-page.** Tag sections or blocks as the original and the variations, inside your page builder or the block editor.
+**On-page.** Tag one section or block as the Original and another as the Variation, inside your page builder or the block editor.
 
 = What you can test =
 
@@ -49,14 +49,14 @@ It is built on the WordPress **Abilities API**, so AI agents such as Claude Code
 
 = Page-builder integrations =
 
-AB Split Test adds **native controls inside each builder**, so you build variations in the interface you already design in:
+AB Split Test adds **native controls inside each builder**, so you build your variation in the interface you already design in:
 
-* **Elementor**: tag any element as a test variation in the Elementor editor.
-* **Bricks**: variation tagging in the element settings.
+* **Elementor**: tag an element as the Original or the Variation in the Elementor editor.
+* **Bricks**: tag an element as the Original or the Variation in the element settings.
 * **Breakdance**: a "Split Test" settings section on every element.
 * **Beaver Builder**: split-test settings in row and module settings.
 * **Oxygen**: split-test options in component options.
-* **WP Bakery**: test and variation controls on rows and sections.
+* **WP Bakery**: tag a row or section as the Original or the Variation.
 * **Gutenberg**: split-test attributes on every block, managed from the block editor.
 
 Each builder can also create a new test without leaving the editor.
@@ -74,7 +74,7 @@ See *why* a variation wins. Click heatmaps show where visitors click, and scroll
 
 = Trustworthy results =
 
-Results use Bayesian statistical analysis, so you know when a winner is really a winner and not just noise. A winner needs enough visits and conversions before it is called. Filter results by device to see how each variation performs.
+Results use Bayesian statistical analysis, so you know when a winner is really a winner and not just noise. A winner needs enough visits and conversions before it is called. Filter results by device to see how the original and the variation perform.
 
 When a running test finds a winner, the site admin gets an email about it. The test keeps running and nothing on your site changes until you end it.
 
@@ -87,11 +87,11 @@ AB Split Test registers WordPress Abilities. Install the official WordPress MCP 
 * `get-test-details`: read a test's full configuration
 * `get-test-results`: pull visits, conversions and statistical confidence
 * `update-test-status`: start, pause or complete a test
-* `update-test-settings`: change the goal, targeting and variations
+* `update-test-settings`: change the goal, targeting and the variation
 
 = AB Split Test Pro =
 
-AB Split Test Pro is a separate plugin, available from [absplittest.com](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=pro), with more ways to measure a win: form submission goals, WooCommerce, Easy Digital Downloads and FluentCart purchase and revenue tracking, sub-goals for multi-step funnels, audiences and location targeting, automatic winner selection, AI test ideas, webhooks, email reports and WP-CLI commands. Your tests and results carry over if you switch.
+AB Split Test Pro is a separate plugin, available from [absplittest.com](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=pro), with more ways to measure a win: form submission goals, WooCommerce, Easy Digital Downloads and FluentCart purchase and revenue tracking, sub-goals for multi-step funnels, audiences and location targeting, automatic winner selection, AI test ideas, webhooks, email reports and WP-CLI commands. Pro also runs multivariate (A/B/n) tests with several variations. Your tests and results carry over if you switch.
 
 = Third-party libraries =
 
@@ -105,6 +105,7 @@ This plugin bundles the following open-source libraries:
 * Awesomplete 1.1.7, MIT License, https://github.com/LeaVerou/awesomplete
 
 The readable source of every minified file ships alongside it: js/chart.src.js, js/select2.src.js, js/driver.src.js, js/tabulator.src.js, js/heatmap.src.js, js/creator.src.js (Awesomplete) and js/bt_conversion.js (the plugin's tracking script, minified as js/bt_conversion-min.js).
+
 = Help translate =
 
 AB Split Test is translation-ready. Contribute a translation for your language at [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/ab-split-test-lite/).
@@ -130,9 +131,9 @@ AB Split Test is translation-ready. Contribute a translation for your language a
 
 Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside your WordPress install and store data on your own server. There is no external account and no SaaS backend. Heatmap data is kept in daily text files in your uploads directory. Their names include a secret code from your site's keys, so they cannot be found by guessing, and an .htaccess rule blocks direct downloads on Apache and LiteSpeed.
 
-= How many tests and variations can I run? =
+= How many tests can I run? =
 
-As many as you like. There is no limit on active tests, variations or traffic.
+As many as you like, on as much traffic as your site serves. Each test is a classic A/B test: it compares your original with one variation, and visitors are split evenly between the two.
 
 = Can an AI agent like Claude run A/B tests on WordPress? =
 
@@ -154,11 +155,11 @@ A visit to the page you choose, such as your thank-you page, or a click on an el
 
 The tracking script is small, loads from your own site, and makes no requests to third-party servers. It is automatically excluded from minification and delay in WP Rocket, NitroPack, LiteSpeed Cache, SiteGround Optimizer and other optimization plugins.
 
-Tests work on cached pages, including host-level page caches, because each visitor is assigned a variation in their own browser and visits and conversions are recorded from the browser too. You don't need to exclude tested pages from your cache.
+Tests work on cached pages, including host-level page caches, because each visitor is assigned to the original or the variation in their own browser and visits and conversions are recorded from the browser too. You don't need to exclude tested pages from your cache.
 
 = Does it use cookies? Is it GDPR friendly? =
 
-AB Split Test uses first-party cookies and browser storage on your own domain to remember which variation a visitor saw. It does not fingerprint devices and sends nothing to a third party.
+AB Split Test uses first-party cookies and browser storage on your own domain to remember which version a visitor saw. It does not fingerprint devices and sends nothing to a third party.
 
 If you need consent first, turn on **Wait for cookie consent**. Tests still run, but nothing is stored or sent until the visitor agrees. It works with Cookiebot, CookieConsent, Usercentrics (including Termageddon) and any consent plugin that supports the WP Consent API (such as Complianz or CookieYes), or call `setAbstApprovalStatus(true)` from your own banner when the visitor accepts; it is remembered on later pages. Call `setAbstApprovalStatus(false)` when consent is withdrawn; this clears tracking identifiers and pending history. Until consent is confirmed, assignments stay in page memory. As with any analytics tool, check your own consent requirements.
 
@@ -180,11 +181,11 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 2. Test results with uplift, confidence and conversion rates, calculated on your own server.
 3. Click heatmaps built from your own visitors, recorded on every page.
 4. Scroll maps show how far down each page your visitors actually read.
-5. Elementor: tag any element as the original or a variation from its Advanced tab.
+5. Elementor: tag an element as the Original or the Variation from its Advanced tab.
 6. The block editor: an AB Split Test panel on every block, under Advanced.
 7. Bricks: AB Split Test controls on every element, under Style.
 8. Beaver Builder: split-test settings in each module's Advanced tab. Oxygen, Breakdance and WP Bakery have native controls too.
-9. Every test at a glance: visits, conversions and conversion rate for the original and each variation, with its status.
+9. Every test at a glance: visits, conversions and conversion rate for the original and the variation, with its status.
 10. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
 11. Creating a test: choose point-and-click, full-page or on-page elements.
 
@@ -192,7 +193,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 
 = 1.0.0 =
 * First WordPress.org release of AB Split Test Lite, built on the AB Split Test engine used since 2019.
-* Self-hosted point-and-click, full-page and on-page A/B tests, with no limit on the number of tests or variations.
+* Self-hosted point-and-click, full-page and on-page A/B tests, each comparing the original with one variation, with no limit on the number of tests.
 * MCP tools (via the WordPress Abilities API) and REST API for AI-agent and programmatic control.
 * Click heatmaps and scroll maps on every page, with configurable data retention.
 * Native page-builder controls for Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg.
@@ -202,4 +203,4 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 == Upgrade Notice ==
 
 = 1.0.0 =
-First public release of AB Split Test Lite: self-hosted A/B testing with unlimited tests and variations, page-visit and click goals, AI-agent (MCP) control, point-and-click editing and heatmaps.
+First public release of AB Split Test Lite: self-hosted A/B testing of your original against a variation, with unlimited tests, page-visit and click goals, AI-agent (MCP) control, point-and-click editing and heatmaps.

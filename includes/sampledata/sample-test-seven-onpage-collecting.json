@@ -1,7 +1,7 @@
 {
     "post_data": {
         "title": "Sample Test 7 - On-Page Elements Collecting Data",
-        "content": "This is an On-Page Elements Test that hasn't collected enough data yet. Each button variation is still below the minimum views required before statistical significance can be reached.",
+        "content": "This is an On-Page Elements Test that hasn't collected enough data yet. The original and the variation button are both still below the minimum views required before statistical significance can be reached.",
         "status": "publish"
     },
     "test_config": {
@@ -10,11 +10,8 @@
             "original": {
                 "label": "Original - Sign Up"
             },
-            "variation-b": {
+            "variation": {
                 "label": "Start My Free Trial"
-            },
-            "variation-c": {
-                "label": "Get Started Now"
             }
         },
         "target_percentage": "50",
@@ -62,7 +59,7 @@
                 }
             }
         },
-        "variation-b": {
+        "variation": {
             "visit": 58,
             "conversion": 5,
             "rate": 8.62,

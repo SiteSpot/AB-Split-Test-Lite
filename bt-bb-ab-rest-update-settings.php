@@ -141,7 +141,7 @@ function abst_rest_update_test_settings($request) {
             : get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
         $effective_variations = $has_param('variations')
-            ? (array) $params['variations']
+            ? array_values(array_unique(array_map($normalize_variation_id, (array) $params['variations'])))
             : array_keys($existing_page_variations);
 
         if (empty($effective_default_page)) {
@@ -149,7 +149,12 @@ function abst_rest_update_test_settings($request) {
         }
 
         if (empty($effective_variations)) {
-            return new WP_Error('missing_variations', 'At least one variation page is required for full_page tests.', ['status' => 400, 'field' => 'variations']);
+            return new WP_Error('missing_variations', 'A variation page is required for full_page tests.', ['status' => 400, 'field' => 'variations']);
+        }
+
+        // A full page test compares the original page with one variation page.
+        if ($has_param('variations') && count($effective_variations) !== 1) {
+            return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400, 'field' => 'variations']);
         }
     }
 
@@ -245,40 +250,32 @@ function abst_rest_update_test_settings($request) {
             ? $normalize_variation_id($params['default_page'])
             : get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
-        $variation_ids = $has_param('variations')
-            ? array_values(array_map($normalize_variation_id, (array) $params['variations']))
-            : array_keys($existing_page_variations);
+        // The one variation page: the one given, or the one already saved.
+        $variation_id = $has_param('variations')
+            ? $normalize_variation_id(array_values((array) $params['variations'])[0]) // validated above: exactly one distinct page
+            : (array_keys($existing_page_variations)[0] ?? null);
 
         update_post_meta($test_id, 'bt_experiments_full_page_default_page', $default_page);
 
         if ($has_param('variations')) {
-            $page_variations = [];
-            foreach ($variation_ids as $variation_id) {
-                $page_variations[$variation_id] = $get_variation_url($variation_id);
-            }
-            update_post_meta($test_id, 'page_variations', $page_variations);
-        } else {
-            $page_variations = $existing_page_variations;
+            update_post_meta($test_id, 'page_variations', [$variation_id => $get_variation_url($variation_id)]);
         }
 
-        if ($has_param('variations') || $has_param('variation_labels') || $has_param('variation_images')) {
+        if ($variation_id !== null && ($has_param('variations') || $has_param('variation_labels') || $has_param('variation_images'))) {
             $labels = ($has_param('variation_labels') && is_array($params['variation_labels'])) ? array_values($params['variation_labels']) : null;
             $images = ($has_param('variation_images') && is_array($params['variation_images'])) ? array_values($params['variation_images']) : null;
+            $existing_meta = $existing_variation_meta[$variation_id] ?? [];
 
-            $variation_meta = [];
-            foreach ($variation_ids as $index => $variation_id) {
-                $existing_meta = $existing_variation_meta[$variation_id] ?? [];
-                $variation_meta[$variation_id] = [
+            update_post_meta($test_id, 'variation_meta', [
+                $variation_id => [
                     'label' => is_array($labels)
-                        ? sanitize_text_field((string) ($labels[$index] ?? ''))
+                        ? sanitize_text_field((string) ($labels[0] ?? ''))
                         : sanitize_text_field((string) ($existing_meta['label'] ?? '')),
                     'image' => is_array($images)
-                        ? esc_url_raw((string) ($images[$index] ?? ''))
+                        ? esc_url_raw((string) ($images[0] ?? ''))
                         : esc_url_raw((string) ($existing_meta['image'] ?? '')),
-                ];
-            }
-
-            update_post_meta($test_id, 'variation_meta', $variation_meta);
+                ],
+            ]);
         }
     }
 

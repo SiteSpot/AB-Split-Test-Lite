@@ -17,21 +17,43 @@ class ABST_Elementor
     $content = get_post_meta($post_id, '_elementor_data', true);
     $experiments = [];
 
-    preg_match_all('/"bt_experiment":"([1-9]+)","bt_variation":"(.*?)(?:")/', $content, $exp);      
+    $elements = is_string($content) ? json_decode($content, true) : $content;
+    if( is_array($elements) ) {
+      $this->collect_elementor_experiments($elements, $experiments);
+    }
 
-    if( isset($exp[1]) && !empty($exp[1]) ) {
-      foreach ($exp[1] as $key => $eid) {
-        $experiments[] = [
-          'eid' => $eid,
-          'variation' => $exp[2][$key]
-        ];
-      }
+    if( !empty($experiments) ) {
       update_post_meta($post_id, 'bt_post_experiments', $experiments); // save EL modules to DB
     } else {
       delete_post_meta($post_id, 'bt_post_experiments'); // remove meta if post/page don't have experiment modules
     }
     
     update_post_meta($post_id, 'bt_post_experiments_editor', 'elementor');
+  }
+
+  /**
+   * Walk Elementor's element tree and list each element tagged with a test.
+   * Elementor leaves a setting out of the saved data while it still has its default,
+   * so an element tagged "Original" may have no bt_variation key at all.
+   */
+  private function collect_elementor_experiments( $elements, &$experiments )
+  {
+    foreach ( $elements as $element ) {
+      if ( !is_array($element) ) {
+        continue;
+      }
+      $settings = isset($element['settings']) && is_array($element['settings']) ? $element['settings'] : [];
+      $eid = isset($settings['bt_experiment']) ? absint($settings['bt_experiment']) : 0;
+      if ( $eid ) {
+        $experiments[] = [
+          'eid' => (string) $eid,
+          'variation' => abst_normalize_onpage_variation( $settings['bt_variation'] ?? '', 'original' )
+        ];
+      }
+      if ( !empty($element['elements']) && is_array($element['elements']) ) {
+        $this->collect_elementor_experiments( $element['elements'], $experiments );
+      }
+    }
   }
 
   public function enqueue_custom_script()
@@ -76,10 +98,11 @@ class ABST_Elementor
       $element->add_control(
         'bt_variation',
         [
-          'label' => __( 'Variation Name', 'ab-split-test-lite' ),
-          'type' => \Elementor\Controls_Manager::TEXT,
-          'default' => '',
-          'description' => __('Using "default" will cause this version to run first, unless otherwise targeted.', 'ab-split-test-lite')
+          'label' => __( 'Version', 'ab-split-test-lite' ),
+          'type' => \Elementor\Controls_Manager::SELECT,
+          'options' => abst_onpage_variation_choices(),
+          'default' => 'original',
+          'description' => __( 'Each visitor sees either the Original or the Variation.', 'ab-split-test-lite' )
         ]
       );
 
@@ -109,13 +132,13 @@ function abst_add_attributes_to_element( $element ) {
   $settings = $element->get_settings();
 
   // if there are settings, then render the attributes
-  if( !empty($settings['bt_variation']) && !empty($settings['bt_experiment']) )
+  if( !empty($settings['bt_experiment']) )
   {
       // Adding our type as a class to the element
       $element->add_render_attribute( '_wrapper', [
         'bt-eid' => $settings['bt_experiment'],
-        'bt_hidden' => $settings['bt_hidden'],
-        'bt-variation' =>  $settings['bt_variation'],
+        'bt_hidden' => $settings['bt_hidden'] ?? 'false',
+        'bt-variation' => abst_normalize_onpage_variation( $settings['bt_variation'] ?? '', 'original' ),
       ] );
 	}
 }
