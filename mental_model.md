@@ -4,20 +4,20 @@
 
 ABSPLITTEST has two contracts that must stay aligned:
 
-- the **public contract** used by REST, MCP, and CLI integrations
+- the **public contract** used by REST and MCP (Abilities API) integrations
 - the **storage contract** used by WordPress posts and post meta
 
 The public contract should use canonical fields such as:
 
 - `test_title`
 - `test_type`
-- `conversion_type`
-- companion fields such as `conversion_selector`, `conversion_url`, and `conversion_page_id`
+- `conversion_type` (`page` or `selector`)
+- companion fields such as `conversion_selector` and `conversion_page_id`
 
 The storage contract still uses historical keys in places:
 
 - `conversion_page` stores the primary conversion trigger
-- string values in `conversion_page` represent conversion types
+- the string `selector` in `conversion_page` means an element-click goal
 - numeric values in `conversion_page` represent page-ID goals
 
 Because of that split, integrations should normalize on input and derive on read instead of inventing parallel storage keys.
@@ -32,19 +32,12 @@ Examples:
 
 - `name` → `test_title`
 - `conversion_page` → `conversion_type` for incoming integration payloads
-- `click` → `selector`
-
-Frontend runtime follows the same pattern:
-
-- localized config exposes canonical read fields such as `conversion_type` and `conversion_page_id`
-- runtime reads canonical fields first
-- runtime falls back to legacy `conversion_page` behavior for old saved tests
 
 This allows plugin updates without rewriting all historical test meta.
 
 ## Test lifecycle model
 
-`complete` is a real experiment lifecycle state, not just display text.
+Complete is a real experiment lifecycle state (post status `abst_complete`, `complete` in the API), not just display text.
 
 That means every management layer has to agree on the same status model:
 
@@ -52,35 +45,32 @@ That means every management layer has to agree on the same status model:
 - admin UI
 - REST
 - MCP
-- CLI
-- frontend/public reporting where relevant
 
 If one layer drops `complete`, the system drifts from the actual experiment lifecycle.
 
 WordPress admin save notices are part of that lifecycle model too.
 
-- `bt_experiments` should show test-specific lifecycle messages rather than generic post wording
+- `abst_experiments` posts show test-specific lifecycle messages rather than generic post wording
 - `pending` maps to the paused lifecycle in the editor workflow
 - save feedback should match the resulting state the user just set: running, paused, draft, or complete
 
 ## Idea model
 
-Test ideas live on the `bt_experiments` post type as `abst_idea_*` post meta.
+Test ideas live on the `abst_experiments` post type (post status `abst_idea`) as `abst_idea_*` post meta.
 
 Two rules matter:
 
 - `abst_idea_hypothesis` is the visibility gate for the editor's `Idea` tab
 - when idea content exists but no runnable `test_type` has been configured yet, the editor should default to the `Idea` tab
-- idea records should stay distinct from runnable tests in the default admin list
 
 ## Magic test model
 
 Magic tests separate two concerns:
 
 - **what changes**: selector, type, and the two versions (`variations: [original, variation]`)
-- **where it applies**: optional scope metadata
+- **where it applies**: scope metadata (`scope.page_id`, `scope.url` or `"*"`)
 
-Scope should be used when available for safer targeting, but older unscoped payloads must remain compatible.
+Integrations must send scope (validation rejects items without it). Editor saves without scope default to all pages.
 
 ## Device targeting model
 
@@ -95,23 +85,9 @@ Canonical values are:
 - `desktop_tablet`
 - `tablet_mobile`
 
-## Revenue-weighted conversion model
+## Editor sidebar
 
-`Use Order Value` changes the question the test is answering.
-
-- with it off, conversions are counted equally
-- with it on, conversions are weighted by monetary value
-- the admin UI should describe the outcome in business terms: which variation earns more revenue per visitor
-
-## Editor workflow model
-
-The experiment editor should group related actions into the same workflow.
-
-In particular, reviewing results and sharing results belong in the same place rather than separate navigation destinations.
-
-The editor sidebar is also part of that workflow model.
-
-- the right-hand sortable sidebar stays sticky while editing
+- the right-hand sortable sidebar stays sticky while editing (851px and wider)
 - the admin offset is intentionally `40px` from the top of the viewport
 - spacing should leave the controls visible without crowding the WordPress admin bar
 
@@ -119,39 +95,8 @@ The editor sidebar is also part of that workflow model.
 
 Journey and heatmap tracking have a transport contract and a file-format contract.
 
-- the transport payload can identify the visitor with `uuid`, `ab_advanced_id`, or `advancedId`
-- the runtime now prefers the advanced ID generated from the `ab-advanced-id` cookie/session value
-- the file-format metadata line still stores that normalized visitor identifier in the historical `uuid` field position for backward compatibility with existing readers
-
-## Public report access model
-
-Public report links and public report rendering are separate concerns.
-
-- the plugin may create or expose a share link without requiring a Teams check at button-render time
-- the actual public report request must enforce the license gate at render time
-- when the site is not on a Teams-level license, the public URL should show an upgrade message instead of the full report
-
-This keeps the frontend/public path independent from admin-only class loading while still enforcing the product entitlement where it matters.
-
-## Agency Hub connection model
-
-Agency Hub has two distinct roles that must agree on the same contract:
-
-- the child site exposes remote summaries only when `abst_remote_access_enabled` is on
-- the hub site stores a site key and uses it to fetch remote summaries on demand
-
-The shareable site key is a transport wrapper for two pieces of data:
-
-- the child site's base URL
-- the child site's current Agency Hub secret
-
-Connection should be treated as verified only after the hub successfully fetches `/wp-json/abst/v1/agency-summary` with the decoded secret.
-
-Secret rotation is intentionally breaking for old keys:
-
-- regenerating the child-site key changes the underlying secret
-- previously saved hub connections using the old key will stop authenticating
-- reconnecting requires pasting the fresh key into the hub again
+- every transport record carries `uuid` (required by `modules/journey.php`) and `ab_advanced_id`, both set from `abstGetAdvancedId()`
+- the file-format metadata line stores the visitor identifier in the `uuid` field position
 
 ## Two-way tests
 

@@ -88,34 +88,6 @@ if ( ! function_exists( 'abst_stats_beta' ) ) {
   }
 }
 
-if ( ! function_exists( 'abst_stats_probability_best' ) ) {
-  /**
-   * Percentage of draws (rounded) in which each variation's sampled value is highest.
-   *
-   * @param callable[] $samplers Variation key => function returning one draw.
-   */
-  function abst_stats_probability_best( array $samplers, $draws ) {
-    $wins = array_fill_keys( array_keys( $samplers ), 0 );
-    for ( $i = 0; $i < $draws; $i++ ) {
-      $best = null;
-      $best_value = -INF;
-      foreach ( $samplers as $key => $draw ) {
-        $x = $draw();
-        if ( $x > $best_value ) {
-          $best_value = $x;
-          $best = $key;
-        }
-      }
-      if ( $best !== null ) $wins[ $best ]++;
-    }
-    $out = array();
-    foreach ( $wins as $key => $count ) {
-      $out[ $key ] = round( $count / $draws * 100 );
-    }
-    return $out;
-  }
-}
-
 if ( ! function_exists( 'abst_stats_collect_variations' ) ) {
   /**
    * Variations that have visits (keyed as in $data), and whether every variation in
@@ -176,7 +148,7 @@ if ( ! function_exists( 'abst_stats_conversion_sampler' ) ) {
 if ( ! function_exists( 'abst_stats_draw_verdict' ) ) {
 /**
  * Chance each variation is best, and the expected loss of choosing each one,
- * from one set of draws (the same draws abst_stats_probability_best() makes).
+ * from one set of draws.
  *
  * Expected loss of choosing k = the average, over all draws, of (the best value
  * in that draw minus k's value). It is what you give up on average if k is not

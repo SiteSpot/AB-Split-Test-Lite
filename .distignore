@@ -41,5 +41,10 @@ tests
 .distignore
 *.zip
 
+# Local crash dumps / OS files
+*.stackdump
+.DS_Store
+Thumbs.db
+
 # WordPress.org SVN assets (banner, icon, screenshots, blueprint) - not part of the plugin
 .wordpress-org

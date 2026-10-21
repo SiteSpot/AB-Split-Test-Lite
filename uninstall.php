@@ -91,31 +91,25 @@ function abst_lite_uninstall_delete_dir( $dir ) {
 function abst_lite_uninstall_cleanup_current_site() {
 	global $wpdb;
 
-	// Experiment posts (their post meta rows go with them).
-	$abst_experiment_ids = get_posts(
-		array(
-			'post_type'      => 'abst_experiments',
-			'post_status'    => 'any',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-		)
-	);
+	// Experiment posts in every status, including the Trash and the plugin's own
+	// statuses, which are not registered while uninstalling (their post meta rows
+	// go with them).
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-time lookup on uninstall.
+	$abst_experiment_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s", 'abst_experiments' ) );
 	foreach ( $abst_experiment_ids as $abst_experiment_id ) {
 		wp_delete_post( $abst_experiment_id, true );
 	}
-
-	// Experiment assignments stored on regular posts/pages.
-	delete_post_meta_by_key( 'bt_post_experiments' );
-	delete_post_meta_by_key( 'bt_post_experiments_editor' );
 
 	// Plugin options: the named ones plus anything under our own prefix.
 	$abst_option_names = array(
 		'abst_plugin_version',
 		'abst_delete_data_on_uninstall',
 		'abst_conversion_pages',
-		'bt_bb_ab_settings',
 		'abst_test_canonical',
 		'abst_bricks_elements',
+		'ab_change_canonicals', // settings saved without the abst_ prefix
+		'ab_dont_clear_cache_on_update',
+		'selected_post_types',
 	);
 	foreach ( $abst_option_names as $abst_option_name ) {
 		delete_option( $abst_option_name );
@@ -127,14 +121,6 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// Journey / heatmap files and the debug log: uploads/abst (abst/journeys, abst/logs).
 	$abst_upload_base = trailingslashit( wp_upload_dir()['basedir'] );
 	abst_lite_uninstall_delete_dir( $abst_upload_base . 'abst' );
-
-	// The debug log lives in uploads/abst/logs (removed above). Older versions kept it
-	// outside the abst directory: abst_log_<hash>.log (named from AUTH_KEY) and abst_log.txt.
-	foreach ( array_merge( (array) glob( $abst_upload_base . 'abst_log_*.log' ), array( $abst_upload_base . 'abst_log.txt' ) ) as $abst_log_file ) {
-		if ( $abst_log_file && file_exists( $abst_log_file ) ) {
-			wp_delete_file( $abst_log_file );
-		}
-	}
 }
 
 /**
@@ -182,5 +168,8 @@ if ( 1 != $abst_delete_data ) {
 abst_lite_uninstall_for_each_site( 'abst_lite_uninstall_cleanup_current_site' );
 
 if ( is_multisite() ) {
-	delete_site_option( 'abst_delete_data_on_uninstall' );
+	// Settings saved from the network admin when the plugin is network-activated.
+	foreach ( array( 'abst_delete_data_on_uninstall', 'selected_post_types', 'ab_change_canonicals', 'abst_enable_user_journeys', 'abst_heatmap_pages', 'ab_dont_clear_cache_on_update', 'abst_wait_for_approval', 'abst_heatmap_retention_length' ) as $abst_site_option_name ) {
+		delete_site_option( $abst_site_option_name );
+	}
 }

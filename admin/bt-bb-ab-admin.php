@@ -78,6 +78,7 @@ class ABST_Admin {
         $heatmap_pages = array($homepage_id);
       }
     }
+    $canonicals_changed = (int) abst_get_admin_setting( 'ab_change_canonicals' ) !== $change_canonicals;
     $this->abst_update_admin_setting( 'selected_post_types', $selected_post_types );
     $this->abst_update_admin_setting( 'ab_change_canonicals', $change_canonicals );
     $this->abst_update_admin_setting( 'abst_enable_user_journeys', $enable_user_journeys );
@@ -86,6 +87,11 @@ class ABST_Admin {
     $this->abst_update_admin_setting( 'abst_wait_for_approval', $wait_for_approval );
     $this->abst_update_admin_setting( 'abst_heatmap_retention_length', $heatmap_retention_length );
     delete_option('abst_all_testable_posts');// refresh it
+    // The canonical map is built (or emptied) with the test list; rebuild it now.
+    global $abst_btab;
+    if ( $canonicals_changed && isset( $abst_btab ) ) {
+      $abst_btab->refresh_conversion_pages();
+    }
   }
   
   public function abst_update_admin_setting( $key, $value )
@@ -211,13 +217,6 @@ class ABST_Admin {
     echo '</div>';
   }
 
-  public function should_show_settings_field()
-  {
-    return ((is_multisite() && !is_network_admin()) || (!is_multisite() && current_user_can( 'manage_options' ) ));
-  }
-
-
-
   public static function get_current_settings_url()
   {
     return (is_network_admin())? self::get_network_admin_url() : self::get_admin_url();
@@ -240,35 +239,4 @@ class ABST_Admin {
     include plugin_dir_path( dirname( __FILE__ ) ) .'admin/partials/'. $file .'.php';
   }
 
-  public function get_protocol()
-  {
-    $abst_https = isset($_SERVER['HTTPS']) ? sanitize_text_field( wp_unslash( $_SERVER['HTTPS'] ) ) : '';
-    $abst_forwarded_proto = isset($_SERVER['HTTP_X_FORWARDED_PROTO']) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) : '';
-    if (
-        ( $abst_https === 'on' || $abst_https === '1' ) ||
-        $abst_forwarded_proto === 'https'
-    ) {
-      $protocol = 'https://';
-    }
-    else {
-      $protocol = 'http://';
-    }   
-    
-    return $protocol; 
-  }
-
 } // end class
-
-
-
-function abst_get_main_site_url() {
-
-	// This is the current network's information; 'site' is old terminology.
-	global $current_site;
-	if ( is_multisite() && $current_site ) {
-		$main_site_blog_id = $current_site->blog_id;
-		return get_home_url( $main_site_blog_id );
-	}
-
-	return home_url();
-}

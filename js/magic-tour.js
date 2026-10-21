@@ -287,8 +287,7 @@
         }
     }
 
-    // Expose restartTour globally
-    window.restartMagicTour = restartTour;
+    // Pause/resume hooks used by highlighter.js while the media library is open
     window.abstMagicTourPause = pauseTour;
     window.abstMagicTourResume = resumeTour;
 

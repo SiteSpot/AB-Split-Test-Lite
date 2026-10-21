@@ -156,6 +156,10 @@ function abst_rest_update_test_settings($request) {
         if ($has_param('variations') && count($effective_variations) !== 1) {
             return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400, 'field' => 'variations']);
         }
+
+        if ($has_param('variations') && !$abst_btab->get_id_from_slug($effective_variations[0])) {
+            return new WP_Error('invalid_variations', 'The variation page was not found.', ['status' => 400, 'field' => 'variations']);
+        }
     }
 
     if ($has_conversion_update) {
@@ -250,9 +254,9 @@ function abst_rest_update_test_settings($request) {
             ? $normalize_variation_id($params['default_page'])
             : get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
 
-        // The one variation page: the one given, or the one already saved.
+        // The one variation page: the one given (stored by page ID), or the one already saved.
         $variation_id = $has_param('variations')
-            ? $normalize_variation_id(array_values((array) $params['variations'])[0]) // validated above: exactly one distinct page
+            ? $abst_btab->get_id_from_slug($normalize_variation_id(array_values((array) $params['variations'])[0])) // validated above: one page that exists
             : (array_keys($existing_page_variations)[0] ?? null);
 
         update_post_meta($test_id, 'bt_experiments_full_page_default_page', $default_page);

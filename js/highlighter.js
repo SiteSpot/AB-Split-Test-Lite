@@ -175,7 +175,6 @@ jQuery(function(){
 
             // Always use the orchestrator that guarantees a page-scoped unique selector
             let selector = getUniqueSelector(element);
-            // getUniqueSelector already scopes the selector, so no need to call scopeSelectorToPage again
             if (!selector || jQuery(selector).length !== 1) {
                 //get the unique selector for the element
                 selector = generateShortPath(element);
@@ -268,7 +267,6 @@ function abstBuildAdminBar() {
   var bt_variation_icon = '<div class="ab-split"></div>';
   var bt_split_test_icon = '<div class="ab-test-tube"></div>';
   var bt_link_icon = '<span class="ab-link"></span>';
-  var magicResults = false;
    // Add New Magic Test link at the top
    submenus += '<li><a class="ab-item ab-sub-secondary" id="wp-admin-bar-ab-new-magic-test" href="#" onclick="abst_magic_bar();">✨ New Magic Test</a></li>';
    
@@ -307,7 +305,6 @@ function abstBuildAdminBar() {
                 if(!shownPrimary) {
                   submenus += '<li><a class="ab-item" target="_blank" href="'+escapeMenuValue(bt_adminurl+'post.php?post='+index+'&action=edit')+'">'+bt_split_test_icon+'<strong>'+ escapeMenuValue(test.name) +'</strong></a></li>';
                   shownPrimary = true;
-                  magicResults = true;
                 }
                 // Get variation display text
                 if (magicItem.variations && magicItem.variations.length > 0) {
@@ -365,11 +362,8 @@ function abstBuildAdminBar() {
 
    }
 
-  var bt_variations_found = jQuery('[bt-eid]:not([bt-eid=""])[bt-variation]:not([bt-variation=""])');
-
   if(true)
   {
-    // submenus += '<li><a class="ab-item ab-sub-secondary" id="ab-clear-test-cookies">Clear AB Test Cookies</a></li>'; // nobody uses this do they email us if you do.
 
     //add admin bar if not there
     if(!jQuery('#wp-admin-bar-ab-test').length)
@@ -421,16 +415,6 @@ function abstBuildAdminBar() {
     });
 
     
-    jQuery('#ab-clear-test-cookies').click(function(){
-      if(confirm("Clear your A/B Split Test cookies?"))
-      {
-        alert('A/B split test cookies cleared\n\nRefresh your page to see another random variation.');
-        //get all experiments on page
-        jQuery('[bt-eid]').each(function(){
-          abstSetCookie('btab_' + jQuery(this).attr('bt-eid'), '', -1);
-        });
-      }
-    });
 
     if ( typeof(jQuery.fn.hoverIntent) == 'undefined' )
       !function(I){I.fn.hoverIntent=function(e,t,n){function r(e){o=e.pageX,v=e.pageY}var o,v,i,u,s={interval:100,sensitivity:6,timeout:0},s="object"==typeof e?I.extend(s,e):I.isFunction(t)?I.extend(s,{over:e,out:t,selector:n}):I.extend(s,{over:e,out:e,selector:t}),h=function(e,t){if(t.hoverIntent_t=clearTimeout(t.hoverIntent_t),Math.sqrt((i-o)*(i-o)+(u-v)*(u-v))<s.sensitivity)return I(t).off("mousemove.hoverIntent",r),t.hoverIntent_s=!0,s.over.apply(t,[e]);i=o,u=v,t.hoverIntent_t=setTimeout(function(){h(e,t)},s.interval)},t=function(e){var n=I.extend({},e),o=this;o.hoverIntent_t&&(o.hoverIntent_t=clearTimeout(o.hoverIntent_t)),"mouseenter"===e.type?(i=n.pageX,u=n.pageY,I(o).on("mousemove.hoverIntent",r),o.hoverIntent_s||(o.hoverIntent_t=setTimeout(function(){h(n,o)},s.interval))):(I(o).off("mousemove.hoverIntent",r),o.hoverIntent_s&&(o.hoverIntent_t=setTimeout(function(){var e,t;e=n,(t=o).hoverIntent_t=clearTimeout(t.hoverIntent_t),t.hoverIntent_s=!1,s.out.apply(t,[e])},s.timeout)))};return this.on({"mouseenter.hoverIntent":t,"mouseleave.hoverIntent":t},s.selector)}}(jQuery);
@@ -913,8 +897,6 @@ function selectorDetection(){
     var box = jQuery('<div id="selector-box"></div>');
     jQuery('body').append(box);
 
-    // Track the current element being hovered
-    var currentElement = null;
     var hoverTimer = null;
 
     // Add a debounce mechanism at the start of your code
@@ -1047,7 +1029,7 @@ function selectorDetection(){
         if (element.closest && element.closest('.abst-magic-ignore'))
             return false;
 
-        if (jQuery(element).closest('.abst-goals-column,.abst-goals-container, .abst-goal-card-header, .abst-button-container').length > 0)
+        if (jQuery(element).closest('.abst-goals-column,.abst-goals-container, .abst-goal-card-header').length > 0)
             return false;
 
         //dont show if on the abst-magic-bar or any parent is abst-magic-bar
@@ -1106,7 +1088,6 @@ function selectorDetection(){
     selectorHoverDebounce = setTimeout(function() {
 
         
-        showBar = true;
 
         var element = e.target;
 
@@ -1140,8 +1121,6 @@ function selectorDetection(){
         //filters
         var elementType = false;
         
-        currentElement = element;
-        var selector = getUniqueSelector(element);
 
 
 
@@ -1165,9 +1144,6 @@ function selectorDetection(){
             elementType = 'text';
         }
 
-        //if element has bg img
-//        if(element.style.backgroundImage && element.style.backgroundImage !== 'none')
-  //          elementType = 'bgimage';
 
         if(!elementType)
             return;
@@ -1258,15 +1234,10 @@ function selectorDetection(){
         //if its an image
         if(e.target.tagName == 'IMG')
         {
-            //get unique selector for this page
-            width = jQuery(element).width();
-            height = jQuery(element).height();
             setMagicBar(selector, jQuery(element).attr('src'),false, 'image');
         }
         else if(e.target.tagName == 'SVG')
-        {   
-            width = jQuery(element).width();
-            height = jQuery(element).height();
+        {
             var imgSrc = jQuery(element).attr('src');
             //remove srcset so its not broken
             jQuery(element).removeAttr('srcset');
@@ -1669,8 +1640,6 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
     jQuery('#abst-variation-editor-container').height(150);
     // Set the content in the editor
     if (window.abstEditor) {
-        // Skip if we're already updating to prevent loops
-        
         try {
             const content = selectorText || '';
             
@@ -1765,9 +1734,6 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
             if (elementDef) {
                 elementDef.variations[variationIndex] = attachments.url;
             }
-            
-            // Update the hidden input
-            jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
         });
         
         // Bring the tour back when the media library is closed
@@ -1803,19 +1769,9 @@ function abst_magic_bar(options = {}) {
     selectorDetection();
     // Default options
     const defaults = {
-        height: '250px',
-        backgroundColor: '#f5f5f5',
-        borderColor: '#ddd',
-        content: '',
         closeButton: true,
         animation: true,
-        onOpen: null,
-        onClose: null,
-        // Default values for the form elements
-        selector: '.selector',
-        versionA: 'Test anything WordPress',
-        versionB: 'Helping WordPress business sell more',
-        versionC: 'Your private testing cloud'
+        onOpen: null
     };
 
     // Merge defaults with user options
@@ -1836,15 +1792,6 @@ function abst_magic_bar(options = {}) {
         magicBar.classList.add('no-animation');
     }
 
-    var rolesHtml = '';
-    //    foreach abst_magic_data.roles
-    jQuery.each(abst_magic_data.roles, function(key, value) {
-        //if key in array abst_magic_data.defaults
-        if (abst_magic_data.defaults.includes(key))
-            rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '" checked><span>' + value + '</span></label>';
-        else
-            rolesHtml += '<label class="abst-user-role"><input type="checkbox" name="roles[]" value="' + key + '"><span>' + value + '</span></label>';
-    });
     // Add content
     // --- BEGIN MAGIC BAR HTML REPLACEMENT ---
     // Build dynamic user roles
@@ -2161,7 +2108,6 @@ function abst_magic_bar(options = {}) {
     // add time date in nice format to new test title
     const now = new Date();
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    currentPageTitle = jQuery('h1').first().text().trim() || jQuery('title').text().trim() || 'Magic';
     const formatted = `${months[now.getMonth()]} ${now.getDate()}`;
     const defaultTitle = 'Test ' + formatted;
     jQuery('.abst-magic-bar-title').val(defaultTitle);
@@ -2345,15 +2291,6 @@ function abst_magic_bar(options = {}) {
         // Call onOpen callback if provided
         if (typeof settings.onOpen === 'function') {
             settings.onOpen();
-        }
-        
-        // Add event listeners for the selector field
-        const selectorField = document.getElementById('abst-selector');
-        if (selectorField) {
-            selectorField.addEventListener('blur', function() {
-                // You could add validation or other functionality here
-                console.log('Selector updated:', this.value);
-            });
         }
 
     }, 10);
@@ -2562,9 +2499,6 @@ function adjustFixedElementsForMagicBar(activate) {
                 // Set the content directly in the contentEditable div
                 window.abstEditor.innerHTML = currentText;
                 setVariationEditorActive(elementDef.type !== 'image');
-                
-                // Update the hidden input
-                jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
                 
                 // Trigger input event to mark as changed
                 const event = new Event('input', { bubbles: true });
@@ -3096,66 +3030,6 @@ function updateVariationPicker(selectedIndex) {
     jQuery('#variation-picker').html(optionsHtml).trigger('change');
 }
 
-/**
- * Parse CSS selector string into individual tags while preserving spaces in square brackets
- * @param {string} selector - CSS selector string
- * @return {array} Array of tag values
- */
-function parseCssSelector(selector) {
-    if (!selector) return [];
-    
-    // Replace spaces in square brackets with a temporary marker
-    var processedSelector = '';
-    var inBrackets = false;
-    var bracketContent = '';
-    
-    for (var i = 0; i < selector.length; i++) {
-        var char = selector[i];
-        
-        if (char === '[') {
-            inBrackets = true;
-            bracketContent = '[';
-        } else if (char === ']' && inBrackets) {
-            inBrackets = false;
-            bracketContent += ']';
-            processedSelector += bracketContent.replace(/ /g, '___SPACE___');
-            bracketContent = '';
-        } else if (inBrackets) {
-            bracketContent += char;
-        } else {
-            // Handle special CSS selector characters by adding spaces around them
-            if (char === '>' || char === '+' || char === '~') {
-                // Add space before if there isn't one already
-                if (processedSelector.length > 0 && processedSelector[processedSelector.length - 1] !== ' ') {
-                    processedSelector += ' ';
-                }
-                processedSelector += char;
-                // Add space after
-                if (i < selector.length - 1 && selector[i + 1] !== ' ') {
-                    processedSelector += ' ';
-                }
-            } else {
-                processedSelector += char;
-            }
-        }
-    }
-    
-    // If we ended while still in brackets, add the remaining content
-    if (bracketContent) {
-        processedSelector += bracketContent;
-    }
-    
-    // Split by spaces (not inside brackets)
-    var tags = processedSelector.split(' ')
-        .filter(tag => tag.trim() !== '')
-        .map(tag => tag.replace(/___SPACE___/g, ' '));
-    
-    return tags;
-}
-
-// Flag to prevent infinite loops
-let isUpdating = false;
-
 function checkChangedEditor() {
     try {
         // Get the HTML content from the editor
@@ -3244,9 +3118,6 @@ function checkChangedEditor() {
             
             elementIndex = window.abmagic.definition.length - 1;
         }
-        
-        // Update the hidden input for form submission
-        jQuery('#abst-variation-data').val(JSON.stringify(window.abmagic.definition));
         
         // Update the preview
         if (variationType === 'image') {

@@ -104,7 +104,7 @@ This plugin bundles the following open-source libraries:
 * heatmap.js 2.0.5, MIT License, https://github.com/pa7/heatmap.js
 * Awesomplete 1.1.7, MIT License, https://github.com/LeaVerou/awesomplete
 
-The readable source of every minified file ships alongside it: js/chart.src.js, js/select2.src.js, js/driver.src.js, js/tabulator.src.js, js/heatmap.src.js, js/creator.src.js (Awesomplete) and js/bt_conversion.js (the plugin's tracking script, minified as js/bt_conversion-min.js).
+The readable source of every minified file ships alongside it: js/chart.src.js, js/select2.src.js, js/driver.src.js, js/tabulator.src.js, js/creator.src.js (Awesomplete) and js/bt_conversion.js (the plugin's tracking script, minified as js/bt_conversion-min.js). heatmap.js ships unminified as js/heatmap.src.js.
 
 = Help translate =
 

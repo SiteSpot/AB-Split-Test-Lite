@@ -1,0 +1,77 @@
+{
+    "post_data": {
+        "title": "Sample: Headline test (completed)",
+        "content": "This is a sample test with made-up results, added so you can see what a finished test looks like. It compared two versions of a page headline: the variation converted at 6.28% against 4.08% for the original. It never changed any page on your site, and you can delete it whenever you like.",
+        "status": "complete"
+    },
+    "test_config": {
+        "test_type": "magic",
+        "magic_definition": [
+            {
+                "type": "text",
+                "selector": "h1.abst-sample-headline",
+                "variations": [
+                    "Welcome to Our Amazing Service",
+                    "Transform Your Business in 30 Days or Less"
+                ],
+                "scope": {
+                    "page_id": "*"
+                }
+            }
+        ],
+        "target_percentage": "100",
+        "target_option_device_size": "all",
+        "conversion_page": "page",
+        "url_query": "",
+        "bt_allowed_roles": [],
+        "test_winner": "magic-1",
+        "ac_min_days": "7",
+        "ac_min_views": "500"
+    },
+    "observations": {
+        "magic-0": {
+            "visit": 1912,
+            "conversion": 78,
+            "rate": 4.08,
+            "device_size": {
+                "desktop": {
+                    "visit": 1003,
+                    "conversion": 45,
+                    "rate": 4.49
+                },
+                "mobile": {
+                    "visit": 734,
+                    "conversion": 27,
+                    "rate": 3.68
+                },
+                "tablet": {
+                    "visit": 175,
+                    "conversion": 6,
+                    "rate": 3.43
+                }
+            }
+        },
+        "magic-1": {
+            "visit": 1894,
+            "conversion": 119,
+            "rate": 6.28,
+            "device_size": {
+                "desktop": {
+                    "visit": 989,
+                    "conversion": 67,
+                    "rate": 6.77
+                },
+                "mobile": {
+                    "visit": 731,
+                    "conversion": 43,
+                    "rate": 5.88
+                },
+                "tablet": {
+                    "visit": 174,
+                    "conversion": 9,
+                    "rate": 5.17
+                }
+            }
+        }
+    }
+}

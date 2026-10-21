@@ -191,40 +191,6 @@ jQuery(document).ready(function() {
 
 
 
-  // Initialize icon select dropdowns with custom templates
-
-  function formatIconOption(option) {
-
-    if (!option.id && !option.element) return option.text;
-
-    var icon = jQuery(option.element).data('icon') || '';
-
-    if (!icon) return option.text;
-
-    return jQuery('<span class="abst-select-option"><span class="abst-select-icon">' + icon + '</span> ' + option.text + '</span>');
-
-  }
-
-  
-
-  jQuery('.abst-icon-select').each(function() {
-
-    jQuery(this).select2({
-
-      dropdownAutoWidth: true,
-
-      width: '100%',
-
-      minimumResultsForSearch: -1,
-
-      templateResult: formatIconOption,
-
-      templateSelection: formatIconOption
-
-    });
-
-  });
-
 
 
   // Only make specific sections collapsible - NOT the main card sections
@@ -610,14 +576,6 @@ jQuery(document).ready(function() {
 
 
 
-  function isValidURL(string) {
-
-    var res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
-
-    return (res !== null);
-
-  }
-
 
 
   //experiment admin tabs
@@ -927,14 +885,6 @@ jQuery(document).ready(function() {
 
   }
 
-  jQuery("body").on('click','.show-css-classes',function(e){
-
-    e.preventDefault();
-
-    jQuery(".test-variation-info").toggle();
-
-  });
-
 
 
   jQuery("#bt_experiments_full_page_default_page").change(function(){
@@ -1119,9 +1069,7 @@ jQuery(document).ready(function() {
 
 
 
-// Global variables for table and chart
-
-var table;
+// Global chart instance (destroyed and rebuilt when the device filter changes)
 
 var abtestChart;
 
@@ -1199,7 +1147,6 @@ if (abtestChartData.observations) {
     $w = jQuery('<div id="abst-sample-size-warning" class="abst-sample-size-warning" style="display:none;"></div>');
     jQuery('#abst-results-table').after($w);
   }
-  jQuery('#abst-device-size-warning').remove();
   if (__abstInsufficientData) {
     var scope = deviceSize ? (' on ' + deviceSize) : '';
     $w.text('Insufficient sample size' + scope + ' - need at least ' + __abstMinVisitsPerVariation + ' visits per variation before computing confidence.').show();
@@ -1441,7 +1388,7 @@ var chance_of_winning_label = "Confidence";
 
 
 
-var table = new Tabulator("#abst-results-table", {
+new Tabulator("#abst-results-table", {
 
   data: newTableData,
 
@@ -1575,8 +1522,7 @@ var table = new Tabulator("#abst-results-table", {
 
 });
 
-// Expose table and restore full observations so later code sees unfiltered data
-window.abstResultsTable = table;
+// Restore full observations so later code sees unfiltered data
 abtestChartData.observations = __abstOriginalObservations;
 
 
@@ -2321,14 +2267,8 @@ function updateDescription(full = true) {
 
     {
 
-      // Traffic is split evenly between the original and every variation.
-      description += "<BR>Traffic split examples:";
-
-      for (var versions = 2; versions <= 4; versions++) {
-
-        description += "<BR>" + versions + " versions: about " + Math.round(percentage / versions) + "% of your total traffic sees each one.";
-
-      }
+      // Traffic is split evenly between the original and the variation.
+      description += "<BR>The original and the variation each get about " + Math.round(percentage / 2) + "% of your total traffic.";
 
     }
 

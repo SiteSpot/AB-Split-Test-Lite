@@ -3,7 +3,7 @@
   "meta": {
     "title": "AB Split Test Lite demo",
     "author": "tomsitespot",
-    "description": "Try self-hosted A/B testing: sample tests with results, heatmaps, and the point-and-click Magic Bar."
+    "description": "Try self-hosted A/B testing: a sample completed test with results, heatmaps, and the point-and-click Magic Bar."
   },
   "landingPage": "/wp-admin/edit.php?post_type=abst_experiments",
   "preferredVersions": { "php": "8.3", "wp": "latest" },

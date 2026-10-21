@@ -10,7 +10,7 @@ function abst_get_supported_test_types() {
 }
 
 function abst_get_supported_test_statuses() {
-    return ['draft', 'publish', 'pending', 'abst_complete'];
+    return ['abst_idea', 'draft', 'publish', 'pending', 'abst_complete'];
 }
 
 function abst_get_supported_conversion_types() {
@@ -266,20 +266,16 @@ function abst_magic_selector_is_balanced($selector) {
     return $quote === '' && empty($stack);
 }
 
-/** The target guards a stored selector can carry: [0] is the older, looser guard,
- * [1] the one applied now; both are listed so the older one can be unwrapped. */
+/** The target guard applied to a stored selector, as a one-item list for abst_magic_selector_unwrap(). */
 function abst_magic_selector_target_guards($type, $property) {
-    $guards = [
-        ':not(script,svg,math):not(script *,svg *,math *)',
-        ':not(script,style,iframe,object,embed,link,meta,base,svg,math,template,noscript):not(script *,style *,iframe *,object *,svg *,math *,template *,noscript *)',
-    ];
+    $guard = ':not(script,style,iframe,object,embed,link,meta,base,svg,math,template,noscript):not(script *,style *,iframe *,object *,svg *,math *,template *,noscript *)';
     $sink = '';
     if ($type === 'image' || ($type === 'attribute' && in_array($property, ['src', 'srcset'], true))) {
         $sink = ':is(img,source)';
     } elseif ($type === 'attribute' && $property === 'href') {
         $sink = ':is(a,area)';
     }
-    return [$guards[0] . $sink, $guards[1] . $sink];
+    return [$guard . $sink];
 }
 
 /** Peel off guards this plugin wrote so the current author's guard replaces them. */
@@ -333,7 +329,7 @@ function abst_prepare_magic_definition_for_write($definition) {
                 $type = $element['type'] ?? '';
                 $property = $element['property'] ?? '';
                 $guards = abst_magic_selector_target_guards($type, $property);
-                $safe_targets = $guards[1];
+                $safe_targets = $guards[0];
                 $element['selector'] = ':is(' . abst_magic_selector_unwrap($selector, $guards) . ')' . $safe_targets;
             }
         }
@@ -503,14 +499,6 @@ function abst_validate_magic_write_content($definition, $index) {
         }
     }
     return true;
-}
-
-/** Raw metadata tools must obey the same policy as the Magic editor. */
-function abst_prepare_magic_meta_write($value) {
-    $definition = abst_prepare_magic_definition_for_write($value);
-    $error = abst_validate_magic_definition($definition);
-    if (is_wp_error($error)) { return $error; }
-    return is_string($value) ? wp_json_encode($definition, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $definition;
 }
 
 function abst_validate_magic_definition($magic_definition) {

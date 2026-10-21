@@ -375,9 +375,6 @@ a:hover {
     text-decoration: underline;
 }
 
-/* Hide elements */
-.ab-tab-button { display: none; }
-
 /* Select2 overrides */
 .select2-container {
     width: 100% !important;

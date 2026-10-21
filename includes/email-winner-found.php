@@ -14,13 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! function_exists( 'abst_email_brand_name' ) ) {
-    /** Name shown in winner emails. */
-    function abst_email_brand_name() {
-        return 'AB Split Test';
-    }
-}
-
 /**
  * Build, format and send the "winner found" email to the site admin.
  *
@@ -39,7 +32,7 @@ function abst_send_winner_found_email( $experiment, $observations ) {
         return false;
     }
 
-    $subject = abst_email_brand_name() . ': ' . $experiment->post_title . ' has a winner';
+    $subject = 'AB Split Test: ' . $experiment->post_title . ' has a winner';
     $subject = apply_filters( 'abst_winner_email_subject', $subject, $data, $experiment );
 
     $html = abst_render_winner_email_html( $data );
@@ -196,7 +189,7 @@ function abst_build_winner_email_data( $experiment, $observations ) {
         'runner_up_key'     => $runner_up_key,
         'runner_up_label'   => $runner_up_key ? $variations[ $runner_up_key ]['label'] : null,
         'edit_url'          => admin_url( 'post.php?post=' . $test_id . '&action=edit' ),
-        'brand_name'           => abst_email_brand_name(),
+        'brand_name'        => 'AB Split Test',
     );
 }
 

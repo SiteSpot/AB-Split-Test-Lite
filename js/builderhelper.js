@@ -194,18 +194,12 @@ jQuery(document).ready(function(){
                     //click currentBrickElement
                     setTimeout(function () {
                         currentBrickElement.first().find('.structure-item').first().click()
-                        //load dropdown
-                        //setTimeout(function () {
-                          //  jQuery('[data-controlkey="bt_experiment"] .input').click()
-                         //   console.log('clicked dropdown');
-
                             //click last li
                             setTimeout(function () {
                                 jQuery('[data-controlkey="bt_experiment"] .dropdown li').last().click();
                                 //if empty set to original
                                 console.log('clicked added and clicked bricks dropdown element');
                             }, 100);
-                      //  }, 100);
                     }, 100);
 
                 }
@@ -264,7 +258,6 @@ jQuery(document).ready(function(){
             if (data == 'abclosemodal'){
                 console.log('ABST close modal');
                 closeNewAbPanelIfOpen();
-            //    jQuery('.newabpanel',window.iframe).remove();//bricks in iframe
             }
     
         }, false);

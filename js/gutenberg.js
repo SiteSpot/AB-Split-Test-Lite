@@ -108,10 +108,6 @@
   const withExperimentControl = wp.compose.createHigherOrderComponent(function (BlockEdit) {
     return function (props) {
 
-      if (props.name === 'bt-experiments/gutenberg-ab-redirect') {
-        return el(BlockEdit, props);
-      }
-
       const experiment = props.attributes['bt-eid'];
       const variation = props.attributes['bt-variation'];
 
@@ -354,13 +350,6 @@
   };
   addFilter('blocks.getSaveContent.extraProps', 'bt-experiments/get-save-content/gutenberg-extra-props', addExperimentExtraProps);
 
-  window.newTestCreated = function (value, name) {
-    const eidInput = document.querySelector('.bt-eid-input input');
-    if (eidInput) {
-      eidInput.value = value;
-      eidInput.dispatchEvent(new Event('input'));
-    }
-  };
 
 
 })( 

@@ -9,7 +9,6 @@ class ABST_Gutenberg
 	public function __construct()
 	{
 		add_action( 'enqueue_block_editor_assets', [$this, 'enqueue_scripts'] );
-		add_action( 'save_post', [$this, 'add_gutenberg_exp_meta'], 10, 3 );
 		add_filter( 'wp_kses_allowed_html', [$this, 'allow_bt_attributes'] );
 		add_filter( 'wp_loaded',[$this,'register_attribute_for_blocks'], 999 );
 	}
@@ -43,38 +42,6 @@ class ABST_Gutenberg
 		}
 	}
 	
-    public function add_gutenberg_exp_meta( $post_id, $post, $update )
-    {
-      $experiments = [];
-
-      $is_gutenberg = (false !== strpos( $post->post_content, '<!-- wp:' ));
-
-      if( $is_gutenberg ) {
-
-        preg_match_all('/<[a-z].*(?=bt-eid)(?:.*?(?:bt-eid)="([^"]+)")?(?:.*?(?:bt-variation)="([^"]+)")?[^>]*>/', $post->post_content, $exp);  
-
-        if( isset($exp[1]) && !empty($exp[1]) ) {
-          foreach ($exp[1] as $key => $eid) {
-            $experiments[] = [
-            	'eid' => $eid,
-            	'variation' => abst_normalize_onpage_variation( $exp[2][$key], 'original' )
-            ];
-          }
-          update_post_meta($post_id, 'bt_post_experiments', $experiments); // save GB modules to DB
-        } else {
-          delete_post_meta($post_id, 'bt_post_experiments'); // remove meta if post/page don't have experiment modules
-        }   
-
-        update_post_meta($post_id, 'bt_post_experiments_editor', 'gutenberg');
-      }
-
-      if( class_exists('\Elementor\Widget_Base') ) {
-        if( !\Elementor\Plugin::$instance->db->is_built_with_elementor($post_id) && !$is_gutenberg ) {
-          delete_post_meta($post_id, 'bt_post_experiments_editor');
-        }
-      }
-    }
-
 	/**
 	 * Enqueue gutenberg support JS
 	 */

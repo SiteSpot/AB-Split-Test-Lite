@@ -88,7 +88,6 @@ jQuery(document).ready(function($) {
         const size = $('#abst-heatmaps-size-selector').val() || urlParams.get('size') || '';
         const mode = $('#abst-heatmaps-mode-selector').val() || urlParams.get('mode') || '';
         const days = $('#abst-heatmaps-days-selector').val() || urlParams.get('days') || '7';
-        const conversionOnly = $('#show-conversion-traffic-only').val() || urlParams.get('cto') || '0';
         const exitUrl = $('#abst-heatmaps-exit-url-selector').val() || urlParams.get('exit_url') || '';
         const referrer = $('#abst-heatmaps-referrer-selector').val() || urlParams.get('referrer') || '';
         const utmSource = $('#abst-heatmaps-utm-source').val() || '';
@@ -97,7 +96,13 @@ jQuery(document).ready(function($) {
         
         // Build URL with all parameters
         // Note: When "All Experiments" is selected (eid is empty), we exclude both eid and variation
-        let url = '?post_type=abst_experiments&page=abst-heatmaps';
+        // Stay on the admin screen this page was opened from (admin.php or edit.php),
+        // keeping the parameters that load it; the filters are rebuilt below.
+        const screenParams = new URLSearchParams();
+        ['post_type', 'page'].forEach(function (key) {
+            if (urlParams.has(key)) screenParams.set(key, urlParams.get(key));
+        });
+        let url = window.location.pathname + '?' + screenParams.toString();
         if (post) url += '&post=' + encodeURIComponent(post);
         if (eid) {
             url += '&eid=' + encodeURIComponent(eid);
@@ -107,7 +112,6 @@ jQuery(document).ready(function($) {
         if (size) url += '&size=' + encodeURIComponent(size);
         if (mode) url += '&mode=' + encodeURIComponent(mode);
         if (days) url += '&days=' + encodeURIComponent(days);
-        if (conversionOnly) url += '&cto=' + encodeURIComponent(conversionOnly);
         if (exitUrl) url += '&exit_url=' + encodeURIComponent(exitUrl);
         if (referrer) url += '&referrer=' + encodeURIComponent(referrer);
         if (utmSource) url += '&utm_source=' + encodeURIComponent(utmSource);
@@ -118,7 +122,7 @@ jQuery(document).ready(function($) {
     }
     
     // Attach change handlers to all selectors
-    $('#abst-heatmaps-page-selector, #abst-heatmaps-experiment-selector, #abst-heatmaps-variation-selector, #abst-heatmaps-size-selector, #abst-heatmaps-mode-selector, #abst-heatmaps-days-selector, #show-conversion-traffic-only, #abst-heatmaps-exit-url-selector, #abst-heatmaps-referrer-selector, #abst-heatmaps-utm-source, #abst-heatmaps-utm-medium, #abst-heatmaps-utm-campaign').on('change', function() {
+    $('#abst-heatmaps-page-selector, #abst-heatmaps-experiment-selector, #abst-heatmaps-variation-selector, #abst-heatmaps-size-selector, #abst-heatmaps-mode-selector, #abst-heatmaps-days-selector, #abst-heatmaps-exit-url-selector, #abst-heatmaps-referrer-selector, #abst-heatmaps-utm-source, #abst-heatmaps-utm-medium, #abst-heatmaps-utm-campaign').on('change', function() {
         const newUrl = buildHeatmapUrl();
         console.log('Heatmap selector changed, navigating to:', newUrl);
         window.location.href = newUrl;
@@ -538,12 +542,10 @@ document.addEventListener('DOMContentLoaded', () => {
       radius: 80,
       maxOpacity: 0.8,
       minOpacity: 0,
-      blur: 0.75,
-      dotColor: '#FF6B6B'
+      blur: 0.75
     });
 
     const points = [];
-    let skippedCount = 0;
 
     heatmapRecords.forEach((record) => {
       const selector = record.selector;
@@ -551,14 +553,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const percentY = parseFloat(record.percentY);
 
       if (!selector || !Number.isFinite(percentX) || !Number.isFinite(percentY)) {
-        skippedCount++;
         return;
       }
 
       try {
         const el = doc.querySelector(selector);
         if (!el) {
-          skippedCount++;
           return;
         }
         const rect = el.getBoundingClientRect();
@@ -568,14 +568,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0) {
             points.push({ x, y, value: 0.5 });
-          } else {
-            skippedCount++;
           }
-        } else {
-          skippedCount++;
         }
       } catch (e) {
-        skippedCount++;
+        // invalid selector: skip this record
       }
     });
 

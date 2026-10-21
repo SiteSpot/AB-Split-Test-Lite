@@ -20,8 +20,6 @@ class ABST_Bricks
 	}
 
 function tests_with_id(){
-  $testTransient = get_transient('abst_bricks_tests');
-
   $posts = get_posts(array(
     'post_type'      => 'abst_experiments',
     'post_status'    => 'publish',
@@ -42,8 +40,6 @@ function tests_with_id(){
     foreach ( $posts as $post ) {
       $postlist[$post->ID] = $post->post_title;
     }
-
-    set_transient('abst_bricks_tests', $postlist,10);
 
     return $postlist;
 }

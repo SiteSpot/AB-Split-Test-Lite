@@ -2,7 +2,7 @@
 
 ## Directory Protection
 
-Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_<hash>_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The journey `<hash>` is derived from `AUTH_KEY`, so file URLs cannot be guessed. The debug log is `wp-content/uploads/abst/logs/debug-<hmac>.log`, named with an HMAC of the site URL keyed with the auth salt; it keeps the newest 500 lines (at most 512 KB) and is the same file AB Split Test Pro uses. The plugin writes no PHP files into uploads. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
+Heatmap (journey) data is stored as daily text files in `wp-content/uploads/abst/journeys/` (`abst_journeys_<hash>_YYYYMMDD.txt`, compressed to `.txt.gz` after a day). The journey `<hash>` is an HMAC keyed with the auth salt (`wp_salt( 'auth' )`), so file URLs cannot be guessed. The debug log is `wp-content/uploads/abst/logs/debug-<hmac>.log`, named with an HMAC of the site URL keyed with the auth salt; it keeps the newest 500 lines (at most 512 KB) and is the same file AB Split Test Pro uses. The plugin writes no PHP files into uploads. Visitor-supplied fields are sanitized and stripped of the `|` delimiter before they are written.
 
 ### 1. Index Files
 The journey directory, its parent and the log directory receive empty `index.html` files to discourage directory listing. Configure directory browsing on the web server as well.
@@ -20,8 +20,7 @@ If you've experienced SEO index pollution from plugin directories being crawled,
 
 ```
 # Block plugin internal directories
-Disallow: /wp-content/plugins/bt-bb-ab/
-Disallow: /wp-content/plugins/ABSPLITTEST/
+Disallow: /wp-content/plugins/ab-split-test-lite/
 
 # If using a different plugin folder name
 Disallow: /wp-content/plugins/*/includes/

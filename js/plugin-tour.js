@@ -14,17 +14,6 @@ jQuery(function ($) {
         if (/Published|Test Running/.test(jQuery('#post-status-display').text()))
             wizard4();
 
-
-    if(window.localStorage.wiz == 2) {
-        wizard2();
-    }
-
-
-
-    jQuery('.start-tour').click(function() {
-        wizard1();
-    });
-
     // Choosing a test type on the "Choose Test Type" step adds the steps for that type.
     jQuery('body').on('click', '.show_test_type.driver-active-element label', function() {
         var testType = jQuery(this).attr('for');
@@ -127,33 +116,6 @@ function abstStartTour(steps) {
     tour = instance;
     tour.drive();
     return tour;
-}
-
-function wizard1(){
-    window.localStorage.wiz = 1;
-    jQuery('a[href="post-new.php?post_type=abst_experiments"]').attr('href', 'post-new.php?post_type=abst_experiments&wizard=3');
-
-    abstStartTour([
-        abstTourStep(null, null, '3 minute test setup wizard.', "Let's get started with a quick setup of the settings you need. Click 'Next' to start.", ['next']),
-        abstTourStep('.ab-test-post-types', 'top', 'Post Types', 'You can test on Pages and posts by default, but choose anything you want here.', ['previous', 'next']),
-        abstTourStep('[name="bt_save"]', 'bottom', 'Save Settings', 'Remember to save your settings.', ['previous'])
-    ]);
-
-    // Saving the settings prompts the user to create a test on the next page.
-    jQuery('body').off('submit.abstTour').on('submit.abstTour', 'form#bt-bb-ab-form', function() {
-        window.localStorage.wiz = 2;
-    });
-}
-
-function wizard2(){
-    abstStartTour([
-        abstTourStep(null, null, 'Settings Updated!', 'Great, now its time to create your first test!', ['next'], {
-            doneBtnText: 'Create A Split Test',
-            onNextClick: function() {
-                window.location.href = 'post-new.php?post_type=abst_experiments&wizard=3';
-            }
-        })
-    ]);
 }
 
 function wizard3(){

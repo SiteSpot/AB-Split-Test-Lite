@@ -100,10 +100,6 @@
     return !!(window.ABST_CONFIG && window.ABST_CONFIG.btab_vars);
   }
   
-  function hasExperiments() {
-    return window.bt_experiments && Object.keys(window.bt_experiments).length > 0;
-  }
-  
   if (!configReady()) {
     console.log('ABST: Config not ready, polling...');
     var poll = setInterval(function() {
@@ -570,11 +566,6 @@ function abstMainInit() {
   window.abst.mainInitialized = true;
   setupConsentPartners();
 
-  if (window.btab_vars && !window.btab_vars.is_preview) {
-    var abTestRedirects = document.querySelectorAll('.ab-test-page-redirect');
-    abTestRedirects.forEach(function (el) { el.remove(); });
-  }
-
   var btHiddenEls = document.querySelectorAll('[bt_hidden="true"]');
   btHiddenEls.forEach(function (el) { el.remove(); });
 
@@ -685,9 +676,11 @@ function abstMainInit() {
         abClickListener(experimentId, experiment.conversion_selector || '');
       }
 
-      //full page test handler //if experiment.full_page_default_page in array current_page
-      if (experiment.test_type == 'full_page' && typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.some(page => String(page) === String(experiment.full_page_default_page))) {
-        //console.log('Full Page Test: ' + experimentId);
+      //full page test handler: on the original page or the variation page
+      var onPage = function (pageId) { return typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.some(page => String(page) === String(pageId)); };
+      var onDefaultPage = experiment.test_type == 'full_page' && onPage(experiment.full_page_default_page);
+      var onVariationPage = experiment.test_type == 'full_page' && !onDefaultPage && Object.keys(experiment.page_variations || {}).some(onPage);
+      if (onDefaultPage || onVariationPage) {
         //add original do nothing variation
         var div = document.createElement('div');
         div.className = 'bt-redirect-handle';
@@ -702,7 +695,8 @@ function abstMainInit() {
           div.style.display = 'none';
           div.setAttribute('bt-variation', varId);
           div.setAttribute('bt-eid', experimentId);
-          div.setAttribute('bt-url', variation);
+          if (onDefaultPage) // on the variation page the visitor is already where the variation lives: no redirect
+            div.setAttribute('bt-url', variation);
           document.body.appendChild(div);
         });
       }
@@ -966,8 +960,6 @@ function abstMainInit() {
           return true;  // continue to next exp
         }
 
-        // no experiment cookie set, calculate and create        
-        bt_experiments[experimentId].variations = bt_get_variations(experimentId);
       }
 
       if (variation_element && !variation_element.length) {
@@ -982,8 +974,6 @@ function abstMainInit() {
       }
       else
         redirect_url = '';
-
-      // if its css, add it to body   
 
       if (bt_experiments[experimentId]['test_type'] == 'magic') {
         // A number: the string "0" wrote the stored original back over the page's live
@@ -1061,10 +1051,6 @@ function abstMainInit() {
 
   window.dispatchEvent(new Event('resize')); // trigger a window resize event. Useful for sliders etc. that dynamically resize
   var event = new Event('ab-test-setup-complete' , {bubbles: true}); 
-  //example usage
-  //document.addEventListener('ab-test-setup-complete', function() {
-  //  console.log('ab-test-setup-complete');
-  //});
   document.body.dispatchEvent(event);
   //add class ab-test-setup-complete to body
   document.body.classList.add('ab-test-setup-complete');
@@ -1193,7 +1179,6 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
       }
     }
     else if (bt_experiments[eid].test_type == "magic") {
-      //console.log('magic test, showing ver ' + variation);
       // A magic test has two slots: magic-<id>-0 (or 0) is the original, magic-<id>-1 (or 1) the variation.
       const slotKey = String(variation).split('-').pop();
       if (slotKey !== '0' && slotKey !== '1') {
@@ -1515,30 +1500,8 @@ function btGetLocal(c_name) {
   return Object.prototype.hasOwnProperty.call(window.abst.memoryStorage, c_name) ? window.abst.memoryStorage[c_name] : null;
 }
 
-function btDeleteLocal(c_name) {
-  delete window.abst.memoryStorage[c_name];
-  try { localStorage.removeItem(c_name); } catch (e) {}
-  try { sessionStorage.removeItem(c_name); } catch (e) {}
-}
-
 function btIsLocalhost() {
   return (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.endsWith(".local") || location.hostname.endsWith(".test"));
-}
-
-function bt_get_variations(eid) {
-  let variation = [];
-  
-  // Standard element-based variations
-  document.querySelectorAll('[bt-eid="' + eid + '"]').forEach(function(el) {
-    var newVariation = el.getAttribute('bt-variation');
-    // Check if the variation already exists in the array
-    if (variation.indexOf(newVariation) === -1) {
-      variation.push(newVariation);
-      }
-    });
-  
-
-  return variation;
 }
 
 function bt_experiment_w(eid, variation, type, url) {
@@ -1658,7 +1621,6 @@ function abst_process_approved_events() {
   }
 
   if (!queue.length) {
-    //console.log('No queued events to process');
     return true;
   }
 
@@ -1672,7 +1634,6 @@ function abst_process_approved_events() {
     
     if (ok) {
       abstSessionDelete('abstTestDataQueue');
-      //console.log('ABST: Batch sent successfully');
     } else {
       console.info('ABST: Beacon rejected by browser, will retry');
     }
@@ -1708,51 +1669,6 @@ if (!String.prototype.endsWith) {
 }
 
 
-
-//function to find and replace strings uin document, including strings with formatting like strong em, etc
-function bt_replace_all(find, replace, location = 'body') {
-  // Get the element by the provided location
-  const element = document.querySelector(location);
-
-  // Function to recursively replace text
-  function replaceText(node) {
-    if (node.nodeType === Node.TEXT_NODE) { // Check if it's a text node
-      // Replace text, preserving HTML entities by decoding and encoding
-      let text = node.textContent;
-      let div = document.createElement('div');
-      div.innerHTML = text.replace(new RegExp(find, 'gi'), replace);
-      node.textContent = div.textContent || div.innerText || "";
-    } else {
-      // Otherwise, handle all its children nodes
-      node.childNodes.forEach(replaceText);
-    }
-  }
-
-  // Start the text replacement process from the chosen element
-  replaceText(element);
-}
-
-// Usage example:
-//bt_replace_all('find text', 'replace text');
-
-function bt_replace_all_html(find, replace, location = 'body') {
-  // Get the element by the provided location
-  const element = document.querySelector(location);
-
-  // Function to recursively replace HTML
-  function replaceHTML(node) {
-    if (node.nodeType === Node.ELEMENT_NODE) { // Check if it's an element node
-      // Replace HTML, preserving the node structure
-      node.innerHTML = node.innerHTML.split(find).join(replace);
-    } else {
-      // Otherwise, handle all its children nodes
-      node.childNodes.forEach(replaceHTML);
-    }
-  }
-
-  // Start the HTML replacement process from the chosen element
-  replaceHTML(element);
-}
 
 /**
  * Revoke approval for tracking (for testing or when user revokes consent)
@@ -1905,7 +1821,6 @@ function showMagicTest(eid, index,scroll = false) { // called from magic bar so 
     }
     
     if (variation === undefined){
-      //console.error('ABST: No variation found for selector in showMagicTest:', swapElement.selector);
       return; // no match, skip
     }
     if (swapElement.type === 'text' || swapElement.type === 'html') {
@@ -1945,12 +1860,10 @@ function showMagicTest(eid, index,scroll = false) { // called from magic bar so 
 function scrollAndHighlightElement(selector) {
   setTimeout(function(){
     
-  //console.log('scrollAndHighlightElement',selector);
   var firstElements = [];
   if (selector) {
     try {
       firstElements = document.querySelectorAll(selector);
-      //console.log('scrollAndHighlightElement: firstElements',firstElements);
     } catch (e) {
       console.error('ABST: Malformed selector in scrollAndHighlightElement:', selector, '-', e);
       firstElements = [];
@@ -2082,7 +1995,6 @@ function ensureTrackerInitialized() {
           
           // If element is visible and not tracked yet
           if (isAnyVisible) {
-            //console.log('ABST: Element is visible, checking if should fire visit for', eid, variation);
             let shouldFireVisit = false;
             
             // Check cookie to see if we should fire visit event
@@ -2092,7 +2004,6 @@ function ensureTrackerInitialized() {
                 // If we have a valid cookie, don't fire visit event
                 JSON.parse(cookieVal);
                 shouldFireVisit = false;
-                //console.log('ABST: Cookie exists, not firing visit for', eid, variation);
               } catch (e) {
                 console.error('Error parsing cookie for ' + eid, e);
                 shouldFireVisit = true;
@@ -2102,16 +2013,13 @@ function ensureTrackerInitialized() {
               const experimentKey = `${eid}_${variation}`;
               if (this.trackedElements.has(experimentKey)) {
                 shouldFireVisit = false;
-                //console.log('ABST: Already fired visit for experiment', eid, variation, 'from different element');
               } else {
                 shouldFireVisit = true;
-                //console.log('ABST: No cookie found, will fire visit for', eid, variation);
               }
             }
             
             if (shouldFireVisit) {
               try {
-                //console.log('ABST: Firing visit event for', eid, variation);
                 bt_experiment_w(eid, variation, 'visit', false);
                 this.trackedElements.add(key);
                 // Also track the experiment+variation to prevent duplicate visits
@@ -2120,8 +2028,6 @@ function ensureTrackerInitialized() {
                 console.error('Error in bt_experiment_w:', e);
               }
             }
-          } else {
-            //  console.log('ABST: Element not visible for', eid, variation);
           }
         }
       },
@@ -2162,16 +2068,6 @@ function watch_for_tag_event(eid, selector = '[bt-eid="' + eid + '"]', variation
   if (!tracker.active) {
     tracker.start();
   }
-}
-
-function abstContainsHtml(str) {
-  if (!str || typeof str !== 'string') {
-    return false;
-  }
-  // This regex looks for a pattern that starts with '<', is followed by a letter,
-  // and eventually has a '>' character. This is a much more reliable
-  // indicator of an HTML tag than just checking for the brackets separately.
-  return /<[a-z][\s\S]*>/i.test(str);
 }
 
 function abstRedirect(url) {
@@ -2279,7 +2175,6 @@ function checkMagicTestSelectors(node) {
             } else if (swapElement.type === 'attribute') {
               el.setAttribute(swapElement.property, variation);
             }
-            //console.log('ABST: Dynamic Magic swap applied:', swapElement.selector, '->', variation);
           });
         } catch (e) {
           // Selector error, skip
@@ -2324,7 +2219,6 @@ function initAbstDomObserver() {
           
           // Check if the added node itself has bt-eid
           if (node.hasAttribute && node.hasAttribute('bt-eid')) {
-            //console.log('ABST: Found new A/B test element (direct):', node.getAttribute('bt-eid'), node.getAttribute('bt-variation'));
             processNewAbTestElement(node);
             foundNewElements = true;
           }
@@ -2333,7 +2227,6 @@ function initAbstDomObserver() {
           if (node.querySelectorAll) {
             const abElements = node.querySelectorAll('[bt-eid]:not([bt-eid=""])');
             if (abElements.length > 0) {
-              //console.log('ABST: Found', abElements.length, 'new A/B test element(s) in container:', node);
               abElements.forEach(processNewAbTestElement);
               foundNewElements = true;
             }
@@ -2380,8 +2273,6 @@ function processNewAbTestElement(element) {
   
   if (!experimentId || !variation) return;
   
-  //console.log('ABST: Auto-tracking new element:', experimentId, variation);
-  
   // Check if user already has a variation assigned for this experiment
   const cookieVal = abstGetCookie('btab_' + experimentId);
   if (cookieVal) {
@@ -2389,18 +2280,13 @@ function processNewAbTestElement(element) {
       const btab = JSON.parse(cookieVal);
       // If this element matches the user's assigned variation, show it immediately
       if (btab.variation === variation) {
-        //console.log('ABST: Showing dynamic element for assigned variation:', experimentId, variation);
         element.classList.add('bt-show-variation');
-      } else {
-        //console.log('ABST: Dynamic element variation mismatch. User has:', btab.variation, 'Element is:', variation);
       }
     } catch (e) {
       console.error('ABST: Error parsing cookie for dynamic element:', experimentId, e);
     }
-  } else {
-    //console.log('ABST: No variation assigned yet for experiment:', experimentId);
   }
-  
+
   // Add to visibility tracker for visit logging
   const selector = '[bt-eid="' + experimentId + '"][bt-variation="' + variation + '"]';
   watch_for_tag_event(experimentId, selector, variation);
@@ -2421,22 +2307,6 @@ function abst_rescan_for_elements() {
 // Initialize DOM observer immediately - no need to wait for DOMContentLoaded
 // This ensures we catch any dynamically added elements from the very beginning
 initAbstDomObserver();
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
- 
-
 
 //generate short paths
 
@@ -2585,20 +2455,6 @@ function getUniqueSelector(element) {
   
   // STEP 4: Fallback to structural path with nth-child (last resort)
   return generateShortPath(element);
-}
-
-function getPageClass() {
-  var body = document.body;
-  return Array.from(body.classList).find(function(cls) {
-      return cls.startsWith('postid-') || cls.startsWith('page-id-') || cls.startsWith('post-type-archive-');
-  });
-}
-
-// Utility: Prepend page class to a selector
-function scopeSelectorToPage(selector) {
-  var pageClass = getPageClass();
-  if (!pageClass) return selector;
-  return '.' + pageClass + ' ' + selector;
 }
 
 // Scrub HTML that came from an untrusted source (URL parameters, external hand-offs) before
@@ -2888,8 +2744,6 @@ function enableClickTracking(){
   //sample line [timestamp | uuid | url | element_id_or_selector | click_x | click_y | screen_size | meta]
   abstRecordJourneyPageView();
 
-  var trackable_elements = ['a','button','input','textarea','select']; // todo filter this to reduce filesize
-
   //watch for click events on trackable elements  in the dom now or later
     document.addEventListener('click', function(event) {
       if (!window.abst.hasApproval) return;
@@ -3037,28 +2891,15 @@ function getActiveExperiments() {
   return experimentPairs.join(',');
 }
 
-var enable_click_tracking = true;
-var abstHeatmapGateLogged = false;
 var abstJourneyDisabledLogged = false;
 var abstJourneyAdminLogged = false;
-var abstJourneyConsentLogged = false;
   
 function check_heatmap_tracking() {
   if (!window.abst.hasApproval || btab_vars.abst_enable_user_journeys !== '1') return;
 
-  if(typeof btab_vars !== 'undefined' && typeof btab_vars.abst_enable_user_journeys !== 'undefined' && btab_vars.abst_enable_user_journeys === '0') {
-    enable_click_tracking = false;
-    if (!abstHeatmapGateLogged) {
-      console.log('ABST: Heatmap tracking disabled because user journeys are disabled.', {
-        abst_enable_user_journeys: btab_vars.abst_enable_user_journeys
-      });
-      abstHeatmapGateLogged = true;
-    }
-  }
-
   // Heatmaps record on every page (no page gate); only admins are skipped.
   var should_track_heatmap = false;
-  if(enable_click_tracking && typeof btab_vars !== 'undefined') {
+  if(typeof btab_vars !== 'undefined') {
     var current_post_id = window.current_page; //array of post id's or tags if archives 404 etc
 
     if (btab_vars.is_admin) {
@@ -3071,7 +2912,7 @@ function check_heatmap_tracking() {
     }
   }
   // Initialize heatmap tracking if enabled
-  if(enable_click_tracking && should_track_heatmap){
+  if(should_track_heatmap){
     if (!abstGetAdvancedId()) {
       setAbCrypto(); // Create UUID for heatmap tracking
     }
@@ -3081,7 +2922,7 @@ function check_heatmap_tracking() {
       current_page: window.current_page,
       has_approval: window.abst.hasApproval
     });
-  } else if (enable_click_tracking && typeof btab_vars !== 'undefined' && !btab_vars.is_admin) {
+  } else if (typeof btab_vars !== 'undefined' && !btab_vars.is_admin) {
     console.log('ABST: Heatmap tracking not enabled on this page.', {
       url: window.location.href,
       current_page: window.current_page
@@ -3139,17 +2980,6 @@ function flushJourneyData() {
     if (!window.abst.clickRegister[bfKey].uuid) {
       window.abst.clickRegister[bfKey].uuid = currentUuid;
     }
-  }
-
-  // Check if we have approval to send data
-  if (!window.abst.hasApproval) {
-    if (!abstJourneyConsentLogged) {
-      console.log('ABST: Journey data queued but not sent because consent approval is pending.', {
-        wait_for_approval: btab_vars.wait_for_approval
-      });
-      abstJourneyConsentLogged = true;
-    }
-    return;
   }
 
   // Create new batch with metadata line first
