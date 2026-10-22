@@ -100,7 +100,7 @@
                     data: { name: 'magic-welcome', passThrough: true },
                     popover: {
                         title: 'Create a Test',
-                        description: '<strong>Click on any element on the page to begin</strong> your test. Try a headline, button, or image. An orange box will appear around the element to help you identify it.',
+                        description: '<strong>Click on any element on the page to begin</strong> your test. Try a headline, button, or image. A blue outline will appear around the element to help you identify it.',
                         side: 'left',
                         align: 'start',
                         showButtons: ['next', 'close'],

@@ -138,9 +138,10 @@ body[data-builder-window='iframe'] .brx-body [bt-eid],
 }
 
 
+/* Test element: thin dotted brand-teal line (outline, so the page layout doesn't shift) */
 .abst-variation {
-  border: 3px dotted orange;
-  border-radius:5px;
+  outline: 2px dotted #38d7d3;
+  outline-offset: 2px;
   position: relative !important; /* Ensure the badge is anchored to this element */
 }
 
@@ -151,78 +152,60 @@ body[data-builder-window='iframe'] .brx-body [bt-eid],
 }
 
 
-/* Variation marker toolbar - positioned on element */
-.abst-variation-marker {
-  position: absolute;
-  top: -32px;
-  right: -10px;
+/* Element tab: one brand-teal toolbar on a test element's top-left corner with the
+   element's name, the Original / Variation switch and remove. highlighter.js positions it (fixed). */
+.abst-magic-tab {
+  position: fixed;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   box-sizing: border-box;
   max-width: calc(100vw - 16px);
   overflow-x: auto;
-  background: #fff;
-  border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.18), 0 1.5px 4px rgba(44, 62, 80, 0.12);
-  padding: 4px 6px;
-  border: 2px solid #2d7be5;
+  height: 28px;
+  padding: 0 4px;
+  background: #38d7d3;
+  color: #0d1a35;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
   z-index: 100000;
-  font-size: 12px;
-  font-weight: bold;
+  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   white-space: nowrap;
 }
-
-.abst-variation-marker button {
-  border: none !important;
-  background: #e3f2fd !important;
-  color: #2d7be5 !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
-  border-radius: 50% !important;
-  cursor: pointer !important;
-  font-size: 12px !important;
-  font-weight: bold !important;
+.abst-magic-tab.abst-tab-below { border-radius: 0 0 6px 6px; }
+.abst-magic-tab .abst-tab-label { padding: 0 6px 0 4px; }
+.abst-magic-tab .abst-tab-sep { flex: none; width: 1px; height: 14px; margin: 0 4px; background: currentColor; opacity: 0.3; }
+.abst-magic-tab button {
+  appearance: none;
+  flex: none;
+  border: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  border-radius: 4px !important;
   padding: 0 !important;
   margin: 0 !important;
-  line-height: 24px !important;
-  transition: all 0.15s ease;
-  text-align: center !important;
+  box-shadow: none !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  cursor: pointer !important;
 }
-
-.abst-variation-marker button:hover {
-  background: #2d7be5 !important;
-  color: #fff !important;
-}
-
-.abst-variation-marker button.active {
-  background: #2d7be5 !important;
-  color: #fff !important;
-}
-
-.abst-variation-marker .abst-marker-var {
-  width: auto !important;
-  padding: 0 8px !important;
-  border-radius: 12px !important;
-}
-
-.abst-variation-marker .abst-marker-remove {
-  background: #ffebee !important;
-  color: #c62828 !important;
-  margin-left: 4px !important;
-  font-size: 16px !important;
-  line-height: 22px !important;
-}
-
-.abst-variation-marker .abst-marker-remove:hover {
-  background: #c62828 !important;
-  color: #fff !important;
-}
+/* Original / Variation are words, not single letters */
+.abst-magic-tab .abst-marker-var { width: auto !important; padding: 0 7px !important; }
+.abst-magic-tab button:hover { background: rgba(13, 26, 53, 0.12) !important; }
+.abst-magic-tab button.active { background: #0d1a35 !important; color: #38d7d3 !important; }
+.abst-magic-tab .abst-marker-remove:hover { background: #b91c1c !important; color: #fff !important; }
+.abst-magic-tab svg { display: block; width: 14px; height: 14px; }
 
 #variation-picker-container, #variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .magic-test-name {
   display: none;
@@ -758,6 +741,12 @@ html.doing-abst-magic-bar{
   margin-right:35% !important;
 }
 
+/* 100vw/alignfull sections ignore the html margin above and would render
+   under the magic bar: clip them at the squeezed site edge instead */
+html.doing-abst-magic-bar body {
+  overflow-x: clip;
+}
+
 /* Class added via JS to fixed elements when magic bar is active */
 .abst-adjusted-for-magic-bar {
   margin-right: 35% !important;
@@ -842,15 +831,29 @@ html.doing-abst-magic-bar{
   width: calc(100% - 50px);
 }
 
+/* Hover highlight: thin line + name tab */
 #selector-box {
   position: absolute;
-  border: 4px solid orange;
-  padding: 5px;
-  font-size: 14px;
+  box-sizing: border-box;
+  outline: 2px solid #2271b1;
   display: none;
   pointer-events: none;
   z-index: 999999999;
 }
+#selector-box::after {
+  content: attr(data-label);
+  position: absolute;
+  left: -2px;
+  bottom: 100%;
+  margin-bottom: 2px;
+  background: #2271b1;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 3px 3px 0 0;
+  white-space: nowrap;
+  font: 500 11px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#selector-box.abst-sb-nolabel::after { display: none; }
 /* Enhanced Select2 Styling for Magic Bar */
 .abst-page-select-container {
     position: relative;
@@ -859,15 +862,18 @@ html.doing-abst-magic-bar{
     z-index: 99999 !important;
 }
 
-/* Container styles */
-.select2-container {
+/* Container styles. Every select2 rule here is scoped to html.doing-abst-magic-bar: this
+   file loads for editors on the frontend, where page builders run their own select2
+   inside modals, and a global z-index: 99999 !important pushed their dropdowns behind
+   the builder settings lightbox. */
+html.doing-abst-magic-bar .select2-container {
     width: 100% !important;
     min-width: 200px !important;
     z-index: 99999 !important;
 }
 
 /* Single select styles */
-.select2-container--default .select2-selection--single {
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single {
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -878,13 +884,13 @@ html.doing-abst-magic-bar{
 }
 
 /* Hover and focus states */
-.select2-container--default.select2-container--focus .select2-selection--single,
-.select2-container--default .select2-selection--single:hover {
+html.doing-abst-magic-bar .select2-container--default.select2-container--focus .select2-selection--single,
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single:hover {
     border-color: #999;
 }
 
 /* Selected value */
-.select2-container--default .select2-selection--single .select2-selection__rendered {
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single .select2-selection__rendered {
     color: #333;
     line-height: 30px;
     padding-left: 12px;
@@ -892,14 +898,14 @@ html.doing-abst-magic-bar{
 }
 
 /* Dropdown arrow */
-.select2-container--default .select2-selection--single .select2-selection__arrow {
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 34px;
     right: 6px;
     width: 24px;
 }
 
 /* Dropdown styles */
-.select2-dropdown {
+html.doing-abst-magic-bar .select2-dropdown {
     border: 1px solid #ddd !important;
     border-radius: 4px !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
@@ -908,13 +914,13 @@ html.doing-abst-magic-bar{
 }
 
 /* Search field in dropdown */
-.select2-search--dropdown {
+html.doing-abst-magic-bar .select2-search--dropdown {
     padding: 8px;
     background: #f8f9fa;
     border-bottom: 1px solid #eee;
 }
 
-.select2-search--dropdown .select2-search__field {
+html.doing-abst-magic-bar .select2-search--dropdown .select2-search__field {
     border: 1px solid #ddd !important;
     border-radius: 4px !important;
     padding: 6px 10px !important;
@@ -923,13 +929,13 @@ html.doing-abst-magic-bar{
 }
 
 /* Results list */
-.select2-results__options {
+html.doing-abst-magic-bar .select2-results__options {
     max-height: 250px;
     overflow-y: auto;
 }
 
 /* Individual result items */
-.select2-results__option {
+html.doing-abst-magic-bar .select2-results__option {
     padding: 8px 12px !important;
     margin: 0;
     color: #333;
@@ -937,26 +943,26 @@ html.doing-abst-magic-bar{
 }
 
 /* Hover state for items */
-.select2-results__option--highlighted[aria-selected] {
+html.doing-abst-magic-bar .select2-results__option--highlighted[aria-selected] {
     background-color: #f0f7ff !important;
     color: #0066cc !important;
 }
 
 /* Selected item in dropdown */
-.select2-results__option[aria-selected=true] {
+html.doing-abst-magic-bar .select2-results__option[aria-selected=true] {
     background-color: #f8f9fa;
     color: #666;
 }
 
 /* Clear button */
-.select2-selection__clear {
+html.doing-abst-magic-bar .select2-selection__clear {
     color: #999;
     margin-right: 20px;
     float: right;
 }
 
 /* Loading indicator */
-.select2-container--default .select2-selection--single .select2-selection__clear {
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single .select2-selection__clear {
     color: #999;
     cursor: pointer;
     float: right;
@@ -964,14 +970,6 @@ html.doing-abst-magic-bar{
     margin-right: 10px;
 }
 
-#selector-box:where([style*="display: block"], .show) {
-  animation: selector-box-pulse 2s ease-in-out infinite;
-}
-@keyframes selector-box-pulse {
-  0% { border-width: 4px; }
-  50% { border-width: 8px; }
-  100% { border-width: 4px; }
-}
 
 
 
@@ -988,28 +986,17 @@ html.doing-abst-magic-bar{
 
 
 .abst-html-editor {
-  min-height: 150px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #fff;
-  outline: none;
-  margin-bottom: 15px;
-}
-.abst-html-editor:focus {
-  border-color: #007cba;
-  box-shadow: 0 0 0 1px #007cba;
-}
-
-.abst-html-editor {
   display: none;
   width: 100%;
+  box-sizing: border-box;
   min-height: 150px;
   padding: 10px;
-  margin-bottom: 15px;
   font-family: monospace;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 0;
+  background-color: #fff;
+  outline: none;
+  margin: -1px 0 -1px 0;
 }
 
 .abst-editor {
@@ -1053,6 +1040,43 @@ html.doing-abst-magic-bar{
 .abst-editor-toolbar button:hover {
   background: #bdbdbd;
   border:none;
+}
+
+.abst-editor-toolbar {
+  position: relative;
+}
+
+.abst-editor-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  color: #333;
+}
+
+.abst-editor-toolbar button svg {
+  display: block;
+  pointer-events: none;
+}
+
+/* Mode badge: a labeled pill naming the editor you would switch to */
+#abst-magic-bar .abst-editor-toolbar button[data-command="html"] {
+  margin-left: auto;
+  align-self: center;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 999px !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 10px !important;
+  white-space: nowrap;
+}
+
+#abst-magic-bar .abst-editor-toolbar button[data-command="html"]:hover {
+  border-color: #14b8a6 !important;
+  color: #0f766e !important;
 }
 
 
@@ -1099,20 +1123,22 @@ html.doing-abst-magic-bar{
   background-size: 16px 16px;
 }
 
-/* Update the existing .awesomplete styles */
-.awesomplete {
+/* Awesomplete page picker: overrides the bundled default theme (creator.css).
+   Scoped under .abst-page-select-container so it only styles the Magic Bar's
+   picker and wins the specificity tie against creator.css, which loads later. */
+.abst-page-select-container .awesomplete {
     position: relative;
     width: 100%;
     margin-bottom: 10px;
     display: block;
 }
 
-/* Make sure the dropdown is above other elements and properly positioned */
-.awesomplete > ul {
+/* Flat white dropdown (no gradient / speech-bubble arrow) */
+.abst-page-select-container .awesomplete > ul {
   position: absolute;
   z-index: 999999;
   width: 100%;
-  border: 1px solid #ddd;
+  border: 1px solid #aaa;
   border-radius: 4px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   margin: 5px 0 0;
@@ -1120,39 +1146,61 @@ html.doing-abst-magic-bar{
   background: #fff;
   max-height: 300px;
   overflow-y: auto;
+  text-shadow: none;
   left: 0 !important; /* Force left alignment */
   top: 100% !important; /* Position below input */
 }
 
-/* Style for dropdown items */
-.awesomplete > ul > li {
-  padding: 10px 15px;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s ease;
-  position: relative;
+.abst-page-select-container .awesomplete > ul:before {
+  display: none; /* remove the default theme's pointer triangle */
 }
 
-.awesomplete > ul > li:last-child {
+/* Style for dropdown items */
+.abst-page-select-container .awesomplete > ul > li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
+  position: relative;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.abst-page-select-container .awesomplete > ul > li:last-child {
   border-bottom: none;
 }
 
-.awesomplete > ul > li:hover,
-.awesomplete > ul > li[aria-selected="true"] {
-  background-color: #f0f7ff;
-  color: #0066cc;
+/* Active row: solid blue bar with white text */
+.abst-page-select-container .awesomplete > ul > li:hover,
+.abst-page-select-container .awesomplete > ul > li[aria-selected="true"] {
+  background-color: #5897fb;
+  color: #fff;
 }
 
-/* Style for loading message */
-.awesomplete > ul > li:only-child {
+/* Neutralise the default theme's <mark> highlighting */
+.abst-page-select-container .awesomplete mark,
+.abst-page-select-container .awesomplete li:hover mark,
+.abst-page-select-container .awesomplete li[aria-selected="true"] mark {
+  background: transparent;
+  color: inherit;
+}
+
+/* Loading / no-results rows carry an empty data-value: a centred message,
+   never a selectable blue bar (autoFirst would otherwise highlight them). */
+.abst-page-select-container .awesomplete > ul > li[data-value=""],
+.abst-page-select-container .awesomplete > ul > li[data-value=""]:hover,
+.abst-page-select-container .awesomplete > ul > li[data-value=""][aria-selected="true"] {
   text-align: center;
-  padding: 15px;
+  padding: 12px 15px;
   color: #666;
+  background: #fff;
   font-style: italic;
+  cursor: default;
 }
 
 /* Empty state message */
-.awesomplete > ul:empty::before {
+.abst-page-select-container .awesomplete > ul:empty::before {
   content: "Type to search for pages";
   display: block;
   padding: 15px;
@@ -1316,6 +1364,9 @@ html.doing-abst-magic-bar{
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
+  /* Themes pad every input (e.g. padding: 0 12px), which stretches an 18px box into a pill */
+  box-sizing: border-box !important;
+  padding: 0 !important;
   width: 18px !important;
   height: 18px !important;
   min-width: 18px !important;
@@ -1431,6 +1482,27 @@ html.doing-abst-magic-bar{
   transform: translateY(-1px);
 }
 
+#variation-editor-container #imageSelector {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155 !important;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 10px 12px 0;
+  padding: 8px 12px;
+  text-transform: none;
+  transform: none;
+}
+
+#variation-editor-container #imageSelector:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8;
+  transform: none;
+}
+
 /* Goals container */
 .abst-goals-container {
   background: #ffffff;
@@ -1455,6 +1527,7 @@ html.doing-abst-magic-bar{
   padding: 10px 12px;
   background: #f6f7f9;
   border-bottom: 1px solid #e3e7ec;
+  border-radius: 9px 9px 0 0;
 }
 
 .abst-goal-card-title {
@@ -1702,7 +1775,7 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 #abst-magic-bar #abst-variation-editor {
   padding: 0 !important; border: 1px solid #cbd5e1; border-radius: var(--abst-mb-radius); overflow: hidden; background: #fff;
 }
-#abst-magic-bar #abst-variation-editor:focus-within { border-color: var(--abst-mb-accent); box-shadow: 0 0 0 1px var(--abst-mb-accent); }
+#abst-magic-bar #abst-variation-editor:focus-within { border-color: var(--abst-mb-accent) !important; box-shadow: 0 0 0 1px var(--abst-mb-accent); }
 #abst-magic-bar .abst-editor-toolbar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 0; padding: 4px 6px;
   border: 0 !important; border-bottom: 1px solid var(--abst-mb-line) !important; border-radius: 0; background: var(--abst-mb-soft);
@@ -1720,6 +1793,25 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 #abst-magic-bar #abst-variation-editor-container {
   min-height: 110px; padding: 12px 14px !important; border: 0 !important; background: #fff;
   color: var(--abst-mb-ink); font-size: 14px; line-height: 1.5; outline: none;
+  /* Only scroll when there is something to scroll: a permanent scrollbar track
+     down an empty editor reads as a broken box. */
+  max-height: 340px; overflow-y: auto !important;
+}
+
+/* Code editor: the same surface as the visual editor, so it fills the card the same
+   way (flush, square, no border of its own) instead of the bar's form-field textarea. */
+#abst-magic-bar #abst-variation-editor textarea.abst-html-editor {
+  min-height: 190px !important; max-height: 60vh;
+  margin: 0 !important; padding: 12px 14px !important;
+  border: 0 !important; border-radius: 0 !important;
+  background: #fff !important; color: var(--abst-mb-ink) !important;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace !important;
+  resize: vertical; tab-size: 2; white-space: pre-wrap; word-break: break-word;
+}
+/* One ring around the whole card instead of a second one inside it. */
+#abst-magic-bar #abst-variation-editor textarea.abst-html-editor:focus,
+#abst-magic-bar #abst-variation-editor #abst-variation-editor-container:focus {
+  border: 0 !important; box-shadow: none !important; outline: none !important;
 }
 
 
@@ -1772,7 +1864,8 @@ body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
 /* While picking the goal element, the hover outline turns green */
 html.abst-goal-picking body { cursor: crosshair; }
 html.abst-goal-picking #abst-magic-bar { cursor: auto; }
-html.abst-goal-picking #selector-box { border-color: #16a34a; }
+html.abst-goal-picking #selector-box { outline-color: #16a34a; }
+html.abst-goal-picking #selector-box::after { background: #16a34a; }
 
 /* Inputs */
 #abst-magic-bar input[type="text"], #abst-magic-bar input[type="number"], #abst-magic-bar select, #abst-magic-bar textarea:not(.wp-editor-area) {
@@ -1813,13 +1906,26 @@ body.abst-tour-hidden .driver-popover { display: none !important; }
   --driver-popover-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 .abst-magic-tour .driver-popover-title { padding-right: 20px; font-size: 15px; font-weight: 600; color: #1e293b; }
-.abst-magic-tour .driver-popover-close-btn { color: #94a3b8; font-size: 20px; }
-.abst-magic-tour .driver-popover-close-btn:hover, .abst-magic-tour .driver-popover-close-btn:focus { color: #1e293b; }
+/* Close button: themes style every <button> (filled, padded, in flow), so pin it all down */
+.driver-popover.abst-magic-tour button.driver-popover-close-btn {
+  position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important;
+  display: flex !important; align-items: center; justify-content: center;
+  width: 28px !important; height: 28px !important; min-width: 0 !important; min-height: 0 !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 6px !important;
+  background: transparent !important; box-shadow: none !important; text-shadow: none !important; outline: none !important;
+  color: #94a3b8 !important; font: 400 20px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  letter-spacing: 0 !important; text-transform: none !important; text-decoration: none !important;
+  cursor: pointer; transition: background-color .15s, color .15s;
+}
+/* driver.js focuses this button on every step, so focus gets the hover look, not a ring */
+.driver-popover.abst-magic-tour button.driver-popover-close-btn:hover,
+.driver-popover.abst-magic-tour button.driver-popover-close-btn:focus-visible { background: #f1f5f9 !important; color: #1e293b !important; }
 .abst-magic-tour .driver-popover-description { color: #334155; font-size: 13px; line-height: 1.5; }
 .abst-magic-tour .driver-popover-footer { margin-top: 12px; }
 .abst-magic-tour .driver-popover-navigation-btns button + button { margin-left: 6px; }
 .abst-magic-tour .driver-popover-footer-btn {
   padding: 7px 14px; border: 1px solid #2271b1; border-radius: 6px; background: #2271b1; color: #fff; font-size: 13px; font-weight: 600;
+  line-height: 1.3; text-shadow: none;
 }
 .abst-magic-tour .driver-popover-footer-btn:hover, .abst-magic-tour .driver-popover-footer-btn:focus { background: #135e96; border-color: #135e96; color: #fff; }
 .abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary { background: #fff; color: #334155; border-color: #cbd5e1; }
@@ -1854,7 +1960,7 @@ body.abst-tour-hidden .driver-popover { display: none !important; }
   /* Page overlays (variation marker 100000, Hide/Move popover 999999) must not float over the
      drawer; the bar's own dropdowns (appended to body) must stay above it. The tour sits higher still. */
   html body:not(.admin-bar) #abst-magic-bar, html body.admin-bar #abst-magic-bar { z-index: 1000000; }
-  .select2-container--open .select2-dropdown, .select2-container--open, .abst-page-select-container, .abst-page-select-container .awesomplete > ul { z-index: 1000001 !important; }
+  html.doing-abst-magic-bar .select2-container--open .select2-dropdown, html.doing-abst-magic-bar .select2-container--open, .abst-page-select-container, .abst-page-select-container .awesomplete > ul { z-index: 1000001 !important; }
   #abst-magic-bar .abst-magic-drawer-handle {
     display: flex; justify-content: center; align-items: center; flex: none;
     height: 22px; cursor: grab; touch-action: none; border-radius: 16px 16px 0 0;

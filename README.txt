@@ -188,6 +188,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/ab-sp
 9. Every test at a glance: visits, conversions and conversion rate for the original and the variation, with its status.
 10. The Developer tab: the MCP tools and REST API endpoints your AI agent can use.
 11. Creating a test: choose point-and-click, full-page or on-page elements.
+12. Heatmaps for a full-page split test: see where visitors click on each version.
 
 == Changelog ==
 

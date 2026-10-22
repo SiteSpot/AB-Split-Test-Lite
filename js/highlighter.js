@@ -1099,13 +1099,14 @@ function selectorDetection(){
                 return;
             }
             var pickRect = pickElement.getBoundingClientRect();
+            box.attr('data-label', 'Goal · click to pick').removeClass('abst-sb-nolabel');
+            box.data('abstHoverEl', pickElement);
             box.css({
                 zIndex: '158000',
-                top: pickRect.top + window.scrollY - 10,
-                left: pickRect.left + window.scrollX - 10,
-                width: pickRect.width + 20,
-                height: pickRect.height + 20,
-                borderRadius: '10px'
+                top: pickRect.top + window.scrollY,
+                left: pickRect.left + window.scrollX,
+                width: pickRect.width,
+                height: pickRect.height
             });
             box.show();
             lastProcessedElement = null;
@@ -1156,13 +1157,16 @@ function selectorDetection(){
         
         // Get position of element to display a box around
         var rect = element.getBoundingClientRect();
+        box.attr('data-label', (elementType === 'image' ? 'Image' : 'Text') + ' · click to edit');
+        // Already a test element: its own tab carries the name, so hover shows the line only
+        box.toggleClass('abst-sb-nolabel', jQuery(element).hasClass('abst-variation'));
+        box.data('abstHoverEl', element);
         box.css({
             zIndex: '158000',
-            top: rect.top + window.scrollY - 10,
-            left: rect.left + window.scrollX - 10,
-            width: rect.width + 20,
-            height: rect.height + 20,
-            borderRadius: '10px'
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+            height: rect.height
         });
         box.show();
         
@@ -1821,8 +1825,8 @@ function abst_magic_bar(options = {}) {
         <div class="abst-magic-tab-panel is-active" id="abst-magic-panel-test" data-tab-panel="test">
         <!-- Click to start help -->
         <div class="abst-settings-column click-to-start-help">
-            <h3 style="color: #9e9e9e;">Create a Split Test.</h3>
-            <p style="font-size: 24px; line-height: 1.25; margin: 40px 0 8px;">To start: Click the element you want to change.</p>
+            <h3>Create a Split Test.</h3>
+            <p>To start: Click the element you want to change.</p>
         </div>
         <!-- Test Name - Hidden until test starts -->
         <div class="abst-settings-column magic-test-name" style="padding: 8px 15px; display: none; align-items: center; gap: 10px;">
@@ -2015,8 +2019,9 @@ function abst_magic_bar(options = {}) {
             { command: 'underline', text: 'U', title: 'Underline' },
             { command: 'insertUnorderedList', text: '• List', title: 'Bullet List' },
             { command: 'insertOrderedList', text: '1. List', title: 'Numbered List' },
-            { command: 'createLink', text: '🔗', title: 'Insert Link' },
-            { command: 'html', text: '</>', title: 'HTML Mode', htmlButton: true }
+            { command: 'createLink', html: '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 9 3.5L8 4.5M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5L8 11.5"/></svg>', title: 'Insert Link' },
+            // Labeled mode badge: always names the mode you'd switch to
+            { command: 'html', text: 'Code Editor', title: 'Switch to the code editor', htmlButton: true }
         ];
         
         // Add HTML editor textarea
@@ -2042,7 +2047,7 @@ function abst_magic_bar(options = {}) {
         buttons.forEach(btn => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.textContent = btn.text;
+            if (btn.html) { button.innerHTML = btn.html; } else { button.textContent = btn.text; }
             button.title = btn.title;
             button.dataset.command = btn.command;
             button.onclick = (e) => {
@@ -2085,8 +2090,8 @@ function abst_magic_bar(options = {}) {
             // Switch to WYSIWYG mode
             editor.style.display = '';
             htmlEditor.style.display = 'none';
-            button.textContent = '</>';
-            button.title = 'HTML Mode';
+            button.textContent = 'Code Editor';
+            button.title = 'Switch to the code editor';
             
             // Nothing to copy back: the textarea writes into the editor as you type.
             // Copying here overwrote an element loaded while HTML mode was open.
@@ -2094,8 +2099,8 @@ function abst_magic_bar(options = {}) {
             // Switch to HTML mode
             editor.style.display = 'none';
             htmlEditor.style.display = 'block';
-            button.textContent = '👁️';
-            button.title = 'Switch to WYSIWYG Editor';
+            button.textContent = 'Visual Editor';
+            button.title = 'Switch to the visual editor';
             
             // Update HTML content from editor
             htmlEditor.value = window.abstEditor.innerHTML;
@@ -2325,6 +2330,8 @@ function adjustFixedElementsForMagicBar(activate) {
         // Skip elements in the magic bar itself
         if (element.closest('#abst-magic-bar')) return;
         if (element.closest('#wpadminbar')) return;
+        // Our own overlays (element tabs, hover line) are fixed too, but must keep their size
+        if (element.closest('.abst-variation-marker, #selector-box')) return;
         
         const style = window.getComputedStyle(element);
         const position = style.getPropertyValue('position');
@@ -2865,13 +2872,28 @@ function addVariationMarker($element, definition, defIndex) {
     buttonsHtml += '<button class="abst-marker-var' + (currentVariation === 0 ? ' active' : '') + '" data-var="0" data-def="' + defIndex + '" title="Show the Original">Original</button>';
     buttonsHtml += '<button class="abst-marker-var' + (currentVariation === 1 ? ' active' : '') + '" data-var="1" data-def="' + defIndex + '" title="Show the Variation">Variation</button>';
 
-    // Add remove button
-    buttonsHtml += '<button class="abst-marker-remove" data-def="' + defIndex + '" title="Remove element from test">×</button>';
-    
-    var $marker = jQuery('<div class="abst-variation-marker" data-def-index="' + defIndex + '">' + buttonsHtml + '</div>');
+    // Remove, set apart so it isn't hit by mistake
+    buttonsHtml += '<span class="abst-tab-sep" aria-hidden="true"></span><button class="abst-marker-remove" data-def="' + defIndex + '" title="Remove element from test" aria-label="Remove element from test">' + ABST_TAB_ICON_REMOVE + '</button>';
+
+    var label = (definition && definition.type === 'image') ? 'Image' : 'Text';
+    var $marker = jQuery('<div class="abst-variation-marker abst-magic-tab" data-def-index="' + defIndex + '">' +
+        '<span class="abst-tab-label">' + label + '</span>' + buttonsHtml + '</div>');
     $marker.data('abstTargetElement', $element[0]);
     jQuery('body').append($marker);
     positionVariationMarker($marker, $element);
+    abstDropHoverLabelFor($element[0]);
+}
+
+// Stroked icon, centred in its button (a text × sat off-centre)
+var ABST_TAB_ICON_REMOVE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+// Once an element has its own tab, the hover box's "click to edit" label would sit on top of
+// it (the mouse hasn't moved since the click), so keep only the line
+function abstDropHoverLabelFor(element) {
+    var $box = jQuery('#selector-box');
+    if ($box.length && element && $box.data('abstHoverEl') === element) {
+        $box.addClass('abst-sb-nolabel');
+    }
 }
 
 function positionVariationMarker($marker, $element) {
@@ -2897,11 +2919,12 @@ function positionVariationMarker($marker, $element) {
         adminBarHeight = $adminBar.outerHeight() || 0;
     }
 
+    // A tab sitting on the element's top-left corner, flush with its 2px outline (offset 2px)
     var safeTop = Math.max(margin, adminBarHeight + margin);
-    var topPosition = elementRect.top - markerHeight - 6;
-    var bottomPosition = elementRect.bottom + 6;
+    var topPosition = elementRect.top - markerHeight - 2;
+    var bottomPosition = elementRect.bottom + 2;
 
-    var viewportLeft = elementRect.right - markerWidth + 10;
+    var viewportLeft = elementRect.left - 4;
     var viewportTop = (topPosition < safeTop) ? bottomPosition : topPosition;
 
     viewportLeft = Math.max(margin, Math.min(viewportLeft, viewportWidth - markerWidth - margin));
@@ -2912,7 +2935,7 @@ function positionVariationMarker($marker, $element) {
         right: 'auto',
         top: viewportTop + 'px',
         display: 'inline-flex'
-    });
+    }).toggleClass('abst-tab-below', topPosition < safeTop);
 }
 
 function repositionVariationMarkers() {
