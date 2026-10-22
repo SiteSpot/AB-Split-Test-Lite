@@ -71,10 +71,6 @@ function abst_build_winner_email_data( $experiment, $observations ) {
     $winner_conf    = isset( $observations['bt_bb_ab_stats']['probability'] )
         ? (float) $observations['bt_bb_ab_stats']['probability']
         : 0.0;
-    $variation_meta = get_post_meta( $test_id, 'variation_meta', true );
-    if ( ! is_array( $variation_meta ) ) {
-        $variation_meta = array();
-    }
 
     $test_age_days = max( 1, (int) ( ( time() - get_post_time( 'U', true, $experiment ) ) / 86400 ) );
 
@@ -88,7 +84,7 @@ function abst_build_winner_email_data( $experiment, $observations ) {
         $conversions = isset( $row['conversion'] ) ? (float) $row['conversion'] : 0.0;
         $variations[ (string) $key ] = array(
             'key'         => (string) $key,
-            'label'       => abst_get_variation_label( $key, $variation_meta ),
+            'label'       => abst_get_variation_label( $key, $test_id ),
             'visits'      => $visits,
             'conversions' => $conversions,
             'rate'        => ( $visits > 0 ) ? ( $conversions / $visits ) : 0.0, // fraction (0..1)
@@ -180,7 +176,7 @@ function abst_build_winner_email_data( $experiment, $observations ) {
         'variations'        => $variations,
         'control_key'       => $control_key,
         'winner_key'        => $winner_key,
-        'winner_label'      => $variations[ $winner_key ]['label'] ?? abst_get_variation_label( $winner_key, $variation_meta ),
+        'winner_label'      => $variations[ $winner_key ]['label'] ?? abst_get_variation_label( $winner_key, $test_id ),
         'winner_conf'       => $winner_conf,
         'winner_is_control' => $winner_is_control,
         'winner_uplift'     => $winner_uplift,

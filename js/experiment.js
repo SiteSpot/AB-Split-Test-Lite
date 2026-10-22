@@ -52,7 +52,6 @@ window.acattrs = {
 
           q: params.term, // search query
 
-          type:'control', // or 'variations'
 
           action: 'abst_page_selector', // AJAX action for admin-ajax.php
 
@@ -181,11 +180,11 @@ jQuery(document).ready(function() {
 
   // remove conversion page options with duplicate values
 
-  jQuery("#page_variations option").each(function(){
+  jQuery("#variation_page option").each(function(){
 
     //find options with duplicate values and remove them
 
-      jQuery("#page_variations").find("option[value='"+jQuery(this).val()+"']").eq(1).remove(); // eq 1 means the second value, not the first cause we want it
+      jQuery("#variation_page").find("option[value='"+jQuery(this).val()+"']").eq(1).remove(); // eq 1 means the second value, not the first cause we want it
 
   });
 
@@ -244,7 +243,7 @@ jQuery(document).ready(function() {
 
 
 
-    // #page_variations is a single select: the one variation page of a full page test.
+    // #variation_page is a single select: the one variation page of a full page test.
     window.acattrs.placeholder = 'Choose the variation page...';
 
     window.acattrs['ajax'] = {
@@ -261,7 +260,6 @@ jQuery(document).ready(function() {
 
             q: params.term, // search query
 
-            type:'variations', // 'control' or 'variations'
 
             action: 'abst_page_selector', // AJAX action for admin-ajax.php
 
@@ -303,15 +301,15 @@ jQuery(document).ready(function() {
 
 
 
-  jQuery( '#page_variations' ).select2(window.acattrs);
+  jQuery( '#variation_page' ).select2(window.acattrs);
 
 
 
-  function validatePageVariations() {
+  function validateVariationPage() {
 
     var defaultPage = jQuery('#bt_experiments_full_page_default_page').val();
 
-    var variationPage = jQuery('#page_variations').val() || '';
+    var variationPage = jQuery('#variation_page').val() || '';
 
 
 
@@ -327,7 +325,7 @@ jQuery(document).ready(function() {
 
         alert('A page cannot be both the original and the variation. The variation page has been cleared.');
 
-        jQuery('#page_variations').val('').trigger('change.select2'); // Clear value and refresh Select2 UI
+        jQuery('#variation_page').val('').trigger('change.select2'); // Clear value and refresh Select2 UI
 
     }
 
@@ -337,9 +335,9 @@ jQuery(document).ready(function() {
 
   // Validate when a variation is selected or removed.
 
-  jQuery('#page_variations').on('change', function () {
+  jQuery('#variation_page').on('change', function () {
 
-      validatePageVariations();
+      validateVariationPage();
 
   });
 
@@ -349,7 +347,7 @@ jQuery(document).ready(function() {
 
   jQuery('#bt_experiments_full_page_default_page').on('change', function() {
 
-      validatePageVariations();
+      validateVariationPage();
 
   });
 
@@ -357,7 +355,7 @@ jQuery(document).ready(function() {
 
   // Initial validation on page load.
 
-  validatePageVariations();
+  validateVariationPage();
 
 
 
@@ -999,13 +997,16 @@ jQuery(document).ready(function() {
 
     magicVars = JSON.parse(magicVars);
 
-    if(magicVars && magicVars[0] && magicVars[0].variations && magicVars[0].variations[index] !== undefined){
+    // Row 0 is the original's text, row 1 the variation's.
+    var magicText = (magicVars && magicVars[0]) ? (index === 0 ? magicVars[0].original : (index === 1 ? magicVars[0].variation : undefined)) : undefined;
 
-      if(magicVars[0].variations[index] !== '') {
+    if(magicText !== undefined){
+
+      if(magicText !== '') {
 
         var varText = document.createElement('p');
         varText.className = 'seen-on-text';
-        varText.textContent = '"' + magicVars[0].variations[index] + '"';
+        varText.textContent = '"' + magicText + '"';
         jQuery(el).next('.seen-on').prepend(varText);
 
       } else {
@@ -1248,11 +1249,11 @@ for (let observationKey in abtestChartData.observations) {
 
 
 
-    // Ensure variation_meta exists before accessing it
+    // Ensure row_meta exists before accessing it
 
-    if(observation.variation_meta === undefined){
+    if(observation.row_meta === undefined){
 
-      observation.variation_meta = {};
+      observation.row_meta = {};
 
     }
 
@@ -1275,9 +1276,9 @@ for (let observationKey in abtestChartData.observations) {
 
     var variationLabel = observationKey;
 
-    if(abtestChartData.observations[observationKey]['variation_meta'] && abtestChartData.observations[observationKey]['variation_meta']['label']){  
+    if(abtestChartData.observations[observationKey]['row_meta'] && abtestChartData.observations[observationKey]['row_meta']['label']){  
 
-      variationLabel = abtestChartData.observations[observationKey]['variation_meta']['label'];
+      variationLabel = abtestChartData.observations[observationKey]['row_meta']['label'];
 
     }
 
@@ -1304,9 +1305,9 @@ for (let observationKey in abtestChartData.observations) {
 
     var link = '';
 
-    if(abtestChartData.observations[observationKey]['variation_meta'] && abtestChartData.observations[observationKey]['variation_meta']['link']){
+    if(abtestChartData.observations[observationKey]['row_meta'] && abtestChartData.observations[observationKey]['row_meta']['link']){
 
-      link = abtestChartData.observations[observationKey]['variation_meta']['link'];
+      link = abtestChartData.observations[observationKey]['row_meta']['link'];
 
       
 
@@ -1316,7 +1317,7 @@ for (let observationKey in abtestChartData.observations) {
 
         console.log(abtestChartData);
 
-        var varMeta = abtestChartData.observations[observationKey]['variation_meta'];
+        var varMeta = abtestChartData.observations[observationKey]['row_meta'];
 
         if(varMeta.eid && varMeta.variation && varMeta.page_id) {
 
@@ -1423,9 +1424,9 @@ new Tabulator("#abst-results-table", {
 
         //send to wp ajax to save variation label
 
-        abtestChartData.observations[cell.getRow().getData().id].variation_meta = abtestChartData.observations[cell.getRow().getData().id].variation_meta || {};
+        abtestChartData.observations[cell.getRow().getData().id].row_meta = abtestChartData.observations[cell.getRow().getData().id].row_meta || {};
 
-        abtestChartData.observations[cell.getRow().getData().id].variation_meta[cell.getField()] = cell.getValue();
+        abtestChartData.observations[cell.getRow().getData().id].row_meta.label = cell.getValue();
 
         jQuery.ajax({
 
@@ -1448,6 +1449,14 @@ new Tabulator("#abst-results-table", {
           },
 
           success: function(response){
+
+            if (!response || !response.success) {
+
+              console.log('error saving label', response);
+
+              return;
+
+            }
 
             console.log('saved label');
 
@@ -1785,15 +1794,15 @@ for (var key in observations) {
 
       
 
-      // Priority order: variation_meta.label > variant.name > key
+      // Priority order: row_meta.label > variant.name > key
 
       var labelText = key; // Default fallback
 
       
 
-      if(variant.variation_meta && variant.variation_meta.label) {
+      if(variant.row_meta && variant.row_meta.label) {
 
-        labelText = decodeHtmlEntities(variant.variation_meta.label);
+        labelText = decodeHtmlEntities(variant.row_meta.label);
 
       } else if(variant.name) {
 
@@ -2133,9 +2142,9 @@ function refreshTestPages(){
 
   if(defaultPage){
 
-    if(jQuery("#page_variations").val() === defaultPage){
+    if(jQuery("#variation_page").val() === defaultPage){
 
-      jQuery("#page_variations").val('').trigger('change');
+      jQuery("#variation_page").val('').trigger('change');
 
     }
 
@@ -2251,7 +2260,7 @@ function updateDescription(full = true) {
 
 
 
-  // Calculate the description based on the percentage giving examples for 2 3 and 4 variations
+  // Describe the share of visitors in the test
 
   if(percentage < 100)
 

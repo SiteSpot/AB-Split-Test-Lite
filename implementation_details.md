@@ -126,6 +126,6 @@ The experiment editor uses WordPress post-updated notices, but `abst_experiments
 
 AB Split Test Lite ships only the features it runs; Pro-only features are absent from the code rather than stubbed, hidden or capped. See mental_model.md, "Two-way tests" and "Lite version architecture".
 
-- **Two versions per test**: magic `variations` is `[original, variation]` (validated in `bt-bb-ab-validation.php`, error `invalid_magic_variations`), full-page `page_variations` holds one entry (single `<select>` in the editor), and on-page elements carry `bt-variation="original|variation"` via `abst_normalize_onpage_variation()`.
-- **No limits on what ships**: tests are unlimited; nothing forces tests to draft, slices variation arrays or caps settings on save.
+- **Two versions per test, as named fields**: each magic element has `original` and `variation` strings (validated in `bt-bb-ab-validation.php`, errors `missing_magic_original` / `missing_magic_variation`), a full-page test stores one `variation_page` page ID (single `<select>` in the editor, `variation_page` in the API), and on-page elements carry `bt-variation="original|variation"` via `abst_normalize_onpage_variation()`. No list of variations is stored, accepted or sent to the front end.
+- **No limits on what ships**: tests are unlimited; nothing forces tests to draft or caps settings on save.
 - **Upsell**: Pro (including A/B/n tests with several variations) is mentioned only as information in the readme and the settings-page notice.

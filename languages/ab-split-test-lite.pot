@@ -9,17 +9,17 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-21T22:28:28+00:00\n"
+"POT-Creation-Date: 2026-10-22T15:47:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ab-split-test-lite\n"
 
 #. Plugin Name of the plugin
 #: bt-bb-ab.php
-#: bt-bb-ab-core.php:6872
-#: bt-bb-ab-core.php:6876
-#: bt-bb-ab-core.php:6878
-#: bt-bb-ab-core.php:6930
+#: bt-bb-ab-core.php:6549
+#: bt-bb-ab-core.php:6553
+#: bt-bb-ab-core.php:6555
+#: bt-bb-ab-core.php:6607
 msgid "AB Split Test Lite"
 msgstr ""
 
@@ -35,14 +35,14 @@ msgstr ""
 
 #. Author of the plugin
 #: bt-bb-ab.php
-#: bt-bb-ab-core.php:6874
+#: bt-bb-ab-core.php:6551
 #: modules/support/bricks/bricks.php:81
 #: modules/support/elementor.php:35
 msgid "AB Split Test"
 msgstr ""
 
 #: admin/bt-bb-ab-admin.php:131
-#: bt-bb-ab-core.php:12631
+#: bt-bb-ab-core.php:12218
 msgid "Settings"
 msgstr ""
 
@@ -64,7 +64,7 @@ msgstr ""
 msgid "Learn more"
 msgstr ""
 
-#: admin/partials/single-site-display.php:927
+#: admin/partials/single-site-display.php:921
 msgid "Save Settings"
 msgstr ""
 
@@ -99,129 +99,129 @@ msgstr ""
 msgid "Tag this as the Original or the Variation."
 msgstr ""
 
-#: bt-bb-ab-core.php:1364
+#: bt-bb-ab-core.php:1352
 msgid "Magic test not saved"
 msgstr ""
 
-#: bt-bb-ab-core.php:4148
+#: bt-bb-ab-core.php:3993
 msgid "User roles"
 msgstr ""
 
-#: bt-bb-ab-core.php:6651
+#: bt-bb-ab-core.php:6329
 msgid "Choose what counts as a conversion: a visitor reaching a page (such as a thank-you or order-complete page), or clicking an element."
 msgstr ""
 
-#: bt-bb-ab-core.php:6656
+#: bt-bb-ab-core.php:6334
 msgid "Page or post visit"
 msgstr ""
 
-#: bt-bb-ab-core.php:6657
+#: bt-bb-ab-core.php:6335
 msgid "Element click"
 msgstr ""
 
-#: bt-bb-ab-core.php:6706
+#: bt-bb-ab-core.php:6384
 msgid "Element to click"
 msgstr ""
 
-#: bt-bb-ab-core.php:6707
+#: bt-bb-ab-core.php:6385
 msgid "A CSS selector: a button such as .buy-button, or a link such as a[href*=\"calendly.com\"]. Elements with this class also count:"
 msgstr ""
 
-#: bt-bb-ab-core.php:6880
+#: bt-bb-ab-core.php:6557
 msgid "AB Split Test  Archives"
 msgstr ""
 
-#: bt-bb-ab-core.php:6882
+#: bt-bb-ab-core.php:6559
 msgid "AB Split Test  Attributes"
 msgstr ""
 
-#: bt-bb-ab-core.php:6884
+#: bt-bb-ab-core.php:6561
 msgid "Parent  AB Split Test Lite"
 msgstr ""
 
-#: bt-bb-ab-core.php:6886
+#: bt-bb-ab-core.php:6563
 msgid "All AB Split Tests "
 msgstr ""
 
-#: bt-bb-ab-core.php:6888
+#: bt-bb-ab-core.php:6565
 msgid "New Split Test"
 msgstr ""
 
-#: bt-bb-ab-core.php:6890
-#: bt-bb-ab-core.php:6892
+#: bt-bb-ab-core.php:6567
+#: bt-bb-ab-core.php:6569
 msgid "New Split Test "
 msgstr ""
 
-#: bt-bb-ab-core.php:6894
+#: bt-bb-ab-core.php:6571
 msgid "Edit Split Test "
 msgstr ""
 
-#: bt-bb-ab-core.php:6896
+#: bt-bb-ab-core.php:6573
 msgid "Update AB Split Test "
 msgstr ""
 
-#: bt-bb-ab-core.php:6898
+#: bt-bb-ab-core.php:6575
 msgid "View"
 msgstr ""
 
-#: bt-bb-ab-core.php:6900
+#: bt-bb-ab-core.php:6577
 msgid "View Tests"
 msgstr ""
 
-#: bt-bb-ab-core.php:6902
+#: bt-bb-ab-core.php:6579
 msgid "Search Tests"
 msgstr ""
 
-#: bt-bb-ab-core.php:6904
+#: bt-bb-ab-core.php:6581
 msgid "Not found"
 msgstr ""
 
-#: bt-bb-ab-core.php:6906
+#: bt-bb-ab-core.php:6583
 msgid "Not found in Trash"
 msgstr ""
 
-#: bt-bb-ab-core.php:6908
+#: bt-bb-ab-core.php:6585
 msgid "Featured Image"
 msgstr ""
 
-#: bt-bb-ab-core.php:6910
+#: bt-bb-ab-core.php:6587
 msgid "Set featured image"
 msgstr ""
 
-#: bt-bb-ab-core.php:6912
+#: bt-bb-ab-core.php:6589
 msgid "Remove featured image"
 msgstr ""
 
-#: bt-bb-ab-core.php:6914
+#: bt-bb-ab-core.php:6591
 msgid "Use as featured image"
 msgstr ""
 
-#: bt-bb-ab-core.php:6916
+#: bt-bb-ab-core.php:6593
 msgid "Insert into item"
 msgstr ""
 
-#: bt-bb-ab-core.php:6918
+#: bt-bb-ab-core.php:6595
 msgid "Uploaded to this item"
 msgstr ""
 
-#: bt-bb-ab-core.php:6920
+#: bt-bb-ab-core.php:6597
 msgid "Test list"
 msgstr ""
 
-#: bt-bb-ab-core.php:6922
+#: bt-bb-ab-core.php:6599
 msgid "Test list navigation"
 msgstr ""
 
-#: bt-bb-ab-core.php:6924
+#: bt-bb-ab-core.php:6601
 msgid "Filter Test list"
 msgstr ""
 
-#: bt-bb-ab-core.php:6932
+#: bt-bb-ab-core.php:6609
 msgid "Page Builder AB Split Test Lite"
 msgstr ""
 
 #. translators: %s: number of ideas.
-#: bt-bb-ab-core.php:6989
+#: bt-bb-ab-core.php:6666
 #, php-format
 msgid "Idea <span class=\"count\">(%s)</span>"
 msgid_plural "Ideas <span class=\"count\">(%s)</span>"
@@ -229,48 +229,48 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of completed tests.
-#: bt-bb-ab-core.php:7012
+#: bt-bb-ab-core.php:6689
 #, php-format
 msgid "Test Complete <span class=\"count\">(%s)</span>"
 msgid_plural "Tests Complete <span class=\"count\">(%s)</span>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: bt-bb-ab-core.php:7290
+#: bt-bb-ab-core.php:6967
 #: modules/support/breakdance.php:48
 msgid "Create a new test"
 msgstr ""
 
-#: bt-bb-ab-core.php:7592
+#: bt-bb-ab-core.php:7269
 msgid "Search for a page…"
 msgstr ""
 
-#: bt-bb-ab-core.php:7592
+#: bt-bb-ab-core.php:7269
 msgid "Copied!"
 msgstr ""
 
-#: bt-bb-ab-core.php:12632
+#: bt-bb-ab-core.php:12219
 msgid "Go Pro"
 msgstr ""
 
-#: bt-bb-ab-core.php:12645
+#: bt-bb-ab-core.php:12232
 msgid "Documentation"
 msgstr ""
 
-#: bt-bb-ab-core.php:13056
+#: bt-bb-ab-core.php:12643
 msgid "Click heatmap"
 msgstr ""
 
-#: bt-bb-ab-core.php:13057
+#: bt-bb-ab-core.php:12644
 msgid "Scroll map"
 msgstr ""
 
-#: bt-bb-ab-core.php:13060
+#: bt-bb-ab-core.php:12647
 msgid "Map"
 msgstr ""
 
 #. translators: %d: number of days of heatmap history to show.
-#: bt-bb-ab-core.php:13080
+#: bt-bb-ab-core.php:12667
 #, php-format
 msgid "Last %d day"
 msgid_plural "Last %d days"
@@ -278,41 +278,41 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of visitors.
-#: bt-bb-ab-core.php:15624
+#: bt-bb-ab-core.php:15115
 #, php-format
 msgid " (about %s more visitors)"
 msgstr ""
 
 #. translators: %s: number of visitors.
-#: bt-bb-ab-core.php:15629
+#: bt-bb-ab-core.php:15120
 #, php-format
 msgid "Collecting data. %s visitors so far."
 msgstr ""
 
-#: bt-bb-ab-core.php:15633
+#: bt-bb-ab-core.php:15124
 msgid "No winner yet."
 msgstr ""
 
 #. translators: 1: days, 2: visitors clause.
-#: bt-bb-ab-core.php:15637
+#: bt-bb-ab-core.php:15128
 #, php-format
 msgid "About %1$d days%2$s until a winner can be called."
 msgstr ""
 
 #. translators: %s: confidence percentage.
-#: bt-bb-ab-core.php:15640
+#: bt-bb-ab-core.php:15131
 #, php-format
 msgid "Nearly complete. A winner should be called soon (%s%% confidence)."
 msgstr ""
 
 #. translators: %d: days.
-#: bt-bb-ab-core.php:15644
+#: bt-bb-ab-core.php:15135
 #, php-format
 msgid "About %d more days needed at this traffic. More traffic would settle it sooner."
 msgstr ""
 
 #. translators: %d: days.
-#: bt-bb-ab-core.php:15648
+#: bt-bb-ab-core.php:15139
 #, php-format
 msgid "Too close to call after %d days. A bolder change is more likely to show a difference."
 msgstr ""

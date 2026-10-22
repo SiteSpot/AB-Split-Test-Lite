@@ -32,7 +32,7 @@ function abst_schedule_winner_check() {
 function abst_find_test_winner( $test ) {
 	global $abst_btab;
 
-	$observations = get_post_meta( $test->ID, 'observations', true );
+	$observations = abst_current_version_observations( get_post_meta( $test->ID, 'observations', true ), $test->ID );
 	if ( empty( $observations ) || ! is_array( $observations ) ) {
 		return null;
 	}

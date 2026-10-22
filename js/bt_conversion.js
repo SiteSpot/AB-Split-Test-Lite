@@ -678,8 +678,9 @@ function abstMainInit() {
 
       //full page test handler: on the original page or the variation page
       var onPage = function (pageId) { return typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.some(page => String(page) === String(pageId)); };
+      var variationPage = String(experiment.variation_page || '');
       var onDefaultPage = experiment.test_type == 'full_page' && onPage(experiment.full_page_default_page);
-      var onVariationPage = experiment.test_type == 'full_page' && !onDefaultPage && Object.keys(experiment.page_variations || {}).some(onPage);
+      var onVariationPage = experiment.test_type == 'full_page' && !onDefaultPage && variationPage !== '' && onPage(variationPage);
       if (onDefaultPage || onVariationPage) {
         //add original do nothing variation
         var div = document.createElement('div');
@@ -688,17 +689,17 @@ function abstMainInit() {
         div.setAttribute('bt-variation', experiment.full_page_default_page);
         div.setAttribute('bt-eid', experimentId);
         document.body.appendChild(div);
-        //foreach variation
-        Object.entries(experiment.page_variations).forEach(function([varId, variation]) {
-          var div = document.createElement('div');
-          div.className = 'bt-redirect-handle';
-          div.style.display = 'none';
-          div.setAttribute('bt-variation', varId);
-          div.setAttribute('bt-eid', experimentId);
+        //the variation page
+        if (variationPage !== '') {
+          var variationDiv = document.createElement('div');
+          variationDiv.className = 'bt-redirect-handle';
+          variationDiv.style.display = 'none';
+          variationDiv.setAttribute('bt-variation', variationPage);
+          variationDiv.setAttribute('bt-eid', experimentId);
           if (onDefaultPage) // on the variation page the visitor is already where the variation lives: no redirect
-            div.setAttribute('bt-url', variation);
-          document.body.appendChild(div);
-        });
+            variationDiv.setAttribute('bt-url', experiment.variation_url);
+          document.body.appendChild(variationDiv);
+        }
       }
 
 
@@ -735,14 +736,14 @@ function abstMainInit() {
       if (bt_experiments[experimentId]['test_type'] == 'magic' && bt_experiments[experimentId]['magic_definition'] && bt_experiments[experimentId]['magic_definition'].length > 0) {
         var magic_definition = parseMagicTestDefinition(bt_experiments[experimentId]['magic_definition']);
         // An unreadable definition would throw below and stop every later test from being set up.
-        if (!Array.isArray(magic_definition) || !magic_definition.length || !magic_definition[0] || !Array.isArray(magic_definition[0].variations)) {
+        if (!Array.isArray(magic_definition) || !magic_definition.length || !magic_definition[0] || typeof magic_definition[0].original !== 'string' || typeof magic_definition[0].variation !== 'string') {
           console.warn('ABST: magic_definition unavailable for experiment ' + experimentId + '. Skipping magic variation registration.');
           return;
         }
         current_exp[experimentId] = []; // create
         exp_redirect[experimentId] = [];
         
-        // Register the two slots: magic-0 is the original (variations[0]), magic-1 the variation (variations[1])
+        // Register the two slots: magic-0 shows each element's original, magic-1 its variation
         ['magic-' + experimentId + '-0', 'magic-' + experimentId + '-1'].forEach(function (slotKey) {
           current_exp[experimentId].push(slotKey);
           exp_redirect[experimentId][slotKey] = '';
@@ -813,24 +814,24 @@ function abstMainInit() {
       {
         if (bt_experiments[experimentId]['test_type'] == 'full_page') {
           // For full page tests: if user landed on a variation page, assign them to that variation
-          var pageVariations = bt_experiments[experimentId]['page_variations'] || {};
+          var variationPageId = String(bt_experiments[experimentId]['variation_page'] || '');
           var currentPageId = String(btab_vars.post_id);
-          if (Object.keys(pageVariations).includes(currentPageId)) {
+          if (variationPageId !== '' && variationPageId === currentPageId) {
             // User landed on a variation page - assign them to this variation
             experimentVariation = currentPageId;
             console.log('ABST: Full page test - user on variation page, assigning to:', experimentVariation);
           } else {
-            // User is on default page - randomly select a variation
-            var variations = current_exp[experimentId];
-            var randVar = getRandomInt(0, variations.length - 1);
-            experimentVariation = variations[randVar];
+            // User is on the original page - randomly pick the Original or the Variation
+            var versionKeys = current_exp[experimentId]; // the version keys registered on this page
+            var randVar = getRandomInt(0, versionKeys.length - 1);
+            experimentVariation = versionKeys[randVar];
             console.log('ABST: Full page test - user on default page, randomly selected:', experimentVariation);
           }
         }
         else {
-          var variations = current_exp[experimentId];
-          var randVar = getRandomInt(0, variations.length - 1);
-          experimentVariation = variations[randVar];
+          var versionKeys = current_exp[experimentId]; // the version keys registered on this page
+          var randVar = getRandomInt(0, versionKeys.length - 1);
+          experimentVariation = versionKeys[randVar];
         }
       }
       else //parse existing data
@@ -1167,8 +1168,8 @@ function showSkippedVisitorDefault(eid, createCookie = false, variation = false,
       if (variation == btab_vars.post_id) {
         return true;
       }
-      url = bt_experiments[eid].page_variations[variation];
-      if (url !== undefined) {
+      url = String(variation) === String(bt_experiments[eid].variation_page || '') ? bt_experiments[eid].variation_url : undefined;
+      if (url) {
         abstRedirect(url); // follow the link w search params
         return true;
       }
@@ -1807,21 +1808,13 @@ function showMagicTest(eid, index,scroll = false) { // called from magic bar so 
     // index 0 = original — page already shows it, nothing to do
     if (index === 0) return;
 
-    var variation;
+    // Slot 1 is the element's variation; the Magic bar passes "0" to put its original back.
+    var slot = Number(index);
+    var variation = slot === 1 ? swapElement.variation : (slot === 0 ? swapElement.original : undefined);
 
-    if (Array.isArray(swapElement.variations)) {
-        // index is 1 (the variation) here; a missing variations[1] leaves the original
-        // (variations[0]) on the page, which already shows it.
-        variation = swapElement.variations[index];
-        if (variation === null || variation === undefined || variation === '') {
-            return;
-        }
-    } else {
-      variation = undefined;
-    }
-    
-    if (variation === undefined){
-      return; // no match, skip
+    // A missing value leaves the original on the page, which already shows it.
+    if (typeof variation !== 'string' || variation === '') {
+      return;
     }
     if (swapElement.type === 'text' || swapElement.type === 'html') {
       elements.forEach(function(el) {
@@ -2147,10 +2140,10 @@ function checkMagicTestSelectors(node) {
           
           if (matches.length === 0) return;
           
-          // Get the variation value
-          var variation = swapElement.variations ? swapElement.variations[varIndex] : undefined;
+          // The assigned slot's value: magic-1 shows the variation, magic-0 the original
+          var variation = varIndex === 1 ? swapElement.variation : swapElement.original;
           if (variation === undefined || variation === null || variation === '') {
-            variation = swapElement.variations ? swapElement.variations[0] : undefined;
+            variation = swapElement.original;
           }
           if (variation === undefined) return;
           

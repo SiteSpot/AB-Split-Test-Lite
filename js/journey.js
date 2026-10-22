@@ -42,7 +42,7 @@ jQuery(document).ready(function($) {
             data: function (params) {
                 return {
                     q: params.term, // search query
-                    type: 'control', // 'control' or 'variations'
+
                     action: 'abst_page_selector', // AJAX action for admin-ajax.php
                     nonce: abst_journey_data.page_selector_nonce
                 };

@@ -503,13 +503,9 @@ $mcpServerName = 'wordpress-' . $mcpServerName;
 
         },
 
-        "variations": [
+        "original": "Original Headline",
 
-          "Original Headline",
-
-          "New Compelling Headline"
-
-        ]
+        "variation": "New Compelling Headline"
 
       }
 
@@ -567,13 +563,9 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
         },
 
-        variations: [
+        original: 'Original Headline',
 
-          'Original Headline',
-
-          'New Compelling Headline'
-
-        ]
+        variation: 'New Compelling Headline'
 
       }
 
@@ -613,13 +605,15 @@ fetch('<?php echo esc_url(rest_url('bt-bb-ab/v1/create-test')); ?>', {
 
                   <li><strong>selector:</strong> CSS selector for the element to test</li>
 
-                  <li><strong>variations:</strong> Two strings: the original text first, then the variation</li>
+                  <li><strong>original:</strong> The element's current text</li>
+
+                  <li><strong>variation:</strong> The text to test against the original</li>
 
                 </ul>
 
                 
 
-                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, variations holds two entries: the original text, then the variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
+                <p style="margin-top: 15px;"><small><strong>Note:</strong> Replace "your-username" and "your-application-password" with your WordPress credentials. For magic tests, each element has its original text and its variation. For backward compatibility, the API still accepts legacy aliases such as <code>name</code> and <code>conversion_page</code>, but new integrations should send the canonical fields shown above.</small></p>
 
               </div>
 

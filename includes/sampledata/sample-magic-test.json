@@ -10,10 +10,8 @@
             {
                 "type": "text",
                 "selector": "h1.abst-sample-headline",
-                "variations": [
-                    "Welcome to Our Amazing Service",
-                    "Transform Your Business in 30 Days or Less"
-                ],
+                "original": "Welcome to Our Amazing Service",
+                "variation": "Transform Your Business in 30 Days or Less",
                 "scope": {
                     "page_id": "*"
                 }

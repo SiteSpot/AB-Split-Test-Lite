@@ -1028,16 +1028,54 @@ if(! class_exists ( 'ABST_Tests'))
       return empty($post) ? 0 : (int) $post->ID;
     }
 
-    function get_url_from_slug($slug) {
+    /**
+     * Store the two pages of a full page test: the original page (a page ID or an archive
+     * key) and the variation page ID (0 when none is chosen yet). A custom label names one
+     * page and the screenshot shows the variation page, so they are cleared when their
+     * page changes.
+     *
+     * @param int        $test_id
+     * @param int|string $default_page
+     * @param int        $variation_page
+     */
+    function save_full_page_pages($test_id, $default_page, $variation_page) {
+      if (get_post_meta($test_id, 'test_type', true) === 'full_page') {
+        $previous_default_page = (string) get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
+        if ($previous_default_page !== '' && $previous_default_page !== (string) $default_page) {
+          delete_post_meta($test_id, 'original_label');
+        }
+        $previous_variation_page = absint(get_post_meta($test_id, 'variation_page', true));
+        if ($previous_variation_page && $previous_variation_page !== (int) $variation_page) {
+          delete_post_meta($test_id, 'variation_label');
+          delete_post_meta($test_id, 'variation_page_image');
+        }
+      }
 
-      $post_id = $this->get_id_from_slug($slug);
+      update_post_meta($test_id, 'bt_experiments_full_page_default_page', $default_page);
 
-      if ($post_id)
-          return get_permalink($post_id) ?: $slug;
+      if ($variation_page) {
+        update_post_meta($test_id, 'variation_page', (int) $variation_page);
+      } else {
+        delete_post_meta($test_id, 'variation_page');
+      }
+    }
 
-      return $slug;
-
-  }
+    /**
+     * The variation_page API parameter (a page ID or slug) as the page's ID.
+     *
+     * @param mixed $value
+     * @return int|WP_Error
+     */
+    function resolve_variation_page_param($value) {
+      if (empty($value)) {
+        return new WP_Error('missing_variation_page', 'variation_page is required for full_page tests: the ID or slug of the variation page.', ['status' => 400, 'field' => 'variation_page']);
+      }
+      $page_id = is_scalar($value) ? $this->get_id_from_slug((string) $value) : 0;
+      if (!$page_id) {
+        return new WP_Error('invalid_variation_page', 'The variation page was not found. variation_page takes one page ID or slug.', ['status' => 400, 'field' => 'variation_page']);
+      }
+      return $page_id;
+    }
 
 
 
@@ -1058,6 +1096,8 @@ if(! class_exists ( 'ABST_Tests'))
     {
 
       $this->save_idea_config($post_id, $data);
+
+      abst_log('Test #' . $post_id . ' saved (idea)');
 
       return;
 
@@ -1092,6 +1132,8 @@ if(! class_exists ( 'ABST_Tests'))
     //test type 
 
     
+
+    $is_first_save = get_post_meta( $post_id, 'test_type', true ) === ''; // no type yet: this save creates the test
 
     $url_query = sanitize_text_field($data['test_type'] ?? ''); //ab_test full_page magic
 
@@ -1180,73 +1222,16 @@ if(! class_exists ( 'ABST_Tests'))
 
     
 
-    // base page for full page split test
-
-    // bt_experiments_full_page_default_page
+    // Full page split test: the original page and the variation page.
 
     // A page ID, or an archive key (category-news, post-type-archive-product) from the same list.
-    $url_query = sanitize_text_field( (string) ($data['bt_experiments_full_page_default_page'] ?? '') );
+    $default_page = sanitize_text_field( (string) ($data['bt_experiments_full_page_default_page'] ?? '') );
 
-    $url_query = is_numeric($url_query) ? absint($url_query) : $url_query;
+    $default_page = is_numeric($default_page) ? absint($default_page) : $default_page;
 
-    update_post_meta( $post_id, 'bt_experiments_full_page_default_page', $url_query );
+    $variation_page = isset($data['variation_page']) && is_scalar($data['variation_page']) ? $this->get_id_from_slug( sanitize_text_field( (string) $data['variation_page'] ) ) : 0;
 
-
-
-    //page_variations
-
-    // A full page test compares the original page with one variation page,
-    // stored as a single entry: variation page ID => URL.
-    $variation_page = isset($data['page_variations']) && is_scalar($data['page_variations']) ? $this->get_id_from_slug( sanitize_text_field( (string) $data['page_variations'] ) ) : 0;
-
-    $page_variations = array();
-
-    if($variation_page){
-
-      $page_variations[$variation_page] = esc_url_raw( get_permalink($variation_page) );
-
-    }
-
-
-
-    update_post_meta( $post_id, 'page_variations', $page_variations );
-
-
-
-    //get variation meta
-
-    $variation_meta = get_post_meta( $post_id, 'variation_meta', true );
-
-
-
-    if(empty($variation_meta))
-
-    {
-
-      //variation meta
-
-      // variation meta (labels and screenshots)
-
-      $variation_labels = $data['variation_label'] ?? array();
-
-      $variation_images = $data['variation_image'] ?? array();
-
-      $variation_meta = array();
-
-      foreach($page_variations as $key => $url){
-
-        $variation_meta[$key] = array(
-
-          'label' => sanitize_text_field($variation_labels[$key] ?? ''),
-
-          'image' => esc_url_raw($variation_images[$key] ?? ''),
-        );
-
-      }
-
-      update_post_meta( $post_id, 'variation_meta', $variation_meta );
-
-    }
+    $this->save_full_page_pages( $post_id, $default_page, $variation_page );
 
 
 
@@ -1311,6 +1296,7 @@ if(! class_exists ( 'ABST_Tests'))
 
     }
 
+    abst_log('Test #' . $post_id . ' ' . ($is_first_save ? 'created' : 'saved') . ' (' . (get_post_meta($post_id, 'test_type', true) ?: 'no type') . ', ' . get_post_status($post_id) . ')');
 
     $this->refresh_conversion_pages();
 
@@ -1628,15 +1614,11 @@ if(! class_exists ( 'ABST_Tests'))
 
           $canonical = get_permalink($bt_experiments_full_page_default_page);// gets default page
 
-          $variatons = get_post_meta($post_id,'page_variations',true);//gets variations
+          $variation_page = absint(get_post_meta($post_id,'variation_page',true));
 
-          foreach ((is_array($variatons) && $canonical ? $variatons : []) as $key => $value) {//loop through variations (none saved yet: '')
+          if($canonical && $variation_page)
 
-            if(is_numeric($key) && (int) $key > 0) // variation page IDs only
-
-              $canonical_list[(int) $key] = $canonical; //add to canonical list
-
-          }
+            $canonical_list[$variation_page] = $canonical; // the variation page's canonical is the original page
 
         }
 
@@ -2175,9 +2157,9 @@ if(! class_exists ( 'ABST_Tests'))
 
           $my_post['post_status'] = 'draft'; // Save Draft, including on an edit of a live test
 
-        elseif(get_post_status(intval($data['post_id'])) === 'auto-draft')
+        elseif(in_array(get_post_status(intval($data['post_id'])), array('auto-draft', 'draft'), true))
 
-          $my_post['post_status'] = 'publish';
+          $my_post['post_status'] = 'publish'; // Start Test on a new or draft test; a paused or complete test keeps its status
 
         wp_update_post( $my_post );
 
@@ -2305,33 +2287,17 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-        //get variation_meta from the test post, not variation post
+        // The row is the Original or the Variation; each has one custom label (original_label / variation_label).
+        $version = abst_variation_version($variation_id, $pid);
 
-        $variation_meta = get_post_meta($pid, 'variation_meta', true);
+        if ($version === '')
+          wp_send_json(array('success' => false, 'error' => 'This row is not the Original or the Variation of this test.'));
 
-        //update variation_name meta
+        update_post_meta($pid, $version . '_label', $variation_name);
 
-        if($variation_meta === false || !is_array($variation_meta))
+        abst_log('variation label saved: ' . $variation_name . ' for the ' . $version . ' (' . $variation_id . ') of test id ' . $pid);
 
-        {
-
-          $variation_meta = array();
-
-        }
-
-        
-
-        // Set the label for this variation ID
-
-        $variation_meta[$variation_id]['label'] = $variation_name;
-
-        
-
-        update_post_meta($pid, 'variation_meta', $variation_meta);
-
-        abst_log('variation label saved: ' . $variation_name . ' for variation id ' . $variation_id . ' for test id ' . $pid);
-
-        wp_send_json(array('success' => true, 'variation_meta' => $variation_meta));
+        wp_send_json(array('success' => true, 'label' => $variation_name));
 
       }
 
@@ -2717,8 +2683,8 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-    // Each magic element stores [original, variation]; the test is configured
-    // once at least one element has its variation (slot 1) filled in.
+    // Each magic element stores its original and its variation; the test is configured
+    // once at least one element has its variation filled in.
     function magic_definition_has_variation($magic_definition) {
 
       if (empty($magic_definition)) {
@@ -2737,7 +2703,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       foreach ($decoded as $item) {
 
-        if (is_array($item) && isset($item['variations'][1]) && is_string($item['variations'][1]) && trim($item['variations'][1]) !== '') {
+        if (is_array($item) && isset($item['variation']) && is_string($item['variation']) && trim($item['variation']) !== '') {
 
           return true;
 
@@ -2791,15 +2757,12 @@ if(! class_exists ( 'ABST_Tests'))
 
       if ($test_type === 'full_page') {
 
-        $page_variations = get_post_meta($pid, 'page_variations', true);
-
-        return is_array($page_variations) && !empty($page_variations);
+        return absint(get_post_meta($pid, 'variation_page', true)) > 0;
 
       }
 
-      $variation_meta = get_post_meta($pid, 'variation_meta', true);
-
-      return is_array($variation_meta) && !empty($variation_meta);
+      // On-page tests: the Variation is tagged in page content, seen once it has results.
+      return false;
 
     }
 
@@ -2851,9 +2814,7 @@ if(! class_exists ( 'ABST_Tests'))
 
 
 
-      $variation_meta = get_post_meta($post->ID, 'variation_meta', true);
-
-      $winner_label = abst_get_variation_label($winner_key, $variation_meta);
+      $winner_label = abst_get_variation_label($winner_key, $post->ID);
 
       $winner_label = $winner_label !== '' ? $winner_label : $winner_key;
 
@@ -3694,7 +3655,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       $selected_page = get_post_meta($post->ID,'bt_experiments_full_page_default_page',true);
 
-      $page_variations = get_post_meta($post->ID,'page_variations',true);
+      $variation_page = absint(get_post_meta($post->ID,'variation_page',true));
 
       $posts = abst_get_all_posts();
 
@@ -3767,154 +3728,36 @@ if(! class_exists ( 'ABST_Tests'))
 
       $mypages = $posts;
 
-      if(!empty($mypages) || !empty($page_variations))
+      if(!empty($mypages) || $variation_page)
 
       {
 
-        echo "<div id='page-test-variations' class='choices-container'><select id='page_variations' name='page_variations' data-placeholder='Choose the variation page...'>";
+        echo "<div id='page-test-variations' class='choices-container'><select id='variation_page' name='variation_page' data-placeholder='Choose the variation page...'>";
 
         // empty option so select2 can show the placeholder and allow clearing
         echo "<option value=''></option>";
 
-        //add in the saved variation page
+        // the saved variation page, preselected
+        $variation_post = $variation_page ? get_post($variation_page) : null;
 
-        if(!empty($page_variations))
-
+        if(!empty($variation_post))
         {
-
-
-
-          // add the preselected option (page_variations holds one entry)
-
-          foreach($page_variations as $k => $page_variation)
-
-          {
-
-
-
-            $variation = false;
-
-            $page_slug = $page_variation;
-
-            // if is not number 
-
-            if(is_numeric($k))
-
-            {
-
-              $variation = get_post($k);
-
-              if(!empty($variation))
-
-              {
-
-                $page_title = $variation->post_title . ' | ' .$variation->post_type . ' | ' . $page_slug;
-
-                $page_slug = $k;
-
-              }
-
-            }
-
-            else
-
-            {
-
-              $variation = get_page_by_path($k, OBJECT, abst_post_types_to_test());
-
-              if(!empty($variation))
-
-              {
-
-                $page_title = $variation->post_title . ' | ' .$variation->post_type . ' | ' . $page_slug;
-
-                $page_slug = $variation->ID;
-
-              }
-
-              else // didnt get from slug. wp query post_name
-
-              {
-
-                $qpo = get_posts(array
-
-                (
-
-                    'name'   => $page_slug,
-
-                    'post_type'   => 'any',
-
-                    'post_per_page' => 1
-
-                ));
-
-                if(!empty($qpo))
-
-                {
-
-                  $page_slug = $qpo[0]->ID;
-
-                  $page_title = $qpo[0]->post_title . ' | ' .$qpo[0]->post_type . ' | ' . $k;
-
-
-
-                }
-
-                else
-
-                {
-
-                  $page_slug = $k;
-
-                  $page_title = $k;
-
-                }
-
-              }
-
-            }
-
-            echo '<option value="', esc_attr( $page_slug ), '" selected="selected">', esc_html( $page_title ), '</option>';
-
-          }
-
+          echo '<option value="', esc_attr( $variation_post->ID ), '" selected="selected">', esc_html( $variation_post->post_title . ' | ' . $variation_post->post_type . ' | ' . get_permalink( $variation_post ) ), '</option>';
         }
 
-
-
-
-
-
-
-
-
           foreach( $mypages as $page )
-
         {
+            if((int) $page->ID === $variation_page)
+              continue; // listed above, preselected
 
             $title = $page->post_title;
 
             $post_name = $page->post_name;
 
-            $selected = false;
-
-
-
-
-
-            $selected = isset($page_variations[$page->ID]) ? 'selected' : '';
-
-
-
             if(empty($title))
-
               $title = '#' . $page->ID . ' (no title)';
 
-
-
-            if(empty($selected))
-
-              echo "<option value='", esc_attr( $page->ID ), "' ", esc_attr( $selected ), ">", esc_html( $title ), " | ", esc_html( $page->post_type ), " | ", esc_html( $post_name ), " </option>";
+            echo "<option value='", esc_attr( $page->ID ), "'>", esc_html( $title ), " | ", esc_html( $page->post_type ), " | ", esc_html( $post_name ), " </option>";
 
           }
 
@@ -4392,7 +4235,7 @@ public function get_experiment_stats_array( $test ){
 
   $pid = $test->ID;
 
-  $observations = get_post_meta($pid,'observations',true);
+  $observations = abst_current_version_observations(get_post_meta($pid,'observations',true), $pid);
 
 
 
@@ -4496,13 +4339,13 @@ public function get_experiment_stats_array( $test ){
 
   if ($test_type === 'full_page') {
 
-    // For full page tests, get from page_variations meta
+    // For full page tests, the variation page (the original page's row comes from its visits)
 
-    $page_variations = get_post_meta($pid, 'page_variations', true);
+    $variation_page = absint(get_post_meta($pid, 'variation_page', true));
 
-    if (is_array($page_variations)) {
+    if ($variation_page) {
 
-      $all_variation_keys = array_keys($page_variations);
+      $all_variation_keys = [$variation_page];
 
     }
 
@@ -4622,7 +4465,7 @@ public function get_experiment_stats_array( $test ){
 
     $variations[$key] = [
 
-      'label'                 => (string)$key,
+      'label'                 => abst_get_variation_label($key, $pid),
 
       'visits'                => $visits,
 
@@ -4650,7 +4493,7 @@ public function get_experiment_stats_array( $test ){
 
       $variations[$var_key] = [
 
-        'label'                 => (string)$var_key,
+        'label'                 => abst_get_variation_label($var_key, $pid),
 
         'visits'                => 0,
 
@@ -4869,7 +4712,7 @@ function abst_show_experiment_results($test){
 
     $magic_def = !empty($magic_definition) ? json_decode($magic_definition, true) : null;
 
-    if(is_array($magic_def) && isset($magic_def[0]['variations']) && is_array($magic_def[0]['variations'])) {
+    if(is_array($magic_def) && isset($magic_def[0]['original'], $magic_def[0]['variation'])) {
 
       if(!is_array($observations)) {
 
@@ -4951,9 +4794,9 @@ function abst_show_experiment_results($test){
 
   // Check for invalid variation keys in full page tests
 
-  $invalid_variations_check = $this->detect_invalid_fullpage_variations($pid);
+  $invalid_keys_check = $this->detect_invalid_fullpage_keys($pid);
 
-  if ($invalid_variations_check['has_invalid']) {
+  if ($invalid_keys_check['has_invalid']) {
 
     $cleanup_variations_nonce_valid = isset( $_GET['abst_cleanup_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['abst_cleanup_nonce'] ) ), 'abst_cleanup_variations' );
     $cleanupConfirm                 = ( isset( $_GET['abstCleanupVariations'] ) && $cleanup_variations_nonce_valid ) ? intval( wp_unslash( $_GET['abstCleanupVariations'] ) ) : 0;
@@ -4978,11 +4821,11 @@ function abst_show_experiment_results($test){
 
       // Show warning with cleanup button
 
-      $invalid_count = count($invalid_variations_check['invalid_keys']);
+      $invalid_count = count($invalid_keys_check['invalid_keys']);
 
-      $valid_ids = implode(', ', $invalid_variations_check['valid_variations']);
+      $valid_ids = implode(', ', $invalid_keys_check['valid_keys']);
 
-      $invalid_ids = implode(', ', $invalid_variations_check['invalid_keys']);
+      $invalid_ids = implode(', ', $invalid_keys_check['invalid_keys']);
 
       $current_request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
       $cleanupHref         = wp_nonce_url( add_query_arg( 'abstCleanupVariations', '1', $current_request_uri ), 'abst_cleanup_variations', 'abst_cleanup_nonce' );
@@ -5017,8 +4860,13 @@ function abst_show_experiment_results($test){
 
   require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
 
-  $observations = abst_analyze_observations($observations, $test_age, abst_test_min_views($test->ID));
+  // Only the current Original and Variation are compared and shown; rows of a page the test
+  // no longer uses stay stored (Remove Invalid Data deletes them).
+  $current_observations = abst_current_version_observations($observations, $pid);
 
+  $stale_observations = is_array($observations) ? array_diff_key($observations, $current_observations) : [];
+
+  $observations = abst_analyze_observations($current_observations, $test_age, abst_test_min_views($test->ID));
 
   $conversion_text = 'Conversion Rate';
 
@@ -5100,116 +4948,6 @@ function abst_show_experiment_results($test){
 
   }
 
-  $goodStats = true;
-
-
-
-  if( empty($observations) ) // empty
-
-  {
-
-    $goodStats = false;
-
-  }
-
-  else
-
-  {
-
-    //check results are decent
-
-    foreach($observations as $m => $a)
-
-    {
-
-      if(!empty($a['visit']))
-
-        if($a['visit'] < 1 || $a['conversion'] < 0)
-
-        {
-
-          $goodStats = false;
-
-          break;
-
-        }
-
-    }
-
-  }
-
-
-
-  if($goodStats)
-
-  {        
-
-    //if its a full page test then loop through all observationbs
-
-    if($test_type  == 'full_page')
-
-    {
-
-      foreach($observations as $key => $value)
-
-      {
-
-        if(is_numeric($key))
-
-          continue;
-
-        // its a text slug, get the post 
-
-        $qpo = get_posts(array
-
-          (
-
-              'name'   => $key,
-
-              'post_type'   => 'any',
-
-              'post_per_page' => 1
-
-          ));
-
-        if(!empty($qpo)) // we found it, does it already exist?
-
-        {
-
-          $page_id = $qpo[0]->ID;
-
-          if(!empty($observations[$page_id]))
-
-          {
-
-            // Fold the slug-keyed entry in fully (locations, buckets) and recompute rate.
-            $observations[$page_id] = abst_merge_observation($observations[$page_id], $observations[$key]);
-
-          }
-
-          else
-
-          {
-
-            $observations[$page_id] = $value;
-
-          }
-
-          unset($observations[$key]);
-
-        }
-
-      }
-
-    }
-
-
-
-    require_once plugin_dir_path(__FILE__) . 'includes/statistics.php';
-
-    $observations = abst_analyze_observations($observations, $test_age, abst_test_min_views($test->ID));
-
-  }
 
 
 
@@ -5235,8 +4973,7 @@ function abst_show_experiment_results($test){
 
 
 
-        $variation_meta = get_post_meta($test->ID,'variation_meta',true);
-        $key = abst_get_variation_label($key, $variation_meta);
+        $key = abst_get_variation_label($key, $test->ID);
 
 
 
@@ -5328,7 +5065,6 @@ function abst_show_experiment_results($test){
 
         $control_data = $all_variations[$control_variation_key] ?? null;
 
-        $variation_meta = get_post_meta($test->ID,'variation_meta',true);
 
 
 
@@ -5346,7 +5082,7 @@ function abst_show_experiment_results($test){
 
           
 
-          $winner_label = abst_get_variation_label($likeylwinner, $variation_meta);
+          $winner_label = abst_get_variation_label($likeylwinner, $test->ID);
 
 
 
@@ -5480,7 +5216,7 @@ function abst_show_experiment_results($test){
 
 
             // Winner label and confidence
-            $winner_label = abst_get_variation_label($likeylwinner, $variation_meta ?? get_post_meta($test->ID, 'variation_meta', true));
+            $winner_label = abst_get_variation_label($likeylwinner, $test->ID);
 
             
 
@@ -5595,7 +5331,7 @@ function abst_show_experiment_results($test){
         
 
         // Custom label, page title, or "Original" / "Variation" for Magic and on-page tests.
-        $leading_label = abst_get_variation_label($leading_variation, $variation_meta ?? get_post_meta($test->ID, 'variation_meta', true));
+        $leading_label = abst_get_variation_label($leading_variation, $test->ID);
 
         
 
@@ -5782,7 +5518,6 @@ function abst_show_experiment_results($test){
 
 $titles = array();
 
-    $variation_meta = get_post_meta($pid,'variation_meta',true);
 
 
 
@@ -5854,7 +5589,7 @@ $titles = array();
 
           abst_log('Saving fixed observations - this should only fire 1 time per old test');
 
-          update_post_meta($test->ID, 'observations', $observations);
+          update_post_meta($test->ID, 'observations', $observations + $stale_observations);
 
         }
 
@@ -5893,7 +5628,7 @@ $titles = array();
 
 
       // Custom label, page title, or "Original" / "Variation" for Magic and on-page tests.
-      $mk = abst_get_variation_label($okey, $variation_meta);
+      $mk = abst_get_variation_label($okey, $pid);
       if (in_array($mk, $titles, true) && is_numeric($okey)) {
         $post_id_data = get_post($okey);
         if (!is_null($post_id_data))
@@ -6221,19 +5956,12 @@ $titles = array();
 
 
 
-        if(!isset($observations['observations'][$key]['variation_meta'])) {
-
-          $observations['observations'][$key]['variation_meta'] = [];
-
-        }
+        // Shown in the results table and chart: the custom label, the page title, or Original / Variation.
+        $observations['observations'][$key]['row_meta'] = ['label' => abst_get_variation_label($key, $pid)];
 
         if(is_int($key)){
 
-          //if no label then set it to the post title
-
-          $observations['observations'][$key]['variation_meta']['label'] = get_the_title($key);
-
-          $observations['observations'][$key]['variation_meta']['slug'] = get_post_field('post_name', $key);
+          $observations['observations'][$key]['row_meta']['slug'] = get_post_field('post_name', $key);
 
         }
 
@@ -6267,31 +5995,6 @@ $titles = array();
       }
 
 
-
-      
-
-      //include variation_meta 
-
-      $variation_meta = get_post_meta($pid, 'variation_meta', true);
-
-      if(!empty($variation_meta)) {
-
-        foreach($variation_meta as $key => $value) {
-
-          
-
-          if(!empty($value['label']))
-
-            $observations['observations'][$key]['variation_meta']['label'] = $value['label'];
-
-          if(!empty($value['slug']))
-
-            $observations['observations'][$key]['variation_meta']['slug'] = $value['slug'];
-
-
-        }
-
-      }
 
       
 
@@ -6392,18 +6095,6 @@ $titles = array();
 
       
 
-      $page_variations = get_post_meta($pid, 'page_variations', true);
-
-      if(!empty($page_variations)) {
-
-        $observations['page_variations'] = $page_variations;
-
-      }
-
-
-
-
-
       $magic_definition = get_post_meta($pid, 'magic_definition', true);
 
       if(!empty($magic_definition)) {
@@ -6446,19 +6137,13 @@ $titles = array();
 
 
 
-        // Add variation titles, links and slugs for all variations
+        // Add the test ID, row key and link for each row (and the heatmap link)
 
         foreach($observations['observations'] as $var_key => $var_data) {
 
-          $post_data = get_post($var_key);
+          $observations['observations'][$var_key]['row_meta']['eid'] = $pid;
 
-          
-
-          // Add experiment ID and variation key for heatmap links (for all variations)
-
-          $observations['observations'][$var_key]['variation_meta']['eid'] = $pid;
-
-          $observations['observations'][$var_key]['variation_meta']['variation'] = $var_key;
+          $observations['observations'][$var_key]['row_meta']['variation'] = $var_key;
 
           
 
@@ -6478,7 +6163,7 @@ $titles = array();
 
               // Store page ID for heatmap links
 
-              $observations['observations'][$var_key]['variation_meta']['page_id'] = $visit;
+              $observations['observations'][$var_key]['row_meta']['page_id'] = $visit;
 
             } else {
 
@@ -6492,7 +6177,7 @@ $titles = array();
 
             if($link_url) {
 
-              $observations['observations'][$var_key]['variation_meta']['link'] = '<a target="_blank" title="View this variation in a a new tab" href="'.$link_url."?abtv=".$var_key."&abtid=".$pid.'">🔗</a>';
+              $observations['observations'][$var_key]['row_meta']['link'] = '<a target="_blank" title="View this variation in a a new tab" href="'.$link_url."?abtv=".$var_key."&abtid=".$pid.'">🔗</a>';
 
             }
 
@@ -6500,15 +6185,6 @@ $titles = array();
 
 
 
-          if($post_data) {
-
-            if(empty($observations['observations'][$var_key]['variation_meta']['label']))
-
-              $observations['observations'][$var_key]['variation_meta']['label'] = $post_data->post_title;
-
-            $observations['observations'][$var_key]['variation_meta']['slug'] = $post_data->post_name;
-
-          }
 
           
 
@@ -6733,7 +6409,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       {
 
-        $observations = get_post_meta( $post_id, 'observations', true );
+        $observations = abst_current_version_observations( get_post_meta( $post_id, 'observations', true ), $post_id );
 
         $out = "";
 
@@ -6761,9 +6437,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             // Use centralized variation label function
 
-            $variation_meta = get_post_meta($post_id, 'variation_meta', true);
 
-            $variation_label = abst_get_variation_label($variation, $variation_meta);
+            $variation_label = abst_get_variation_label($variation, $post_id);
 
             
 
@@ -7817,7 +7492,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         // Return empty if search is too short (less than 2 characters)
 
-        if(strlen($searchQuery) < 2) {
+        // A page ID is looked up below at any length (the Magic Bar sends the saved goal's ID).
+        if(strlen($searchQuery) < 2 && !ctype_digit($searchQuery)) {
 
           wp_reset_postdata();
 
@@ -8428,7 +8104,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'post_type' => 'abst_experiments',
 
-          'post_status' => ['draft','publish', 'abst_complete'],
+          // Paused (pending) tests are listed so the Magic Bar can open them and visitors
+          // get the original; the tracker serves and records only running tests.
+          'post_status' => ['draft','publish', 'pending', 'abst_complete'],
 
           'numberposts' => -1
 
@@ -8467,6 +8145,8 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         $full_page_default_page = $meta['bt_experiments_full_page_default_page'][0] ?? '';
 
+        $variation_page = absint($meta['variation_page'][0] ?? 0);
+
         // A completed test is not served: every visitor sees the original again.
         if ($val->post_status === 'abst_complete') {
 
@@ -8496,9 +8176,9 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'full_page_default_page' => $full_page_default_page,
 
-          'page_variations' => $this->maybe_unserialize_for_js($meta['page_variations'][0] ?? ''),
+          'variation_page' => $variation_page,
 
-          'variation_meta' => $this->maybe_unserialize_for_js($meta['variation_meta'][0] ?? ''),
+          'variation_url' => $variation_page ? (string) get_permalink($variation_page) : '',
 
           'magic_definition' => $meta['magic_definition'][0] ?? '',
 
@@ -8720,6 +8400,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
     function post_status_transition($new_status, $old_status, $post)
 
     {
+
+        // One line per status change of a test, from the editor, list table, REST or abilities.
+        // Creating a test is logged where it is configured (with its type), so 'new' and
+        // 'auto-draft' starts are left out here.
+        if ($post->post_type === 'abst_experiments' && $new_status !== $old_status && !in_array($old_status, ['new', 'auto-draft'], true) && $new_status !== 'auto-draft') {
+          abst_log('Test #' . $post->ID . ' (' . (get_post_meta($post->ID, 'test_type', true) ?: 'no type') . ') status: ' . $old_status . ' -> ' . $new_status);
+        }
 
         // Check if the post is transitioning from 'auto-draft' to 'publish'
 
@@ -9220,7 +8907,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
               $definition = maybe_unserialize($test_meta['magic_definition'][0] ?? []);
               if (is_string($definition)) $definition = json_decode($definition, true);
               // Two slots: magic-0 (original) and magic-1 (variation).
-              $has_slots = is_array($definition) && isset($definition[0]['variations']) && is_array($definition[0]['variations']);
+              $has_slots = is_array($definition) && isset($definition[0]['original'], $definition[0]['variation']);
               if (!$has_slots || !in_array((string) $variation, ['magic-0', 'magic-1'], true)) {
                 $error = 'Invalid Magic variation.';
               }
@@ -9246,27 +8933,12 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
               $default_page = isset($test_meta['bt_experiments_full_page_default_page'][0]) ? (string)$test_meta['bt_experiments_full_page_default_page'][0] : '';
 
-              $page_variations = isset($test_meta['page_variations'][0]) ? maybe_unserialize($test_meta['page_variations'][0]) : [];
+              $variation_page = !empty($test_meta['variation_page'][0]) ? (string) absint($test_meta['variation_page'][0]) : '';
 
-              
+              // The visit must be to the original page or the variation page
+              if($variation === '' || ($variation !== $default_page && $variation !== $variation_page)) {
 
-              // Build list of valid variation IDs (default page + all variation page IDs)
-
-              $valid_variations = [$default_page];
-
-              if(is_array($page_variations)) {
-
-                $valid_variations = array_merge($valid_variations, array_map('strval', array_keys($page_variations)));
-
-              }
-
-              
-
-              // Check if the submitted variation is valid
-
-              if(!in_array($variation, $valid_variations, true)) {
-
-                $error = 'Invalid variation ID ' . $variation . ' for full page test. Valid IDs: ' . implode(', ', $valid_variations);
+                $error = 'Invalid variation ID ' . $variation . ' for full page test. Valid IDs: ' . $default_page . ', ' . $variation_page;
 
                 abst_log('Full page test validation failed: ' . $error);
 
@@ -9614,17 +9286,17 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
      * @param int $test_id The test post ID
 
-     * @return array ['invalid_keys' => [...], 'valid_variations' => [...], 'observations' => [...]]
+     * @return array ['invalid_keys' => [...], 'valid_keys' => [...], 'observations' => [...]]
 
      */
 
-    function detect_invalid_fullpage_variations($test_id) {
+    function detect_invalid_fullpage_keys($test_id) {
 
       $result = [
 
         'invalid_keys' => [],
 
-        'valid_variations' => [],
+        'valid_keys' => [],
 
         'observations' => [],
 
@@ -9678,55 +9350,21 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       
 
-      // Get valid variation IDs
+      // The observation keys this test can have: the original page and the variation page.
 
-      $default_page = (string) get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
+      $version_keys = abst_test_version_keys($test_id);
 
-      $page_variations = get_post_meta($test_id, 'page_variations', true);
+      $result['valid_keys'] = array_values(array_filter([$version_keys['original'], $version_keys['variation']], static function ($key) {
 
-      if (is_string($page_variations) && !empty($page_variations)) {
+        return $key !== '' && $key !== '0';
 
-        $decoded = maybe_unserialize($page_variations);
+      }));
 
-        if (!is_array($decoded)) {
 
-          $decoded = json_decode($page_variations, true);
 
-        }
+      // Skip if neither page is set (can't determine what's invalid)
 
-        $page_variations = $decoded;
-
-      }
-
-      
-
-      // Build valid variations list
-
-      if ($default_page !== '' && $default_page !== '0') {
-
-        $result['valid_variations'][] = $default_page;
-
-      }
-
-      if (is_array($page_variations) && !empty($page_variations)) {
-
-        foreach (array_keys($page_variations) as $var_id) {
-
-          if ((string) $var_id !== '' && (string) $var_id !== '0') {
-
-            $result['valid_variations'][] = (string) $var_id;
-
-          }
-
-        }
-
-      }
-
-      
-
-      // Skip if no valid variations found (can't determine what's invalid)
-
-      if (empty($result['valid_variations'])) {
+      if (empty($result['valid_keys'])) {
 
         return $result;
 
@@ -9746,7 +9384,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         }
 
-        if (!in_array((string) $var_key, $result['valid_variations'], true)) {
+        if (!in_array((string) $var_key, $result['valid_keys'], true)) {
 
           $result['invalid_keys'][] = $var_key;
 
@@ -9778,7 +9416,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     function cleanup_single_fullpage_test($test_id) {
 
-      $detection = $this->detect_invalid_fullpage_variations($test_id);
+      $detection = $this->detect_invalid_fullpage_keys($test_id);
 
       
 
@@ -9938,15 +9576,15 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
               'type' => 'array',
 
-              'description' => 'For magic tests: array of element definitions. Each item must have selector, type, variations (two plain strings: the original, then the variation), and scope. ' .
+              'description' => 'For magic tests: array of element definitions. Each item must have selector, type, scope, original (the element\'s current content) and variation (the content to test against it), plus property for the style and attribute types. ' .
 
                                'scope examples: {"page_id": 42}, {"url": "pricing"}, {"page_id": "*"} or {"url": "*"} for all pages. ' .
 
-                               'variations must be a plain array of strings — NOT objects. ' .
+                               'original and variation must be plain strings — NOT objects. ' .
 
                                'You can test multiple elements together (e.g. headline and sub-headline) by adding more than one item to the array — each visitor sees either the original of every element or the variation of every element, keeping them in sync. ' .
 
-                               'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"variations":["Original headline","New headline"]},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"variations":["Original subtitle","New subtitle"]}]',
+                               'Example multi-element test (headline + sub-headline): [{"type":"text","selector":"h1.hero-title","scope":{"page_id":42},"original":"Original headline","variation":"New headline"},{"type":"text","selector":"h2.hero-subtitle","scope":{"page_id":42},"original":"Original subtitle","variation":"New subtitle"}]',
 
               'items' => [
 
@@ -9956,15 +9594,15 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
                   'selector'   => ['type' => 'string', 'description' => 'CSS selector for the element. To find reliable selectors, browse the page with ?abhash=1 appended to the URL — a table appears at the bottom listing each visible element\'s unique selector.'],
 
-                  'type'       => ['type' => 'string', 'enum' => ['text', 'html', 'image'], 'description' => 'Element content type'],
-
+                  'type'       => ['type' => 'string', 'enum' => ['text', 'html', 'image', 'style', 'attribute'], 'description' => 'What changes: text or html sets the element\'s content, image its src, style one CSS property and attribute one HTML attribute (style and attribute need property)'],
+                  'property'   => ['type' => 'string', 'description' => 'Required for style and attribute, not used by other types. style: one CSS property, e.g. "color" or "backgroundColor". attribute: one of aria-*, title, alt, role, class, id, href, src, srcset, width, height, placeholder, value, disabled, checked, rel, target'],
                   'scope'      => ['type' => 'object', 'description' => 'Page scope: {"page_id": 42} or {"url": "path"} or wildcard {"page_id": "*"}'],
-
-                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 2, 'maxItems' => 2, 'description' => 'The original first, then the variation, e.g. ["Original headline", "New headline"]'],
+                  'original'   => ['type' => 'string', 'description' => 'The element\'s current content (text or HTML, image URL, CSS value or attribute value), e.g. "Original headline"'],
+                  'variation'  => ['type' => 'string', 'description' => 'The content to test against the original, of the same kind, e.g. "New headline"'],
 
                 ],
 
-                'required' => ['selector', 'type', 'scope', 'variations'],
+                'required' => ['selector', 'type', 'scope', 'original', 'variation'],
 
               ],
 
@@ -9972,11 +9610,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'default_page'     => ['type' => ['integer', 'string'], 'description' => 'For full_page tests: default page ID'],
 
-            'variations'       => ['type' => 'array', 'maxItems' => 1, 'description' => 'For full_page tests: the variation page ID (one item)', 'items' => ['type' => ['integer', 'string']]],
+            'variation_page'   => ['type' => ['integer', 'string'], 'description' => 'For full_page tests: the variation page ID or slug'],
 
-            'variation_labels' => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Optional label for the full_page variation page (one item)'],
+            'variation_label'  => ['type' => 'string', 'description' => 'Optional label for the full_page variation page'],
 
-            'variation_images' => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Optional screenshot URL for the full_page variation page (one item)'],
+            'variation_image'  => ['type' => 'string', 'description' => 'Optional screenshot URL for the full_page variation page'],
 
             'conversion_type'  => ['type' => 'string', 'enum' => $active_types, 'description' => $conversion_type_description],
 
@@ -10279,27 +9917,29 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
             'magic_definition'           => [
               'type'        => 'array',
-              'description' => 'Replace the full magic test definition for magic tests. Each item\'s variations holds two strings: the original, then the variation.',
+              'description' => 'Replace the full magic test definition for magic tests. Each item has selector, type, scope, original (the element\'s current content) and variation (the content to test against it), plus property for the style and attribute types.',
               'items'       => [
                 'type'       => 'object',
                 'properties' => [
                   'selector'   => ['type' => 'string'],
-                  'type'       => ['type' => 'string', 'enum' => ['text', 'html', 'image']],
+                  'type'       => ['type' => 'string', 'enum' => ['text', 'html', 'image', 'style', 'attribute'], 'description' => 'What changes: text or html sets the element\'s content, image its src, style one CSS property and attribute one HTML attribute (style and attribute need property)'],
+                  'property'   => ['type' => 'string', 'description' => 'Required for style and attribute, not used by other types. style: one CSS property, e.g. "color" or "backgroundColor". attribute: one of aria-*, title, alt, role, class, id, href, src, srcset, width, height, placeholder, value, disabled, checked, rel, target'],
                   'scope'      => ['type' => 'object'],
-                  'variations' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 2, 'maxItems' => 2, 'description' => 'The original first, then the variation'],
+                  'original'   => ['type' => 'string', 'description' => 'The element\'s current content (text or HTML, image URL, CSS value or attribute value)'],
+                  'variation'  => ['type' => 'string', 'description' => 'The content to test against the original, of the same kind'],
                 ],
-                'required'   => ['selector', 'type', 'scope', 'variations'],
+                'required'   => ['selector', 'type', 'scope', 'original', 'variation'],
               ],
             ],
 
 
             'default_page'               => ['type' => ['integer', 'string'], 'description' => 'Control page ID or slug for full_page tests'],
 
-            'variations'                 => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => ['integer', 'string']], 'description' => 'The variation page ID or slug for full_page tests (one item)'],
+            'variation_page'             => ['type' => ['integer', 'string'], 'description' => 'Variation page ID or slug for full_page tests'],
 
-            'variation_labels'           => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Label for the full_page variation page (one item)'],
+            'variation_label'            => ['type' => 'string', 'description' => 'Label for the full_page variation page'],
 
-            'variation_images'           => ['type' => 'array', 'maxItems' => 1, 'items' => ['type' => 'string'], 'description' => 'Screenshot URL for the full_page variation page (one item)'],
+            'variation_image'            => ['type' => 'string', 'description' => 'Screenshot URL for the full_page variation page'],
 
           ],
 
@@ -10353,7 +9993,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
      * Variation key formats (must match the JS tracker):
 
-     *   magic:     magic-0 (original, variations[0]) and magic-1 (variation, variations[1])
+     *   magic:     magic-0 (each element's original) and magic-1 (each element's variation)
 
      *   full_page: the original page and the variation page, each at its own permalink (no query params needed)
 
@@ -10387,7 +10027,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
         $first = $items[0];
 
-        if (empty($first['variations']) || !is_array($first['variations'])) return [];
+        if (!is_array($first) || !isset($first['original'], $first['variation'])) return [];
 
 
 
@@ -10433,7 +10073,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-        // Two slots: magic-0 = original (variations[0]), magic-1 = variation (variations[1])
+        // Two slots: magic-0 = the original, magic-1 = the variation
 
         foreach (['magic-0', 'magic-1'] as $k) {
 
@@ -10459,21 +10099,13 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-        // Variation pages — each is its own standalone page
+        // The variation page — its own standalone page
 
-        $page_variations = get_post_meta($test_id, 'page_variations', true);
+        $variation_page = absint(get_post_meta($test_id, 'variation_page', true));
 
-        if (is_array($page_variations)) {
+        $url = $variation_page ? get_permalink($variation_page) : null;
 
-          foreach ($page_variations as $page_id => $page_url) {
-
-            $url = is_numeric($page_id) ? get_permalink(intval($page_id)) : ($page_url ?: null);
-
-            if ($url) $preview_urls[(string) $page_id] = $url;
-
-          }
-
-        }
+        if ($url) $preview_urls[(string) $variation_page] = $url;
 
       }
 
@@ -10528,45 +10160,21 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
 
 
-      $page_variations = get_post_meta($test_id, 'page_variations', true);
+      // Full page tests: the one variation page, with its label and screenshot
 
-      if (!is_array($page_variations)) {
+      $variation_page = absint(get_post_meta($test_id, 'variation_page', true));
 
-        $page_variations = [];
+      $variation_page_details = $variation_page ? [
 
-      }
+        'id' => $variation_page,
 
+        'url' => (string) get_permalink($variation_page),
 
+        'label' => (string) get_post_meta($test_id, 'variation_label', true),
 
-      $variation_meta = get_post_meta($test_id, 'variation_meta', true);
+        'image' => (string) get_post_meta($test_id, 'variation_page_image', true),
 
-      if (!is_array($variation_meta)) {
-
-        $variation_meta = [];
-
-      }
-
-
-
-      $full_page_variations = [];
-
-      foreach ($page_variations as $variation_key => $variation_url) {
-
-        $meta = $variation_meta[$variation_key] ?? [];
-
-        $full_page_variations[] = [
-
-          'id' => is_numeric($variation_key) ? intval($variation_key) : (string) $variation_key,
-
-          'url' => $variation_url,
-
-          'label' => isset($meta['label']) ? (string) $meta['label'] : '',
-
-          'image' => isset($meta['image']) ? (string) $meta['image'] : '',
-
-        ];
-
-      }
+      ] : null;
 
 
 
@@ -10581,6 +10189,11 @@ function abst_cmp_by_conversion_rate($a, $b) {
         'status' => abst_status_for_api($test->post_status),
 
         'test_type' => $test_type,
+
+        // Custom labels of the two versions ('' when unset): results show these in place of Original / Variation.
+        'original_label' => (string) get_post_meta($test_id, 'original_label', true),
+
+        'variation_label' => (string) get_post_meta($test_id, 'variation_label', true),
 
         'created' => $test->post_date,
 
@@ -10644,7 +10257,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
           'default_page' => get_post_meta($test_id, 'bt_experiments_full_page_default_page', true),
 
-          'variations' => $full_page_variations,
+          'variation_page' => $variation_page_details,
 
         ],
 
@@ -11607,7 +11220,7 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       }
 
-
+      abst_log('Test #' . $test_id . ' created via API (' . ($test_type ?: 'no type') . ', ' . $post_data['post_status'] . ')');
 
       // Refresh conversion pages cache
 
@@ -11751,62 +11364,34 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
       }
 
-      
-
-      if (empty($params['variations']) || !is_array($params['variations'])) {
-
-        return new WP_Error('missing_variations', 'A variation page is required for full page tests', ['status' => 400]);
-
-      }
-
-      // A full page test compares the original page with one variation page.
-      $variation_pages = array_values(array_unique(array_map(function ($variation) {
-        return is_numeric($variation) ? intval($variation) : sanitize_text_field((string) $variation);
-      }, array_values($params['variations']))));
-
-      if (count($variation_pages) !== 1) {
-
-        return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400]);
-
-      }
-
       // Stored and tracked by page ID: a slug is resolved to the page it names.
-      $var_id = $this->get_id_from_slug($variation_pages[0]);
+      $var_id = $this->resolve_variation_page_param($params['variation_page'] ?? '');
 
-      if (!$var_id) {
+      if (is_wp_error($var_id)) {
 
-        return new WP_Error('invalid_variations', 'The variation page was not found.', ['status' => 400]);
+        return $var_id;
 
       }
 
-      
-
-      // Set default page
+      // The original page (a page ID, or an archive key) and the variation page
 
       $default_page = is_numeric($params['default_page']) ? intval($params['default_page']) : sanitize_text_field($params['default_page']);
 
-      update_post_meta($test_id, 'bt_experiments_full_page_default_page', $default_page);
+      $this->save_full_page_pages($test_id, $default_page, $var_id);
 
-      
+      // The variation page's label and screenshot, if given
 
-      // Set the variation page and its metadata (label and image if provided)
+      if (isset($params['variation_label'])) {
 
-      $page_variations = [ $var_id => $this->get_url_from_slug($var_id) ];
+        update_post_meta($test_id, 'variation_label', sanitize_text_field($params['variation_label']));
 
-      $variation_meta = [
-        $var_id => [
-          'label' => isset($params['variation_labels'][0]) ? sanitize_text_field($params['variation_labels'][0]) : '',
-          'image' => isset($params['variation_images'][0]) ? esc_url_raw($params['variation_images'][0]) : '',
-        ],
-      ];
+      }
 
+      if (isset($params['variation_image'])) {
 
+        update_post_meta($test_id, 'variation_page_image', esc_url_raw($params['variation_image']));
 
-      update_post_meta($test_id, 'page_variations', $page_variations);
-
-      update_post_meta($test_id, 'variation_meta', $variation_meta);
-
-
+      }
 
       return true;
 
@@ -13147,7 +12732,7 @@ function abst_heatmaps_page_content() {
 
         $filters['variation'] = $selected_variation;
 
-        $var_name = abst_resolve_variation_name($selected_eid, $selected_variation);
+        $var_name = abst_get_variation_label($selected_variation, $selected_eid);
 
         $context_parts['variation'] = $var_name;
 
@@ -13217,7 +12802,7 @@ function abst_heatmaps_page_content() {
 
       $experiments = isset($scroll_result['experiments']) ? $scroll_result['experiments'] : [];
 
-      $variations = !empty($experiments) ? $experiments : [];
+      $tests_seen = !empty($experiments) ? $experiments : []; // test ID => versions seen in the logs
 
       $scroll_distribution = isset($scroll_result['distribution']) ? $scroll_result['distribution'] : [];
 
@@ -13231,9 +12816,9 @@ function abst_heatmaps_page_content() {
       // cost ~2KB per matching event on top of $data, which is what pushed long
       // ranges on busy sites into the memory limit.
 
-      $abst_meta_variations = [];
+      $abst_meta_versions = [];
 
-      $journey_logs = abst_search_all_journey_logs($selected_post, $filters, function ($journey_log) use (&$data, &$abst_meta_variations, $selected_mode) {
+      $journey_logs = abst_search_all_journey_logs($selected_post, $filters, function ($journey_log) use (&$data, &$abst_meta_versions, $selected_mode) {
 
         $event_type = isset($journey_log[1]) ? strtolower(trim($journey_log[1])) : '';
 
@@ -13251,7 +12836,7 @@ function abst_heatmaps_page_content() {
 
           $variation = $meta[1];
 
-          $abst_meta_variations[$eid][$variation] = true;
+          $abst_meta_versions[$eid][$variation] = true;
 
         }
 
@@ -13315,16 +12900,16 @@ function abst_heatmaps_page_content() {
 
       // Initialize arrays
 
-      $variations = !empty($experiments) ? $experiments : [];
+      $tests_seen = !empty($experiments) ? $experiments : []; // test ID => versions seen in the logs
 
       // Fold in anything the streaming pass picked up from meta rows (kept for
       // parity with the previous inline loop).
 
-      foreach ($abst_meta_variations as $abst_eid => $abst_vars) {
+      foreach ($abst_meta_versions as $abst_eid => $abst_vars) {
 
         foreach ($abst_vars as $abst_var => $abst_flag) {
 
-          $variations[$abst_eid][$abst_var] = true;
+          $tests_seen[$abst_eid][$abst_var] = true;
 
         }
 
@@ -13355,7 +12940,7 @@ function abst_heatmaps_page_content() {
         $active_filter_summary[] = ['label' => 'Test', 'value' => get_the_title($selected_eid)];
       }
       if (!empty($selected_variation)) {
-        $active_filter_summary[] = ['label' => 'Variation', 'value' => abst_resolve_variation_name($selected_eid, $selected_variation)];
+        $active_filter_summary[] = ['label' => 'Variation', 'value' => abst_get_variation_label($selected_variation, $selected_eid)];
       }
       if (!empty($selected_exit_url)) {
         $active_filter_summary[] = ['label' => 'Exit page', 'value' => abst_resolve_page_title($selected_exit_url)];
@@ -13385,15 +12970,15 @@ function abst_heatmaps_page_content() {
 
       // Experiment selector (only show if page is selected)
 
-  if($selected_post && !empty($variations)) {
+  if($selected_post && !empty($tests_seen)) {
 
     echo '<div class="abst-filter-field"><label>Test</label><select id="abst-heatmaps-experiment-selector">';
 
     echo '<option value="">No Test Filter</option>';
 
-    // $variations is an array with experiment IDs as keys
+    // $tests_seen has the test IDs as keys
 
-    foreach ($variations as $eid => $variation_list) {
+    foreach (array_keys($tests_seen) as $eid) {
 
       // Get the actual experiment post
 
@@ -13413,29 +12998,19 @@ function abst_heatmaps_page_content() {
 
     
 
-    // Variation selector (only show if experiment is selected)
+    // Version selector (only show if a test is selected): the test's Original and Variation
 
-    if($selected_eid && isset($variations[$selected_eid])) {
+    if($selected_eid && isset($tests_seen[$selected_eid])) {
 
       echo '<select id="abst-heatmaps-variation-selector">';
 
-      
+      foreach (abst_test_version_keys($selected_eid) as $version_key) {
 
-      $experiment_variations = $variations[$selected_eid];
+        if ($version_key === '') continue; // a full page test without its variation page yet
 
-      if (!empty($experiment_variations) && is_array($experiment_variations)) {
+        $selected_attr = ($selected_variation === $version_key) ? 'selected' : '';
 
-        foreach ($experiment_variations as $var_name => $count) {
-
-          // Resolve variation name (handles numeric post IDs for full-page tests)
-
-          $display_name = abst_resolve_variation_name($selected_eid, $var_name);
-
-          $selected_attr = ($selected_variation === $var_name) ? 'selected' : '';
-
-          echo '<option value="' . esc_attr($var_name) . '" ' . esc_attr($selected_attr) . '>' . esc_html($display_name) . '</option>';
-
-        }
+        echo '<option value="' . esc_attr($version_key) . '" ' . esc_attr($selected_attr) . '>' . esc_html(abst_get_variation_label($version_key, $selected_eid)) . '</option>';
 
       }
 
@@ -13759,7 +13334,6 @@ function abst_heatmaps_page_content() {
 
     $abst_heatmap_js .= 'window.heatmapClickCounts = ' . wp_json_encode($click_counts) . ';';
 
-    $abst_heatmap_js .= 'window.variations = ' . wp_json_encode($variations) . ';';
 
     $abst_heatmap_js .= 'window.scrollMap = ' . wp_json_encode([
 
@@ -14439,47 +14013,6 @@ function abst_get_scroll_data($post_id, $filters) {
 
 
 
-/**
-
- * Resolve variation name - if numeric and full-page test, get post title
-
- * 
-
- * @param int $eid Experiment ID
-
- * @param string $variation Variation identifier (e.g., "magic-1" or "123")
-
- * @return string Resolved variation name
-
- */
-
-function abst_resolve_variation_name($eid, $variation) {
-
-  // If variation is numeric, it's likely a post ID (full-page test)
-
-  if (is_numeric($variation)) {
-
-    $post_id = intval($variation);
-
-    $post_title = get_the_title($post_id);
-
-    
-
-    if ($post_title && $post_title !== '') {
-
-      return $post_title . ' (ID: ' . $post_id . ')';
-
-    }
-
-  }
-
-  
-
-  // Otherwise return as-is (e.g., "magic-1", "magic-0")
-
-  return $variation;
-
-}
 
 
 
@@ -15516,50 +15049,6 @@ add_action('abst_trim_log', 'abst_trim_abst_log');
 
 
 
-/**
- * Merge one observation entry into another (full-page slug -> page-ID collapse).
- * Sums visits and conversions, unions location lists, recurses into
- * device_size buckets and recomputes the derived rate.
- *
- * @param array $into Observation entry that survives.
- * @param array $from Observation entry being folded in.
- * @return array
- */
-function abst_merge_observation( $into, $from ) {
-	if ( ! is_array( $into ) ) {
-		return $from;
-	}
-	if ( ! is_array( $from ) ) {
-		return $into;
-	}
-
-	$into['visit']      = (int) ( isset( $into['visit'] ) ? $into['visit'] : 0 ) + (int) ( isset( $from['visit'] ) ? $from['visit'] : 0 );
-	$into['conversion'] = (float) ( isset( $into['conversion'] ) ? $into['conversion'] : 0 ) + (float) ( isset( $from['conversion'] ) ? $from['conversion'] : 0 );
-
-	if ( ! empty( $from['location'] ) && is_array( $from['location'] ) ) {
-		foreach ( $from['location'] as $lk => $ids ) {
-			$cur                     = ( isset( $into['location'][ $lk ] ) && is_array( $into['location'][ $lk ] ) ) ? $into['location'][ $lk ] : array();
-			$into['location'][ $lk ] = array_values( array_unique( array_merge( $cur, (array) $ids ) ) );
-		}
-	}
-
-	if ( ! empty( $from['device_size'] ) && is_array( $from['device_size'] ) ) {
-		if ( empty( $into['device_size'] ) || ! is_array( $into['device_size'] ) ) {
-			$into['device_size'] = array();
-		}
-		foreach ( $from['device_size'] as $k => $sub ) {
-			$into['device_size'][ $k ] = isset( $into['device_size'][ $k ] )
-				? abst_merge_observation( $into['device_size'][ $k ], $sub )
-				: $sub;
-		}
-	}
-
-	$into['rate'] = $into['visit'] > 0
-		? round( ( $into['conversion'] / $into['visit'] ) * 100, 2 )
-		: 0;
-
-	return $into;
-}
 
 /**
  * Which progress state a running test is in, from likelyDuration / test age.
@@ -16190,6 +15679,77 @@ register_activation_hook(ABST_LITE_MAIN_FILE, 'abst_create_sample_tests_on_activ
 
 /**
 
+ * The observation keys of a test's two versions. Magic tests use magic-0 / magic-1,
+ * on-page tests original / variation, and full page tests the original page (a page ID
+ * or archive key) and the variation page ID.
+ *
+ * @param int $test_id
+ * @return array ['original' => string, 'variation' => string], '' for a page not chosen yet.
+ */
+function abst_test_version_keys( $test_id ) {
+    $test_type = get_post_meta( $test_id, 'test_type', true );
+
+    if ( 'magic' === $test_type ) {
+        return [ 'original' => 'magic-0', 'variation' => 'magic-1' ];
+    }
+
+    if ( 'full_page' === $test_type ) {
+        $variation_page = absint( get_post_meta( $test_id, 'variation_page', true ) );
+        return [
+            'original'  => (string) get_post_meta( $test_id, 'bt_experiments_full_page_default_page', true ),
+            'variation' => $variation_page ? (string) $variation_page : '',
+        ];
+    }
+
+    return [ 'original' => 'original', 'variation' => 'variation' ];
+}
+
+/**
+ * A test's observations without the rows of keys that are no longer its Original or
+ * Variation (a full page test's earlier pages). Those rows stay stored until Remove
+ * Invalid Data deletes them, but they are never compared, so they never lead or win.
+ *
+ * @param mixed $observations Stored observations.
+ * @param int   $test_id
+ * @return mixed
+ */
+function abst_current_version_observations( $observations, $test_id ) {
+    if ( ! is_array( $observations ) ) {
+        return $observations;
+    }
+    $keys = abst_test_version_keys( $test_id );
+    foreach ( $observations as $key => $row ) {
+        if ( 'bt_bb_ab_stats' !== $key && is_array( $row ) && (string) $key !== $keys['original'] && (string) $key !== $keys['variation'] ) {
+            unset( $observations[ $key ] );
+        }
+    }
+    return $observations;
+}
+
+/**
+ * Which version of a test an observation key belongs to.
+ *
+ * @param string|int $variation Observation key.
+ * @param int        $test_id
+ * @return string 'original', 'variation', or '' for neither.
+ */
+function abst_variation_version( $variation, $test_id ) {
+    $variation = (string) $variation;
+    if ( '' === $variation || ! $test_id ) {
+        return '';
+    }
+    $keys = abst_test_version_keys( $test_id );
+    if ( $variation === $keys['original'] ) {
+        return 'original';
+    }
+    if ( $variation === $keys['variation'] ) {
+        return 'variation';
+    }
+    return '';
+}
+
+/**
+
  * Get a human-readable label for a variation key.
 
  * Centralized variation-label helper.
@@ -16198,23 +15758,31 @@ register_activation_hook(ABST_LITE_MAIN_FILE, 'abst_create_sample_tests_on_activ
 
  * @param string|int $variation Variation key (e.g., 'magic-0', post ID, or custom string).
 
- * @param array|null $variation_meta Optional variation metadata containing custom labels.
+ * @param int        $test_id   The test, for the custom label of its Original or Variation (original_label / variation_label).
 
  * @return string Human-readable variation label.
 
  */
 
-function abst_get_variation_label( $variation, $variation_meta = null ) {
+function abst_get_variation_label( $variation, $test_id = 0 ) {
 
     $variation = (string) $variation;
 
     $variation_label = $variation;
 
-    // Check for custom label in variation_meta first (highest priority)
+    // A custom label for the Original or the Variation comes first (highest priority)
 
-    if ( is_array( $variation_meta ) && isset( $variation_meta[ $variation ]['label'] ) && ! empty( $variation_meta[ $variation ]['label'] ) ) {
+    $version = abst_variation_version( $variation, $test_id );
 
-        return $variation_meta[ $variation ]['label'];
+    if ( '' !== $version ) {
+
+        $custom_label = (string) get_post_meta( $test_id, $version . '_label', true );
+
+        if ( '' !== $custom_label ) {
+
+            return $custom_label;
+
+        }
 
     }
 

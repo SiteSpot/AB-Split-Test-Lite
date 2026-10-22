@@ -36,18 +36,11 @@ function abst_rest_update_test_settings($request) {
         return array_key_exists($key, $params);
     };
 
-    $normalize_variation_id = static function($value) {
+    $normalize_default_page = static function($value) {
         if (is_numeric($value)) {
             return intval($value);
         }
         return sanitize_text_field((string) $value);
-    };
-
-    $get_variation_url = static function($variation) use ($abst_btab) {
-        if (isset($abst_btab) && method_exists($abst_btab, 'get_url_from_slug')) {
-            return $abst_btab->get_url_from_slug($variation);
-        }
-        return (string) $variation;
     };
 
     $conversion_fields = [
@@ -56,7 +49,7 @@ function abst_rest_update_test_settings($request) {
         'conversion_page_id',
     ];
 
-    $full_page_fields = ['default_page', 'variations', 'variation_labels', 'variation_images'];
+    $full_page_fields = ['default_page', 'variation_page', 'variation_label', 'variation_image'];
     $has_full_page_update = false;
     foreach ($full_page_fields as $field) {
         if ($has_param($field)) {
@@ -78,7 +71,7 @@ function abst_rest_update_test_settings($request) {
     }
 
     if ($has_full_page_update && $test_type !== 'full_page') {
-        return new WP_Error('invalid_test_type_update', 'default_page, variations, variation_labels, and variation_images can only be updated on full_page tests.', ['status' => 400, 'field' => 'default_page']);
+        return new WP_Error('invalid_test_type_update', 'default_page, variation_page, variation_label, and variation_image can only be updated on full_page tests.', ['status' => 400, 'field' => 'default_page']);
     }
 
     if ($has_conversion_update) {
@@ -131,34 +124,25 @@ function abst_rest_update_test_settings($request) {
     }
 
     if ($has_full_page_update) {
-        $existing_page_variations = get_post_meta($test_id, 'page_variations', true);
-        if (!is_array($existing_page_variations)) {
-            $existing_page_variations = [];
-        }
-
         $effective_default_page = $has_param('default_page')
-            ? $normalize_variation_id($params['default_page'])
+            ? $normalize_default_page($params['default_page'])
             : get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
-
-        $effective_variations = $has_param('variations')
-            ? array_values(array_unique(array_map($normalize_variation_id, (array) $params['variations'])))
-            : array_keys($existing_page_variations);
 
         if (empty($effective_default_page)) {
             return new WP_Error('missing_default_page', 'Default page is required for full_page tests.', ['status' => 400, 'field' => 'default_page']);
         }
 
-        if (empty($effective_variations)) {
-            return new WP_Error('missing_variations', 'A variation page is required for full_page tests.', ['status' => 400, 'field' => 'variations']);
+        // The variation page given (a page ID or slug, stored by ID), or the one already saved.
+        $variation_id = $has_param('variation_page')
+            ? $abst_btab->resolve_variation_page_param($params['variation_page'])
+            : absint(get_post_meta($test_id, 'variation_page', true));
+
+        if (is_wp_error($variation_id)) {
+            return $variation_id;
         }
 
-        // A full page test compares the original page with one variation page.
-        if ($has_param('variations') && count($effective_variations) !== 1) {
-            return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400, 'field' => 'variations']);
-        }
-
-        if ($has_param('variations') && !$abst_btab->get_id_from_slug($effective_variations[0])) {
-            return new WP_Error('invalid_variations', 'The variation page was not found.', ['status' => 400, 'field' => 'variations']);
+        if (empty($variation_id)) {
+            return new WP_Error('missing_variation_page', 'variation_page is required for full_page tests: the ID or slug of the variation page.', ['status' => 400, 'field' => 'variation_page']);
         }
     }
 
@@ -240,48 +224,20 @@ function abst_rest_update_test_settings($request) {
     }
 
     if ($has_full_page_update) {
-        $existing_page_variations = get_post_meta($test_id, 'page_variations', true);
-        if (!is_array($existing_page_variations)) {
-            $existing_page_variations = [];
+        // $effective_default_page and $variation_id were validated above. A new variation
+        // page drops the old page's label and screenshot unless new ones are given.
+        $abst_btab->save_full_page_pages($test_id, $effective_default_page, $variation_id);
+
+        if ($has_param('variation_label')) {
+            update_post_meta($test_id, 'variation_label', sanitize_text_field((string) $params['variation_label']));
         }
 
-        $existing_variation_meta = get_post_meta($test_id, 'variation_meta', true);
-        if (!is_array($existing_variation_meta)) {
-            $existing_variation_meta = [];
-        }
-
-        $default_page = $has_param('default_page')
-            ? $normalize_variation_id($params['default_page'])
-            : get_post_meta($test_id, 'bt_experiments_full_page_default_page', true);
-
-        // The one variation page: the one given (stored by page ID), or the one already saved.
-        $variation_id = $has_param('variations')
-            ? $abst_btab->get_id_from_slug($normalize_variation_id(array_values((array) $params['variations'])[0])) // validated above: one page that exists
-            : (array_keys($existing_page_variations)[0] ?? null);
-
-        update_post_meta($test_id, 'bt_experiments_full_page_default_page', $default_page);
-
-        if ($has_param('variations')) {
-            update_post_meta($test_id, 'page_variations', [$variation_id => $get_variation_url($variation_id)]);
-        }
-
-        if ($variation_id !== null && ($has_param('variations') || $has_param('variation_labels') || $has_param('variation_images'))) {
-            $labels = ($has_param('variation_labels') && is_array($params['variation_labels'])) ? array_values($params['variation_labels']) : null;
-            $images = ($has_param('variation_images') && is_array($params['variation_images'])) ? array_values($params['variation_images']) : null;
-            $existing_meta = $existing_variation_meta[$variation_id] ?? [];
-
-            update_post_meta($test_id, 'variation_meta', [
-                $variation_id => [
-                    'label' => is_array($labels)
-                        ? sanitize_text_field((string) ($labels[0] ?? ''))
-                        : sanitize_text_field((string) ($existing_meta['label'] ?? '')),
-                    'image' => is_array($images)
-                        ? esc_url_raw((string) ($images[0] ?? ''))
-                        : esc_url_raw((string) ($existing_meta['image'] ?? '')),
-                ],
-            ]);
+        if ($has_param('variation_image')) {
+            update_post_meta($test_id, 'variation_page_image', esc_url_raw((string) $params['variation_image']));
         }
     }
+
+    abst_log('Test #' . $test_id . ' settings updated via API (' . ($test_type ?: 'no type') . '): ' . implode(', ', array_keys(array_diff_key($params, ['test_id' => true]))));
 
     // Refresh conversion pages cache
     if (isset($abst_btab) && method_exists($abst_btab, 'refresh_conversion_pages')) {
@@ -307,15 +263,9 @@ function abst_rest_update_test_settings($request) {
         'ac_min_views' => $details['optimization']['ac_min_views'] ?? intval(get_post_meta($test_id, 'ac_min_views', true)),
         'magic_definition' => $details['magic_definition'] ?? null,
         'default_page' => $details['full_page']['default_page'] ?? get_post_meta($test_id, 'bt_experiments_full_page_default_page', true),
-        'variations' => isset($details['full_page']['variations']) ? array_values(array_map(static function($variation) {
-            return $variation['id'] ?? null;
-        }, $details['full_page']['variations'])) : [],
-        'variation_labels' => isset($details['full_page']['variations']) ? array_values(array_map(static function($variation) {
-            return $variation['label'] ?? '';
-        }, $details['full_page']['variations'])) : [],
-        'variation_images' => isset($details['full_page']['variations']) ? array_values(array_map(static function($variation) {
-            return $variation['image'] ?? '';
-        }, $details['full_page']['variations'])) : [],
+        'variation_page' => $details['full_page']['variation_page']['id'] ?? 0,
+        'variation_label' => $details['full_page']['variation_page']['label'] ?? '',
+        'variation_image' => $details['full_page']['variation_page']['image'] ?? '',
     ];
 
     return new WP_REST_Response([

@@ -67,7 +67,7 @@ Two rules matter:
 
 Magic tests separate two concerns:
 
-- **what changes**: selector, type, and the two versions (`variations: [original, variation]`)
+- **what changes**: selector, type, and the two versions (`original` and `variation`, two named strings)
 - **where it applies**: scope metadata (`scope.page_id`, `scope.url` or `"*"`)
 
 Integrations must send scope (validation rejects items without it). Editor saves without scope default to all pages.
@@ -102,8 +102,8 @@ Journey and heatmap tracking have a transport contract and a file-format contrac
 
 Every Lite test compares the Original with exactly one Variation. That is the data model everywhere, not a setting:
 
-- **Magic (point-and-click)**: each `magic_definition` item has `variations: [original, variation]`, exactly two strings. Validation rejects any other count with `invalid_magic_variations`.
-- **Full-page**: `page_variations` holds one entry, the variation page. The test's own page is the original.
+- **Magic (point-and-click)**: each `magic_definition` item is `{type, selector, scope, original, variation}`: two named strings, both required (`missing_magic_original` / `missing_magic_variation`). Results keys are `magic-0` (original) and `magic-1` (variation).
+- **Full-page**: the test's own page (`bt_experiments_full_page_default_page`) is the original and the single post meta `variation_page` (a page ID) is the variation; its URL comes from `get_permalink()`. Custom labels are `original_label` / `variation_label`, the variation's screenshot `variation_page_image`.
 - **On-page (builders and Gutenberg)**: the `bt-variation` attribute is `original` or `variation`. `abst_normalize_onpage_variation()` reads `original` (or an empty value, where a builder leaves its default out of the saved data) as the Original and anything else as the Variation.
 
 The rule: no code may exist that supports more versions and then restricts them (no "max variations" setting, no slicing arrays down, no hidden or disabled third-variation UI). WordPress.org treats locked or capped functionality as trialware (guideline 5). A/B/n tests with several variations live in the separate AB Split Test Pro plugin, and Lite only mentions that as information.

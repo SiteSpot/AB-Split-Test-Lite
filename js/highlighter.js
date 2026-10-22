@@ -136,9 +136,9 @@ jQuery(function(){
   });
 
 
-// https://example.com/?abmagic=1&abiframe=1&text_to_replace=Get%20a%20locker&variations=Reserve%20Your%20Locker%20Now%7CBook%20Your%20Locker%20Instantly%7CSecure%20Your%20Storage%20Spot%20Today
-// if text_to_replace and variations are set, then log url decoded values of each
-    if(/[?&]abmagic\b/.test(window.location.search) && window.location.search.includes('text_to_replace') && window.location.search.includes('variations'))
+// https://example.com/?abmagic=1&abiframe=1&text_to_replace=Get%20a%20locker&variation=Reserve%20Your%20Locker%20Now
+// if text_to_replace and variation are set, start a test of that text (the original) against the variation
+    if(/[?&]abmagic\b/.test(window.location.search) && new URLSearchParams(window.location.search).has('text_to_replace') && new URLSearchParams(window.location.search).has('variation'))
     {
       setTimeout(function(){
         console.log('Magic bar loaded adding url testvars');
@@ -187,16 +187,14 @@ jQuery(function(){
             element.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
 
             // Get the variation from the URL
-            const variationsParam = urlParams.get('variations');
+            const variationParam = urlParams.get('variation');
             // These land in the saved definition and are replayed via innerHTML to every
             // visitor, so scrub them here — the query string is attacker-controllable if an
             // admin is talked into opening a crafted link. (The raw textToReplace is still
             // used above for text matching, where it is never treated as markup.)
-            const variationsArray = (variationsParam ? variationsParam.split('|') : [])
-                .map(function (v) { return abstSanitizeCreatedHtml(v); });
             // The original and the suggested variation.
             const originalText = abstSanitizeCreatedHtml(textToReplace);
-            const allVariations = [originalText, variationsArray.length ? variationsArray[0] : originalText];
+            const variationText = variationParam ? abstSanitizeCreatedHtml(variationParam) : originalText;
             
             // Initialize abmagic and create definition
             if (!window.abmagic) window.abmagic = {};
@@ -205,7 +203,8 @@ jQuery(function(){
             // Add to definition with the original and the variation from the URL
             window.abmagic.definition.push({
                 selector: selector,
-                variations: allVariations,
+                original: originalText,
+                variation: variationText,
                 scope: getMagicScope(),
                 type: 'text'
             });
@@ -222,7 +221,7 @@ jQuery(function(){
             
             // Set editor content
             if (window.abstEditor) {
-                // Sanitized — same untrusted-URL-parameter reasoning as the variations above.
+                // Sanitized — same untrusted-URL-parameter reasoning as the variation above.
                 window.abstEditor.innerHTML = abstSanitizeCreatedHtml(textToReplace);
                 jQuery('#abst-variation-editor').val(abstSanitizeCreatedHtml(textToReplace));
             }
@@ -244,7 +243,7 @@ jQuery(function(){
                     updateVariationPicker();
                 }
                 
-                console.log('URL test created:', { selector, variations: allVariations, definition: window.abmagic.definition });
+                console.log('URL test created:', { selector, original: originalText, variation: variationText, definition: window.abmagic.definition });
             }, 100);
         }
         
@@ -307,7 +306,7 @@ function abstBuildAdminBar() {
                   shownPrimary = true;
                 }
                 // Get variation display text
-                if (magicItem.variations && magicItem.variations.length > 0) {
+                if (typeof magicItem.original === 'string' && typeof magicItem.variation === 'string') {
                   [0, 1].forEach((ix) => {
                     let variationText = bt_variation_icon + " " + getVariationLabel(ix);
                     //generate link_html and preview_url like below
@@ -330,8 +329,8 @@ function abstBuildAdminBar() {
       else
         submenus += '<li><a class="ab-item" target="_blank" href="'+escapeMenuValue(bt_adminurl+'post.php?post='+index+'&action=edit')+'">'+bt_split_test_icon+'<strong>'+ escapeMenuValue(test.name) +'</strong></a></li>';
 
-      let variations = [];
-      //list test variations
+      let versionsListed = []; // bt-variation tags already in the menu
+      //list the test's versions on this page
       jQuery('[bt-eid="'+index+'"]').each(function(){
         let spantext = '';
         if(jQuery(this).attr('bt-url'))
@@ -344,9 +343,9 @@ function abstBuildAdminBar() {
           spantext = versionTag === 'original' ? 'Original' : (versionTag === 'variation' ? 'Variation' : versionTag);
         }
 
-        if( variations.indexOf(jQuery(this).attr('bt-variation')) === -1)
+        if( versionsListed.indexOf(jQuery(this).attr('bt-variation')) === -1)
         {
-          variations.push(jQuery(this).attr('bt-variation'));
+          versionsListed.push(jQuery(this).attr('bt-variation'));
           var preview_url;
           try {
             preview_url = new URL(jQuery(this).attr('bt-url') || window.location.href, window.location.href);
@@ -621,9 +620,10 @@ function showMagicGoalPageTitle($goalContainer, pageId) {
                 return;
             }
 
+            // Only the saved page itself: a search hit on another page must not stand in for it.
             var pageMatch = pages.find(function(page) {
                 return Array.isArray(page) && String(page[0]) === String(pageId);
-            }) || pages[0];
+            });
 
             if (!Array.isArray(pageMatch) || pageMatch.length < 2) {
                 return;
@@ -687,7 +687,9 @@ function initMagicGoalPageSelector($goalContainer) {
 
     var input = document.getElementById(inputId);
     var awesomplete = new Awesomplete(input, {
-        minChars: 2,
+        // 0 so the recent pages show on an empty field; searches still wait for
+        // two characters (the input handler below).
+        minChars: 0,
         maxItems: 15,
         autoFirst: true,
         sort: false,
@@ -714,7 +716,7 @@ function initMagicGoalPageSelector($goalContainer) {
             url: abst_magic_data.ajax_url,
             dataType: 'json',
             data: {
-                q: 'recent',
+                q: '', // an empty search returns the home page and recent pages
                 action: 'abst_page_selector',
                 nonce: abst_magic_data.page_selector_nonce
             },
@@ -850,7 +852,8 @@ function loadMagicTestFromUrl() {
     jQuery('.abst-magic-bar-footer').addClass('abst-magic-bar-footer-visible');
     jQuery('#variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button').show();
     jQuery('.magic-test-name').css('display', 'flex');
-    jQuery('#abst-magic-bar-start').text('Update Test');
+    // A draft is started from here; a test that already ran is updated.
+    jQuery('#abst-magic-bar-start').text(experiment.test_status === 'draft' ? 'Start Test' : 'Update Test');
 
     if (typeof refreshVariationClasses === 'function') {
         refreshVariationClasses();
@@ -862,12 +865,11 @@ function loadMagicTestFromUrl() {
 
     var firstDef = magicDefinition[0];
     if (firstDef && firstDef.selector) {
-        // Open on the Variation: variations are [original, variation].
-        var firstVariations = firstDef.variations || [];
+        // Open on the Variation.
         jQuery('#variation-picker').val('1');
         setMagicBar(
             firstDef.selector,
-            firstVariations[1] || firstVariations[0] || '',
+            firstDef.variation || firstDef.original || '',
             false,
             firstDef.type || 'text',
             true
@@ -970,7 +972,7 @@ function selectorDetection(){
             if(elementIndex !== -1) {
                 if(newSelectorValue == ''){
                     // Reset the element content to original
-                    jQuery(oldSelector).html(window.abmagic.definition[elementIndex].variations[0]);
+                    jQuery(oldSelector).html(window.abmagic.definition[elementIndex].original);
                     window.abmagic.definition.splice(elementIndex, 1); // Remove the definition if the selector is empty
                     console.log('removed', oldSelector);
                     console.log(window.abmagic.definition);
@@ -1010,7 +1012,7 @@ function selectorDetection(){
         }) : null;
         var variationIndex = parseInt(jQuery("#variation-picker").val(), 10) || 0;
         var elementType = elementDef && elementDef.type ? elementDef.type : getElementType(jQuery(this).first()[0]);
-        var selectorText = elementDef && elementDef.variations ? (elementDef.variations[variationIndex] || elementDef.variations[0] || '') : jQuery(selector).html();
+        var selectorText = elementDef ? (elementDef[abstMagicSlotField(variationIndex)] || elementDef.original || '') : jQuery(selector).html();
         setMagicBar(selector, selectorText, false, elementType);
         
     });
@@ -1736,7 +1738,7 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
             const variationIndex = parseInt(jQuery("#variation-picker").val(), 10);
             const elementDef = window.abmagic.definition.find(def => def.selector === selector);
             if (elementDef) {
-                elementDef.variations[variationIndex] = attachments.url;
+                elementDef[abstMagicSlotField(variationIndex)] = attachments.url;
             }
         });
         
@@ -1754,13 +1756,14 @@ function setMagicBar(selector, selectorText, unused = false, type = 'text', quie
     const variationIndex = parseInt(jQuery("#variation-picker").val(), 10);
     
     if (existingDefinition) {
-        // If we have a definition but not this variation, initialize it with the first variation's content
-        if (!existingDefinition.variations[variationIndex] && existingDefinition.variations[0]) {
-            existingDefinition.variations[variationIndex] = existingDefinition.variations[0];
+        // If this version is still empty, start it from the original's content
+        const slotField = abstMagicSlotField(variationIndex);
+        if (!existingDefinition[slotField] && existingDefinition.original) {
+            existingDefinition[slotField] = existingDefinition.original;
         }
-        
-        // Update the editor with the current variation's content
-        const currentVariation = existingDefinition.variations[variationIndex] || '';
+
+        // Update the editor with the current version's content
+        const currentVariation = existingDefinition[slotField] || '';
         if (currentVariation && window.abstEditor) {
             window.abstEditor.innerHTML = currentVariation;
         }
@@ -2397,8 +2400,8 @@ function adjustFixedElementsForMagicBar(activate) {
 
             if (elementIndex !== -1) {
                 // found
-                window.abmagic.definition[elementIndex]['variations'][variationIndex] = variationValue;
-                console.log('updated variation',window.abmagic.definition[elementIndex]['variations']);
+                window.abmagic.definition[elementIndex][abstMagicSlotField(variationIndex)] = variationValue;
+                console.log('updated variation',window.abmagic.definition[elementIndex]);
             } else {
                 //not found, add - but only if element type is valid
                 if (!variationType) {
@@ -2414,17 +2417,16 @@ function adjustFixedElementsForMagicBar(activate) {
                 }
 
                 originalValue = originalValue || ''; // Ensure it's never null/undefined
-                var newVariations = [originalValue, variationIndex === 1 ? (variationValue || '') : originalValue];
-
                 var newDef = {
                     type: variationType,
                     selector: selector,
                     scope: getMagicScope(),
-                    variations: newVariations
+                    original: originalValue,
+                    variation: variationIndex === 1 ? (variationValue || '') : originalValue
                 };
 
                 window.abmagic.definition.push(newDef);
-                console.log('added new variation',window.abmagic.definition[window.abmagic.definition.length - 1]['variations'][variationIndex]);
+                console.log('added new variation', newDef);
             }
 
             if (variationType === 'image') {
@@ -2483,9 +2485,9 @@ function adjustFixedElementsForMagicBar(activate) {
             if(!window.abmagic)                window.abmagic = {};
             if(!window.abmagic.definition)                window.abmagic.definition = [];
 
-            // Update all elements with their respective variations
+            // Show every element's original or variation
             window.abmagic.definition.forEach(function(def) {
-                const content = def.variations[variationIndex] || def.variations[0] || '';
+                const content = def[abstMagicSlotField(variationIndex)] || def.original || '';
                 if (def.type === 'image') {
                     jQuery(def.selector).attr('src', content);
                 } else {
@@ -2501,7 +2503,7 @@ function adjustFixedElementsForMagicBar(activate) {
             const elementDef = window.abmagic.definition.find(def => def.selector === selector);
             
             if (elementDef && window.abstEditor) {
-                const currentText = elementDef.variations[variationIndex] || elementDef.variations[0] || '';
+                const currentText = elementDef[abstMagicSlotField(variationIndex)] || elementDef.original || '';
                 
                 // Set the content directly in the contentEditable div
                 window.abstEditor.innerHTML = currentText;
@@ -2530,6 +2532,8 @@ function adjustFixedElementsForMagicBar(activate) {
             //get all magic data
             postStatus = postStatus || 'publish';
             var isDraftSave = postStatus === 'draft';
+            var editingId = window.abmagic && window.abmagic.editingTestId;
+            var startsDraft = !isDraftSave && editingId && typeof bt_experiments !== 'undefined' && bt_experiments[editingId] && bt_experiments[editingId].test_status === 'draft';
 
             //if theres no magicdata then alert
             if(!window.abmagic || !window.abmagic.definition || window.abmagic.definition.length == 0) {
@@ -2581,12 +2585,10 @@ function adjustFixedElementsForMagicBar(activate) {
                         sanitized.scope = normalizeMagicScope(selectedScope, true);
                     }
                     
-                    // Variations are exactly [original, variation]. An element never edited
+                    // The element's original and its variation. An element never edited
                     // in the Variation shows its original there.
-                    var itemVariations = Array.isArray(item.variations) ? item.variations : [];
-                    var original = (itemVariations[0] === null || itemVariations[0] === undefined) ? '' : String(itemVariations[0]);
-                    var variation = (itemVariations[1] === null || itemVariations[1] === undefined) ? original : String(itemVariations[1]);
-                    sanitized.variations = [original, variation];
+                    sanitized.original = (item.original === null || item.original === undefined) ? '' : String(item.original);
+                    sanitized.variation = (item.variation === null || item.variation === undefined) ? sanitized.original : String(item.variation);
                     
                     return sanitized;
                 }).filter(function(item) { return item !== null; }); // Remove null items
@@ -2654,8 +2656,13 @@ function adjustFixedElementsForMagicBar(activate) {
                     }
 
                     if(response.post_title && response.post_title !== ''){
-                        var message = isDraftSave ? ' saved as a draft.' : (response.updated ? ' updated.' : ' created, reloading page.');
+                        var message = isDraftSave ? ' saved as a draft.' : (startsDraft ? ' started.' : (response.updated ? ' updated.' : ' created, reloading page.'));
                         alert(response.post_title + message);
+                        if (startsDraft) {
+                            // It is running now: later saves from this bar are updates.
+                            bt_experiments[editingId].test_status = 'publish';
+                            jQuery('#abst-magic-bar-start').text('Update Test');
+                        }
                         var urlParams = new URLSearchParams(window.location.search);
                         var returnTo = urlParams.get('return_to');
                         if (isDraftSave && response.edit_url) {
@@ -2971,7 +2978,7 @@ jQuery('body').on('click', '.abst-marker-var', function(e) {
         
         // Update editor with this variation's content
         if (window.abstEditor) {
-            var content = def.variations[varIndex] || def.variations[0] || '';
+            var content = def[abstMagicSlotField(varIndex)] || def.original || '';
             window.abstEditor.innerHTML = content;
             setVariationEditorActive(def.type !== 'image');
         }
@@ -3004,9 +3011,9 @@ jQuery('body').on('click', '.abst-marker-remove', function(e) {
         
         // Reset element to original content
         if (def.type === 'image') {
-            jQuery(selector).attr('src', def.variations[0]);
+            jQuery(selector).attr('src', def.original);
         } else {
-            jQuery(selector).html(def.variations[0]);
+            jQuery(selector).html(def.original);
         }
         
         // Remove class and marker from element
@@ -3034,6 +3041,11 @@ jQuery('body').on('click', '.abst-marker-remove', function(e) {
 
 function getVariationLabel(variationIndex) {
     return variationIndex === 1 ? 'Variation' : 'Original';
+}
+
+// The field a Magic element keeps a version in: index 1 is its variation, 0 its original.
+function abstMagicSlotField(variationIndex) {
+    return Number(variationIndex) === 1 ? 'variation' : 'original';
 }
 
 /**
@@ -3103,8 +3115,8 @@ function checkChangedEditor() {
             // raw-HTML toggle and synthetic input events must not rewrite the control.
             if (!(variationIndex >= 1)) return;
             // Update existing variation with cleaned HTML
-            window.abmagic.definition[elementIndex].variations[variationIndex] = cleanValue;
-            console.log('updated variation', window.abmagic.definition[elementIndex].variations);
+            window.abmagic.definition[elementIndex].variation = cleanValue;
+            console.log('updated variation', window.abmagic.definition[elementIndex]);
         } else {
             // Add new variation - but only if element type is valid
             if (!variationType) {
@@ -3130,11 +3142,10 @@ function checkChangedEditor() {
                 }
             }
 
-            const newVariations = [originalValue, variationIndex === 1 ? cleanValue : originalValue];
-            
             window.abmagic.definition.push({
                 selector: selector,
-                variations: newVariations,
+                original: originalValue,
+                variation: variationIndex === 1 ? cleanValue : originalValue,
                 scope: getMagicScope(),
                 type: variationType
             });

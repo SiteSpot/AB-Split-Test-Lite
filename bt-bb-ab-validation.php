@@ -131,23 +131,19 @@ function abst_normalize_api_input_params($params) {
         $params['allowed_roles'] = array_values(array_map('sanitize_text_field', $decode_array_param($params['allowed_roles'])));
     }
 
-    if (isset($params['variations'])) {
-        $params['variations'] = array_values(array_map(static function($variation) {
-            if (is_numeric($variation)) {
-                return intval($variation);
-            }
-            return sanitize_text_field((string) $variation);
-        }, $decode_array_param($params['variations'])));
+    // Full page tests: one variation page (ID or slug), with an optional label and screenshot URL.
+    if (isset($params['variation_page']) && is_scalar($params['variation_page'])) {
+        $params['variation_page'] = is_numeric($params['variation_page'])
+            ? intval($params['variation_page'])
+            : sanitize_text_field((string) $params['variation_page']);
     }
 
-    foreach (['variation_labels', 'variation_images'] as $array_key) {
-        if (isset($params[$array_key])) {
-            $params[$array_key] = array_values(array_map(static function($value) use ($array_key) {
-                return $array_key === 'variation_images'
-                    ? esc_url_raw((string) $value)
-                    : sanitize_text_field((string) $value);
-            }, $decode_array_param($params[$array_key])));
-        }
+    if (isset($params['variation_label'])) {
+        $params['variation_label'] = is_scalar($params['variation_label']) ? sanitize_text_field((string) $params['variation_label']) : '';
+    }
+
+    if (isset($params['variation_image'])) {
+        $params['variation_image'] = is_scalar($params['variation_image']) ? esc_url_raw((string) $params['variation_image']) : '';
     }
 
     return $params;
@@ -313,11 +309,9 @@ function abst_prepare_magic_definition_for_write($definition) {
     if (is_array($definition)) {
         foreach ($definition as &$element) {
             if (is_array($element)) {
-                unset($element['selector_rejected']);
-                // Hide never uses a caller-controlled HTML/URL sink on the node.
-                if (($element['type'] ?? '') === 'hide') {
-                    continue;
-                }
+                // An element is {type, selector, scope, original, variation}, plus property for
+                // style and attribute changes. Anything else is not stored.
+                $element = array_intersect_key($element, array_flip(['type', 'selector', 'scope', 'property', 'original', 'variation']));
                 $selector = isset($element['selector']) && is_string($element['selector']) ? sanitize_text_field($element['selector']) : '';
                 if (!abst_magic_selector_is_balanced($selector)) {
                     $element['selector'] = '';
@@ -347,8 +341,9 @@ function abst_magic_quote_for_message($value) {
     return '"' . $value . '"';
 }
 
-/** Name the change by the selector the author typed (guards unwrapped). */
-function abst_magic_element_label($definition, $index, $variation_index = null) {
+/** Name the change by the selector the author typed (guards unwrapped), and the field
+ * ('original' or 'variation') when the problem is in one of them. */
+function abst_magic_element_label($definition, $index, $field = null) {
     $selector = isset($definition['selector']) && is_string($definition['selector']) ? $definition['selector'] : '';
     if ($selector !== '') {
         $selector = abst_magic_selector_unwrap(
@@ -359,7 +354,7 @@ function abst_magic_element_label($definition, $index, $variation_index = null) 
     $label = $selector === ''
         ? 'Element ' . ($index + 1)
         : 'The change to ' . abst_magic_quote_for_message($selector);
-    return $label . ($variation_index === null ? '' : ' (variation ' . ($variation_index + 1) . ')');
+    return $label . ($field === null ? '' : ' (' . $field . ')');
 }
 
 /** Name what KSES removed so the author can fix that one tag or attribute. */
@@ -449,15 +444,15 @@ function abst_magic_kses_allowed_html() {
 }
 }
 
-/** Content policy for every Magic test, whoever saves it: variations may only hold
- * the HTML WordPress allows in post content (no scripts, event handlers or iframes). */
+/** Content policy for every Magic test, whoever saves it: the original and the variation
+ * may only hold the HTML WordPress allows in post content (no scripts, event handlers or iframes). */
 function abst_validate_magic_write_content($definition, $index) {
     $type = $definition['type'];
     $property = $definition['property'] ?? '';
-    $error = function($reason, $variation_index = null) use ($definition, $index) {
+    $error = function($reason, $field = null) use ($definition, $index) {
         return new WP_Error(
             'magic_content_not_allowed',
-            abst_magic_element_label($definition, $index, $variation_index) . ': ' . $reason
+            abst_magic_element_label($definition, $index, $field) . ': ' . $reason
                 . ' Nothing was saved; change it and save again.',
             ['status' => 400, 'field' => 'magic_definition.' . $index]
         );
@@ -465,7 +460,7 @@ function abst_validate_magic_write_content($definition, $index) {
     if (!abst_magic_selector_is_balanced($definition['selector'])) {
         return $error('the selector ' . abst_magic_quote_for_message($definition['selector']) . ' could not be used.');
     }
-    if (!in_array($type, ['text', 'html', 'image', 'hide', 'style', 'attribute'], true)) {
+    if (!in_array($type, ['text', 'html', 'image', 'style', 'attribute'], true)) {
         // Moving arbitrary existing DOM can activate previously inert scripts.
         return $error('the ' . abst_magic_quote_for_message($type) . ' change type rearranges existing page elements.');
     }
@@ -476,25 +471,26 @@ function abst_validate_magic_write_content($definition, $index) {
     if ($type === 'style' && (!is_string($property) || !preg_match('/^[a-zA-Z][a-zA-Z-]*$/D', $property) || $property === 'cssText')) {
         return $error('the ' . abst_magic_quote_for_message($property) . ' style property is not a single CSS property Magic tests can set.');
     }
-    foreach ($definition['variations'] as $variation_index => $value) {
+    foreach (['original', 'variation'] as $field) {
+        $value = $definition[$field];
         if ($value === 'original') { continue; }
         $safe_html = wp_kses($value, abst_magic_kses_allowed_html());
         // Refuse only when KSES would remove or change something a browser
         // renders. Pure re-encoding ("Fish & Chips" -> "Fish &amp; Chips",
         // attribute quoting) leaves the content exactly as safe as the filtered copy.
         if ($safe_html !== $value && !abst_magic_html_equivalent($value, $safe_html)) {
-            return $error(abst_magic_removed_markup_hint($value, $safe_html) . ' not HTML WordPress allows in Magic tests.', $variation_index);
+            return $error(abst_magic_removed_markup_hint($value, $safe_html) . ' not HTML WordPress allows in Magic tests.', $field);
         }
         if (($type === 'image' || ($type === 'attribute' && in_array($property, ['href', 'src', 'srcset'], true)))
             && wp_kses_bad_protocol($value, $property === 'href' ? ['http', 'https', 'mailto', 'tel'] : ['http', 'https']) !== $value) {
             return $error(abst_magic_quote_for_message($value) . ' is not an ordinary web'
-                . ($property === 'href' ? ', email or telephone' : '') . ' address.', $variation_index);
+                . ($property === 'href' ? ', email or telephone' : '') . ' address.', $field);
         }
         if ($type === 'style') {
             $css_property = strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $property));
             $rule = $css_property . ':' . $value;
             if (trim(safecss_filter_attr($rule)) !== trim($rule)) {
-                return $error(abst_magic_quote_for_message($rule) . ' is not a style declaration WordPress accepts.', $variation_index);
+                return $error(abst_magic_quote_for_message($rule) . ' is not a style declaration WordPress accepts.', $field);
             }
         }
     }
@@ -564,19 +560,13 @@ function abst_validate_magic_definition($magic_definition) {
             );
         }
 
-        if (empty($definition['variations']) || !is_array($definition['variations'])) {
-            return new WP_Error('missing_magic_variations', 'Each magic_definition item requires a variations array: the original, then the variation.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
+        // A Magic test compares the original with one variation: two plain non-empty strings.
+        if (!isset($definition['original']) || !is_string($definition['original']) || trim($definition['original']) === '') {
+            return new WP_Error('missing_magic_original', 'Each magic_definition item requires original: the element\'s current content, as a plain non-empty string.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.original']);
         }
 
-        // A Magic test compares the original with one variation: exactly two strings.
-        if (count($definition['variations']) !== 2) {
-            return new WP_Error('invalid_magic_variations', 'A Magic test compares the original with one variation: variations must hold two strings, the original then the variation.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations']);
-        }
-
-        foreach ($definition['variations'] as $variation_index => $variation) {
-            if (!is_string($variation) || trim($variation) === '') {
-                return new WP_Error('invalid_magic_variation_value', 'Magic definition variations must be plain non-empty strings.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variations.' . $variation_index]);
-            }
+        if (!isset($definition['variation']) || !is_string($definition['variation']) || trim($definition['variation']) === '') {
+            return new WP_Error('missing_magic_variation', 'Each magic_definition item requires variation: the content to test against the original, as a plain non-empty string.', ['status' => 400, 'field' => 'magic_definition.' . $index . '.variation']);
         }
 
         $content_validation = abst_validate_magic_write_content($definition, $index);
@@ -646,16 +636,8 @@ function abst_validate_test_payload($params, $mode = 'create') {
             return new WP_Error('missing_default_page', 'Default page is required for full page tests.', ['status' => 400, 'field' => 'default_page']);
         }
 
-        if (empty($params['variations']) || !is_array($params['variations'])) {
-            return new WP_Error('missing_variations', 'A variation page is required for full page tests.', ['status' => 400, 'field' => 'variations']);
-        }
-
-        // A full page test compares the original page with one variation page.
-        $variation_pages = array_unique(array_map(function ($variation) {
-            return is_scalar($variation) ? (string) $variation : wp_json_encode($variation);
-        }, array_values($params['variations'])));
-        if (count($variation_pages) !== 1) {
-            return new WP_Error('invalid_variations', 'A full page test compares the original page with one variation page.', ['status' => 400, 'field' => 'variations']);
+        if (empty($params['variation_page'])) {
+            return new WP_Error('missing_variation_page', 'variation_page is required for full page tests: the ID or slug of the variation page.', ['status' => 400, 'field' => 'variation_page']);
         }
     }
 

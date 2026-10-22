@@ -55,18 +55,30 @@ Use these for new integrations:
     "type": "text",
     "selector": ".hero h1",
     "scope": { "page_id": 12 },
-    "variations": ["Original headline", "Variation headline"]
+    "original": "Original headline",
+    "variation": "Variation headline"
   }
 ]
 ```
 
 Notes:
 
-- `variations` holds exactly two strings: the original, then the variation (validation rejects any other count with `invalid_magic_variations`)
+- `original` and `variation` are two named, non-empty strings: the element's current content and the content tested against it (validation errors `missing_magic_original` / `missing_magic_variation`)
+- results and tracking keys stay `magic-0` (the original) and `magic-1` (the variation)
 - `scope` is required for REST/MCP payloads (`missing_magic_scope` otherwise); editor saves without it default to all pages
 - page goals store the numeric page ID in historical `conversion_page` storage
 - point-and-click selector capture ignores Magic Bar and admin-bar UI
 - Lite: the Magic Bar has no AI panel and no AI code; AI suggestions are an AB Split Test Pro feature
+
+## Full-page test fields
+
+- post meta `bt_experiments_full_page_default_page`: the original page (page ID, or an archive key)
+- post meta `variation_page`: the variation page ID; its URL comes from `get_permalink()`
+- post meta `original_label` / `variation_label`: custom labels for the Original and the Variation (any test type, set from the results table; `variation_label` also from the API)
+- post meta `variation_page_image`: screenshot URL of the variation page (API only)
+- API (`create-test`, `update-test-settings`): `default_page`, `variation_page` (page ID or slug, resolved to an ID; unknown gives `invalid_variation_page`), `variation_label`, `variation_image`
+- front-end config: `full_page_default_page`, `variation_page`, `variation_url`
+- results and tracking keys are the two page IDs
 
 ## Editor tabs
 

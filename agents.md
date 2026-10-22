@@ -9,7 +9,7 @@ Notes for agents and developers creating Magic (point-and-click) tests over the 
 
 Magic Tests are a powerful feature for creating point-and-click A/B tests via multiple entry points with flexible scope control.
 
-Every magic test compares the original with one variation, so each `variations` array holds exactly two strings: the original first, then the variation.
+Every magic test compares the original with one variation, so each element has two named strings: `original` (the element's current content) and `variation` (the content tested against it).
 
 ## Scope Configuration
 
@@ -26,7 +26,8 @@ Magic test definitions require explicit scope to control where tests are display
   "type": "text",
   "selector": ".button-text",
   "scope": {"page_id": 42},
-  "variations": ["Buy Now", "Start Free"]
+  "original": "Buy Now",
+  "variation": "Start Free"
 }
 ```
 
@@ -41,7 +42,8 @@ Magic test definitions require explicit scope to control where tests are display
     "type": "text",
     "selector": ".cta-button",
     "scope": {"page_id": 42},
-    "variations": ["Click Here", "Get Started"]
+    "original": "Click Here",
+    "variation": "Get Started"
   }],
   "conversion_type": "selector",
   "conversion_selector": ".checkout-btn"
@@ -57,7 +59,8 @@ Magic test definitions require explicit scope to control where tests are display
     "type": "text",
     "selector": ".price-text",
     "scope": {"url": "pricing"},
-    "variations": ["$99", "$79"]
+    "original": "$99",
+    "variation": "$79"
   }],
   "conversion_type": "selector",
   "conversion_selector": ".buy-button"
@@ -73,7 +76,8 @@ Magic test definitions require explicit scope to control where tests are display
     "type": "text",
     "selector": "button.primary",
     "scope": {"url": "*"},
-    "variations": ["Submit", "Continue"]
+    "original": "Submit",
+    "variation": "Continue"
   }],
   "conversion_type": "selector",
   "conversion_selector": ".success"
@@ -86,10 +90,12 @@ Magic test definitions require explicit scope to control where tests are display
 - `test_title` (required): Test name
 - `test_type`: "magic"
 - `magic_definition` (required): Array of element definitions
-  - `type`: "text", "html", or "image"
+  - `type`: "text", "html", "image", "style" or "attribute"
+  - `property`: for "style" one CSS property (e.g. "color"), for "attribute" one of aria-*, title, alt, role, class, id, href, src, srcset, width, height, placeholder, value, disabled, checked, rel, target
   - `selector`: CSS selector string
   - `scope`: Object with scoping rules (page_id, url, or wildcard)
-  - `variations`: Two plain strings (NOT objects): the original, then the variation
+  - `original`: Plain string (NOT an object): the element's current content
+  - `variation`: Plain string (NOT an object): the content to test against the original
 - `conversion_type`: `page` (a visit to `conversion_page_id`) or `selector` (a click on `conversion_selector`)
 - Additional conversion parameters (varies by type)
 
@@ -103,7 +109,8 @@ Magic test definitions require explicit scope to control where tests are display
       "type": "text",
       "selector": "header h1",
       "scope": {"page_id": "*"},
-      "variations": ["Welcome", "Hello"]
+      "original": "Welcome",
+      "variation": "Hello"
     }
   ],
   "conversion_type": "selector",
@@ -115,8 +122,8 @@ Magic test definitions require explicit scope to control where tests are display
 
 **Required for each magic definition item**:
 1. `selector` - Valid CSS selector string
-2. `type` - One of: "text", "html", "image"
-3. `variations` - Exactly two plain non-empty strings: the original, then the variation
+2. `type` - One of: "text", "html", "image", "style", "attribute" ("style" and "attribute" also need `property`)
+3. `original` and `variation` - Two plain non-empty strings: the element's current content, and the content to test against it
 4. `scope` - Object with at least one of:
    - `page_id`: Integer > 0 OR "*" wildcard
    - `url`: Non-empty string OR "*" wildcard
@@ -124,17 +131,16 @@ Magic test definitions require explicit scope to control where tests are display
 **Invalid (rejected)**:
 ```json
 {
-  "variations": [
-    {"label": "Option A", "text": "Buy Now"},
-    {"label": "Option B", "text": "Get Started"}
-  ]
+  "original": {"label": "Option A", "text": "Buy Now"},
+  "variation": {"label": "Option B", "text": "Get Started"}
 }
 ```
 
 **Correct**:
 ```json
 {
-  "variations": ["Buy Now", "Get Started"]
+  "original": "Buy Now",
+  "variation": "Get Started"
 }
 ```
 
@@ -145,14 +151,14 @@ Magic test definitions require explicit scope to control where tests are display
 missing_magic_scope: Each magic_definition item requires scope.page_id, scope.url, or "*" wildcard to define where the test should run.
 ```
 
-**Wrong number of variations**:
+**Missing original**:
 ```
-invalid_magic_variations: A Magic test compares the original with one variation: variations must hold two strings, the original then the variation.
+missing_magic_original: Each magic_definition item requires original: the element's current content, as a plain non-empty string.
 ```
 
-**Invalid variations**:
+**Missing variation**:
 ```
-invalid_magic_variation_value: Magic definition variations must be plain non-empty strings.
+missing_magic_variation: Each magic_definition item requires variation: the content to test against the original, as a plain non-empty string.
 ```
 
 ## Multi-Element Tests
@@ -172,19 +178,15 @@ A common use case is testing a headline and sub-headline together so they stay c
       "type": "text",
       "selector": "h1.hero-title",
       "scope": {"page_id": 42},
-      "variations": [
-        "Build Better Products Faster",
-        "Ship Features Your Customers Love"
-      ]
+      "original": "Build Better Products Faster",
+      "variation": "Ship Features Your Customers Love"
     },
     {
       "type": "text",
       "selector": "h2.hero-subtitle",
       "scope": {"page_id": 42},
-      "variations": [
-        "The all-in-one platform for modern product teams.",
-        "From backlog to launch — without the busywork."
-      ]
+      "original": "The all-in-one platform for modern product teams.",
+      "variation": "From backlog to launch — without the busywork."
     }
   ],
   "conversion_type": "selector",
@@ -202,19 +204,22 @@ Each visitor sees either the original of every element or the variation of every
     "type": "text",
     "selector": ".header-title",
     "scope": {"page_id": 42},
-    "variations": ["Original", "Variation"]
+    "original": "Original",
+    "variation": "Variation"
   },
   {
     "type": "text",
     "selector": ".cta-button",
     "scope": {"url": "*"},
-    "variations": ["Click", "Tap"]
+    "original": "Click",
+    "variation": "Tap"
   },
   {
     "type": "image",
     "selector": ".hero-image",
     "scope": {"url": "pricing"},
-    "variations": ["https://example.com/img1.jpg", "https://example.com/img2.jpg"]
+    "original": "https://example.com/img1.jpg",
+    "variation": "https://example.com/img2.jpg"
   }
 ]
 ```
