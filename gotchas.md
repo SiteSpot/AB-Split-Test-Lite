@@ -61,6 +61,19 @@ Pages load `js/bt_conversion-min.js` whenever it exists; `js/bt_conversion.js` i
 - update `js/bt_conversion.js`
 - regenerate `js/bt_conversion-min.js` (the `.github/workflows/minify-bt-conversion.yml` workflow does this on push)
 
+## Full-page tests: only the original page assigns visitors
+
+The tracker creates redirect handles only on a full-page test's original page. A visitor who lands straight on the variation page (an ad, a search result, a shared link) sees it but is not assigned or counted.
+
+### Symptom
+
+- Creating handles on the variation page too looks like a fix ("direct visitors aren't tracked"), but it counts traffic that only the variation receives, so the variation's numbers are no longer comparable with the original's.
+
+### Mitigation in ABSPLITTEST Lite
+
+- keep handle creation behind the original-page check in `abstMainInit` (Pro and its external embed behave the same way)
+- paused (`pending`) tests are in the front-end config so the Magic Bar can open them; `abstRecordConversion` skips them so they record nothing while paused
+
 ## Journey tracking: every record carries `uuid`
 
 Journey logs are written as a batch with one `meta` line followed by event rows. The receiver in `modules/journey.php` requires `type`, `timestamp`, `post_id` and `uuid` on every record (plus `screen_size` on `meta` records) and logs `Missing field uuid in journey record` when one is absent.

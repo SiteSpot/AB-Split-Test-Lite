@@ -676,12 +676,12 @@ function abstMainInit() {
         abClickListener(experimentId, experiment.conversion_selector || '');
       }
 
-      //full page test handler: on the original page or the variation page
+      //full page test handler: only the original page gets handles. A visitor who lands straight
+      // on the variation page (ad, search, shared link) sees it but is not assigned or counted:
+      // counting them would give the variation traffic the original never gets.
       var onPage = function (pageId) { return typeof current_page !== 'undefined' && Array.isArray(current_page) && current_page.some(page => String(page) === String(pageId)); };
       var variationPage = String(experiment.variation_page || '');
-      var onDefaultPage = experiment.test_type == 'full_page' && onPage(experiment.full_page_default_page);
-      var onVariationPage = experiment.test_type == 'full_page' && !onDefaultPage && variationPage !== '' && onPage(variationPage);
-      if (onDefaultPage || onVariationPage) {
+      if (experiment.test_type == 'full_page' && onPage(experiment.full_page_default_page)) {
         //add original do nothing variation
         var div = document.createElement('div');
         div.className = 'bt-redirect-handle';
@@ -696,8 +696,7 @@ function abstMainInit() {
           variationDiv.style.display = 'none';
           variationDiv.setAttribute('bt-variation', variationPage);
           variationDiv.setAttribute('bt-eid', experimentId);
-          if (onDefaultPage) // on the variation page the visitor is already where the variation lives: no redirect
-            variationDiv.setAttribute('bt-url', experiment.variation_url);
+          variationDiv.setAttribute('bt-url', experiment.variation_url);
           document.body.appendChild(variationDiv);
         }
       }
@@ -1078,6 +1077,11 @@ document.addEventListener('abst-config-ready', abstMainInit);
 function abstRecordConversion(testId) {
   if (!window.abst.hasApproval && window.abst.consentRevoked) return false;
   if (!testId || !window.bt_experiments || !window.bt_experiments[testId]) {
+    return false;
+  }
+
+  // A paused test is in the config so the Magic Bar can open it, but records nothing while paused.
+  if (window.bt_experiments[testId].test_status === 'pending') {
     return false;
   }
 
