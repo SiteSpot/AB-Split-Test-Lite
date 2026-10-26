@@ -8,23 +8,36 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Self-hosted A/B testing for WordPress: unlimited tests comparing your original with a variation, heatmaps, page-builder controls and MCP.
+Self-hosted A/B testing with an MCP API for AI agents. Test every change before you keep it: unlimited tests, heatmaps, no account.
 
 == Description ==
 
-**A/B testing that runs entirely on your own WordPress site. No external account, no traffic meter, and no visitor data leaving your server.**
+**Most website changes don't lift your conversion rate. Many do nothing, and some quietly make it worse. AB Split Test Lite lets you, or your AI agent, prove each change on real visitors before you keep it.**
 
-AB Split Test Lite is a **self-hosted** A/B and split testing plugin for WordPress. Tests, visits, conversions and heatmaps are all stored in your own database. Run as many tests as you like, on as much traffic as your site serves.
+A new headline, a redesigned hero or a rewritten button looks like an improvement on the day you ship it. Without a test you never find out whether it won, lost, or changed nothing. AI agents now write and ship site changes in minutes, so more of those untested changes go live every week.
 
-It is built on the WordPress **Abilities API**, so AI agents such as Claude Code, Cursor and Windsurf can create and run tests over **MCP (Model Context Protocol)**.
+AB Split Test Lite closes that gap. It is a **self-hosted** A/B testing plugin with a modern **MCP API**, built on the WordPress **Abilities API**, so Claude Code, Cursor, Windsurf or any MCP client can create, launch, read and end tests on your site. Tests, visits, conversions and heatmaps are all stored in your own database, with no external account and no traffic meter.
+
+= The validation loop =
+
+Give your agent a loop to work in instead of a list of edits to ship blind:
+
+1. **Propose.** The agent picks one change worth testing: a headline, a call to action, an image, a section, or a whole page.
+2. **Create the test.** One `create-test` call sets up the original, the variation and the goal (a page visit or an element click). Invalid tests are rejected with clear errors, such as a missing scope, so the agent fixes the request instead of guessing.
+3. **Run it.** Visitors are split 50/50 between the original and the variation, on your own server.
+4. **Read the result.** `get-test-results` returns visits, conversions, conversion rates and Bayesian confidence, so the agent knows whether there is a real winner or just noise. The site admin also gets an email when a winner is found.
+5. **Decide.** Keep the variation only if it won. If it lost or made no difference, the original stays and nothing is lost but a guess. End the test with `update-test-status` and start the next one.
+
+You stay in charge: the plugin reports a winner but never changes your site on its own.
 
 = Features =
 
+* **MCP API for AI agents.** Six tools, over MCP and the matching REST API: create a test, list tests, read a test's configuration, read its results, start, pause or complete it, and change its settings.
 * **Unlimited A/B tests.** Run as many tests at once as you need. Each test compares your original with one variation, and traffic is split evenly between the two.
+* **Trustworthy results.** Bayesian statistics, with a minimum number of visits and conversions before a winner is called.
 * **Self-hosted.** Tests, tracking and reporting all run on your server.
 * **No traffic meter.** No "tested page view" limit and no per-visitor billing.
-* **Heatmaps on every page.** Click maps and scroll maps, stored on your own server. You choose how many days of data to keep.
-* **Built for AI agents.** An MCP integration and a matching REST API let Claude, Cursor or any MCP client create, launch and read tests on your site.
+* **Heatmaps on every page.** Click maps and scroll maps, stored on your own server, so you can see why a variation won. You choose how many days of data to keep.
 * **Page-builder integrations.** Elementor, Bricks, Beaver Builder, Oxygen, Breakdance, WP Bakery and Gutenberg all get native test controls inside the builder.
 * **Privacy-first.** No device fingerprinting and no third-party services. Visitors are assigned to the original or the variation with first-party cookies on your own domain, and you can wait for cookie consent before anything is stored.
 * **Cache-friendly.** Test scripts are marked for exclusion in WP Rocket, NitroPack, LiteSpeed Cache, SiteGround Optimizer and other optimization plugins, so tests don't flicker or break.
@@ -89,6 +102,10 @@ AB Split Test registers WordPress Abilities. Install the official WordPress MCP 
 * `update-test-status`: start, pause or complete a test
 * `update-test-settings`: change the goal, targeting and the variation
 
+Each tool describes its inputs in full, so an agent can build a valid test without reading documentation first. To find reliable CSS selectors, an agent can open any page with `?abhash=1` added to the URL, which lists every visible text element with a unique selector.
+
+A prompt as short as *"Test a clearer headline on the pricing page, with a click on the buy button as the goal, and tell me when there's a result"* is enough for an agent to run the whole loop.
+
 = AB Split Test Pro =
 
 AB Split Test Pro is a separate plugin, available from [absplittest.com](https://absplittest.com/repo-up/?utm_source=wporg-lite&utm_medium=readme&utm_campaign=pro), with more ways to measure a win: form submission goals, WooCommerce, Easy Digital Downloads and FluentCart purchase and revenue tracking, sub-goals for multi-step funnels, audiences and location targeting, automatic winner selection, AI test ideas, webhooks, email reports and WP-CLI commands. Pro also runs multivariate (A/B/n) tests with several variations. Your tests and results carry over if you switch.
@@ -134,6 +151,10 @@ Yes. The testing engine, visitor tracking, heatmaps and reporting all run inside
 = How many tests can I run? =
 
 As many as you like, on as much traffic as your site serves. Each test is a classic A/B test: it compares your original with one variation, and visitors are split evenly between the two.
+
+= Why test a change instead of just making it? =
+
+Because most changes don't do what you expect. A new headline or layout that looks better often makes no measurable difference, and some lower your conversion rate without anyone noticing. A test shows you which it is, on your own visitors, before the change becomes permanent. That matters even more when an AI agent can make dozens of changes a week.
 
 = Can an AI agent like Claude run A/B tests on WordPress? =
 
