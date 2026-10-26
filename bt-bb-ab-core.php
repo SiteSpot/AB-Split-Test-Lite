@@ -4149,7 +4149,7 @@ if(! class_exists ( 'ABST_Tests'))
 
       $class_eid = 'ab-' . sanitize_html_class($attributes['eid']);
 
-      $class_var = 'ab-var-' . sanitize_html_class($attributes['var']);
+      $class_var = 'ab-var-' . abst_normalize_onpage_variation($attributes['var'], 'original');
 
       $wrap = in_array($attributes['wrap'], array('span', 'div'), true) ? $attributes['wrap'] : 'span';
 

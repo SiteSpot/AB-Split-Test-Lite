@@ -185,27 +185,28 @@ window.abst = window.abst || {};
 window.abst.ignoreSelectorPrefixes = ['abst-variation','stk-'];
 window.abst.clickRegister = window.abst.clickRegister || {};
 window.abst.heatScrollLastSent = window.abst.heatScrollLastSent || 0;
-window.abst.invalidVariationWarnings = window.abst.invalidVariationWarnings || {};
 window.abst.invalidExperimentIdWarnings = window.abst.invalidExperimentIdWarnings || {};
-
-function abstHasSafeVariationCharacters(value) {
-  return typeof value === 'string' && /^[A-Za-z0-9 _-]+$/.test(value);
-}
 
 function abstHasSafeExperimentId(value) {
   return typeof value === 'string' && /^[0-9]+$/.test(value);
 }
 
-function abstWarnOnUnsafeVariationNames() {
-  document.querySelectorAll('[bt-variation]:not([bt-variation=""])').forEach(function (el) {
-    var variation = el.getAttribute('bt-variation');
-    if (!variation || abstHasSafeVariationCharacters(variation) || window.abst.invalidVariationWarnings[variation]) {
-      return;
-    }
+// An on-page version is the Original when tagged 'original' or left empty, otherwise the
+// Variation. Matches abst_normalize_onpage_variation() in PHP.
+function abstOnPageVersion(value) {
+  return (!value || value === 'original') ? 'original' : 'variation';
+}
 
-    window.abst.invalidVariationWarnings[variation] = true;
-    console.warn('ABST: WARNING: Use of unallowed characters in bt_variation "' + variation + '". Use only letters, numbers, spaces, underscores, and hyphens. Other characters may not match correctly in monitoring or server-side logging.', el);
-  });
+// The two versions a test compares: [original, variation]. Full page tests use page IDs,
+// magic tests their two slots, on-page tests the two tags.
+function abstVersionSlots(experimentId, experiment) {
+  if (experiment.test_type == 'full_page') {
+    return [String(experiment.full_page_default_page || ''), String(experiment.variation_page || '')];
+  }
+  if (experiment.test_type == 'magic') {
+    return ['magic-' + experimentId + '-0', 'magic-' + experimentId + '-1'];
+  }
+  return ['original', 'variation'];
 }
 
 function abstWarnOnUnsafeExperimentIds() {
@@ -605,7 +606,7 @@ function abstMainInit() {
         if (thisTestVar !== false && thisTestId !== false) {
           //we've got variations, do ya thing!
           el.setAttribute('bt-eid', thisTestId.replace("ab-", ""));
-          el.setAttribute('bt-variation', thisTestVar.replace("ab-var-", ""));
+          el.setAttribute('bt-variation', abstOnPageVersion(thisTestVar.replace("ab-var-", "")));
           //remove classes after adding attributes
           allClasses.forEach(function (className) {
             if (className.startsWith('ab-var-') || className === thisTestId) {
@@ -632,13 +633,12 @@ function abstMainInit() {
       el.removeAttribute('bt-variation');
     });
 
-    // Builders that leave the default out of saved data (Breakdance) tag an element
-    // with a test but no version: that is the Original.
-    document.querySelectorAll('[bt-eid]:not([bt-eid=""]):not([bt-variation]), [bt-eid]:not([bt-eid=""])[bt-variation=""]').forEach(function (el) {
-      el.setAttribute('bt-variation', 'original');
+    // Every tagged element is the Original or the Variation. Builders that leave the default
+    // out of saved data (Breakdance) tag an element with a test but no version: the Original.
+    document.querySelectorAll('[bt-eid]:not([bt-eid=""])').forEach(function (el) {
+      el.setAttribute('bt-variation', abstOnPageVersion(el.getAttribute('bt-variation')));
     });
 
-    abstWarnOnUnsafeVariationNames();
     abstWarnOnUnsafeExperimentIds();
 
     let searchParams = new URLSearchParams(window.location.search)
@@ -711,21 +711,19 @@ function abstMainInit() {
 
 
     var experiments_el = document.querySelectorAll('[bt-eid]:not([bt-eid=""])[bt-variation]:not([bt-variation=""])');
-    var current_exp = {};
+    var current_exp = {}; // the tests on this page
     var exp_redirect = {};
 
     experiments_el.forEach(function (el) {
       var experimentId = el.getAttribute('bt-eid');
       var variation = el.getAttribute('bt-variation');
-      var redirect_url = el.getAttribute('bt-url');
 
       if (current_exp[experimentId] === undefined) {
-        current_exp[experimentId] = [];
-        exp_redirect[experimentId] = [];
+        current_exp[experimentId] = true;
+        exp_redirect[experimentId] = {};
       }
-      if (!current_exp[experimentId].includes(variation)) {
-        current_exp[experimentId].push(variation);
-        exp_redirect[experimentId][variation] = redirect_url;
+      if (el.getAttribute('bt-url')) {
+        exp_redirect[experimentId][variation] = el.getAttribute('bt-url');
       }
 
     });
@@ -739,14 +737,9 @@ function abstMainInit() {
           console.warn('ABST: magic_definition unavailable for experiment ' + experimentId + '. Skipping magic variation registration.');
           return;
         }
-        current_exp[experimentId] = []; // create
-        exp_redirect[experimentId] = [];
-        
-        // Register the two slots: magic-0 shows each element's original, magic-1 its variation
-        ['magic-' + experimentId + '-0', 'magic-' + experimentId + '-1'].forEach(function (slotKey) {
-          current_exp[experimentId].push(slotKey);
-          exp_redirect[experimentId][slotKey] = '';
-        });
+        // Its two slots come from abstVersionSlots(): magic-0 shows each element's original, magic-1 its variation
+        current_exp[experimentId] = true;
+        exp_redirect[experimentId] = {};
       }
     });
 
@@ -814,23 +807,24 @@ function abstMainInit() {
         if (bt_experiments[experimentId]['test_type'] == 'full_page') {
           // For full page tests: if user landed on a variation page, assign them to that variation
           var variationPageId = String(bt_experiments[experimentId]['variation_page'] || '');
+          if (variationPageId === '') { // no variation page to send anyone to
+            showSkippedVisitorDefault(experimentId);
+            return true; // continue to next exp
+          }
           var currentPageId = String(btab_vars.post_id);
           if (variationPageId !== '' && variationPageId === currentPageId) {
             // User landed on a variation page - assign them to this variation
             experimentVariation = currentPageId;
             console.log('ABST: Full page test - user on variation page, assigning to:', experimentVariation);
           } else {
-            // User is on the original page - randomly pick the Original or the Variation
-            var versionKeys = current_exp[experimentId]; // the version keys registered on this page
-            var randVar = getRandomInt(0, versionKeys.length - 1);
-            experimentVariation = versionKeys[randVar];
+            // User is on the original page - 50/50 between the Original and the Variation
+            experimentVariation = abstVersionSlots(experimentId, bt_experiments[experimentId])[getRandomInt(0, 1)];
             console.log('ABST: Full page test - user on default page, randomly selected:', experimentVariation);
           }
         }
         else {
-          var versionKeys = current_exp[experimentId]; // the version keys registered on this page
-          var randVar = getRandomInt(0, versionKeys.length - 1);
-          experimentVariation = versionKeys[randVar];
+          // 50/50 between the Original and the Variation
+          experimentVariation = abstVersionSlots(experimentId, bt_experiments[experimentId])[getRandomInt(0, 1)];
         }
       }
       else //parse existing data

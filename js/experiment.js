@@ -532,7 +532,7 @@ jQuery(document).ready(function() {
 
     
 
-    alert(jQuery(this).val() + ' copied! \n\nRemember to replace {name} with a name of your choice. e.g...\nab-var-new');
+    alert(jQuery(this).val() + ' copied! \n\nUse ab-var-original on the original and ab-var-variation on the variation.');
 
 
 
