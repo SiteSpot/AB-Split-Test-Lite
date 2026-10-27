@@ -580,17 +580,18 @@ if(! class_exists ( 'ABST_Tests'))
 
       
 
-      if (isset($atts['test_id']) && !empty($atts['test_id'])) {
+      // WPBakery fills in the Version default on every row, so only a row with a test is tagged;
+      // an ab-var- class on its own would hide the row
 
-          $class_string .= ' ab-'. sanitize_html_class($atts['test_id']);
+      if (empty($atts['test_id'])) {
 
-      }
-
-      if (isset($atts['test_variation']) && !empty($atts['test_variation'])) {
-
-          $class_string .= ' ab-var-'. abst_normalize_onpage_variation($atts['test_variation']);
+          return $class_string;
 
       }
+
+      $class_string .= ' ab-'. sanitize_html_class($atts['test_id']);
+
+      $class_string .= ' ab-var-'. abst_normalize_onpage_variation($atts['test_variation'] ?? '', 'original');
 
       
 
@@ -6504,21 +6505,21 @@ function abst_cmp_by_conversion_rate($a, $b) {
 
     function add_experiment_row_attributes ($attrs, $row) {
 
-      //ditch if not set
-
-      if(!isset($row->settings->ab_test) || !isset($row->settings->bt_variation_name))
+      //ditch if no test is picked: Beaver Builder saves the Version default on every node,
+      //and a version without a test would hide the node
+      if(empty($row->settings->ab_test) || !isset($row->settings->bt_variation_name))
 
         return $attrs;
 
-      
 
-      //check the experiment still exists
 
-      $test = get_post($row->settings->ab_test);
+      //check the experiment still exists (get_post('') would return the current page)
 
-      
+      $test = get_post((int) $row->settings->ab_test);
 
-      if(isset($test) && $test->post_status == 'publish')
+
+
+      if(isset($test) && $test->post_type == 'abst_experiments' && $test->post_status == 'publish')
 
       {
 

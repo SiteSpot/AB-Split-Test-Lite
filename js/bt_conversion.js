@@ -61,8 +61,19 @@
     elements.forEach(function(el) {
       // Get experiment ID
       var eid = getExperimentId(el);
-      
-      if (!eid) return;
+
+      // A version mark with no test (a builder that saved its Version default on an untagged
+      // element) is not part of any test: drop the mark so the hiding CSS leaves it alone.
+      if (!eid) {
+        el.removeAttribute('bt-variation');
+        el.removeAttribute('data-bt-variation');
+        Array.prototype.slice.call(el.classList).forEach(function (className) {
+          if (className.indexOf('ab-var-') === 0) {
+            el.classList.remove(className);
+          }
+        });
+        return;
+      }
       
       // If this is the first time we've seen this experiment ID
       if (!seenExperiments[eid]) {

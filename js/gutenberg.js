@@ -313,8 +313,12 @@
 ),
               options: filteredExperiments,
               onChange: (newVal) => {
-                props.setAttributes({
+                // Clearing the test clears its version too: a version without a test hides the block.
+                props.setAttributes(newVal ? {
                   'bt-eid': newVal
+                } : {
+                  'bt-eid': undefined,
+                  'bt-variation': undefined
                 });
               },
               onFilterValueChange: handleFilterValueChange,
