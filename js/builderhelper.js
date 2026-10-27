@@ -1,0 +1,265 @@
+(function() {
+    if (window.abstConsoleGateLoaded) return;
+    window.abstConsoleGateLoaded = true;
+
+    try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('abstdebug') === '1') {
+            localStorage.setItem('debug', 'true');
+        }
+    } catch (e) {}
+
+    var originalLog = console.log ? console.log.bind(console) : function() {};
+    console.log = function() {
+        try {
+            if (localStorage.getItem('debug') !== 'true') return;
+        } catch (e) {
+            return;
+        }
+
+        var args = Array.prototype.slice.call(arguments);
+        if (typeof args[0] === 'string') {
+            args[0] = args[0].replace(/^\s*ABST\s*:\s*/i, '');
+            args[0] = 'ABST: ' + args[0];
+        } else {
+            args.unshift('ABST:');
+        }
+        originalLog.apply(console, args);
+    };
+})();
+
+jQuery(document).ready(function(){
+    // to create iframe in page builders and block editors and manage drupdoowns for them
+    
+        // if inside an iframe, then its a page builder preview and we dont want to do things.
+        // check if the window is inside an iframe
+        if (window.parent.document !== window.document) {
+            console.log('in iframe');
+            //uf url contains ?fl_builder
+            // Beaver Builder and Breakdance run their editor UI in the window around this
+            // frame; the helper binds to it from here so "Create a new test" works there.
+            if(window.location.href.indexOf('fl_builder') <1 && window.location.href.indexOf('breakdance_iframe') <1)
+            {
+                return;
+            }
+        }
+
+        // oxygen builder: the scope of the page iframe, which holds the active element and its options
+        function abstOxygenScope(){
+            var ui = document.getElementById('ct-controller-ui');
+            if (!ui || typeof angular === 'undefined')
+                return null;
+            var uiScope = angular.element(ui).scope();
+            return uiScope && uiScope.iframeScope ? uiScope.iframeScope : null;
+        }
+
+
+        // closes the open create-test pop-up (iframe + backdrop), if there is one
+        var closeActiveNewAbPanel = null;
+        function closeNewAbPanelIfOpen(){
+            if (closeActiveNewAbPanel)
+                closeActiveNewAbPanel();
+            jQuery('.newabpanel, .newabpanel-backdrop').remove();
+        }
+
+        jQuery(window.parent.document.body).on("click", ".new-on-page-test-button", function(e){
+
+            e.preventDefault();
+            console.log('clicked');
+            var testName = '';
+            closeNewAbPanelIfOpen();
+    
+            if(jQuery(this).parents('#bricks-panel-element').length > 0) // if its bricks get its name
+                testName = '&name=' + jQuery(this).parents('#bricks-panel-element').find('#bricks-panel-header input').val() + ' Test';
+    
+            if(jQuery(this).parents('#elementor-panel-inner').length > 0) // if its elementor get its name
+                testName = '&name=' + jQuery(this).parents('#elementor-panel-inner').find('#elementor-panel-header-title').text().replace('Edit ','') + ' Test';
+    
+            if(jQuery(this).parents('.fl-builder-module-settings').length > 0) // if its bb get its name
+                testName = '&name=' + jQuery(this).parents('.fl-builder-module-settings').find('.fl-lightbox-header h1').text() + ' Test';
+            
+            if(jQuery(this).parents('.block-editor-block-inspector').length > 0) // if its blocks get its name
+                testName = '&name=' + jQuery(this).parents('.block-editor-block-inspector').find('h2.block-editor-block-card__title').text() + ' Test';
+    
+            //if its wp bakery  parent .vc_edit_form_elements
+            if(jQuery(this).parents('.vc_edit_form_elements').length > 0) // if its wp bakery get its name
+                testName = '&name=' + 'Row Test';
+
+            if(jQuery(this).parents('.breakdance-alert-box').length > 0) // if its breakdance get its name, e.g. "Heading"
+            {
+                var bdName = jQuery(window.parent.document).find('.properties-panel-titlebar-title').first().text().trim();
+                testName = '&name=' + encodeURIComponent((bdName || 'Breakdance') + ' Test');
+            }
+
+            var oxyScope = abstOxygenScope();
+            if(oxyScope && oxyScope.component && oxyScope.component.active) // if its oxygen get its name, e.g. "Headline (#12)"
+            {
+                var oxyOptions = oxyScope.component.options[oxyScope.component.active.id];
+                var oxyName = (oxyOptions && oxyOptions.nicename ? oxyOptions.nicename : 'Oxygen').replace(/\s*\(#\d+\)$/, '');
+                testName = '&name=' + encodeURIComponent(oxyName + ' Test');
+            }
+
+            //backdrop dims the builder and blocks clicks to it while the pop-up is open
+            var newabbackdrop = document.createElement('div');
+            newabbackdrop.classList.add('newabpanel-backdrop');
+            document.body.appendChild(newabbackdrop);
+
+            //CREATE IFRAME AS A MODAL POPOVER
+            var newabiframe = document.createElement('iframe');
+
+            // Function to close and cleanup
+            function closeNewAbPanel() {
+                if (newabiframe && newabiframe.parentNode) {
+                    newabiframe.parentNode.removeChild(newabiframe);
+                }
+                if (newabbackdrop && newabbackdrop.parentNode) {
+                    newabbackdrop.parentNode.removeChild(newabbackdrop);
+                }
+                // Remove event listeners
+                document.removeEventListener('keydown', escapeHandler);
+                if (closeActiveNewAbPanel === closeNewAbPanel)
+                    closeActiveNewAbPanel = null;
+            }
+
+            // Escape pressed on the builder page (Escape inside the iframe is posted as 'abclosemodal')
+            function escapeHandler(e) {
+                if (e.key == 'Escape') {
+                    closeNewAbPanel();
+                }
+            }
+
+            // close on a click outside the pop-up
+            newabbackdrop.addEventListener('click', closeNewAbPanel);
+
+            // close on escape key
+            document.addEventListener('keydown', escapeHandler);
+
+            closeActiveNewAbPanel = closeNewAbPanel;
+    
+            // generate source
+            const wp_ajax_on_page_test_create = window.abstBuilderHelper.ajaxUrl + '?action=abst_on_page_test_create';
+
+            newabiframe.classList.add('newabpanel');
+            document.body.appendChild(newabiframe);
+            newabiframe.style.display = 'block';
+            var createNonce = (window.abstBuilderHelper && window.abstBuilderHelper.createNonce) ? window.abstBuilderHelper.createNonce : '';
+            newabiframe.src = wp_ajax_on_page_test_create + '&nonce=' + encodeURIComponent(createNonce) + testName;
+    
+            //POPUP THE IFRAME
+            newabiframe.contentWindow.focus();
+            newabiframe.contentWindow.open();
+            newabiframe.contentWindow.moveTo(0, 0);
+            newabiframe.contentWindow.resizeTo(screen.width, screen.height);
+        });
+    
+        //catch postmessage from iframe then update inputs and hide iframe
+    //    data array keys id and name
+        window.addEventListener('message', function(e){
+    
+            var data = e.data;
+    
+            if(data.id && data.name && jQuery('.newabpanel').length > 0){
+    
+                // add to blocks dropdown - check if we are in Gutenberg context and have a selected block
+                if (typeof wp !== 'undefined' && wp.data && wp.data.dispatch && wp.data.select('core/block-editor')) {
+                    const selectedBlockId = wp.data.select('core/block-editor').getSelectedBlockClientId();
+                    if (selectedBlockId) {
+                        wp.data.dispatch('core/block-editor').updateBlockAttributes( selectedBlockId, { 
+                            'bt-eid': data.id,
+                            'bt-variation': 'original'
+                        } );
+                    }
+                }
+    
+                //add to bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks bricks
+                //if bricks save and reload page
+                if(jQuery('[data-controlkey="bt_experiment"]').length > 0)
+                {
+
+                    Object.values(bricksData.elements).forEach(element => {
+                        if (
+                            element.controls &&
+                            element.controls.bt_experiment &&
+                            element.controls.bt_experiment.options
+                        ) {
+                            // Add your option (example: using test name as both id and label)
+                            element.controls.bt_experiment.options[data.id] = data.name
+                        }
+                    });
+
+                    //current element
+                    var currentBrickElement = jQuery('#bricks-structure .bricks-draggable-item.active');
+                    //click first not active
+                    jQuery('#bricks-structure .bricks-draggable-item:not(".active")').first().find('.structure-item').first().click()
+                    //click currentBrickElement
+                    setTimeout(function () {
+                        currentBrickElement.first().find('.structure-item').first().click()
+                            //click last li
+                            setTimeout(function () {
+                                jQuery('[data-controlkey="bt_experiment"] .dropdown li').last().click();
+                                //if empty set to original
+                                console.log('clicked added and clicked bricks dropdown element');
+                            }, 100);
+                    }, 100);
+
+                }
+           
+                //elementor
+                var newOption = new Option(data.name, data.id, true, true);
+                if(jQuery('.elementor-select2[data-setting="bt_experiment"]').length > 0)
+                {
+                    console.log('ABST adding new test to elementor list ' + data.name + ' to options');
+                    jQuery('.elementor-select2[data-setting="bt_experiment"]').append(newOption).trigger('change');
+                    this.setInterval(function(){
+                        if((jQuery('.elementor-select2[data-setting="bt_experiment"]').length > 0) && jQuery('.elementor-select2[data-setting="bt_experiment"] option[value="' + data.id + '"]').length == 0) /// if the option doesnt exist
+                        {
+                            var newOption = new Option(data.name, data.id, false, false);
+                            jQuery('.elementor-select2[data-setting="bt_experiment"]').prepend(newOption).trigger('change');
+                            console.log('ABST re added new test option: ' + data.name);
+                        }
+                    },1000)
+                }
+    
+                // oxygen: add the new test to the rendered test dropdowns, then select it on the active element
+                var oxyScope = abstOxygenScope();
+                if(oxyScope)
+                {
+                    jQuery('[ng-include="\'ctDropDownTemplate\'"]').each(function(){
+                        var dropdownScope = angular.element(this).scope();
+                        if(dropdownScope && dropdownScope.data && dropdownScope.data.paramName === 'btExperiment')
+                            dropdownScope.data.pairs[data.id] = data.name;
+                    });
+                    oxyScope.$apply(function(){
+                        oxyScope.setOptionModel('btExperiment', String(data.id));
+                    });
+                    angular.element(document.getElementById('ct-controller-ui')).scope().$applyAsync();
+                }
+
+                // bb gotta type in
+                jQuery('#ab_test').val('' + data.name + '').trigger('focus');
+    
+                // if wpbakery is visible
+                if(jQuery('[data-vc-shortcode-param-name="test_id"] .vc_auto_complete_param').length > 0)
+                {
+                    jQuery('[data-vc-shortcode-param-name="test_id"] .vc_autocomplete-remove').click()
+                    jQuery('[data-vc-shortcode-param-name="test_id"] .vc_auto_complete_param').val(data.name).trigger('input');
+                    this.setTimeout(function(){
+                        if(jQuery('[data-vc-shortcode-param-name="test_id"] .vc_auto_complete_param').length > 0)
+                        {
+                            jQuery('.vc_autocomplete-item').first().trigger('click');
+                        }
+                    },2000);
+                }
+    
+                //window closing in 1 second
+                this.setTimeout(closeNewAbPanelIfOpen,1500);
+            }
+
+            if (data == 'abclosemodal'){
+                console.log('ABST close modal');
+                closeNewAbPanelIfOpen();
+            }
+    
+        }, false);
+        
+    });

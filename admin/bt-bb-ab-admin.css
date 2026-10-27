@@ -1,0 +1,2663 @@
+/* =====================================================
+   ABSPLITTEST DESIGN SYSTEM (2026)
+   "Clean, Spacious, SaaS-Inspired"
+   ===================================================== */
+
+:root {
+    /* Brand */
+    --abst-primary: #17A8E3;
+    --abst-primary-hover: #1289ba;
+    
+    /* Status Colors */
+    --abst-success: #10B981;
+    --abst-warning: #F97316;
+    --abst-error: #EF4444;
+    --abst-info: #3B82F6;
+    --abst-purple: #8D00B1;
+    
+    /* Neutrals - Tailwind-inspired grays */
+    --abst-bg: #F5F5F5;
+    --abst-card: #FFFFFF;
+    --abst-text: #1F2937;
+    --abst-text-secondary: #6B7280;
+    --abst-text-muted: #9CA3AF;
+    --abst-border: #E5E7EB;
+    --abst-border-light: #F3F4F6;
+    
+    /* Legacy aliases */
+    --abst-dark: #1F2937;
+    --abst-card-bg: #FFFFFF;
+    
+    /* Spacing Scale */
+    --abst-space-xs: 4px;
+    --abst-space-sm: 8px;
+    --abst-space-md: 12px;
+    --abst-space-lg: 16px;
+    --abst-space-xl: 24px;
+    --abst-gap: 24px;
+    
+    /* Border Radius */
+    --abst-radius-sm: 4px;
+    --abst-radius-md: 6px;
+    --abst-radius-lg: 8px;
+    --abst-radius: 8px;
+    
+    /* Shadows - Subtle depth */
+    --abst-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --abst-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --abst-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+    --abst-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Global Resets for our context */
+.post-type-abst_experiments #wpcontent {
+    background-color: var(--abst-bg);
+}
+
+.post-type-abst_experiments #poststuff {
+    padding-top: 20px;
+}
+
+/* =====================================================
+   CARD UI COMPONENT
+   ===================================================== */
+
+/* Transform WP Postboxes into Modern Cards */
+.post-type-abst_experiments .postbox {
+    background: var(--abst-card-bg);
+    border: 1px solid var(--abst-border);
+    border-radius: var(--abst-radius);
+    box-shadow: var(--abst-shadow);
+    margin-bottom: 30px;
+}
+
+/* Hide default WP handles/borders we don't want */
+.post-type-abst_experiments .postbox .postbox-header {
+    background: transparent;
+    border-bottom: 1px solid var(--abst-border);
+    padding: 15px 20px;
+}
+
+.post-type-abst_experiments .postbox .postbox-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--abst-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.post-type-abst_experiments .postbox .handle-actions {
+    display: none; /* Clean look, no toggle arrows unless needed */
+}
+
+.post-type-abst_experiments .postbox .inside {
+    padding: 20px 30px;
+    margin: 0 !important;
+}
+
+/* Clean up the Title Input */
+.post-type-abst_experiments #titlediv #title {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    font-size: 24px;
+    font-weight: 500;
+    padding: 10px 0;
+    color: var(--abst-dark);
+}
+
+.post-type-abst_experiments #titlediv #title-prompt-text {
+    font-size: 24px;
+    padding: 10px 0;
+    color: #bbb;
+}
+
+/* =====================================================
+   INTERNAL CARDS (The "Multi-Card" Layout)
+   ===================================================== */
+
+/* 
+   Target specifically the main configuration box (#all_boxes) to be transparent
+   because it contains our custom "Internal Cards".
+   
+   Sidebar boxes (Publish, etc.) should RETAIN the standard .postbox styling 
+   defined in the "CARD UI COMPONENT" section above.
+*/
+.post-type-abst_experiments #all_boxes.postbox {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.post-type-abst_experiments #all_boxes.postbox .postbox-header {
+    display: none; /* Hide header for main config box */
+}
+
+.post-type-abst_experiments #all_boxes.postbox .inside {
+    padding: 0;
+}
+
+/* Define the sections INSIDE the main box that should look like cards */
+.post-type-abst_experiments .show_test_type,
+.post-type-abst_experiments .show_full_page_test,
+.post-type-abst_experiments #magic_settings,
+.post-type-abst_experiments .show_css_classes,
+.post-type-abst_experiments .bt_experiments_inner_custom_box {
+    background: var(--abst-card-bg);
+    border: 1px solid var(--abst-border);
+    border-radius: var(--abst-radius);
+    box-shadow: var(--abst-shadow);
+    padding: 25px 30px;
+    margin-bottom: 25px;
+    position: relative;
+    transition: box-shadow 0.2s ease;
+}
+
+/* Collapsible sections - no card wrapper, just the h3 header */
+.post-type-abst_experiments .show_targeting_options,
+.post-type-abst_experiments .restart_test {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 12px;
+}
+
+/* Collapsible section headers */
+.post-type-abst_experiments .show_targeting_options > h3,
+.post-type-abst_experiments .restart_test > h3 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--abst-text);
+    background: var(--abst-card);
+    border: 1px solid var(--abst-border);
+    border-radius: var(--abst-radius);
+    padding: 14px 18px;
+    margin: 0;
+    box-shadow: var(--abst-shadow-sm);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.post-type-abst_experiments .show_targeting_options > h3:hover,
+.post-type-abst_experiments .restart_test > h3:hover {
+    border-color: #D1D5DB;
+    box-shadow: var(--abst-shadow);
+}
+
+/* Chevron indicator for collapsible headers */
+.post-type-abst_experiments .show_targeting_options > h3:after,
+.post-type-abst_experiments .restart_test > h3:after {
+    content: "▾";
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--abst-text-muted);
+    margin-left: auto;
+    padding-left: 12px;
+}
+
+/* Collapsed state - chevron points right */
+.post-type-abst_experiments .show_targeting_options.collapsed > h3:after,
+.post-type-abst_experiments .restart_test.collapsed > h3:after {
+    content: "▸";
+}
+
+/* =====================================================
+   FORM ELEMENTS
+   ===================================================== */
+
+.post-type-abst_experiments input[type="text"],
+.post-type-abst_experiments input[type="number"],
+.post-type-abst_experiments select,
+.post-type-abst_experiments textarea {
+    background: #F8F8F8;
+    border: 1px solid #DDD;
+    border-radius: 4px;
+    padding: 8px 12px;
+    box-shadow: none;
+    font-size: 13px;
+    color: var(--abst-text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.post-type-abst_experiments input:focus,
+.post-type-abst_experiments select:focus,
+.post-type-abst_experiments textarea:focus {
+    border-color: var(--abst-primary);
+    background: #FFF;
+    outline: none;
+    box-shadow: 0 0 0 1px var(--abst-primary);
+}
+
+/* Buttons */
+.post-type-abst_experiments .button.button-primary {
+    background: var(--abst-primary);
+    border-color: var(--abst-primary);
+    color: #FFF;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 16px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.post-type-abst_experiments .button.button-primary:hover {
+    background: var(--abst-primary-hover);
+    border-color: var(--abst-primary-hover);
+}
+
+.post-type-abst_experiments .button.button-secondary {
+    background: #FFF;
+    border: 1px solid var(--abst-border);
+    color: var(--abst-text-secondary);
+}
+
+/* =====================================================
+   SPECIFIC OVERRIDES
+   ===================================================== */
+
+.wrap {
+    max-width: 1200px;
+    margin: auto auto auto 20px;
+}
+
+#poststuff .inside {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+input#title {
+    font-size: 3em !important;
+    font-weight: bolder;
+}
+
+label#title-prompt-text {
+    font-size: 3em !important;
+    font-weight: bold;
+    line-height: 100%;
+}
+
+.bt_experiments_inner_custom_box label {
+    padding: 8px 0;
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--abst-text);
+}
+
+/* Description text in goals section should be normal weight */
+.bt_experiments_inner_custom_box p > label {
+    font-weight: 400;
+    color: var(--abst-text-secondary);
+}
+
+/* =====================================================
+   CONVERSION / GOAL TRIGGER SECTION
+   ===================================================== */
+
+.bt_experiments_inner_custom_box {
+    background: var(--abst-card) !important;
+    border: 1px solid var(--abst-border) !important;
+    border-radius: var(--abst-radius) !important;
+    padding: 20px 24px !important;
+}
+
+
+
+/* Goals subsection - remove yellow background */
+.bt_experiments_inner_custom_box .conversion-goal {
+    background: var(--abst-border-light) !important;
+    border: 1px solid var(--abst-border) !important;
+    border-radius: var(--abst-radius-md) !important;
+    padding: 14px 16px !important;
+    margin: 10px 0 !important;
+}
+
+.bt_experiments_inner_custom_box .conversion-goal h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--abst-text);
+    margin: 0 0 8px 0;
+}
+
+/* Add Goal button */
+.bt_experiments_inner_custom_box .button {
+    background: var(--abst-card);
+    border: 1px solid var(--abst-border);
+    color: var(--abst-text);
+    border-radius: var(--abst-radius-md);
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.bt_experiments_inner_custom_box .button:hover {
+    background: var(--abst-border-light);
+    border-color: var(--abst-primary);
+    color: var(--abst-primary);
+}
+
+.show_css_classes>h4:hover{
+    cursor: pointer;
+    font-weight: bolder;
+}
+.show_css_classes>h4:after {
+    content: ' +';
+}
+
+.show_css_classes>* {
+    display:none; 
+}
+.show_css_classes>h4 {
+    display:inherit; 
+}
+.show{
+    display:inherit;
+}
+
+#bt_experiments_conversion_page_preview,
+#full-page-test-page-preview {
+    margin: 0px 13px !important;
+    display: block;
+    padding: 5px;
+}
+
+#publish {
+    display: none;
+}
+
+.post-state span {
+    display: inline-block;
+    padding: 3px 5px;
+    background: white;
+    border: thin solid #00000021;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    font-size: .9em;
+    margin: 1px;
+}
+
+.post-state .test-type{
+    font-weight:bold;
+    font-size:.8em;
+    text-transform:uppercase;
+}
+.results_variation .title {
+    font-weight: 500;
+    margin: 4px -5px;
+    overflow: hidden;
+}
+
+.urlqueryexamples {
+    cursor: pointer;
+}
+
+.results-visits,
+.results-conversions {
+    cursor: pointer;
+}
+
+/* toggled */
+
+.target-example {
+    display: none;
+}
+
+.testwinner .title{
+    font-weight: bolder;
+}
+.testwinner .title:before {
+    content: ' ';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+}
+
+.testwinner .title:after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAsMCwyNTYsMjU2IgpzdHlsZT0iZmlsbDojMDAwMDAwOyI+CjxnIGZpbGw9IiMyZThiNTciIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IiIgc3Ryb2tlLWRhc2hvZmZzZXQ9IjAiIGZvbnQtZmFtaWx5PSJub25lIiBmb250LXdlaWdodD0ibm9uZSIgZm9udC1zaXplPSJub25lIiB0ZXh0LWFuY2hvcj0ibm9uZSIgc3R5bGU9Im1peC1ibGVuZC1tb2RlOiBub3JtYWwiPjxnIHRyYW5zZm9ybT0ic2NhbGUoOC41MzMzMyw4LjUzMzMzKSI+PHBhdGggZD0iTTcsM2MtMC4zNjA2NCwtMC4wMDUxIC0wLjY5NjA4LDAuMTg0MzggLTAuODc3ODksMC40OTU4N2MtMC4xODE4MSwwLjMxMTUgLTAuMTgxODEsMC42OTY3NiAwLDEuMDA4MjVjMC4xODE4MSwwLjMxMTUgMC41MTcyNSwwLjUwMDk3IDAuODc3ODksMC40OTU4N3YyLjM3MzA1Yy0wLjQ0MDI5LC0wLjIyNTAyIC0wLjkzNDAzLC0wLjM3MzA1IC0xLjUsLTAuMzczMDVjLTEuOTIxMTksMCAtMy41LDEuNTc4ODEgLTMuNSwzLjVjMCwxLjM1MTE5IDAuODgxMTksMi40MDE4OCAxLjkyNTc4LDMuMjYzNjdjMS4wNDQ2LDAuODYxNzkgMi4zNTE1NCwxLjU4NyAzLjY0NDUzLDIuMjAxMTdjMS4xNDY0NCwwLjU0NDU2IDIuMjUzMjgsMC45Nzg1NiAzLjE2Nzk3LDEuMzE0NDVjMS4yMTM1MywxLjY0NjEgMi4yNjE3MiwyLjcyMDcgMi4yNjE3MiwyLjcyMDdoMmgyYzAsMCAxLjA0ODE5LC0xLjA3NDYgMi4yNjE3MiwtMi43MjA3YzAuOTE0NjksLTAuMzM1ODkgMi4wMjE1MiwtMC43Njk4OSAzLjE2Nzk3LC0xLjMxNDQ1YzEuMjkyOTksLTAuNjE0MTcgMi41OTk5NCwtMS4zMzkzOCAzLjY0NDUzLC0yLjIwMTE3YzEuMDQ0NiwtMC44NjE3OSAxLjkyNTc4LC0xLjkxMjQ4IDEuOTI1NzgsLTMuMjYzNjdjMCwtMS45MjExOSAtMS41Nzg4MSwtMy41IC0zLjUsLTMuNWMtMC41NjU5NywwIC0xLjA1OTcxLDAuMTQ4MDMgLTEuNSwwLjM3MzA1di0yLjM3MzA1YzAuMzYwNjQsMC4wMDUxIDAuNjk2MDgsLTAuMTg0MzggMC44Nzc4OSwtMC40OTU4N2MwLjE4MTgxLC0wLjMxMTUgMC4xODE4MSwtMC42OTY3NiAwLC0xLjAwODI1Yy0wLjE4MTgxLC0wLjMxMTUgLTAuNTE3MjUsLTAuNTAwOTcgLTAuODc3ODksLTAuNDk1ODd6TTUuNSw5YzAuNzE2NjcsMCAxLjMzMTQ5LDAuNjI4MTcgMS44MTY0MSwxLjQ5MDIzYzAuMDA4MTksMC4wMTQ1NiAwLjAxMzQ0LDAuMDI4NCAwLjAyMTQ4LDAuMDQyOTdjMC4zMzI0NiwxLjMzODU0IDAuODc5MTcsMi42MzI5NiAxLjUxNTYzLDMuODEyNWMtMC4xNDM2MiwtMC4wNjUzOCAtMC4yNzk4OSwtMC4xMTcxOCAtMC40MjM4MywtMC4xODU1NWMtMS4yMDcwMSwtMC41NzMzMyAtMi40MDAwNiwtMS4yNTQzNyAtMy4yMzA0NywtMS45Mzk0NWMtMC44MzA0LC0wLjY4NTA4IC0xLjE5OTIyLC0xLjMyMTg5IC0xLjE5OTIyLC0xLjcyMDdjMCwtMC44NDA4MSAwLjY1OTE5LC0xLjUgMS41LC0xLjV6TTI0LjUsOWMwLjg0MDgxLDAgMS41LDAuNjU5MTkgMS41LDEuNWMwLDAuMzk4ODEgLTAuMzY4ODEsMS4wMzU2MiAtMS4xOTkyMiwxLjcyMDdjLTAuODMwNCwwLjY4NTA4IC0yLjAyMzQ2LDEuMzY2MTIgLTMuMjMwNDcsMS45Mzk0NWMtMC4xNDM5NCwwLjA2ODM3IC0wLjI4MDIxLDAuMTIwMTcgLTAuNDIzODMsMC4xODU1NWMwLjYzNjQ1LC0xLjE3OTU0IDEuMTgzMTYsLTIuNDczOTYgMS41MTU2MywtMy44MTI1YzAuMDA4MDQsLTAuMDE0NTcgMC4wMTMyOSwtMC4wMjg0MSAwLjAyMTQ4LC0wLjA0Mjk3YzAuNDg0OTEsLTAuODYyMDYgMS4wOTk3NCwtMS40OTAyMyAxLjgxNjQxLC0xLjQ5MDIzek0xMiwyMmMtMS4xMDUsMCAtMiwwLjg5NSAtMiwydjFjLTAuMzYwNjQsLTAuMDA1MSAtMC42OTYwOCwwLjE4NDM4IC0wLjg3Nzg5LDAuNDk1ODdjLTAuMTgxODEsMC4zMTE1IC0wLjE4MTgxLDAuNjk2NzYgMCwxLjAwODI1YzAuMTgxODEsMC4zMTE1IDAuNTE3MjUsMC41MDA5NyAwLjg3Nzg5LDAuNDk1ODdoMTBjMC4zNjA2NCwwLjAwNTEgMC42OTYwOCwtMC4xODQzOCAwLjg3Nzg5LC0wLjQ5NTg3YzAuMTgxODEsLTAuMzExNSAwLjE4MTgxLC0wLjY5Njc2IDAsLTEuMDA4MjVjLTAuMTgxODEsLTAuMzExNSAtMC41MTcyNSwtMC41MDA5NyAtMC44Nzc4OSwtMC40OTU4N3YtMWMwLC0xLjEwNSAtMC44OTUsLTIgLTIsLTJ6Ij48L3BhdGg+PC9nPjwvZz4KPC9zdmc+) 50% 50% no-repeat;
+    background-size: 100%;
+    margin: 0px 0px -5px 4px;
+}
+    
+    
+
+
+.results_variation>div {
+    font-size: 1.2em;
+    display: inline-block;
+    margin: 8px 1%;
+    width: 46%;
+}
+
+.results_variation span {
+    font-size: .8em;
+    display: inline;
+    color: #85b3ba;
+    margin-left: 5px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.results_variation.title {
+    font-size: 1em;
+    font-weight: 500;
+    border-bottom: thin solid #e1e1e1;
+}
+
+.bt_ab_success {
+    color: #0a6076;
+    font-size: 1.1em;
+}
+
+#normal-sortables {
+    display: none !important
+}
+
+.bt_variation {
+    font-weight: normal;
+    display: inline-block;
+    color: #777;
+    padding: 1px 3px;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 1dro;
+    line-clamp: 1dro;
+    -webkit-box-orient: vertical;
+}
+
+.bt_variation_container {
+    padding: 2px;
+    margin: 6px 0;
+    background: white;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    border: thin solid #e2e2e2;
+}
+
+.hidden{
+    display: none;
+}
+
+.seen-on a,
+.seen-on span {
+    background: whitesmoke;
+    padding: 5px;
+    border: thin solid #dfdfdf;
+    margin: 3px 6px;
+    display: inline-block;
+    border-radius: 3px;
+}
+
+.seen-on {
+    display: none;
+    margin: 0;
+    background: #fcfcfc;
+    border: thin solid #e2e2e2;
+    border-radius: 5px;
+    box-shadow: 0 1px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+.seen-on p {
+    margin: 3px auto;
+    font-weight: 500;
+}
+
+.seen-on>div {
+    WIDTH: 45%;
+    DISPLAY: inline-block;
+    PADDING: 1%;
+    MARGIN: 0 1% 1% 1%;
+    vertical-align: top;
+}
+
+
+.conversion_selector_input {
+    display: none;
+}
+
+.select2-selection__choice__display{
+    padding-left:18px !important;
+}
+
+/* OLD #configuration_settings h3 styles removed - see MODERN ADMIN UI section */
+
+#configuration_settings>div {
+    padding: 0 0 20px 0;
+    display: none;
+}
+
+.collapsed{
+    padding-bottom:0 !important;
+}
+
+.target-example {
+    padding: 10px;
+    background: whitesmoke;
+    margin: 5px 0;
+}
+
+
+@media screen and (max-width: 581px) {
+
+
+    .wrap {
+        margin: auto;
+    }
+
+}
+
+
+.ab-panels {
+    position: relative;
+    width: 100%;
+    display: block;
+    float: left;
+    z-index: 1;
+}
+
+h2,
+h3,
+h4,
+h5 {
+    color: #092E4B;
+}
+
+@media screen and (max-width: 782px) {
+    h2{
+        line-height:1.1 !important;
+    }
+}
+
+.tab-active {
+    background: white !important;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.15);
+    border: thin solid #d0d0d0;
+    z-index: 3;
+    border-bottom: white;
+}
+
+.tab-active:focus {
+    outline: none;
+}
+
+/* OLD #configuration_settings base removed - see MODERN ADMIN UI section */
+
+#configuration_settings p {
+    opacity: 1;
+}
+
+
+.show_test_type input[type=radio]:checked::before {
+    background: none;
+}
+
+.show_test_type input[type=checkbox],
+input[type=radio] {
+    border: none;
+    background: none;
+    box-shadow: none;
+}
+
+/* OLD .show_test_type label styles removed - see TEST TYPE SECTION in MODERN ADMIN UI */
+
+select,
+input[type="number"],
+input[type="text"] {
+    border-radius: 5px !important;
+    border: THIN SOLID #c9c9c9;
+    width: 100%;
+}
+
+.show_test_type.err {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+}
+
+input#title {
+    box-shadow: none !important;
+}
+
+
+
+h5 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+/* OLD .show_test_type p styles removed - see TEST TYPE SECTION in MODERN ADMIN UI */
+div#all_boxes {
+    background: none !important;
+    box-shadow: none !important;
+    border: none;
+}
+
+/* Keep the status sidebar in view while scrolling, but only in WordPress's
+   two-column edit layout (851px and up). Below that the sidebar is stacked
+   above the content, and a sticky block would sit on top of the results. */
+@media screen and (min-width: 851px) {
+    div#side-sortables {
+        position: sticky;
+        top: 40px;
+    }
+    #postbox-container-1 {
+        position: sticky !important;
+        top: 45px !important; /* Adjust as needed for your admin bar height */
+        z-index: 100;
+    }
+}
+#post-body {
+    display: flow-root !important;
+}
+
+.post-type-abst_experiments #submitdiv #major-publishing-actions,
+.post-type-abst_experiments #submitdiv #minor-publishing-actions,
+.post-type-abst_experiments #submitdiv #misc-publishing-actions > .misc-pub-section:not(#abst-status-lifecycle) {
+    display: none;
+}
+
+.post-type-abst_experiments #submitdiv #misc-publishing-actions {
+    padding: 0;
+}
+
+.post-type-abst_experiments #submitdiv #abst-status-lifecycle {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__card {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #f6f7f7;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2271b1;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__header-action {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2271b1;
+    text-decoration: underline;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__header-action:hover {
+    color: #135e96;
+}
+
+.post-type-abst_experiments .abst-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100100;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.post-type-abst_experiments .abst-modal {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    padding: 24px;
+    width: 100%;
+    max-width: 440px;
+    text-align: left;
+}
+
+.post-type-abst_experiments .abst-modal h2,
+#poststuff .abst-modal h2 {
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d2327;
+}
+
+.post-type-abst_experiments .abst-modal p {
+    margin: 0 0 16px;
+    color: #50575e;
+}
+
+.post-type-abst_experiments .abst-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+.post-type-abst_experiments .abst-status-lifecycle__body {
+    padding: 12px 16px 8px;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__row {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    color: #50575e;
+    font-size: 13px;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__row + .abst-status-lifecycle__row {
+    border-top: 1px solid #f0f0f1;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__row .dashicons {
+    width: 18px;
+    height: 18px;
+    font-size: 16px;
+    color: #8c8f94;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__label {
+    color: #646970;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__value {
+    color: #1d2327;
+    font-weight: 600;
+    text-align: right;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__progress {
+    padding-top: 10px;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__progress-bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: #f0f0f1;
+    overflow: hidden;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: #2271b1;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__progress-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #646970;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__actions {
+    padding: 14px 16px 16px;
+    border-top: 1px solid #dcdcde;
+    background: #fff;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__actions-row + .abst-status-lifecycle__actions-row {
+    margin-top: 10px;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__actions-row--split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__actions .button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__footer {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.post-type-abst_experiments .abst-status-lifecycle__footer .submitdelete {
+    float: none;
+    padding: 0;
+    color: #b32d2e;
+    text-decoration: underline;
+}
+
+.post-type-abst_experiments .abst-idea-panel {
+    display: grid;
+    gap: 16px;
+}
+
+.post-type-abst_experiments #idea_settings .show_test_type {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+.post-type-abst_experiments #idea_settings .show_test_type > h3 {
+    margin: 0 0 18px 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.post-type-abst_experiments .abst-idea-field {
+    display: grid;
+    gap: 0;
+    background: #ffffff;
+    border: 1px solid var(--abst-border);
+    border-radius: var(--abst-radius);
+    box-shadow: var(--abst-shadow);
+    overflow: hidden;
+}
+
+.post-type-abst_experiments .abst-idea-field > label {
+    display: block;
+    margin: 0;
+    padding: 16px 18px 12px;
+    background: #ffffff;
+    border: 0;
+    box-shadow: none;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #52657f !important;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.post-type-abst_experiments .abst-idea-field > input[type="text"],
+.post-type-abst_experiments .abst-idea-field > textarea {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 14px 18px 18px;
+    background: #ffffff !important;
+    border: 0 !important;
+    border-top: 1px solid var(--abst-border) !important;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 14px;
+    color: var(--abst-text);
+}
+
+.post-type-abst_experiments .abst-idea-field > textarea {
+    min-height: 108px;
+    resize: vertical;
+    line-height: 1.55;
+}
+
+.post-type-abst_experiments .abst-idea-score-grid {
+    display: grid;
+    align-items: start;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid var(--abst-border);
+    border-radius: var(--abst-radius);
+    box-shadow: var(--abst-shadow);
+}
+
+.post-type-abst_experiments .abst-idea-score-card {
+    display: grid;
+    gap: 8px;
+}
+
+.post-type-abst_experiments .abst-idea-score-card > label {
+    display: block;
+    margin: 0;
+    padding: 14px 12px;
+    background: #ffffff !important;
+    border: 1px solid var(--abst-border) !important;
+    border-radius: var(--abst-radius-md);
+    box-shadow: none;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #52657f !important;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-align: center;
+}
+
+.post-type-abst_experiments .abst-idea-score-card > select,
+.post-type-abst_experiments .abst-idea-score-card > input[type="text"] {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    min-height: 56px;
+    padding: 14px 12px;
+    background: #ffffff !important;
+    border: 1px solid var(--abst-border) !important;
+    border-radius: var(--abst-radius-md);
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.post-type-abst_experiments .abst-idea-score-total > input[type="text"] {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--abst-dark);
+}
+
+@media (max-width: 960px) {
+    .post-type-abst_experiments .abst-idea-score-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .post-type-abst_experiments .abst-idea-score-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* hide bad metaboxes */
+#advanced-sortables .postbox:not(#all_boxes) {
+    display: none;
+}
+
+.postbox-header {
+    display: none;
+}
+
+input#title {
+    background: none !important;
+}
+
+input#title {
+    border: none;
+    margin: 0 !important;
+    padding: 10px 0 !important;
+}
+
+#configuration_settings hr {
+    margin-bottom: 20px;
+    border: 7px solid #f0f0f1;
+    margin-left: -21px;
+    margin-right: -21px;
+    box-shadow: 0 0 1px rgb(55, 55, 55);
+}
+
+span.status {
+    color: #2271b1;
+}
+
+.experiment-status h3 {
+    font-size: 3em;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-weight: bolder;
+}
+
+.collapsed>*{
+    display: none !important;
+}
+
+.collapsed.ab-accordion-animating > *,
+.expanded.ab-accordion-animating > * {
+    display: block !important;
+}
+
+.collapsed.ab-accordion-animating > h3,
+.expanded.ab-accordion-animating > h3 {
+    display: flex !important;
+}
+
+.collapsed>h3{
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+.collapsed>h3:hover{
+    background: #f8fafc !important;
+}
+.collapsed>h3:after{
+    content: ' ↓';
+}
+.experiment-status p {
+    font-size: 1.1em;
+}
+
+
+label#title-prompt-text {
+    font-size: 3em !important;
+    font-weight: bolder;
+}
+
+div#titlewrap {
+    margin-top: 0px;
+}
+
+
+.test-class-info input {
+    padding: 5px 10px;
+    border-radius: 5px;
+    background-position: calc(100% - 10px);
+    cursor: pointer;
+    box-shadow: inset 0 1px 10px -4px;
+    background: #fcfcfc;
+}
+
+.test-class-info input:hover {
+    box-shadow: inset 0 1px 10px -3px;
+    cursor: pointer;
+    background: #f0f0f0 url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4Igp3aWR0aD0iMjQiIGhlaWdodD0iMjQiCnZpZXdCb3g9IjAgMCAyNCAyNCIKc3R5bGU9IiBmaWxsOiMwMDAwMDA7Ij4gICAgPHBhdGggZD0iTSA0IDIgQyAyLjg5NSAyIDIgMi44OTUgMiA0IEwgMiAxNyBDIDIgMTcuNTUyIDIuNDQ4IDE4IDMgMTggQyAzLjU1MiAxOCA0IDE3LjU1MiA0IDE3IEwgNCA0IEwgMTcgNCBDIDE3LjU1MiA0IDE4IDMuNTUyIDE4IDMgQyAxOCAyLjQ0OCAxNy41NTIgMiAxNyAyIEwgNCAyIHogTSA4IDYgQyA2Ljg5NSA2IDYgNi44OTUgNiA4IEwgNiAyMCBDIDYgMjEuMTA1IDYuODk1IDIyIDggMjIgTCAyMCAyMiBDIDIxLjEwNSAyMiAyMiAyMS4xMDUgMjIgMjAgTCAyMiA4IEMgMjIgNi44OTUgMjEuMTA1IDYgMjAgNiBMIDggNiB6IE0gOCA4IEwgMjAgOCBMIDIwIDIwIEwgOCAyMCBMIDggOCB6Ij48L3BhdGg+PC9zdmc+') 50% 50% no-repeat;
+}
+
+.test-class-info input:active {
+    box-shadow: inset 0 1px 10px -3px;
+    background: #bbdeec url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4Igp3aWR0aD0iMjQiIGhlaWdodD0iMjQiCnZpZXdCb3g9IjAgMCAyNCAyNCIKc3R5bGU9IiBmaWxsOiMwMDAwMDA7Ij4gICAgPHBhdGggZD0iTSA0IDIgQyAyLjg5NSAyIDIgMi44OTUgMiA0IEwgMiAxNyBDIDIgMTcuNTUyIDIuNDQ4IDE4IDMgMTggQyAzLjU1MiAxOCA0IDE3LjU1MiA0IDE3IEwgNCA0IEwgMTcgNCBDIDE3LjU1MiA0IDE4IDMuNTUyIDE4IDMgQyAxOCAyLjQ0OCAxNy41NTIgMiAxNyAyIEwgNCAyIHogTSA4IDYgQyA2Ljg5NSA2IDYgNi44OTUgNiA4IEwgNiAyMCBDIDYgMjEuMTA1IDYuODk1IDIyIDggMjIgTCAyMCAyMiBDIDIxLjEwNSAyMiAyMiAyMS4xMDUgMjIgMjAgTCAyMiA4IEMgMjIgNi44OTUgMjEuMTA1IDYgMjAgNiBMIDggNiB6IE0gOCA4IEwgMjAgOCBMIDIwIDIwIEwgOCAyMCBMIDggOCB6Ij48L3BhdGg+PC9zdmc+') 50% 50% no-repeat;
+}
+
+#visibility {
+    display: none;
+}
+
+.edit-timestamp {
+    display: none !important;
+}
+
+#page-test-variations h5 {
+    margin-top: 5px;
+    margin-bottom: 2px;
+}
+
+#page-test-variations h5 small {
+    opacity: 0.7;
+}
+
+.results_variation {
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-align-items: center;
+    -ms-align-items: center;
+    align-items: center;
+    padding: 5px;
+}
+
+p.experiment-status {
+    font-size: 1.1em;
+}
+
+#visibility {
+    display: none;
+}
+
+.edit-timestamp {
+    display: none !important;
+}
+
+#page-test-variations h5 {
+    margin-top: 5px;
+    margin-bottom: 2px;
+}
+
+#page-test-variations h5 small {
+    opacity: 0.7;
+}
+
+.results_variation {
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-align-items: center;
+    -ms-align-items: center;
+    align-items: center;
+    padding: 5px;
+    flex-wrap: wrap;
+}
+
+p.experiment-status {
+    font-size: 1.1em;
+}
+
+
+@media (max-width: 500px) {
+
+
+    .results_variation>div {
+        font-size: 1em;
+        width: 96%;
+        margin: 8px 2%;
+    }
+
+    .results_variation.title>div {
+        font-size: 1em;
+        transform: rotate(-60deg);
+        padding: 5px 0;
+        margin: auto;
+    }
+
+    .results_variation.title {
+        padding: 20px 0;
+    }
+
+}
+
+@media (max-width: 350px) {
+
+    .results_variation.title>div {
+        transform: rotate(-80deg);
+    }
+}
+
+
+/* Setup tours (Driver.js) */
+.driver-overlay {
+    z-index: 100000 !important; /* above the admin bar */
+}
+
+.driver-popover.abst-tour {
+    max-width: 340px;
+    border: 2px solid #1d2327;
+    box-shadow: 0 1px 20px rgb(0 0 0 / 47%);
+}
+
+.driver-popover.abst-tour .driver-popover-title {
+    font-size: 16px;
+    padding: 0 20px 8px 0;
+    border-bottom: 2px solid #1d2327;
+}
+
+.driver-popover.abst-tour .driver-popover-description {
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.driver-popover.abst-tour .driver-popover-footer-btn {
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 3px;
+    background: #3288e6;
+    color: #fff;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 4px #00000057;
+    text-transform: uppercase;
+}
+
+.driver-popover.abst-tour .driver-popover-footer-btn:hover,
+.driver-popover.abst-tour .driver-popover-footer-btn:focus {
+    background: #1f6fc5;
+}
+
+.driver-popover.abst-tour .driver-popover-arrow-side-left { border-left-color: #1d2327; }
+.driver-popover.abst-tour .driver-popover-arrow-side-right { border-right-color: #1d2327; }
+.driver-popover.abst-tour .driver-popover-arrow-side-top { border-top-color: #1d2327; }
+.driver-popover.abst-tour .driver-popover-arrow-side-bottom { border-bottom-color: #1d2327; }
+.conversion-goal{
+    padding: 0 0 15px 0;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.conversion-goal{
+    margin-top:15px;
+}
+.conversion-goal {
+    background: #00000003;
+    padding: 5px 31px 10px 15px;
+    border-radius: 6px;
+    border: 1px solid #bbbbbb;
+}
+
+.na .results-conversion-rate {
+    font-size: 1.5em !important;
+    font-weight:bolder;
+}
+
+/* =====================================================
+   MODERN ADMIN UI OVERHAUL
+   ===================================================== */
+
+/* =====================================================
+   SIDEBAR NAVIGATION LAYOUT
+   Settings/Results pills on left side
+   ===================================================== */
+
+.ab-layout-wrapper {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+}
+
+.ab-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 0px 0 0;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+/* Navigation Pills */
+.ab-nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.ab-nav-pill:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.ab-nav-pill.tab-active {
+    background: #17A8E3;
+    color: #fff;
+    font-weight: 500;
+}
+
+.ab-nav-pill.tab-active svg {
+    stroke: #fff;
+}
+
+.ab-nav-pill svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    stroke: #94a3b8;
+    transition: stroke 0.15s ease;
+}
+
+.ab-nav-pill:hover svg {
+    stroke: #64748b;
+}
+
+/* Panels container - takes remaining space */
+.ab-panels {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Base styling for tab content */
+.ab-tab-content {
+    padding: var(--abst-space-xl);
+}
+
+/* Responsive: Stack on smaller screens */
+@media (max-width: 782px) {
+    .ab-layout-wrapper {
+        flex-direction: column;
+    }
+    
+    .ab-sidebar-nav {
+        flex-direction: row;
+        min-width: 100%;
+        padding: 0 0 16px 0;
+        gap: 8px;
+    }
+    
+    .ab-nav-pill {
+        border-radius: var(--abst-radius);
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .ab-nav-pill.tab-active {
+        border-right: none;
+        border-bottom: 2px solid var(--abst-primary);
+    }
+}
+
+/* Legacy tab button styles (keep for backwards compat) */
+
+.tab-active {
+    background: var(--abst-card) !important;
+    color: var(--abst-text) !important;
+    border-color: var(--abst-border) !important;
+    border-bottom: 1px solid var(--abst-card) !important;
+    margin-bottom: -1px;
+    z-index: 2;
+}
+
+/* =====================================================
+   ACCORDION SECTIONS - WPMU DEV Style
+   Clean white cards with subtle borders
+   ===================================================== */
+
+#configuration_settings {
+    max-width: 100%;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* Remove card styling from collapsed wrapper divs */
+#configuration_settings > div.collapsed,
+.post-type-abst_experiments .collapsed {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 8px !important;
+}
+
+/* Accordion Header - Clean white card style (ONLY collapsible section headers) */
+#configuration_settings > div.collapsed > h3,
+#configuration_settings > div:not(.collapsed) > h3:first-child {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0;
+    margin: 0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    text-transform:uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* ALL other h3s inside configuration_settings - simple title, no box */
+#configuration_settings h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 16px 0 8px 0;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    display: block;
+    cursor: default;
+}
+
+/* Nested h3s inside expanded sections - simple title style, no box */
+#configuration_settings > div:not(.collapsed) h3:not(:first-child),
+#configuration_settings .bt_experiments_inner_custom_box h3:not(:first-child),
+#configuration_settings .bt_experiments_inner_custom_box > div h3,
+.bt_experiments_inner_custom_box > div h3,
+.show_targeting_options > div h3,
+.bt_experiments_inner_custom_box .conversion-goal h3,
+#magic_settings h3,
+.show_full_page_test h3:not(:first-child) {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: block !important;
+    cursor: default !important;
+}
+
+
+
+
+#configuration_settings > div.collapsed > h3:after,
+.collapsed > h3:after {
+    content: "▸";
+}
+
+
+
+#configuration_settings > div > h3:after {
+    flex: 0 0 auto;
+    line-height: 1;
+}
+
+/* Accordion Content - seamless with header when expanded */
+#configuration_settings > div:not(.collapsed) {
+    padding: 20px;
+    background: var(--abst-card);
+    border: 1px solid var(--abst-border);
+    border-top: none;
+    border-radius: var(--abst-radius);
+    box-shadow: var(--abst-shadow-sm);
+    margin-bottom: 12px;
+}
+
+/* When expanded, header connects to content */
+#configuration_settings > div:not(.collapsed) > h3 {
+    margin-bottom: 0;
+}
+
+/* =====================================================
+   TEST TYPE SECTION - Selection Cards (Defender-style)
+   ===================================================== */
+
+/* Test Type Section Title */
+.show_test_type > h3 {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: var(--abst-text) !important;
+    margin: 0 0 16px 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    cursor: default !important;
+    display: block !important;
+}
+
+.show_test_type > h3::after {
+    content: none !important;
+}
+
+/* Test Type Container */
+.show_test_type {
+    background: transparent;
+    border-radius: var(--abst-radius);
+    padding: 0;
+}
+
+/* Test Type Radio Cards */
+.show_test_type > div {
+    margin-bottom: var(--abst-space-sm);
+}
+
+.show_test_type label {
+    background: var(--abst-card);
+    border: 1px solid var(--abst-border);
+    border-radius: var(--abst-radius);
+    padding: 16px 20px;
+    margin-bottom: 0;
+    transition: all 0.15s ease;
+    display: block;
+    cursor: pointer;
+    position: relative;
+}
+
+.show_test_type label:hover {
+    border-color: var(--abst-primary);
+    box-shadow: 0 2px 8px rgba(23, 168, 227, 0.1);
+}
+
+.show_test_type label h5 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--abst-text);
+    margin: 0 0 4px 0;
+}
+
+.show_test_type label p {
+    font-size: 13px;
+    color: var(--abst-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+    width: 100%;
+    opacity: 1;
+}
+
+.show_test_type input[type=radio]{
+    display: none;
+}
+/* Selected State - Subtle with border accent */
+.show_test_type input[type=radio]:checked + label {
+    background: #f0f9ff;
+    border-color: var(--abst-primary);
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(23, 168, 227, 0.1);
+}
+
+.show_test_type input[type=radio]:checked + label h5 {
+    color: var(--abst-primary) !important;
+}
+
+.show_test_type input[type=radio]:checked + label p {
+    color: var(--abst-text-secondary);
+}
+
+/* Checkmark indicator for selected */
+.show_test_type input[type=radio]:checked + label::after {
+    content: "✓";
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+    background: var(--abst-primary);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Form inputs */
+#configuration_settings input[type="text"],
+#configuration_settings input[type="number"],
+#configuration_settings textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-size: 13px;
+    background: #ffffff;
+    transition: all 0.15s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#configuration_settings select {
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    padding: 6px 10px;
+    padding-right: 30px;
+    font-size: 13px;
+    background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 10px center;
+    background-size: 12px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+#configuration_settings select:focus,
+#configuration_settings input[type="text"]:focus,
+#configuration_settings input[type="number"]:focus,
+#configuration_settings textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+/* Conversion goal - base styles */
+.conversion-goal {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    position: relative;
+}
+
+/* Magic test textarea */
+#magic_definition {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+
+/* Status badges */
+.post-state span {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    box-shadow: none;
+}
+
+.post-state .test-type {
+    background: #eff6ff;
+    color: #3b82f6;
+    border-color: #dbeafe;
+}
+
+/* Results section */
+.results_variation {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.testwinner {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+    border: 1px solid #a7f3d0 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+/* Buttons */
+#configuration_settings button,
+#configuration_settings .button {
+    background: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+#configuration_settings button:hover,
+#configuration_settings .button:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+#configuration_settings button.button-primary,
+#configuration_settings .button-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border: none;
+}
+
+#configuration_settings button.button-primary:hover,
+#configuration_settings .button-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+/* Labels */
+#configuration_settings label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+    display: block;
+    margin-bottom: 3px;
+}
+
+/* Help text */
+#configuration_settings p,
+#configuration_settings small {
+    font-size: 12px;
+    line-height: 1.4;
+    margin: 4px 0;
+}
+
+/* Checkboxes - Regular style */
+#configuration_settings input[type="checkbox"]:not(.ab-toggle) {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid #9ca3af;
+    border-radius: 3px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 6px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#configuration_settings input[type="checkbox"]:not(.ab-toggle):checked {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+#configuration_settings input[type="checkbox"]:not(.ab-toggle):checked::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 3px;
+    height: 6px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+#configuration_settings input[type="checkbox"]:not(.ab-toggle):hover {
+    border-color: #3b82f6;
+}
+
+/* =====================================================
+   WPMU DEV STYLE TOGGLE SWITCHES
+   ===================================================== */
+
+/* Toggle switch - WPMU DEV style */
+input.ab-toggle {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 36px !important;
+    height: 20px !important;
+    min-width: 36px !important;
+    min-height: 20px !important;
+    background: #d1d5db !important;
+    border: none !important;
+    border-radius: 10px !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    vertical-align: middle;
+    margin: 0 10px 0 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+input.ab-toggle::before,
+input.ab-toggle:checked::before {
+    content: "" !important;
+    position: absolute !important;
+    width: 16px !important;
+    height: 16px !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    pointer-events: none !important;
+    border-radius: 50% !important;
+    top: 2px !important;
+    left: 2px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    margin: 0 !important;
+    float: none !important;
+    display: block !important;
+}
+
+input.ab-toggle:checked {
+    background: #17A8E3 !important;
+}
+
+input.ab-toggle:checked::before {
+    left: 18px !important;
+}
+
+input.ab-toggle:hover {
+    background: #9ca3af;
+}
+
+input.ab-toggle:checked:hover {
+    background: #1289ba;
+}
+
+/* Toggle label styling */
+#configuration_settings .ab-log-on-visible label[for="bt_experiments_log_on_visible"] {
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--abst-text);
+    cursor: pointer;
+}
+
+/* Collapsed state styling */
+.collapsed > h3 {
+    background: #ffffff !important;
+    border-radius: var(--abst-radius);
+    padding: 10px 25px !important;
+}
+
+.collapsed > h3:hover {
+    background: #ffffff !important;
+    padding-left:25px;
+}
+
+/* HR dividers */
+#configuration_settings hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 16px 0;
+    box-shadow: none;
+}
+
+/* =====================================================
+   IMPROVED SCANNABILITY & VISUAL HIERARCHY
+   ===================================================== */
+
+/* User roles - inline chip layout */
+#configuration_settings .ab-targeting-roles {
+    margin-bottom: 16px;
+}
+
+#configuration_settings .ab-targeting-roles h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 6px 0;
+    padding: 0 0 6px 8px;
+    border-bottom: none;
+}
+
+#configuration_settings .ab-targeting-roles p {
+    font-size: 11px;
+    color: #6b7280;
+    margin: 0 0 10px 0;
+}
+
+#configuration_settings .ab-targeting-roles label {
+    display: inline-flex !important;
+    align-items: center;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 5px 12px;
+    margin: 3px 6px 3px 0;
+    font-size: 12px;
+    font-weight: 400;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+#configuration_settings .ab-targeting-roles label:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+}
+
+#configuration_settings .ab-targeting-roles label:has(input:checked) {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+#configuration_settings .ab-targeting-roles label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    border-radius: 3px;
+}
+
+
+
+
+
+/* Conversion goal section */
+#configuration_settings .conversion-goal {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #22c55e;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.08);
+}
+
+#configuration_settings .conversion-goal h4 {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #15803d;
+}
+
+/* Compact description text */
+#configuration_settings .target-example {
+    background: #f3f4f6;
+    border-left: 2px solid #9ca3af;
+    padding: 6px 10px;
+    margin: 4px 0;
+    font-size: 11px;
+    color: #4b5563;
+}
+
+/* URL filtering section */
+#configuration_settings .ab-target-percentage input {
+    max-width: 100px;
+}
+
+/* Inline code snippets */
+#configuration_settings code {
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
+    border: 1px solid #e2e8f0;
+}
+
+/* Block code (textareas, pre) */
+#configuration_settings pre {
+    background: #f8fafc;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    display: block;
+    overflow-x: auto;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
+}
+
+/* Select dropdowns */
+#configuration_settings select {
+    max-width: 300px;
+}
+
+/* Inline checkbox with label */
+#configuration_settings > div > label:has(input[type="checkbox"]) {
+    display: inline-flex;
+    align-items: center;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin: 4px 0;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+#configuration_settings > div > label:has(input[type="checkbox"]):hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+/* Textarea improvements - exclude Select2 search inputs */
+#configuration_settings textarea:not(.select2-search__field) {
+    min-height: 80px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Small/muted text */
+#configuration_settings .small,
+#configuration_settings p.small {
+    font-size: 12px;
+    color: #9ca3af;
+    cursor: pointer;
+}
+
+#configuration_settings .small:hover {
+    color: #3b82f6;
+}
+
+/* Percentage description */
+#configuration_settings #percentage_description {
+    font-size: 11px;
+    color: #059669;
+    font-weight: 500;
+}
+
+/* =====================================================
+   SELECT2 STYLING - Minimal overrides for tag pills
+   ===================================================== */
+
+/* Selected tag styling - blue pills */
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #17A8E3 !important;
+    border: none !important;
+    border-radius: 4px !important;
+    color: #ffffff !important;
+    padding: 5px 10px !important;
+    font-size: 13px !important;
+    margin: 4px 4px 4px 0 !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: rgba(255, 255, 255, 0.8) !important;
+    border: none !important;
+    background: none !important;
+    margin-right: 6px !important;
+    font-size: 14px !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: #ffffff !important;
+    background: rgba(0,0,0,0.1) !important;
+    border-radius: 3px !important;
+}
+
+/* Hide the clear all button that appears on the right */
+.select2-container--default .select2-selection--multiple .select2-selection__clear {
+    display: none !important;
+}
+
+/* =====================================================
+   RESULTS PAGE - Modern Clean Style
+   ===================================================== */
+
+/* Results Panel - consistent card styling */
+.abst-results-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px !important;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Status Panel */
+.abst-status-panel h2 {
+    font-size: 1.25em;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+}
+
+.abst-status-panel h2 .status {
+    color: #17A8E3;
+}
+
+.abst-status-panel .experiment-status {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0;
+}
+
+.abst-status-panel h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.abst-status-panel .bt_ab_success {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: #065f46;
+}
+
+/* Result Filters Panel */
+.abst-result-filters-panel h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.04em;
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+}
+
+.abst-result-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 10px;
+    align-items: end;
+}
+
+.abst-result-filter-field {
+    min-width: 0;
+}
+
+.abst-result-filter-field label {
+    display: block;
+    margin: 0 0 5px 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.abst-result-filters-panel select {
+    width: 100%;
+    padding: 10px 14px;
+    padding-right: 36px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #334155;
+    background-color: #ffffff;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px 12px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+@media (max-width: 640px) {
+    .abst-result-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+.table-panel, .chart-panel {
+    padding: 0 !important;
+}
+/*on large xl screens*/
+@media (min-width:782px) {
+    .abst-data-panel {
+        margin-left: -165px;
+    }
+}
+@media (max-width:781px) {
+    .ab-tab-content{
+        padding:0 10px 0 0 !important;
+    }
+}
+
+.abst-data-panel #abst-results-table {
+    padding: 0;
+    margin: 0;
+}
+
+.abst-sample-size-warning {
+    padding: 10px 12px;
+    color: #92400e;
+    line-height: 1.4;
+}
+
+.abst-data-panel canvas {
+    padding: 0;
+}
+
+.abst-data-panel #expectedEnd {
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Results table header */
+.results_variation.title {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.results_variation.title > div {
+    font-size: 11px !important;
+    color: #64748b !important;
+}
+
+/* Results table rows */
+.results_variation:not(.title) {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+    padding: 14px 16px !important;
+    margin: 0 !important;
+}
+
+.results_variation:last-of-type {
+    border-radius: 0 0 8px 8px !important;
+}
+
+/* Variation name column */
+.results_variation .title {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+/* Stats columns */
+.results_variation > div {
+    font-size: 14px !important;
+    color: #334155;
+}
+
+.results_variation > div span {
+    color: #94a3b8 !important;
+    font-size: 11px !important;
+}
+
+.abst-underpowered-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: help;
+}
+
+/* Winner row */
+.results_variation.testwinner {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+    border-color: #a7f3d0 !important;
+}
+
+.results_variation.testwinner .title {
+    color: #065f46;
+}
+
+/* Chart container */
+div#wpfooter {
+    position: static; /* fix footer floating up with absolute positioning? */
+}
+
+/* Remove any remaining red/orange borders */
+.ab-tab-content hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 20px 0;
+}
+
+/* Variation icons */
+.results_variation .dashicons {
+    color: #94a3b8;
+    margin-right: 8px;
+}
+
+.table-panel {
+    border: none;
+}
+.tabulator-col-title {
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+/* =====================================================
+   ON-PAGE TEST - CSS Class Display (subtle white style)
+   ===================================================== */
+
+/* Code class display blocks - subtle white instead of dark */
+.show_css_classes h4 {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    padding: 12px 16px !important;
+    margin: 8px 0 !important;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+}
+
+.show_css_classes h4 span {
+    color: #17A8E3 !important;
+    font-weight: 600 !important;
+}
+
+/* =====================================================
+   HEATMAPS PAGE - WPMU DEV Style
+   ===================================================== */
+
+.abst-heatmaps-wrap {
+    max-width: 100%;
+}
+
+.abst-heatmaps-wrap .abst-page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.abst-heatmaps-wrap .abst-page-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+/* Filter groups */
+.abst-heatmaps-filters {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    margin-right:20px;
+}
+
+.abst-filter-group {
+    margin-bottom: 16px;
+}
+
+.abst-filter-group:last-child {
+    margin-bottom: 0;
+}
+
+.abst-filter-group > label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.abst-filter-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.abst-filter-row select {
+    flex: 1;
+    min-width: 180px;
+    max-width: 300px;
+    padding: 10px 14px;
+    padding-right: 36px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;
+    background-size: 12px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.abst-filter-row select:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Heatmap context bar */
+.abst-heatmap-context {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 20px 20px 12px 0;
+    font-size: 14px;
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.abst-heatmap-context > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.abst-heatmap-context .abst-heatmap-description {
+    margin: 0;
+}
+
+.abst-context-icon {
+    font-size: 16px;
+}
+
+.abst-context-sep {
+    color: #94a3b8;
+    margin: 0 4px;
+}
+
+.abst-heatmap-description {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 20px 0;
+    line-height: 1.5;
+}
+
+.abst-heatmap-description strong {
+    color: #1e293b;
+}
+
+
+/* Select2 overrides for heatmaps */
+.abst-heatmaps-wrap .select2-container {
+    min-width: 180px !important;
+    max-width: 300px !important;
+}
+
+.abst-heatmaps-wrap .select2-container--default .select2-selection--single {
+    height: 42px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+}
+
+.abst-heatmaps-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 28px !important;
+    color: #1e293b !important;
+}
+
+.abst-heatmaps-wrap .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 40px !important;
+}
+
+/* Preview width notice */
+.previewwiderthan {
+    display: none;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: 0 20px 16px 0;
+    font-size: 13px;
+    color: #92400e;
+    text-align: center;
+}
+
+/* =====================================================
+   SHARED ADMIN COMPONENTS
+   ===================================================== */
+
+/* Empty state */
+.abst-empty-state {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+/* Results section */
+
+.abst-results-header {
+    margin-bottom: 20px;
+}
+
+.abst-results-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Variations list */
+
+.abst-heatmap-filter-panel {
+    grid-column: 1 / -1;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 0;
+}
+
+.abst-heatmap-filter-panel summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px 14px;
+}
+
+.abst-filter-summary-title {
+    font-weight: 600;
+}
+
+.abst-filter-summary-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.abst-filter-summary-item {
+    background: #f1f5f9;
+    border-radius: 999px;
+    color: #475569;
+    font-size: 12px;
+    padding: 3px 8px;
+}
+
+.abst-filter-summary-label {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.abst-heatmap-filter-panel > .abst-filter-row {
+    border-top: 1px solid #e2e8f0;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    padding: 14px;
+}
+
+.abst-filter-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.abst-filter-field select {
+    width: 100%;
+}
+
+/* Conversion Page picker: fill the goals card, never wider than it */
+label.conversion_page_selector .select2-container {
+  max-width: 25rem;
+}
+
+/* Logs screen */
+.abst-logs-wrap {
+max-width: 1200px;
+}
+.abst-logs-wrap .abst-page-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
+}
+.abst-logs-wrap .abst-page-header h1 {
+font-size: 24px;
+font-weight: 600;
+color: #1e293b;
+margin: 0;
+}
+.abst-logs-info {
+background: #f8fafc;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 16px 20px;
+margin-bottom: 16px;
+}
+.abst-logs-info p {
+margin: 0 0 8px 0;
+color: #475569;
+font-size: 14px;
+}
+.abst-logs-info p:last-child {
+margin-bottom: 0;
+}
+.abst-logs-info a {
+color: #3b82f6;
+text-decoration: none;
+}
+.abst-logs-info a:hover {
+text-decoration: underline;
+}
+.abst-logs-actions {
+margin-bottom: 16px;
+display: flex;
+gap: 8px;
+}
+.abst-logs-container {
+background: #1e293b;
+border-radius: 8px;
+padding: 20px;
+max-height: 600px;
+overflow-y: auto;
+}
+.abst-logs-container pre {
+margin: 0;
+font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+font-size: 12px;
+line-height: 1.6;
+color: #e2e8f0;
+white-space: pre-wrap;
+word-wrap: break-word;
+}
+.abst-logs-container .log-info {
+color: #60a5fa;
+}
+.abst-logs-container .log-warning {
+color: #fbbf24;
+}
+.abst-logs-container .log-error {
+color: #f87171;
+}
+.abst-logs-empty {
+color: #94a3b8;
+font-style: italic;
+margin: 0;
+}

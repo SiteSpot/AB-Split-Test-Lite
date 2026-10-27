@@ -1,0 +1,1983 @@
+/* css for building split tests */
+
+/* Ultimate fallback: CSS animation shows page after 4s if JS completely fails */
+/* This runs purely in CSS - no JS needed. 4s = enough for slow loads, not painful if JS broken */
+@keyframes abst-force-show {
+    to { opacity: 1; pointer-events: auto; }
+}
+body:not(.abst-show-page) {
+    animation: abst-force-show 0s 4s forwards;
+}
+
+/* Hide all variations by default - prevents flicker */
+[bt-variation]:not(.bt-show-variation),
+[data-bt-variation]:not(.bt-show-variation),
+[class*='ab-var-']:not(.bt-show-variation) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Show the first variation of each experiment - prevents CLS */
+[bt-variation].bt-first-variation:not(.bt-show-variation),
+[data-bt-variation].bt-first-variation:not(.bt-show-variation),
+[class*='ab-var-'].bt-first-variation {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* After test setup complete, fully remove non-selected variations from DOM */
+body.ab-test-setup-complete [bt-variation]:not(.bt-show-variation),
+body.ab-test-setup-complete [data-bt-variation]:not(.bt-show-variation),
+body.ab-test-setup-complete [class*='ab-var-']:not(.bt-show-variation) {
+    display: none !important;
+}
+
+/* Show selected variation */
+.bt-show-variation {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Backwards compat display:revert removed Feb 2026 - was breaking themes using display:flex/grid on body */
+
+/* Page builders - always show everything */
+body.fl-builder-edit [bt-variation],
+body.fl-builder-edit [data-bt-variation],
+body.fl-builder-edit [class*='ab-var-'],
+body.ab-test-setup-complete.fl-builder-edit [bt-variation]:not(.bt-show-variation),
+body.ab-test-setup-complete.fl-builder-edit [data-bt-variation]:not(.bt-show-variation),
+body.ab-test-setup-complete.fl-builder-edit [class*='ab-var-']:not(.bt-show-variation),
+body.ab-test-setup-complete #breakdance_canvas [bt-eid]:not(.bt-show-variation),
+body.ab-test-setup-complete #editor [data-bt-eid]:not(.bt-show-variation),
+body.ab-test-setup-complete[data-builder-window='iframe'] .brx-body [bt-eid]:not(.bt-show-variation),
+body.ab-test-setup-complete .vc_editor .vc_element [class*='ab-var-']:not(.bt-show-variation),
+#breakdance_canvas [bt-eid],
+#editor [data-bt-eid],
+body[data-builder-window='iframe'] .brx-body [bt-eid],
+.vc_editor .vc_element [class*='ab-var-'] {
+    opacity: 1 !important;
+    display: revert !important;
+    pointer-events: auto !important;
+}
+
+
+.fl-block-overlay-active[bt-variation][bt-eid]>.fl-row-overlay,.fl-block-overlay-active[bt-variation][bt-eid]>.fl-module-overlay{
+  border:2px solid #F75C03 !important;
+}
+
+.fl-block-overlay-active[bt-variation][bt-eid]>.fl-row-overlay .fl-block-overlay-actions,.fl-block-overlay-active[bt-variation][bt-eid]>.fl-module-overlay .fl-block-overlay-actions{
+  background-color:#F75C03 !important;  
+}
+
+.ab-highlight {
+  animation: highlight 2s ease-in-out infinite !important;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(247, 92, 3, 0.2);
+    transform: scale(1);
+  }
+  15% {
+    box-shadow: 0 0 20px 10px rgba(247, 92, 3, 1);
+    transform: scale(1.02);
+  }
+  30% {
+    box-shadow: 0 0 10px 5px rgba(247, 92, 3, 0.2);
+    transform: scale(1);
+  }
+  45% {
+    box-shadow: 0 0 20px 10px rgba(247, 92, 3, 1);
+    transform: scale(1.02);
+  }
+  60% {
+    box-shadow: 0 0 10px 5px rgba(247, 92, 3, 0.2);
+    transform: scale(1);
+  }
+  75% {
+    box-shadow: 0 0 20px 10px rgba(247, 92, 3, 1);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(247, 92, 3, 0.2);
+    transform: scale(1);
+  }
+}
+
+.ab-split { 
+    display: inline-block;
+    width: 20px !important;
+    height: 20px !important;
+    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4Igp3aWR0aD0iMzAiIGhlaWdodD0iMzAiCnZpZXdCb3g9IjAgMCAxNzIgMTcyIgpzdHlsZT0iIGZpbGw6IzAwMDAwMDsiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IiIgc3Ryb2tlLWRhc2hvZmZzZXQ9IjAiIGZvbnQtZmFtaWx5PSJub25lIiBmb250LXdlaWdodD0ibm9uZSIgZm9udC1zaXplPSJub25lIiB0ZXh0LWFuY2hvcj0ibm9uZSIgc3R5bGU9Im1peC1ibGVuZC1tb2RlOiBub3JtYWwiPjxwYXRoIGQ9Ik0wLDE3MnYtMTcyaDE3MnYxNzJ6IiBmaWxsPSJub25lIj48L3BhdGg+PGcgZmlsbD0iI2EwYTVhYSI+PHBhdGggZD0iTTUwLjE2NjY3LDE0LjMzMzMzYy0xMS44NTM2NywwIC0yMS41LDkuNjQ2MzMgLTIxLjUsMjEuNWMwLDkuMzI4MiA2LjAxMTAzLDE3LjIxNTMzIDE0LjMzMzMzLDIwLjE4NDI0djU5Ljk2NDg1Yy04LjMyMjMsMi45Njg5MSAtMTQuMzMzMzMsMTAuODU2MDUgLTE0LjMzMzMzLDIwLjE4NDI0YzAsMTEuODUzNjcgOS42NDYzMywyMS41IDIxLjUsMjEuNWMxMS44NTM2NywwIDIxLjUsLTkuNjQ2MzMgMjEuNSwtMjEuNWMwLC05LjMyODIgLTYuMDExMDMsLTE3LjIxNTMzIC0xNC4zMzMzMywtMjAuMTg0MjR2LTI3LjMyMjkyYzIuODEzNDUsMy4zODY4NyA1LjkwNTk2LDYuNDUwMjkgOS4xNTQzLDkuMTY4M2MxMS4wMDM3LDkuMjA3MjEgMjMuNjMzMjIsMTQuODU3MzUgMzUuMDIxNDgsMTYuMzc2OTVjMi44MzcwNyw4LjU1ODk1IDEwLjgyNjcsMTQuNzk1MjUgMjAuMzI0MjIsMTQuNzk1MjVjMTEuODUzNjcsMCAyMS41LC05LjY0NjMzIDIxLjUsLTIxLjVjMCwtMTEuODUzNjcgLTkuNjQ2MzMsLTIxLjUgLTIxLjUsLTIxLjVjLTkuMDg1OTQsMCAtMTYuODMyMjgsNS42OTA0OSAtMTkuOTc0MjgsMTMuNjc1NDVjLTcuNzU1NzEsLTEuNTMyNyAtMTcuODM4MDUsLTUuODcxMzggLTI2LjE2MTE0LC0xMi44MzU2MWMtOS4yMDIwNiwtNy42OTk3MiAtMTYuMzI5NDgsLTE4LjA2MjQgLTE3Ljk4NjY1LC0zMC45MzQyNWM4LjEyOTU5LC0zLjA2OTkyIDEzLjk1NTQsLTEwLjg4MjMyIDEzLjk1NTQsLTIwLjA3MjI3YzAsLTExLjg1MzY3IC05LjY0NjMzLC0yMS41IC0yMS41LC0yMS41eiI+PC9wYXRoPjwvZz48L2c+PC9zdmc+') 50% 50% no-repeat;
+    background-size: 100%; 
+    vertical-align: text-top;
+    margin-right: 3px !important;
+}
+
+.ab-test-tube { 
+    display: inline-block;
+    width: 20px !important;
+    height: 20px !important;
+    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4Igp3aWR0aD0iNjQiIGhlaWdodD0iNjQiCnZpZXdCb3g9IjAgMCAxNzIgMTcyIgpzdHlsZT0iIGZpbGw6IzAwMDAwMDsiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IiIgc3Ryb2tlLWRhc2hvZmZzZXQ9IjAiIGZvbnQtZmFtaWx5PSJub25lIiBmb250LXdlaWdodD0ibm9uZSIgZm9udC1zaXplPSJub25lIiB0ZXh0LWFuY2hvcj0ibm9uZSIgc3R5bGU9Im1peC1ibGVuZC1tb2RlOiBub3JtYWwiPjxwYXRoIGQ9Ik0wLDE3MnYtMTcyaDE3MnYxNzJ6IiBmaWxsPSJub25lIj48L3BhdGg+PGcgZmlsbD0iI2EwYTVhYSI+PHBhdGggZD0iTTU5LjEyNSwxNy45MTY2N2MtMS45Mzg0MiwtMC4wMjc0MSAtMy43NDE0NCwwLjk5MTAyIC00LjcxODY1LDIuNjY1MzJjLTAuOTc3MjEsMS42NzQzIC0wLjk3NzIxLDMuNzQ1MDcgMCw1LjQxOTM3YzAuOTc3MjEsMS42NzQzIDIuNzgwMjMsMi42OTI3MyA0LjcxODY1LDIuNjY1MzJoMS43OTE2N3Y0Mi4yNzkxM2MwLDMuMjc5MDQgLTEuMDAzMTIsNi40ODE4NSAtMi44Njk0Nyw5LjE3NTI5bC0zMy42ODQ3Myw0OC42NTQ5NWMwLDAuMDAyMzMgMCwwLjAwNDY3IDAsMC4wMDdjLTQuMTc5MzgsNi4wNDA4OSAtMy43NjE5LDE0LjQwODAzIDEuMzU3NzUsMjAuMDUxMjdjMy4zNDIxNCwzLjY4NzQ2IDguMDE3NjgsNS4yNDkwMiAxMi40NjQ2OCw1LjI0OTAyaDk1LjYzMDIxYzQuNDQ3LDAgOS4xMjI1NCwtMS41NjE1NiAxMi40NjQ2OCwtNS4yNDkwMmM1LjExOTY0LC01LjY0MzI0IDUuNTM3MTMsLTE0LjAxMDIxIDEuMzU3NzUsLTIwLjA1MTI3YzAsLTAuMDAyMzMgMCwtMC4wMDQ2NyAwLC0wLjAwN2wtMzMuNjg0NzMsLTQ4LjY1NDk1Yy0xLjg2NjM0LC0yLjY5MzQ0IC0yLjg2OTQ3LC01Ljg5NjI1IC0yLjg2OTQ3LC05LjE3NTI5di00Mi4yNzkxM2gxLjc5MTY3YzEuOTM4NDIsMC4wMjc0MSAzLjc0MTQ0LC0wLjk5MTAyIDQuNzE4NjUsLTIuNjY1MzJjMC45NzcyMSwtMS42NzQzIDAuOTc3MjEsLTMuNzQ1MDcgMCwtNS40MTkzN2MtMC45NzcyMSwtMS42NzQzIC0yLjc4MDIzLC0yLjY5MjczIC00LjcxODY1LC0yLjY2NTMyaC03LjE2NjY3aC0zOS40MTY2N3pNNzEuNjY2NjcsMjguNjY2NjdoMjguNjY2Njd2MjguNjY2NjdoLTI4LjY2NjY3ek03NS4yNSw5My4xNjY2N2MzLjk1OTU4LDAgNy4xNjY2NywzLjIwNzA4IDcuMTY2NjcsNy4xNjY2N2MwLDMuOTU5NTggLTMuMjA3MDgsNy4xNjY2NyAtNy4xNjY2Nyw3LjE2NjY3Yy0zLjk1OTU4LDAgLTcuMTY2NjcsLTMuMjA3MDggLTcuMTY2NjcsLTcuMTY2NjdjMCwtMy45NTk1OCAzLjIwNzA4LC03LjE2NjY3IDcuMTY2NjcsLTcuMTY2Njd6TTEwNS43MDgzMywxMTQuNjY2NjdjNC45NDg1OCwwIDguOTU4MzMsNC4wMDk3NSA4Ljk1ODMzLDguOTU4MzNjMCw0Ljk0ODU4IC00LjAwOTc1LDguOTU4MzMgLTguOTU4MzMsOC45NTgzM2MtNC45NDg1OCwwIC04Ljk1ODMzLC00LjAwOTc1IC04Ljk1ODMzLC04Ljk1ODMzYzAsLTQuOTQ4NTggNC4wMDk3NSwtOC45NTgzMyA4Ljk1ODMzLC04Ljk1ODMzeiI+PC9wYXRoPjwvZz48L2c+PC9zdmc+') 50% 50% no-repeat;
+    background-size: 100%; 
+    vertical-align: text-top;
+    margin-right: 3px !important;
+}   
+
+.ab-link{
+  display: inline-block;
+  width: 20px !important;
+  height: 20px !important;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAnElEQVR4nO2STQrCMBCFu453aL2BWainSO9gRHL/G3wy8IRpiYuUFhTyYDZvZt78DkNHx38BOAMz8ASKt0rswq+cBEzfxO+VpNJQwNut1rk5XsAFCBumD0CUhmmN3jmLjK3Ca6iIaSVPZpGhYQ2ltj5NYnw+qsBJ/MOT6egVTe7IcfcjG+y1dnzT6zr+kzRqXXlDgazcZecdHb+PN6Kxm3m8VSfmAAAAAElFTkSuQmCC') 50% 50% no-repeat;
+  background-size: 100%;
+  vertical-align: text-top;
+  margin-left: 3px !important;
+  cursor: pointer;
+}
+
+
+/* Test element: thin dotted brand-teal line (outline, so the page layout doesn't shift) */
+.abst-variation {
+  outline: 2px dotted #38d7d3;
+  outline-offset: 2px;
+  position: relative !important; /* Ensure the badge is anchored to this element */
+}
+
+.click-to-start-help{
+  padding: 30px !important;
+  text-align: center;
+
+}
+
+
+/* Element tab: one brand-teal toolbar on a test element's top-left corner with the
+   element's name, the Original / Variation switch and remove. highlighter.js positions it (fixed). */
+.abst-magic-tab {
+  position: fixed;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  overflow-x: auto;
+  height: 28px;
+  padding: 0 4px;
+  background: #38d7d3;
+  color: #0d1a35;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  z-index: 100000;
+  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  white-space: nowrap;
+}
+.abst-magic-tab.abst-tab-below { border-radius: 0 0 6px 6px; }
+.abst-magic-tab .abst-tab-label { padding: 0 6px 0 4px; }
+.abst-magic-tab .abst-tab-sep { flex: none; width: 1px; height: 14px; margin: 0 4px; background: currentColor; opacity: 0.3; }
+.abst-magic-tab button {
+  appearance: none;
+  flex: none;
+  border: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  border-radius: 4px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  cursor: pointer !important;
+}
+/* Original / Variation are words, not single letters */
+.abst-magic-tab .abst-marker-var { width: auto !important; padding: 0 7px !important; }
+.abst-magic-tab button:hover { background: rgba(13, 26, 53, 0.12) !important; }
+.abst-magic-tab button.active { background: #0d1a35 !important; color: #38d7d3 !important; }
+.abst-magic-tab .abst-marker-remove:hover { background: #b91c1c !important; color: #fff !important; }
+.abst-magic-tab svg { display: block; width: 14px; height: 14px; }
+
+#variation-picker-container, #variation-editor-container, .abst-goals-column, .abst-magic-bar-footer, #abst-targeting-button, .magic-test-name {
+  display: none;
+}
+/* BRICKS */
+[data-abmagictestelementtype]{
+  cursor: pointer;
+}
+.bricks-panel-controls div[controlkey="ab_heading"] {
+    background-color: rgba(0,0,0,0) !important;
+    text-transform: uppercase;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.bricks-panel-controls div[data-controlkey="ab_heading"] {
+    border-top: thin solid rgb(82, 82, 82) !important;
+    margin-top: 12px;
+}
+
+[data-controlkey="bt_info"] [data-control=info] {
+  background: #ffffff00 !important;
+  color:white !important;
+}
+[data-controlkey="bt_info"] [data-control=info] a:hover {
+  color: #7abcf5 !important;
+}
+
+/* create-test pop-up in page builders (js/builderhelper.js); framed like .abst-modal in the admin */
+.newabpanel {
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  height: min(760px, 88vh);
+  position: fixed;
+  top: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  border: none;
+  z-index: 100101;
+  display: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+
+.newabpanel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100100;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+
+
+.ab-copy-link{
+  cursor: pointer;
+  position: absolute !important;
+  right: 10px;
+}
+
+
+
+#variation-editor-container {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#variation-editor-container.is-active {
+  border-color: #4a97ca;
+  box-shadow: 0 0 0 1px rgba(20, 184, 184, 0.08);
+}
+
+#version-value.abst-version-value {
+  align-items: center;
+  color: #1f2937;
+  display: flex;
+  font-size: 18px;
+  font-weight: 600;
+  gap: 7px;
+  justify-content: flex-start;
+  line-height: 1.25;
+  margin: 10px 12px 8px;
+}
+
+#version-value .abst-version-toggle,
+#version-value .abst-version-swap {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+#version-value .abst-version-toggle {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+#version-value .abst-version-swap {
+  align-items: center;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+#version-value .abst-version-swap svg {
+  fill: none;
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 20px;
+}
+
+#version-value .abst-version-toggle:hover,
+#version-value .abst-version-swap:hover {
+  color: #0f766e;
+}
+
+#variation-editor-container #imageSelector {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 10px 12px 0;
+  padding: 8px 12px;
+}
+
+#variation-editor-container #imageSelector:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+
+
+.goal-value-label{
+  padding: 1px 0;
+}
+
+
+/* MAGIC BAR STYLES */
+.abst-magic-bar {
+  width: 35%;
+  position: fixed;
+  background-color: #fff;
+  top: 32px;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  right: 0;
+  z-index: 65534;
+  color: #1e293b !important;
+  box-sizing: border-box;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-in-out;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-weight: 400;
+  height: calc(100% - 32px) !important;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+.abst-magic-bar-footer {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 1px solid #e8eaed;
+    padding: 12px 14px;
+    flex-shrink: 0;
+    z-index: 10;
+    gap: 10px;
+}
+.abst-magic-bar-footer.abst-magic-bar-footer-visible {
+    display: flex !important;
+}
+#abst-magic-bar button#abst-magic-bar-start {
+    flex: 1;
+    color: white !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+    border-radius: 9px !important;
+    margin: 0;
+    padding: 12px !important;
+    background: #2271b1 !important;
+    border: none !important;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+#abst-magic-bar button#abst-magic-bar-start:hover {
+    background: #1a5c92 !important;
+}
+#abst-magic-bar button#abst-magic-bar-start:active {
+    background: #134a78 !important;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft {
+    flex: 0 0 34%;
+    color: #3c434a !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+    border-radius: 9px !important;
+    margin: 0;
+    padding: 12px !important;
+    background: #f0f0f1 !important;
+    border: 1px solid #dcdcde !important;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft:hover {
+    background: #e8eaed !important;
+    border-color: #c3c4c7 !important;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft:active {
+    background: #dcdcde !important;
+}
+
+#imageSelector{
+  background:GREY !imPORTANT;
+  font-size:14px;
+  text-transform:uppercase;
+  padding:5px 15px;
+  border-radius:3px;
+  border-width:1px;
+}
+
+#imageSelector:hover{
+  background:#2b7bb9 !imPORTANT;
+}
+
+#imageSelector:active{
+  background:#08a66a !imPORTANT;}
+
+/* Hardened form elements for magic bar */
+#abst-magic-bar > input[type="text"],
+#abst-magic-bar > input[type="number"],
+#abst-magic-bar > input[type="email"],
+#abst-magic-bar > input[type="url"],
+#abst-magic-bar > input[type="password"],
+#abst-magic-bar > input[type="search"],
+#abst-magic-bar > input[type="tel"],
+#abst-magic-bar > textarea:not(.wp-editor-area),
+#abst-magic-bar > select,
+#abst-magic-bar  input[type="text"],
+#abst-magic-bar  input[type="number"],
+#abst-magic-bar  input[type="email"],
+#abst-magic-bar  input[type="url"],
+#abst-magic-bar  input[type="password"],
+#abst-magic-bar  input[type="search"],
+#abst-magic-bar  input[type="tel"],
+#abst-magic-bar  textarea:not(.wp-editor-area),
+#abst-magic-bar  select {
+  width: 100%;
+  max-width: 100%;
+  margin: 5px 0 15px 0;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* checkboxes - see modern checkbox styles below */
+
+#abst-magic-bar > input:focus,
+#abst-magic-bar > textarea:focus:not(.wp-editor-area),
+#abst-magic-bar > select:focus,
+#abst-magic-bar  input:focus,
+#abst-magic-bar  textarea:focus:not(.wp-editor-area),
+#abst-magic-bar  select:focus {
+  border-color: #4d90fe;
+  outline: none;
+  box-shadow: 0 0 0 1px #4d90fe, inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+#abst-magic-bar select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23444" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px 16px;
+  padding-right: 30px;
+}
+
+#abst-magic-bar > button:not(.mce-btn button),
+#abst-magic-bar > .button,
+#abst-magic-bar > input[type="button"],
+#abst-magic-bar > input[type="submit"],
+#abst-magic-bar  > button:not(.mce-btn button),
+#abst-magic-bar  > .button,
+#abst-magic-bar  > input[type="button"],
+#abst-magic-bar  > input[type="submit"] {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 5px 5px 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f8f8f8;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+#abst-magic-bar > button:hover:not(.mce-btn button),
+#abst-magic-bar > .button:hover,
+#abst-magic-bar > input[type="button"]:hover,
+#abst-magic-bar > input[type="submit"]:hover,
+#abst-magic-bar  > button:hover:not(.mce-btn button),
+#abst-magic-bar  > .button:hover,
+#abst-magic-bar  > input[type="button"]:hover,
+#abst-magic-bar  > input[type="submit"]:hover {
+  background-color: #e8e8e8;
+  border-color: #999;
+}
+
+#abst-magic-bar > button:active:not(.mce-btn button),
+#abst-magic-bar > .button:active,
+#abst-magic-bar > input[type="button"]:active,
+#abst-magic-bar > input[type="submit"]:active,
+#abst-magic-bar  > button:active:not(.mce-btn button),
+#abst-magic-bar  > .button:active,
+#abst-magic-bar  > input[type="button"]:active,
+#abst-magic-bar  > input[type="submit"]:active {
+  background-color: #ddd;
+  border-color: #777;
+}
+
+#abst-magic-bar > label,
+#abst-magic-bar  > label {
+  display: block;
+  margin: 10px 0 5px 0;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.abst-magic-bar-header {
+  display: block;
+  width: 100%;
+  padding: 5px;
+}
+
+.abst-magic-bar-title {
+  font-weight: bold;
+  font-size: 16px;
+  width: 95%;
+  margin: 0 5px 5px 5px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: thin solid #dddddd;
+}
+
+#variation-picker {
+font-size:1.2em !important;
+  font-weight:500 !important;
+}
+
+#variation-picker:focus {
+  border-color: #4d90fe;
+  outline: none;
+  box-shadow: 0 0 0 1px #4d90fe, inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+#abst-variation-editor{
+  margin: auto -13px;
+}
+
+div#abst-variation-editor button {
+  background: whitesmoke !important;
+  color: grey !important;
+  padding: 4px 20px;
+  font-size: 1em;
+}
+
+div#abst-variation-editor button:hover{
+      background: #dedede !important;
+
+}
+div#abst-variation-editor button:hover{
+      background: white !important;
+
+}
+
+.abst-magic-bar-start {
+  color: white;
+  border: none !important;
+  padding: 12px;
+  font-weight: 700;
+  border-radius: 9px;
+  cursor: pointer;
+  background: #2271b1 !important;
+  width: 100%;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  transition: background 0.15s;
+}
+.abst-magic-bar-save-draft {
+  color: #3c434a !important;
+  border: 1px solid #dcdcde !important;
+  padding: 12px;
+  font-weight: 700;
+  border-radius: 9px;
+  cursor: pointer;
+  background: #f0f0f1 !important;
+  flex: 0 0 34%;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, border-color 0.15s;
+}
+.abst-magic-bar-start:hover {
+  background: #1a5c92 !important;
+}
+.abst-magic-bar-start:active {
+  background: #134a78 !important;
+}
+
+.abst-magic-bar-container {
+  background-color: #fff;
+  padding-top: 1px;
+  width: 100%;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.abst-goals-column, .abst-settings-column {
+  background: white;
+  border-radius: 10px;
+}
+
+.abst-goals-column, .abst-settings-column {
+  padding: 10px;
+  margin: 2% !important;
+  width: 96%;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+
+
+.abst-hidden{
+  display: none;
+}
+
+.abst-settings-title, .abst-goals-title {
+  background: whitesmoke;
+  margin: -9px -9px 5px -9px;
+  padding: 10px 10px 5px 9px;
+  border-radius: 5px 5px 0 0;
+  font-weight: bold;
+  color: #626262;
+  
+}
+.abst-settings-header{
+  font-weight: bold;
+  font-size: .9em;
+  background: #f5f5f5;
+  margin: 5px 0;
+  padding: 0 5px;
+  border-radius: 6px;
+  border: thin solid #eaeaea;
+}
+.abst-settings-header:hover{
+  cursor: pointer;
+  text-decoration: underline;
+}
+.abst-settings-header:after {
+  content: " -";
+  color: #626262;
+  font-size: 16px;
+  cursor: pointer;
+}
+.abst-settings-header.closed:after {
+  content: " +";
+  color: #626262;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+
+.abst-goals-container {
+  background: #f3f3f3;
+  border: thin solid #d7d7d7;
+  margin: 10px 0;
+  padding: 5px 10px 0px 10px;
+  border-radius: 5px;
+}
+
+/* Webkit browsers (Chrome, Safari) */
+.abst-goals-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.abst-goals-container::-webkit-scrollbar-track {
+  background: #f3f3f3;
+  border-radius: 4px;
+}
+
+.abst-goals-container::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 4px;
+}
+
+
+html.doing-abst-magic-bar{
+  margin-right:35% !important;
+}
+
+/* 100vw/alignfull sections ignore the html margin above and would render
+   under the magic bar: clip them at the squeezed site edge instead */
+html.doing-abst-magic-bar body {
+  overflow-x: clip;
+}
+
+/* Class added via JS to fixed elements when magic bar is active */
+.abst-adjusted-for-magic-bar {
+  margin-right: 35% !important;
+  width: calc(100% - 35%) !important;
+  max-width: calc(100% - 35%) !important;
+  transition: margin-right 0.3s, width 0.3s, max-width 0.3s;
+}
+
+.abst-goal-page-input,
+#abst-device-size{
+  width: 100%;
+  display: inline-block;
+  border: 1px solid #d7d7d7;
+  border-radius:5px;
+  padding:5px 10px;
+  margin:5px 0;
+}
+
+.abst-magic-bar-close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 26px;
+  height: 26px;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+  z-index: 40;
+}
+.abst-magic-bar-close:hover {
+  background: #fee2e2;
+  color: #dc2626 !important;
+}
+.abst-magic-bar-close:active {
+  background: #fecaca;
+  color: #dc2626 !important;
+}
+
+.abst-targeting-settings{
+  display: none;
+}
+
+#abst-targeting-button {
+  margin: 10px 8px 0;
+  padding: 10px 14px;
+  background: #f5f6f8;
+  border: none;
+  border-radius: 10px;
+  color: #7d8796;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+#abst-targeting-text {
+  color: #7d8796;
+}
+
+#abst-show-targeting {
+  color: #14b8a6;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#abst-show-targeting:hover {
+  color: #0f766e;
+  text-decoration: underline;
+}
+
+.abst-goals-container>h5 {
+  display: inline-block;
+  width: calc(100% - 50px);
+}
+
+/* Hover highlight: thin line + name tab */
+#selector-box {
+  position: absolute;
+  box-sizing: border-box;
+  outline: 2px solid #2271b1;
+  display: none;
+  pointer-events: none;
+  z-index: 999999999;
+}
+#selector-box::after {
+  content: attr(data-label);
+  position: absolute;
+  left: -2px;
+  bottom: 100%;
+  margin-bottom: 2px;
+  background: #2271b1;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 3px 3px 0 0;
+  white-space: nowrap;
+  font: 500 11px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#selector-box.abst-sb-nolabel::after { display: none; }
+/* Enhanced Select2 Styling for Magic Bar */
+.abst-page-select-container {
+    position: relative;
+    width: 100%;
+    margin: 8px 0 15px;
+    z-index: 99999 !important;
+}
+
+/* Container styles. Every select2 rule here is scoped to html.doing-abst-magic-bar: this
+   file loads for editors on the frontend, where page builders run their own select2
+   inside modals, and a global z-index: 99999 !important pushed their dropdowns behind
+   the builder settings lightbox. */
+html.doing-abst-magic-bar .select2-container {
+    width: 100% !important;
+    min-width: 200px !important;
+    z-index: 99999 !important;
+}
+
+/* Single select styles */
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 36px;
+    padding: 3px 0;
+    outline: none;
+    transition: border-color 0.15s ease-in-out;
+}
+
+/* Hover and focus states */
+html.doing-abst-magic-bar .select2-container--default.select2-container--focus .select2-selection--single,
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single:hover {
+    border-color: #999;
+}
+
+/* Selected value */
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #333;
+    line-height: 30px;
+    padding-left: 12px;
+    padding-right: 30px;
+}
+
+/* Dropdown arrow */
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 34px;
+    right: 6px;
+    width: 24px;
+}
+
+/* Dropdown styles */
+html.doing-abst-magic-bar .select2-dropdown {
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    z-index: 999999 !important;
+    background: #fff;
+}
+
+/* Search field in dropdown */
+html.doing-abst-magic-bar .select2-search--dropdown {
+    padding: 8px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+html.doing-abst-magic-bar .select2-search--dropdown .select2-search__field {
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    padding: 6px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Results list */
+html.doing-abst-magic-bar .select2-results__options {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+/* Individual result items */
+html.doing-abst-magic-bar .select2-results__option {
+    padding: 8px 12px !important;
+    margin: 0;
+    color: #333;
+    transition: background-color 0.15s ease;
+}
+
+/* Hover state for items */
+html.doing-abst-magic-bar .select2-results__option--highlighted[aria-selected] {
+    background-color: #f0f7ff !important;
+    color: #0066cc !important;
+}
+
+/* Selected item in dropdown */
+html.doing-abst-magic-bar .select2-results__option[aria-selected=true] {
+    background-color: #f8f9fa;
+    color: #666;
+}
+
+/* Clear button */
+html.doing-abst-magic-bar .select2-selection__clear {
+    color: #999;
+    margin-right: 20px;
+    float: right;
+}
+
+/* Loading indicator */
+html.doing-abst-magic-bar .select2-container--default .select2-selection--single .select2-selection__clear {
+    color: #999;
+    cursor: pointer;
+    float: right;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+
+
+
+
+#abst-selector-input{
+  width: 100%;
+  display: inline-block;
+  border: none;
+  padding:5px 10px;
+  margin: 0 0 15px 0 !important;
+}
+
+
+
+
+.abst-html-editor {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 150px;
+  padding: 10px;
+  font-family: monospace;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  background-color: #fff;
+  outline: none;
+  margin: -1px 0 -1px 0;
+}
+
+.abst-editor {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  background-color: #fff;
+  outline: none;
+  margin: -1px 0 -1px 0;
+  overflow-y: scroll;
+}
+.abst-editor:focus {
+  border-color: #007cba;
+  box-shadow: 0 0 0 1px #007cba;
+}
+.abst-editor p {
+  margin: 0 0 1em 0;
+}
+.abst-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.abst-editor-toolbar {
+  padding: 1px;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  background: #f5f5f5;
+  border: thin solid #e1e1e1;
+  border-radius: 4px 4px 0 0;
+}
+
+.abst-editor-toolbar button {
+  padding: 5px 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 3px;
+}
+
+.abst-editor-toolbar button:hover {
+  background: #bdbdbd;
+  border:none;
+}
+
+.abst-editor-toolbar {
+  position: relative;
+}
+
+.abst-editor-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  color: #333;
+}
+
+.abst-editor-toolbar button svg {
+  display: block;
+  pointer-events: none;
+}
+
+/* Mode badge: a labeled pill naming the editor you would switch to */
+#abst-magic-bar .abst-editor-toolbar button[data-command="html"] {
+  margin-left: auto;
+  align-self: center;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 999px !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 10px !important;
+  white-space: nowrap;
+}
+
+#abst-magic-bar .abst-editor-toolbar button[data-command="html"]:hover {
+  border-color: #14b8a6 !important;
+  color: #0f766e !important;
+}
+
+
+
+/* Awesomplete Styles */
+.abst-page-select-container {
+  position: relative;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.abst-goal-page-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 16px 16px;
+  transition: all 0.2s ease;
+}
+
+.abst-goal-page-input:focus {
+  border-color: #007cba;
+  box-shadow: 0 0 0 1px #007cba;
+  outline: none;
+}
+
+.abst-page-search-label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #444;
+}
+
+/* Loading indicator */
+.abst-goal-page-input.loading {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="16" height="16"><path fill="%23999" d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50"><animateTransform attributeName="transform" attributeType="XML" type="rotate" dur="1s" from="0 50 50" to="360 50 50" repeatCount="indefinite"/></path></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 16px;
+}
+
+/* Awesomplete page picker: overrides the bundled default theme (creator.css).
+   Scoped under .abst-page-select-container so it only styles the Magic Bar's
+   picker and wins the specificity tie against creator.css, which loads later. */
+.abst-page-select-container .awesomplete {
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Flat white dropdown (no gradient / speech-bubble arrow) */
+.abst-page-select-container .awesomplete > ul {
+  position: absolute;
+  z-index: 999999;
+  width: 100%;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  margin: 5px 0 0;
+  padding: 0;
+  background: #fff;
+  max-height: 300px;
+  overflow-y: auto;
+  text-shadow: none;
+  left: 0 !important; /* Force left alignment */
+  top: 100% !important; /* Position below input */
+}
+
+.abst-page-select-container .awesomplete > ul:before {
+  display: none; /* remove the default theme's pointer triangle */
+}
+
+/* Style for dropdown items */
+.abst-page-select-container .awesomplete > ul > li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
+  position: relative;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.abst-page-select-container .awesomplete > ul > li:last-child {
+  border-bottom: none;
+}
+
+/* Active row: solid blue bar with white text */
+.abst-page-select-container .awesomplete > ul > li:hover,
+.abst-page-select-container .awesomplete > ul > li[aria-selected="true"] {
+  background-color: #5897fb;
+  color: #fff;
+}
+
+/* Neutralise the default theme's <mark> highlighting */
+.abst-page-select-container .awesomplete mark,
+.abst-page-select-container .awesomplete li:hover mark,
+.abst-page-select-container .awesomplete li[aria-selected="true"] mark {
+  background: transparent;
+  color: inherit;
+}
+
+/* Loading / no-results rows carry an empty data-value: a centred message,
+   never a selectable blue bar (autoFirst would otherwise highlight them). */
+.abst-page-select-container .awesomplete > ul > li[data-value=""],
+.abst-page-select-container .awesomplete > ul > li[data-value=""]:hover,
+.abst-page-select-container .awesomplete > ul > li[data-value=""][aria-selected="true"] {
+  text-align: center;
+  padding: 12px 15px;
+  color: #666;
+  background: #fff;
+  font-style: italic;
+  cursor: default;
+}
+
+/* Empty state message */
+.abst-page-select-container .awesomplete > ul:empty::before {
+  content: "Type to search for pages";
+  display: block;
+  padding: 15px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+
+/* Ensure the container has proper stacking context */
+.abst-page-select-container {
+  position: relative;
+  width: 100%;
+  margin-top: 5px;
+  z-index: 1; /* Create stacking context */
+}
+
+/* Make sure the input has a higher z-index than its container */
+.abst-goal-page-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2; /* Higher than container */
+  background-color: #fff; /* Ensure background is solid */
+}
+
+/* Add this to ensure the dropdown is above any absolutely positioned elements */
+#wpwrap {
+  position: relative;
+  z-index: 1;
+}
+
+/* =====================================================
+   MODERN MAGIC BAR UI OVERHAUL
+   ===================================================== */
+
+/* Base panel styling */
+.abst-magic-bar {
+  background: #fff;
+  border-left: 1px solid #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.abst-magic-tab-panel {
+  display: none;
+}
+
+.abst-magic-tab-panels {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.abst-magic-tab-panel.is-active {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.abst-magic-tab-panel[hidden] {
+  display: none !important;
+}
+
+/* Section cards */
+.abst-settings-column,
+.abst-goals-column {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin: 8px !important;
+  padding: 12px;
+  width: calc(100% - 16px);
+}
+
+/* Section headers */
+.abst-settings-title, .abst-goals-title {
+  background: transparent;
+  border-bottom: 1px solid #e2e8f0;
+  margin: -12px -12px 10px -12px;
+  padding: 8px 12px;
+  border-radius: 10px 10px 0 0;
+  font-weight: 600;
+  font-size: 13px;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+/* Magic bar h4 and p labels */
+#abst-magic-bar h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#abst-magic-bar .abst-settings-column > p {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 6px 0;
+}
+
+#abst-magic-bar .magic-test-name h4 {
+  margin-bottom: 8px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Accordion headers */
+.abst-settings-header {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin: 5px 0;
+  font-weight: 500;
+  font-size: 12px;
+  color: #475569;
+  transition: all 0.15s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.abst-settings-header:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  text-decoration: none;
+}
+
+.abst-settings-header:after {
+  content: "−";
+  font-size: 18px;
+  font-weight: 400;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.abst-settings-header.closed:after {
+  content: "+";
+}
+
+/* Modern checkboxes */
+#abst-magic-bar .abst-user-role {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #374151;
+}
+
+#abst-magic-bar .abst-user-role input[type="checkbox"],
+#abst-magic-bar input[type="checkbox"] {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  /* Themes pad every input (e.g. padding: 0 12px), which stretches an 18px box into a pill */
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border: 2px solid #d1d5db !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  margin: 0 10px 0 0 !important;
+  flex-shrink: 0;
+  box-shadow: none !important;
+}
+
+#abst-magic-bar .abst-user-role input[type="checkbox"]:checked,
+#abst-magic-bar input[type="checkbox"]:checked {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+#abst-magic-bar .abst-user-role input[type="checkbox"]:checked::after,
+#abst-magic-bar input[type="checkbox"]:checked::after {
+  content: "" !important;
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+#abst-magic-bar .abst-user-role input[type="checkbox"]:hover,
+#abst-magic-bar input[type="checkbox"]:hover {
+  border-color: #3b82f6 !important;
+}
+
+/* Form inputs */
+#abst-magic-bar input[type="text"],
+#abst-magic-bar input[type="number"],
+#abst-magic-bar textarea:not(.wp-editor-area),
+#abst-magic-bar select {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: #fff;
+  transition: all 0.15s ease;
+  box-shadow: none;
+  margin: 4px 0 8px 0;
+}
+
+#abst-magic-bar input[type="text"]:focus,
+#abst-magic-bar input[type="number"]:focus,
+#abst-magic-bar textarea:focus:not(.wp-editor-area),
+#abst-magic-bar select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Select dropdowns */
+#abst-magic-bar select {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Labels */
+#abst-magic-bar label {
+  font-weight: 500;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+#abst-magic-bar .abst-url-help {
+  margin-top: 8px;
+  color: #8a94a6;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+#abst-magic-bar .abst-url-help code {
+  color: #6b7280;
+  background: #f8fafc;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+
+/* Primary button (Start Test) — see .abst-magic-bar-footer above */
+
+/* Secondary buttons */
+#imageSelector {
+  background: #1e293b !important;
+  color: white !important;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: none;
+  transition: all 0.15s ease;
+}
+
+#imageSelector:hover {
+  background: #334155 !important;
+  transform: translateY(-1px);
+}
+
+#variation-editor-container #imageSelector {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155 !important;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 10px 12px 0;
+  padding: 8px 12px;
+  text-transform: none;
+  transform: none;
+}
+
+#variation-editor-container #imageSelector:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8;
+  transform: none;
+}
+
+/* Goals container */
+.abst-goals-container {
+  background: #ffffff;
+  border: 1px solid #d9e0e7;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 10px 0;
+  overflow: visible; /* the page search dropdown opens below the card */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.abst-goals-container.is-active {
+  border-color: #4a97ca;
+  box-shadow: 0 0 0 1px rgba(20, 184, 184, 0.08);
+}
+
+.abst-goal-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -12px -12px 12px -12px;
+  padding: 10px 12px;
+  background: #f6f7f9;
+  border-bottom: 1px solid #e3e7ec;
+  border-radius: 9px 9px 0 0;
+}
+
+.abst-goal-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Goal type select */
+.abst-goal-page-input,
+#abst-device-size {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: #ffffff;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+/* Remove goal button */
+
+.goal-value-label {
+  margin: 0 0 10px 0;
+  padding: 0;
+  color: #8a94a6;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.abst-goals-container .abst-goal-input-value {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #d9e0e7;
+  border-radius: 10px;
+  min-height: 44px;
+  margin: 0;
+}
+
+/* Test name input */
+.abst-magic-bar-title {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.abst-magic-bar-title:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Variation picker */
+#variation-picker {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  background: #fff;
+}
+
+
+
+
+
+/* Editor area */
+.abst-editor {
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0;
+  padding: 12px;
+  min-height: 120px;
+}
+
+/* Selector input */
+#abst-selector-input {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: #475569;
+}
+
+/* Help text styling */
+.abst-settings-column small,
+.abst-goals-column small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Scrollbar styling */
+.abst-magic-bar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.abst-magic-bar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.abst-magic-bar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.abst-magic-bar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Consistent checkbox styling for user roles */
+.abst-user-role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-right: 0;
+  margin-bottom: 8px;
+  border: 1px solid #d9e0e7;
+  border-radius: 6px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  color: #475569;
+}
+
+.abst-user-role input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: #2d7be5;
+}
+
+.abst-user-role span {
+  flex: 1 1 auto;
+}
+
+.abst-user-role:hover {
+  border-color: #c7d0db;
+  background-color: #f9fafb;
+}
+
+.abst-user-role.is-checked {
+  border-color: #bfd8f5;
+  background-color: #f4f8ff;
+  color: #334155;
+}
+
+/* ==========================================================================
+   MAGIC BAR REFRESH (2026-09)
+   One type scale, one accent, flat cards. Scoped to #abst-magic-bar so page
+   styles can't leak in; !important only where the bar's markup has inline styles.
+   ========================================================================== */
+#abst-magic-bar {
+  --abst-mb-ink: #1e293b;
+  --abst-mb-text: #334155;
+  --abst-mb-muted: #64748b;
+  --abst-mb-line: #e2e8f0;
+  --abst-mb-soft: #f8fafc;
+  --abst-mb-accent: #2271b1;
+  --abst-mb-accent-ink: #135e96;
+  --abst-mb-accent-soft: #f0f6fc;
+  --abst-mb-radius: 8px;
+  font: 400 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--abst-mb-text) !important;
+  background: #fff;
+  border-left: 1px solid var(--abst-mb-line);
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.10);
+}
+/* No admin bar (logged-out demo, external editor): use the full height */
+body:not(.admin-bar) #abst-magic-bar { top: 0; height: 100% !important; }
+#abst-magic-bar h1, #abst-magic-bar h2, #abst-magic-bar h3, #abst-magic-bar h4,
+#abst-magic-bar input, #abst-magic-bar select, #abst-magic-bar textarea, #abst-magic-bar button {
+  font-family: inherit !important;
+  letter-spacing: normal;
+  text-transform: none;
+}
+/* Padding stays inside each section's width (the base styles don't set this) */
+#abst-magic-bar, #abst-magic-bar *, #abst-magic-bar *::before, #abst-magic-bar *::after { box-sizing: border-box; }
+#abst-magic-bar .abst-magic-bar-container { display: flex; flex-direction: column; min-height: 100%; }
+/* The base styles make each section a card: width calc(100% - 16px) + 8px margins. The refresh
+   drops the margins, so the width has to follow or every section stops 16px short. */
+#abst-magic-bar .abst-settings-column, #abst-magic-bar .abst-goals-column { margin: 0 !important; width: 100% !important; box-shadow: none; }
+
+/* Header: title + tour, the close button sits top-right */
+#abst-magic-bar .abst-magic-bar-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 52px 12px 18px;
+  border-bottom: 1px solid var(--abst-mb-line);
+}
+#abst-magic-bar .abst-magic-bar-heading { font-size: 15px; font-weight: 600; color: var(--abst-mb-ink); }
+#abst-magic-bar .abst-magic-tour-button {
+  padding: 4px 10px; min-height: 0;
+  border: 1px solid var(--abst-mb-line) !important; border-radius: 999px; background: #fff !important;
+  color: var(--abst-mb-muted) !important; font-size: 12px !important; font-weight: 500; line-height: 1.4; box-shadow: none;
+}
+#abst-magic-bar .abst-magic-tour-button:hover { color: var(--abst-mb-accent) !important; border-color: var(--abst-mb-accent) !important; }
+#abst-magic-bar .abst-magic-bar-close {
+  top: 10px; right: 10px; width: 32px; height: 32px; line-height: 30px;
+  border-radius: 6px; color: var(--abst-mb-muted); font-size: 22px; background: transparent;
+}
+#abst-magic-bar .abst-magic-bar-close:hover { background: var(--abst-mb-soft); color: var(--abst-mb-ink); }
+#abst-magic-bar .abst-magic-tab-panels { flex: 1; }
+
+/* Empty state */
+#abst-magic-bar .click-to-start-help { padding: 28px 22px !important; text-align: left; }
+#abst-magic-bar .click-to-start-help h3 { margin: 0 0 6px; font-size: 17px; font-weight: 600; color: var(--abst-mb-ink); }
+#abst-magic-bar .click-to-start-help p { margin: 0; font-size: 13px; color: var(--abst-mb-text); }
+
+/* Sections */
+#abst-magic-bar .magic-test-name, #abst-magic-bar #variation-editor-container, #abst-magic-bar .abst-goals-column, #abst-magic-bar .abst-targeting-settings {
+  margin: 0 !important; padding: 14px 18px !important;
+  border: 0 !important; border-bottom: 1px solid var(--abst-mb-line) !important; border-radius: 0 !important;
+  background: #fff !important; box-shadow: none !important;
+}
+#abst-magic-bar .magic-test-name label,
+#abst-magic-bar .abst-goals-title,
+#abst-magic-bar .abst-settings-title {
+  font-size: 11px !important; font-weight: 600 !important; letter-spacing: .04em !important; text-transform: uppercase !important;
+  color: var(--abst-mb-muted) !important;
+}
+#abst-magic-bar .abst-version-value { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+#abst-magic-bar .abst-version-prefix { color: var(--abst-mb-muted); }
+#abst-magic-bar .abst-version-toggle {
+  padding: 3px 10px; border: 0 !important; border-radius: 999px; background: var(--abst-mb-accent-soft) !important;
+  color: var(--abst-mb-accent-ink) !important; font-weight: 600; text-decoration: none !important;
+}
+#abst-magic-bar .abst-version-swap { border: 0 !important; background: none !important; color: var(--abst-mb-muted) !important; }
+
+#abst-magic-bar #variation-editor-container > .abst-goals-title { justify-content: flex-start !important; margin-bottom: 8px; }
+#abst-magic-bar #abst-selector-input {
+  text-align: left !important; color: var(--abst-mb-muted) !important; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  height: 28px !important; padding: 0 8px !important; border: 1px solid var(--abst-mb-line) !important; border-radius: 6px !important; background: var(--abst-mb-soft) !important;
+}
+
+/* Rich text editor as one card: #abst-variation-editor holds the toolbar + editable area */
+#abst-magic-bar #abst-variation-editor {
+  padding: 0 !important; border: 1px solid #cbd5e1; border-radius: var(--abst-mb-radius); overflow: hidden; background: #fff;
+}
+#abst-magic-bar #abst-variation-editor:focus-within { border-color: var(--abst-mb-accent) !important; box-shadow: 0 0 0 1px var(--abst-mb-accent); }
+#abst-magic-bar .abst-editor-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 0; padding: 4px 6px;
+  border: 0 !important; border-bottom: 1px solid var(--abst-mb-line) !important; border-radius: 0; background: var(--abst-mb-soft);
+}
+#abst-magic-bar .abst-editor-toolbar button {
+  min-width: 28px; height: 28px; padding: 0 7px; margin: 0;
+  border: 0 !important; border-radius: 5px; background: transparent !important;
+  color: var(--abst-mb-text) !important; font-size: 13px !important; line-height: 28px; box-shadow: none !important;
+}
+#abst-magic-bar .abst-editor-toolbar button:hover, #abst-magic-bar .abst-editor-toolbar button.is-active { background: #fff !important; color: var(--abst-mb-ink) !important; }
+#abst-magic-bar .abst-editor-toolbar button[data-command="html"] {
+  margin-left: auto; height: 26px; line-height: 24px; font-size: 12px !important;
+  border: 1px solid var(--abst-mb-line) !important; background: #fff !important;
+}
+#abst-magic-bar #abst-variation-editor-container {
+  min-height: 110px; padding: 12px 14px !important; border: 0 !important; background: #fff;
+  color: var(--abst-mb-ink); font-size: 14px; line-height: 1.5; outline: none;
+  /* Only scroll when there is something to scroll: a permanent scrollbar track
+     down an empty editor reads as a broken box. */
+  max-height: 340px; overflow-y: auto !important;
+}
+
+/* Code editor: the same surface as the visual editor, so it fills the card the same
+   way (flush, square, no border of its own) instead of the bar's form-field textarea. */
+#abst-magic-bar #abst-variation-editor textarea.abst-html-editor {
+  min-height: 190px !important; max-height: 60vh;
+  margin: 0 !important; padding: 12px 14px !important;
+  border: 0 !important; border-radius: 0 !important;
+  background: #fff !important; color: var(--abst-mb-ink) !important;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace !important;
+  resize: vertical; tab-size: 2; white-space: pre-wrap; word-break: break-word;
+}
+/* One ring around the whole card instead of a second one inside it. */
+#abst-magic-bar #abst-variation-editor textarea.abst-html-editor:focus,
+#abst-magic-bar #abst-variation-editor #abst-variation-editor-container:focus {
+  border: 0 !important; box-shadow: none !important; outline: none !important;
+}
+
+
+/* Targeting + goals */
+#abst-magic-bar #abst-targeting-button { margin: 0; padding: 12px 18px; background: #fff; border: 0; border-bottom: 1px solid var(--abst-mb-line); border-radius: 0; font-size: 12px; color: var(--abst-mb-muted); }
+#abst-magic-bar #abst-show-targeting { color: var(--abst-mb-accent) !important; font-weight: 500; }
+#abst-magic-bar .abst-settings-header { padding: 9px 0; border-bottom: 1px solid var(--abst-mb-line); color: var(--abst-mb-ink); font-weight: 500; }
+#abst-magic-bar .abst-goals-container {
+  margin: 8px 0 0; padding: 12px; border: 1px solid var(--abst-mb-line) !important; border-radius: var(--abst-mb-radius) !important;
+  background: var(--abst-mb-soft) !important; box-shadow: none !important;
+}
+#abst-magic-bar .abst-goal-card-title { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--abst-mb-ink); }
+
+/* Goal type: Page visit | Element click (segmented control; the radios stay focusable) */
+#abst-magic-bar .abst-goal-type-toggle {
+  display: flex; gap: 2px; margin: 0 0 10px; padding: 2px;
+  border: 1px solid var(--abst-mb-line); border-radius: var(--abst-mb-radius); background: #fff;
+}
+#abst-magic-bar .abst-goal-type-option { position: relative; flex: 1 1 0; min-width: 0; margin: 0 !important; cursor: pointer; }
+#abst-magic-bar .abst-goal-type-option input {
+  position: absolute !important; opacity: 0; width: 1px !important; height: 1px !important; min-width: 0 !important; min-height: 0 !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important; pointer-events: none;
+}
+#abst-magic-bar .abst-goal-type-option span {
+  display: block; padding: 6px 8px; border-radius: 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12px; font-weight: 600; line-height: 1.4; color: var(--abst-mb-muted); transition: background .15s ease, color .15s ease;
+}
+#abst-magic-bar .abst-goal-type-option:hover span { color: var(--abst-mb-ink); }
+#abst-magic-bar .abst-goal-type-option input:checked + span { background: var(--abst-mb-accent-soft); color: var(--abst-mb-accent-ink); }
+#abst-magic-bar .abst-goal-type-option input:focus-visible + span { outline: 2px solid var(--abst-mb-accent); outline-offset: -2px; }
+#abst-magic-bar .abst-goal-type-panel[hidden], #abst-magic-bar .abst-goal-pick-hint[hidden] { display: none !important; }
+
+/* Element click: CSS selector + "Pick on page" */
+#abst-magic-bar .abst-goal-selector-row { display: flex; align-items: center; gap: 6px; }
+#abst-magic-bar .abst-goals-container input.abst-goal-selector-input {
+  flex: 1 1 auto; min-width: 0; width: auto; margin: 0 !important;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+}
+#abst-magic-bar .abst-goal-pick-element {
+  flex: none; min-height: 34px; margin: 0; padding: 0 10px; white-space: nowrap; cursor: pointer;
+  border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background: #fff !important;
+  color: var(--abst-mb-accent) !important; font-size: 12px !important; font-weight: 600; line-height: 1.2; box-shadow: none !important;
+}
+#abst-magic-bar .abst-goal-pick-element:hover { border-color: var(--abst-mb-accent) !important; }
+#abst-magic-bar .abst-goal-pick-element.is-picking { background: var(--abst-mb-accent-soft) !important; border-color: var(--abst-mb-accent) !important; color: var(--abst-mb-accent-ink) !important; }
+#abst-magic-bar .abst-goal-pick-hint {
+  margin: 8px 0 0 !important; padding: 8px 10px; border-radius: 6px; background: var(--abst-mb-accent-soft);
+  color: var(--abst-mb-accent-ink); font-size: 12px; line-height: 1.45;
+}
+/* While picking the goal element, the hover outline turns green */
+html.abst-goal-picking body { cursor: crosshair; }
+html.abst-goal-picking #abst-magic-bar { cursor: auto; }
+html.abst-goal-picking #selector-box { outline-color: #16a34a; }
+html.abst-goal-picking #selector-box::after { background: #16a34a; }
+
+/* Inputs */
+#abst-magic-bar input[type="text"], #abst-magic-bar input[type="number"], #abst-magic-bar select, #abst-magic-bar textarea:not(.wp-editor-area) {
+  min-height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
+  background: #fff; color: var(--abst-mb-ink) !important; font-size: 13px !important; box-shadow: none;
+}
+#abst-magic-bar input:focus, #abst-magic-bar select:focus, #abst-magic-bar textarea:focus {
+  border-color: var(--abst-mb-accent) !important; box-shadow: 0 0 0 1px var(--abst-mb-accent) !important; outline: none;
+}
+
+/* One primary action colour everywhere */
+#abst-magic-bar button#abst-magic-bar-start {
+  background: var(--abst-mb-accent) !important; color: #fff !important; border: 0 !important; border-radius: 6px !important;
+  font-weight: 600 !important; box-shadow: none !important;
+}
+#abst-magic-bar button#abst-magic-bar-start:hover { background: var(--abst-mb-accent-ink) !important; }
+#abst-magic-bar .abst-magic-bar-footer { padding: 12px 18px; border-top: 1px solid var(--abst-mb-line); box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.04); }
+#abst-magic-bar button#abst-magic-bar-start, #abst-magic-bar button#abst-magic-bar-save-draft { min-height: 40px; font-size: 14px !important; }
+#abst-magic-bar button#abst-magic-bar-save-draft {
+  background: #fff !important; color: var(--abst-mb-ink) !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; box-shadow: none !important;
+}
+#abst-magic-bar button#abst-magic-bar-save-draft:hover { background: var(--abst-mb-soft) !important; }
+
+
+@media (max-width: 782px) {
+  body.admin-bar #abst-magic-bar { top: 46px; height: calc(100% - 46px) !important; }
+}
+
+/* Magic bar walkthrough (Driver.js). The first step leaves the page clickable
+   (abst-tour-passthrough); the media library hides the tour (abst-tour-hidden). */
+body.abst-magic-touring .driver-overlay { z-index: 2147483645 !important; }
+body.abst-tour-passthrough .driver-overlay,
+body.abst-tour-hidden .driver-overlay,
+body.abst-tour-hidden .driver-popover { display: none !important; }
+.driver-popover.abst-magic-tour {
+  z-index: 2147483646 !important; max-width: 300px; padding: 14px 16px; border-radius: 10px;
+  background: #fff; box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+  --driver-popover-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.abst-magic-tour .driver-popover-title { padding-right: 20px; font-size: 15px; font-weight: 600; color: #1e293b; }
+/* Close button: themes style every <button> (filled, padded, in flow), so pin it all down */
+.driver-popover.abst-magic-tour button.driver-popover-close-btn {
+  position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important;
+  display: flex !important; align-items: center; justify-content: center;
+  width: 28px !important; height: 28px !important; min-width: 0 !important; min-height: 0 !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 6px !important;
+  background: transparent !important; box-shadow: none !important; text-shadow: none !important; outline: none !important;
+  color: #94a3b8 !important; font: 400 20px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  letter-spacing: 0 !important; text-transform: none !important; text-decoration: none !important;
+  cursor: pointer; transition: background-color .15s, color .15s;
+}
+/* driver.js focuses this button on every step, so focus gets the hover look, not a ring */
+.driver-popover.abst-magic-tour button.driver-popover-close-btn:hover,
+.driver-popover.abst-magic-tour button.driver-popover-close-btn:focus-visible { background: #f1f5f9 !important; color: #1e293b !important; }
+.abst-magic-tour .driver-popover-description { color: #334155; font-size: 13px; line-height: 1.5; }
+.abst-magic-tour .driver-popover-footer { margin-top: 12px; }
+.abst-magic-tour .driver-popover-navigation-btns button + button { margin-left: 6px; }
+.abst-magic-tour .driver-popover-footer-btn {
+  padding: 7px 14px; border: 1px solid #2271b1; border-radius: 6px; background: #2271b1; color: #fff; font-size: 13px; font-weight: 600;
+  line-height: 1.3; text-shadow: none;
+}
+.abst-magic-tour .driver-popover-footer-btn:hover, .abst-magic-tour .driver-popover-footer-btn:focus { background: #135e96; border-color: #135e96; color: #fff; }
+.abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary { background: #fff; color: #334155; border-color: #cbd5e1; }
+.abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn:hover, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary:hover,
+.abst-magic-tour .driver-popover-footer-btn.driver-popover-prev-btn:focus, .abst-magic-tour .driver-popover-footer-btn.abst-tour-secondary:focus { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
+/* ==========================================================================
+   MAGIC BAR ON PHONES: bottom drawer
+   The page is not squeezed; it gets bottom padding equal to the drawer, which the
+   handle resizes through --abst-mb-drawer-h (see abstInitMagicDrawer).
+   ========================================================================== */
+.abst-magic-drawer-handle { display: none; }
+@media (max-width: 767px) {
+  html.doing-abst-magic-bar { margin-right: 0 !important; padding-bottom: var(--abst-mb-drawer-h, 55vh) !important; }
+  /* must outrank body:not(.admin-bar) #abst-magic-bar (the :not counts as a class) */
+  html body:not(.admin-bar) #abst-magic-bar,
+  html body.admin-bar #abst-magic-bar {
+    top: auto !important; bottom: 0; left: 0; right: 0;
+    width: 100% !important; max-width: 100%;
+    height: var(--abst-mb-drawer-h, 55vh) !important; max-height: calc(100% - 46px);
+    border-left: 0; border-top: 1px solid var(--abst-mb-line); border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 32px rgba(15, 23, 42, 0.18);
+    transform: translateY(100%);
+    transition: transform .3s ease-in-out, height .22s ease;
+  }
+  html body #abst-magic-bar.is-dragging { transition: none !important; }
+  /* Only the panel scrolls: the drawer itself must not, or the handle, header and close
+     button scroll away. The content box fills the space under the 22px handle instead
+     of claiming min-height: 100% on top of it. */
+  html body:not(.admin-bar) #abst-magic-bar, html body.admin-bar #abst-magic-bar { overflow: hidden !important; }
+  #abst-magic-bar .abst-magic-bar-container { flex: 1 1 auto; min-height: 0 !important; }
+  #abst-magic-bar .abst-magic-tab-panels { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  /* Page overlays (variation marker 100000, Hide/Move popover 999999) must not float over the
+     drawer; the bar's own dropdowns (appended to body) must stay above it. The tour sits higher still. */
+  html body:not(.admin-bar) #abst-magic-bar, html body.admin-bar #abst-magic-bar { z-index: 1000000; }
+  html.doing-abst-magic-bar .select2-container--open .select2-dropdown, html.doing-abst-magic-bar .select2-container--open, .abst-page-select-container, .abst-page-select-container .awesomplete > ul { z-index: 1000001 !important; }
+  #abst-magic-bar .abst-magic-drawer-handle {
+    display: flex; justify-content: center; align-items: center; flex: none;
+    height: 22px; cursor: grab; touch-action: none; border-radius: 16px 16px 0 0;
+  }
+  #abst-magic-bar .abst-magic-drawer-handle span { width: 40px; height: 5px; border-radius: 999px; background: #cbd5e1; }
+  #abst-magic-bar .abst-magic-drawer-handle:focus-visible { outline: 2px solid var(--abst-mb-accent); outline-offset: -2px; }
+  #abst-magic-bar .abst-magic-bar-header { padding-top: 2px; }
+  #abst-magic-bar .abst-magic-bar-close { top: 24px; }
+  /* Too many bars on a phone: hide the WP admin bar while the drawer is open (it returns
+     when the bar closes and the class is removed). WP's own rule is html { margin-top: 46px !important }. */
+  html.doing-abst-magic-bar #wpadminbar { display: none !important; }
+  html.doing-abst-magic-bar { margin-top: 0 !important; scroll-padding-top: 0 !important; }
+  html body.admin-bar #abst-magic-bar { max-height: calc(100% - 12px); }
+}
+
+/* Start Test without a goal: flash the Goals card and offer one-tap goals (abstNeedGoal) */
+#abst-magic-bar .abst-goals-container.abst-goal-needed { animation: abst-goal-needed 0.7s ease-in-out 3; border-color: #d97706 !important; }
+@keyframes abst-goal-needed { 0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); } 50% { box-shadow: 0 0 0 4px rgba(217, 119, 6, .45); } }
+#abst-magic-bar .abst-goal-needed-hint { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 10px 12px; border-radius: 8px; background: #fffbeb; }
+#abst-magic-bar .abst-goal-needed-hint p { flex-basis: 100%; margin: 0 0 2px !important; font-size: 12px; font-weight: 600; color: #92400e; }

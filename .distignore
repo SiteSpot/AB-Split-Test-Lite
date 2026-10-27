@@ -1,0 +1,50 @@
+# Files and directories that must not ship in the distributed plugin zip.
+# Honoured by `wp dist-archive` and 10up/action-wordpress-plugin-deploy.
+#
+# Note: js/*.src.js files are deliberately NOT listed. WordPress.org requires the
+# human-readable source for any minified/compiled JavaScript that ships, so those
+# stay in the package.
+
+# Version control
+.git
+.gitignore
+.gitattributes
+.github
+
+# Editor / assistant tooling
+.claude
+.windsurf
+.vscode
+.idea
+
+# Internal development notes
+agents.md
+gotchas.md
+implementation_details.md
+mental_model.md
+quick_reference.md
+styleguide.md
+SECURITY.md
+
+# Build / dependency manifests
+composer.json
+composer.lock
+package.json
+package-lock.json
+node_modules
+phpunit.xml
+phpcs.xml
+phpcs.xml.dist
+tests
+
+# Packaging
+.distignore
+*.zip
+
+# Local crash dumps / OS files
+*.stackdump
+.DS_Store
+Thumbs.db
+
+# WordPress.org SVN assets (banner, icon, screenshots, blueprint) - not part of the plugin
+.wordpress-org

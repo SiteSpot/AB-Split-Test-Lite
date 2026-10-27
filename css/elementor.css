@@ -1,0 +1,37 @@
+.elementor-panel .elementor-controls-stack .elementor-panel-navigation {
+	display: -webkit-box !important;
+	display: -moz-box !important;
+	display: -ms-flexbox !important;
+	display: -webkit-flex !important;
+	display: flex !important;
+	-webkit-box-orient: horizontal;
+	-moz-box-orient: horizontal;
+	-webkit-flex-direction: row;
+	-ms-flex-direction: row;
+	flex-direction: row;
+	-webkit-box-align: start;
+	-moz-box-align: start;
+	-ms-flex-align: start;
+	-webkit-align-items: flex-start;
+	align-items: flex-start;	
+}
+
+.elementor-component-tab.elementor-panel-navigation-tab.elementor-tab-control-advanced {
+	-webkit-box-ordinal-group: 3;
+	-moz-box-ordinal-group: 3;
+	-ms-flex-order: 3;
+	-webkit-order: 3;
+	order: 3;
+}
+
+.elementor-panel .elementor-panel-navigation .elementor-panel-navigation-tab{
+	flex-grow: 1;
+}
+
+.elementor-control-bt_hidden {
+	display: none !important;
+}
+
+body .elementor-panel .select2-container {
+	min-width: 135px !important;
+}
