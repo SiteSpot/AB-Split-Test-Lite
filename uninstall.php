@@ -118,6 +118,13 @@ function abst_lite_uninstall_cleanup_current_site() {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- options table cleanup on uninstall.
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'abst\\_%'" );
 
+	// Transients. The named ones also clear a persistent object cache; the per-IP
+	// journey rate limits (abst_jr_*) only live a minute, so the rows are enough.
+	delete_transient( 'abst_posts_frontend_cache' );
+	delete_transient( 'abst_lite_stepped_aside_logged' );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- options table cleanup on uninstall.
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_abst\\_%' OR option_name LIKE '\\_transient\\_timeout\\_abst\\_%'" );
+
 	// Journey / heatmap files and the debug log: uploads/abst (abst/journeys, abst/logs).
 	$abst_upload_base = trailingslashit( wp_upload_dir()['basedir'] );
 	abst_lite_uninstall_delete_dir( $abst_upload_base . 'abst' );

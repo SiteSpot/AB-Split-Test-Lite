@@ -2354,20 +2354,6 @@ div#wpfooter {
     margin: 0;
 }
 
-.abst-beta-badge {
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 4px 10px;
-    border-radius: 20px;
-}
-
-.abst-beta-badge a {
-    color: #92400e;
-    text-decoration: underline;
-}
-
 /* Filter groups */
 .abst-heatmaps-filters {
     background: #ffffff;

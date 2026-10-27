@@ -12510,8 +12510,6 @@ function abst_heatmaps_page_content() {
 
   echo '<h1>' . esc_html( ABST_TEST_LABEL ) . ' Heatmaps & Scrollmaps</h1>';
 
-  echo '<span class="abst-beta-badge">Beta <a href="https://absplittest.com/support" target="_blank">Report issues</a></span>';
-
   echo '</div>';
 
   // Read all query parameters
