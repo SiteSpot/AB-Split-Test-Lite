@@ -1,4 +1,4 @@
-/*! Tabulator v6.6.1 | MIT License | Copyright (c) 2015-2026 Oli Folkerd | https://github.com/olifolkerd/tabulator */
+/*! Tabulator v6.7.1 | MIT License | Copyright (c) 2015-2026 Oli Folkerd | https://github.com/olifolkerd/tabulator */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
@@ -11975,11 +11975,11 @@
 
 		function onChange(e){
 			if(((cellValue === null || typeof cellValue === "undefined") && input.value !== "") || input.value !== cellValue){
-				if(success(input.value)){
+				if(success(input.value, e)){
 					cellValue = input.value; //persist value if successfully validated incase editor is used as header filter
 				}
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 
@@ -11992,11 +11992,11 @@
 			switch(e.key){
 				// case "Tab":
 				case "Enter":
-					onChange();
+					onChange(e);
 					break;
 
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 
 				case "End":
@@ -12062,7 +12062,7 @@
 
 			if(((cellValue === null || typeof cellValue === "undefined") && input.value !== "") || input.value !== cellValue){
 
-				if(success(input.value)){
+				if(success(input.value, e)){
 					cellValue = input.value; //persist value if successfully validated incase editor is used as header filter
 				}
 
@@ -12070,7 +12070,7 @@
 					cell.getRow().normalizeHeight();
 				},300);
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 
@@ -12098,12 +12098,23 @@
 
 				case "Enter":
 					if(e.shiftKey && editorParams.shiftEnterSubmit){
-						onChange();
+						onChange(e);
+					} else if(
+						(e.shiftKey && editorParams.shiftEnterNewLine)
+						|| (e.altKey && editorParams.altEnterNewLine)
+						|| (e.ctrlKey && editorParams.ctrlEnterNewLine)
+						|| (e.metaKey && editorParams.metaEnterNewLine)
+					) {
+						e.preventDefault();
+						input.setRangeText("\n", input.selectionStart, input.selectionEnd, "end");
+					} else if (editorParams.enterSubmit){
+						e.preventDefault();
+						onChange(e);
 					}
 					break;
 
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 
 				case "ArrowUp":
@@ -12174,7 +12185,7 @@
 		input.value = cellValue;
 
 		var blurFunc = function(e){
-			onChange();
+			onChange(e);
 		};
 
 		onRendered(function () {
@@ -12194,7 +12205,7 @@
 			}
 		});
 
-		function onChange(){
+		function onChange(e){
 			var value = input.value;
 
 			if(!isNaN(value) && value !==""){
@@ -12202,11 +12213,11 @@
 			}
 
 			if(value !== cellValue){
-				if(success(value)){
+				if(success(value, e)){
 					cellValue = value; //persist value if successfully validated incase editor is used as header filter
 				}
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 
@@ -12215,11 +12226,11 @@
 			switch(e.key){
 				case "Enter":
 				// case "Tab":
-					onChange();
+					onChange(e);
 					break;
 
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 
 				case "ArrowUp":
@@ -12288,7 +12299,7 @@
 			}
 		});
 		
-		function onChange(){
+		function onChange(e){
 			var value = input.value;
 			
 			if(!isNaN(value) && value !==""){
@@ -12296,17 +12307,17 @@
 			}
 			
 			if(value != cellValue){
-				if(success(value)){
+				if(success(value, e)){
 					cellValue = value; //persist value if successfully validated incase editor is used as header filter
 				}
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 		
 		//submit new value on blur
 		input.addEventListener("blur", function(e){
-			onChange();
+			onChange(e);
 		});
 		
 		//submit new value on enter
@@ -12314,11 +12325,11 @@
 			switch(e.key){
 				case "Enter":
 				// case "Tab":
-					onChange();
+					onChange(e);
 					break;
 				
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 			}
 		});
@@ -12399,7 +12410,7 @@
 			}
 		});
 		
-		function onChange(){
+		function onChange(e){
 			var value = input.value,
 			luxDate;
 			
@@ -12426,18 +12437,18 @@
 					}
 				}
 				
-				if(success(value)){
+				if(success(value, e)){
 					cellValue = input.value; //persist value if successfully validated incase editor is used as header filter
 				}
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 		
 		//submit new value on blur
 		input.addEventListener("blur", function(e) {
 			if (e.relatedTarget || e.rangeParent || e.explicitOriginalTarget !== input) {
-				onChange(); // only on a "true" blur; not when focusing browser's date/time picker
+				onChange(e); // only on a "true" blur; not when focusing browser's date/time picker
 			}
 		});
 		
@@ -12446,11 +12457,11 @@
 			switch(e.key){
 				// case "Tab":
 				case "Enter":
-					onChange();
+					onChange(e);
 					break;
 				
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 				
 				case "End":
@@ -12532,7 +12543,7 @@
 			}
 		});
 		
-		function onChange(){
+		function onChange(e){
 			var value = input.value,
 			luxTime;
 			
@@ -12559,18 +12570,18 @@
 					}
 				}
 				
-				if(success(value)){
+				if(success(value, e)){
 					cellValue = input.value; //persist value if successfully validated incase editor is used as header filter
 				}
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 		
 		//submit new value on blur
 		input.addEventListener("blur", function(e) {
 			if (e.relatedTarget || e.rangeParent || e.explicitOriginalTarget !== input) {
-				onChange(); // only on a "true" blur; not when focusing browser's date/time picker
+				onChange(e); // only on a "true" blur; not when focusing browser's date/time picker
 			}
 		});
 		
@@ -12579,11 +12590,11 @@
 			switch(e.key){
 				// case "Tab":
 				case "Enter":
-					onChange();
+					onChange(e);
 					break;
 				
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 				
 				case "End":
@@ -12664,7 +12675,7 @@
 			}
 		});
 		
-		function onChange(){
+		function onChange(e){
 			var value = input.value,
 			luxDateTime;
 			
@@ -12691,18 +12702,18 @@
 					}
 				}
 				
-				if(success(value)){
+				if(success(value, e)){
 					cellValue = input.value; //persist value if successfully validated incase editor is used as header filter
 				}
 			}else {
-				cancel();
+				cancel(e);
 			}
 		}
 		
 		//submit new value on blur
 		input.addEventListener("blur", function(e) {
 			if (e.relatedTarget || e.rangeParent || e.explicitOriginalTarget !== input) {
-				onChange(); // only on a "true" blur; not when focusing browser's date/time picker
+				onChange(e); // only on a "true" blur; not when focusing browser's date/time picker
 			}
 		});
 		
@@ -12711,11 +12722,11 @@
 			switch(e.key){
 				// case "Tab":
 				case "Enter":
-					onChange();
+					onChange(e);
 					break;
 				
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 				
 				case "End":
@@ -13004,7 +13015,7 @@
 				if(this.popup){
 					this.popup.hide();
 				}else {
-					this._resolveValue(true);
+					this._resolveValue(true, e);
 				}
 			}
 		}
@@ -13030,11 +13041,11 @@
 					break;
 				
 				case "Enter":
-					this._keyEnter();
+					this._keyEnter(e);
 					break;
 				
 				case "Escape":
-					this._keyEsc();
+					this._keyEsc(e);
 					break;
 				
 				case "Home":
@@ -13092,7 +13103,7 @@
 		
 		_keyTab(e){
 			if(this.params.autocomplete && this.lastAction === "typing"){
-				this._resolveValue(true);
+				this._resolveValue(true, e);
 			}else {
 				if(this.focusedItem){
 					this._chooseItem(this.focusedItem, true);
@@ -13142,20 +13153,20 @@
 		
 		_keyEnter(e){
 			if(this.params.autocomplete && this.lastAction === "typing"){
-				this._resolveValue(true);
+				this._resolveValue(true, e);
 			}else {
 				if(this.focusedItem){
 					if(this.isFilter && !this.params.multiselect && this.focusedItem.selected){
-						this._resolveValue();
+						this._resolveValue(false, e);
 					}else {
-						this._chooseItem(this.focusedItem);
+						this._chooseItem(this.focusedItem, false, e);
 					}
 				}
 			}
 		}
 		
 		_keyEsc(e){
-			this._cancel();
+			this._cancel(e);
 		}
 		
 		_keyHomeEnd(e){
@@ -13701,7 +13712,7 @@
 		_itemClick(item, e){
 			e.stopPropagation();
 			
-			this._chooseItem(item);
+			this._chooseItem(item, false, e);
 		}
 		
 		_groupClick(item, e){
@@ -13713,9 +13724,9 @@
 		////// Current Item Management ///////
 		//////////////////////////////////////
 		
-		_cancel(){
+		_cancel(e){
 			this.popup.hide(true);
-			this.actions.cancel();
+			this.actions.cancel(e);
 		}
 		
 		_clearChoices(){
@@ -13731,7 +13742,7 @@
 			this.focusedItem = null;
 		}
 		
-		_chooseItem(item, silent){
+		_chooseItem(item, silent, e){
 			var index;
 			
 			this.typing = false;
@@ -13755,7 +13766,7 @@
 				if(this.isFilter && !silent && item.selected){
 					this._clearChoices();
 					this.input.value = "";
-					this._resolveValue();
+					this._resolveValue(false, e);
 					return;
 				}
 				this.currentItems = [item];
@@ -13766,14 +13777,14 @@
 				this._styleItem(item);
 				
 				if(!silent){
-					this._resolveValue();
+					this._resolveValue(false, e);
 				}
 			}
 			
 			this._focusItem(item);
 		}
 		
-		_resolveValue(blur){
+		_resolveValue(blur, e){
 			var output, initialValue;
 			
 			if(this.popup){
@@ -13787,7 +13798,7 @@
 					if(this.params.freetext || (this.params.allowEmpty && this.input.value === "")){
 						output = this.input.value;
 					}else {
-						this.actions.cancel();
+						this.actions.cancel(e);
 						return;
 					}
 				}else {
@@ -13812,7 +13823,7 @@
 				output = this.params.emptyValue;
 			}
 			
-			this.actions.success(output);
+			this.actions.success(output, e);
 			
 			if(this.isFilter){
 				this.initialValues = output && !Array.isArray(output) ? [output] : output;
@@ -13885,7 +13896,7 @@
 			starHolder.addEventListener("click", function(e){
 				e.stopPropagation();
 				e.stopImmediatePropagation();
-				success(i);
+				success(i, e);
 				element.blur();
 			});
 
@@ -13944,11 +13955,11 @@
 		});
 
 		starsHolder.addEventListener("click", function(e){
-			success(0);
+			success(0, e);
 		});
 
 		element.addEventListener("blur", function(e){
-			cancel();
+			cancel(e);
 		});
 
 		//allow key based navigation
@@ -13963,11 +13974,11 @@
 					break;
 
 				case "Enter":
-					success(value);
+					success(value, e);
 					break;
 
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 			}
 		});
@@ -13987,11 +13998,11 @@
 		mouseDrag, mouseDragWidth;
 
 		//set new value
-		function updateValue(){
+		function updateValue(e){
 			var style = window.getComputedStyle(element, null);
 
 			var calcVal = (percent * Math.round(bar.offsetWidth / ((element.clientWidth - parseInt(style.getPropertyValue("padding-left")) - parseInt(style.getPropertyValue("padding-right")))/100))) + min;
-			success(calcVal);
+			success(calcVal, e);
 			element.setAttribute("aria-valuenow", calcVal);
 			element.setAttribute("aria-label", value);
 		}
@@ -14067,7 +14078,7 @@
 				mouseDrag = false;
 				mouseDragWidth = false;
 
-				updateValue();
+				updateValue(e);
 			}
 		});
 
@@ -14086,18 +14097,18 @@
 
 				case "Tab":
 				case "Enter":
-					updateValue();
+					updateValue(e);
 					break;
 
 				case "Escape":
-					cancel();
+					cancel(e);
 					break;
 
 			}
 		});
 
-		element.addEventListener("blur", function(){
-			cancel();
+		element.addEventListener("blur", function(e){
+			cancel(e);
 		});
 
 		return bar;
@@ -14179,20 +14190,20 @@
 		
 		//submit new value on blur
 		input.addEventListener("change", function(e){
-			success(setValue());
+			success(setValue(), e);
 		});
 
 		input.addEventListener("blur", function(e){
-			success(setValue(true));
+			success(setValue(true), e);
 		});
 		
 		//submit new value on enter
 		input.addEventListener("keydown", function(e){
 			if(e.key == "Enter"){
-				success(setValue());
+				success(setValue(), e);
 			}
 			if(e.key == "Escape"){
-				cancel();
+				cancel(e);
 			}
 		});
 		
@@ -14735,7 +14746,10 @@
 		}
 		
 		
-		clearEditor(cancel){
+		/**
+		 * @param {KeyboardEvent|MouseEvent|FocusEvent|Event} [e] editor event that ended the edit
+		 */
+		clearEditor(cancel, e){
 			var cell = this.currentCell,
 			cellEl;
 			
@@ -14746,7 +14760,7 @@
 				
 				cellEl = cell.getElement();
 				
-				this.dispatch("edit-editor-clear", cell, cancel);
+				this.dispatch("edit-editor-clear", cell, cancel, e);
 				
 				cellEl.classList.remove("tabulator-editing");
 				
@@ -14764,12 +14778,15 @@
 			}
 		}
 		
-		cancelEdit(){
+		/**
+		 * @param {KeyboardEvent|MouseEvent|FocusEvent|Event} [e] editor event that ended the edit
+		 */
+		cancelEdit(e){
 			if(this.currentCell){
 				var cell = this.currentCell;
 				var component = this.currentCell.getComponent();
 				
-				this.clearEditor(true);
+				this.clearEditor(true, e);
 				cell.setValueActual(cell.getValue());
 				cell.cellRendered();
 				
@@ -14928,7 +14945,10 @@
 			}
 			
 			//handle successful value change
-			function success(value){
+			/**
+			 * @param {KeyboardEvent|MouseEvent|FocusEvent|Event} [e] editor event that ended the edit
+			 */
+			function success(value, e){
 				if(self.currentCell === cell && !editFinished){
 					var valid = self.chain("edit-success", [cell, value], true, true);
 
@@ -14936,7 +14956,7 @@
 
 						editFinished = true;
 
-						self.clearEditor();
+						self.clearEditor(false, e);
 						
 						if(!cell.modules.edit){
 							cell.modules.edit = {};
@@ -14968,11 +14988,14 @@
 			}
 			
 			//handle aborted edit
-			function cancel(){
+			/**
+			 * @param {KeyboardEvent|MouseEvent|FocusEvent|Event} [e] editor event that ended the edit
+			 */
+			function cancel(e){
 				// editFinished = true;
 
 				if(self.currentCell === cell && !editFinished){
-					self.cancelEdit();
+					self.cancelEdit(e);
 				}
 			}
 			
@@ -15025,6 +15048,8 @@
 					//if editor returned, add to DOM, if false, abort edit
 					if(this.currentCell && cellEditor !== false){
 						if(cellEditor instanceof Node){
+							this.dispatch("edit-editor-created", cell, cellEditor);
+
 							element.classList.add("tabulator-editing");
 							cell.row.getElement().classList.add("tabulator-editing");
 							cell.table.element.classList.add("tabulator-editing");
@@ -27505,9 +27530,11 @@
 			/** @type {Range|false} */
 			this.activeRange = false;
 			this.blockKeydown = false;
+			this.tabAnchorCol = null;
 			this.fillHandle = null;
 			
 			this.keyDownEvent = this._handleKeyDown.bind(this);
+			this.editKeyDownEvent = this._handleEditKeyDown.bind(this);
 			this.mouseUpEvent = this._handleMouseUp.bind(this);
 			
 			this.registerTableOption("selectableRange", false); //enable selectable range
@@ -27518,6 +27545,7 @@
 			this.registerTableOption("selectableRangeAutoFocus", true); //focus on a cell after resetRanges
 			this.registerTableOption("selectableRangeInitializeDefault", true); //initializes default range on cell [0,0]
 			this.registerTableOption("selectableRangeBlurEditOnNavigate", undefined); //prevent editing on navigation
+			this.registerTableOption("selectableRangeCommitEditOnNavigate", false); //commit instead of cancel the edit when blurred on navigation
 			this.registerTableOption("selectableRangeFill", false); //drag the range handle to fill neighbouring cells
 			
 			this.registerTableFunction("getRangesData", this.getRangesData.bind(this));
@@ -27619,11 +27647,16 @@
 			this.subscribe("table-redraw", this.redraw.bind(this));
 			this.subscribe("table-destroy", this.tableDestroyed.bind(this));
 			
+			this.subscribe("edit-editor-created", this.handleEditorCreated.bind(this));
 			this.subscribe("edit-editor-clear", this.finishEditingCell.bind(this));
 			this.subscribe("edit-blur", this.restoreFocus.bind(this));
 			
-			this.subscribe("keybinding-nav-prev", this.keyNavigate.bind(this, "prev"));
-			this.subscribe("keybinding-nav-next", this.keyNavigate.bind(this, "next"));
+			// Runs before Edit's own Tab handling, which would open the next cell's
+			// editor first and make Tab move twice
+			this.subscribe("keybinding-nav-prev", this.keyNavigate.bind(this, "prev"), 20);
+			// Runs before Edit moves the editor, which would shift the active range
+			this.subscribe("keybinding-nav-next", this.setTabAnchor.bind(this), 10);
+			this.subscribe("keybinding-nav-next", this.keyNavigate.bind(this, "next"), 20);
 			this.subscribe("keybinding-nav-left", this.keyNavigate.bind(this, "left"));
 			this.subscribe("keybinding-nav-right", this.keyNavigate.bind(this, "right"));
 			this.subscribe("keybinding-nav-up", this.keyNavigate.bind(this, "up"));
@@ -27748,6 +27781,28 @@
 					}
 				}
 			}
+		}
+
+		_handleEditKeyDown(e) {
+			if (e.key !== "Enter") {
+				return;
+			}
+
+			if (e.ctrlKey || e.altKey || e.metaKey) {
+				return;
+			}
+
+			if (this.table.modules.edit.checkEditing()) {
+				return;
+			}
+
+			if (e.shiftKey) {
+				this.navigateToTabAnchor("up");
+			} else {
+				this.navigateToTabAnchor("down");
+			}
+
+			e.preventDefault();
 		}
 		
 		initializeFocus(cell){
@@ -27882,11 +27937,15 @@
 				this.activeRange.setBounds(cell);
 			}
 		}
+
+		handleEditorCreated(cell, editor) {
+			editor.addEventListener("keydown", this.editKeyDownEvent);
+		}
 		
-		finishEditingCell() {
+		finishEditingCell(_cell, _cancel, e) {
 			this.blockKeydown = true;
 			this.table.rowManager.element.focus();
-			
+
 			setTimeout(() => {
 				this.blockKeydown = false;
 			}, 10);
@@ -27902,12 +27961,21 @@
 				
 				if(isEditing){
 					if(dir === 'next' || dir === 'prev'){
-						this.dispatch("edit-cancel-cell");
+						if(this.options("selectableRangeCommitEditOnNavigate")){
+							// Moving focus out of the editor commits it, like clicking away
+							this.restoreFocus();
+						}else {
+							this.dispatch("edit-cancel-cell");
+						}
 					}else {
 						// Prevent navigating while editing except for next/prev
 						return false;
 					}
 				}
+			}
+
+			if (dir !== "next") {
+				this.tabAnchorCol = null;
 			}
 
 			if (dir === 'prev') {
@@ -27921,7 +27989,28 @@
 			}
 		}
 		
+		setTabAnchor(){
+			if (this.tabAnchorCol === null) {
+				this.tabAnchorCol = this.activeRange.start.col;
+			}
+		}
+
+		navigateToTabAnchor(dir){
+			const range = this.activeRange;
+
+			if (this.tabAnchorCol !== null) {
+				range.setStart(range.start.row, this.tabAnchorCol);
+				range.setEnd(range.start.row, this.tabAnchorCol);
+				this.tabAnchorCol = null;
+				this.layoutElement();
+			}
+
+			this.navigate(false, false, dir);
+		}
+		
 		keyNavigateRange(e, dir, jump, expand){
+			this.tabAnchorCol = null;
+
 			if(this.navigate(jump, expand, dir)){
 				e.preventDefault();
 			}
@@ -28411,6 +28500,7 @@
 			}
 			
 			range = new Range(this.table, this, { start, end });
+			this.tabAnchorCol = null;
 			
 			this.setActiveRange(range);
 			this.ranges.push(range);
@@ -30567,4 +30657,3 @@
 	return TabulatorFull;
 
 }));
-
